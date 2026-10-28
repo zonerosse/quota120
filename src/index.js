@@ -278,7 +278,12 @@ export class Stato extends DurableObject {
     if (p === "/interno/posta" && this.env.POSTA_FINTA === "1") return J(globalThis.__POSTA || []);
 
     // ---- controllo pubblico: dice solo SE le impostazioni ci sono (mai i valori) ----
-    if (p === "/api/salute") { const c = n => !!(this.env[n] && String(this.env[n]).trim()); return J({ versione: "c10", posta: c("RESEND_API_KEY") || c("BREVO_API_KEY"), RESEND_API_KEY: c("RESEND_API_KEY"), BREVO_API_KEY: c("BREVO_API_KEY"), MITTENTE: c("MITTENTE"), RISPOSTE: c("RISPOSTE"), ANTHROPIC_API_KEY: c("ANTHROPIC_API_KEY"), DJI_API_KEY: c("DJI_API_KEY") }); }
+    if (p === "/api/salute") { const c = n => !!(this.env[n] && String(this.env[n]).trim()); const prova = {};
+      if (url.searchParams.get("prova") === "1") {   // prova dal vivo che DJI e Claude accettino le chiavi (risponde solo sì/no e il messaggio d'errore)
+        try { const r = await fetch(DJI_KEYCHAINS, { method: "POST", headers: { "content-type": "application/json", "api-key": this.env.DJI_API_KEY || "" }, body: JSON.stringify({ version: 1, department: 3, keychainsArray: [] }) }); const j = await r.json().catch(() => ({})); prova.dji = { http: r.status, risultato: j.result || null }; } catch (e) { prova.dji = { errore: String(e.message || e).slice(0, 120) }; }
+        try { const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "x-api-key": this.env.ANTHROPIC_API_KEY || "", "anthropic-version": "2023-06-01", "content-type": "application/json" }, body: JSON.stringify({ model: MODELLO, max_tokens: 5, messages: [{ role: "user", content: "Rispondi solo: OK" }] }) }); const j = await r.json().catch(() => ({})); prova.claude = { http: r.status, risposta: j.content ? j.content.map(x => x.text).join("") : (j.error && j.error.message || "").slice(0, 160) }; } catch (e) { prova.claude = { errore: String(e.message || e).slice(0, 120) }; }
+      }
+      return J({ prova, versione: "c11", posta: c("RESEND_API_KEY") || c("BREVO_API_KEY"), RESEND_API_KEY: c("RESEND_API_KEY"), BREVO_API_KEY: c("BREVO_API_KEY"), MITTENTE: c("MITTENTE"), RISPOSTE: c("RISPOSTE"), ANTHROPIC_API_KEY: c("ANTHROPIC_API_KEY"), DJI_API_KEY: c("DJI_API_KEY") }); }
 
     // ---- da qui serve un dispositivo riconosciuto ----
     let id = url.searchParams.get("id") || "", k = url.searchParams.get("k") || "";
