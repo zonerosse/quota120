@@ -54,7 +54,9 @@ function pulisciLetto(v) {
     foto: NUM(v.foto, 0, 99999), videoS: NUM(v.videoS, 0, 999999), cIni: NUM(v.cIni, 0, 100), cFin: NUM(v.cFin, 0, 100), tMax: NUM(v.tMax, -50, 150),
     dev: NUM(v.dev, 0, 5), celle: Array.isArray(v.celle) ? v.celle.slice(0, 14).map(x => NUM(x, 0, 10)) : [], batt: esc(v.batt, 40), bsn: esc(v.bsn, 60),
     sn: esc(v.sn, 60), logKey: esc(v.logKey, 120), fine: esc(v.fine, 5), sec: NUM(v.sec, 0, 86400),
-    prof: Array.isArray(v.prof) ? v.prof.slice(0, 160).map(x => Math.round(NUM(x, -999, 9999))) : [] };
+    prof: Array.isArray(v.prof) ? v.prof.slice(0, 160).map(x => Math.round(NUM(x, -999, 9999))) : [],
+    trk: Array.isArray(v.trk) ? v.trk.slice(0, 420).filter(p => Array.isArray(p) && p.length >= 2).map(p => [NUM(p[0], -90, 90), NUM(p[1], -180, 180), Math.round(NUM(p[2], -999, 9999))]) : [],
+    distMax: NUM(v.distMax, 0, 999999), haTrk: !!v.haTrk };
 }
 
 // ---- permessi ----
@@ -108,7 +110,7 @@ function unisci(full, m, n) {
     const pulito = { id: +id, data: DATA(v.data) || oggi(), ora: esc(v.ora, 5), drone: esc(v.drone, 80), pilota: n, luogo: esc(v.luogo, 120),
       min: Math.max(0, Math.min(600, +v.min || 0)), stato: ["completo", "dacompl", "attesa"].includes(v.stato) ? v.stato : "dacompl",
       ctrl: !!v.ctrl, ctrlOra: esc(v.ctrlOra, 5), cliente: esc(v.cliente, 200), note: esc(v.note, 2000), importato: !!v.importato, amano: !!v.amano,
-      cat: esc(v.cat, 60), inc: esc(v.inc, 60), codLav: esc(v.codLav, 20), docLog: (o && o.docLog) || esc(v.docLog, 40), logNome: esc(v.logNome, 120) };
+      cat: esc(v.cat, 60), inc: esc(v.inc, 60), codLav: esc(v.codLav, 20), meteo: esc(v.meteo, 160), docLog: (o && o.docLog) || esc(v.docLog, 40), logNome: esc(v.logNome, 120) };
     // i dati letti dal registro li scrive solo il server (/api/volo/importa): il telefono non li può cambiare
     if (o && o.letto) Object.assign(pulito, pulisciLetto(o), { drone: o.drone, data: o.data, ora: o.ora, min: o.min, pilota: o.pilota });
     if (o) Object.assign(o, pulito); else { d.VOLI = d.VOLI || []; d.VOLI.unshift(pulito); }
@@ -269,6 +271,12 @@ export class Stato extends DurableObject {
       const l = c && m && (m.d.LAVORI || []).find(x => norm(x.codice).replace(/\s/g, "") === c && x.stato !== "concluso");
       return J({ lavoro: l ? { id: l.id, codice: l.codice, cliente: l.cliente, titolo: l.titolo, luogo: l.luogo, data: l.data } : null });
     }
+    if (p === "/api/volo/trk") {
+      const vid = +url.searchParams.get("id"), m = await leggiMain(), v = m && (m.d.VOLI || []).find(x => x.id === vid);
+      if (!v) return J({ errore: "Volo non trovato" }, 404);
+      if (!adm && v.pilota !== me.n && !permDi(m.d, me.n).voliTutti) return J({ errore: "Non puoi vederlo" }, 403);
+      return J({ trk: (await st.get("trk:" + vid)) || [] });
+    }
     // ---- registri di volo DJI: la chiave resta qui, il telefono chiede solo le chiavi del suo file ----
     if (p === "/api/dji/keychains" && request.method === "POST") {
       if (!this.env.DJI_API_KEY) return J({ errore: "chiave_dji" }, 503);
@@ -295,7 +303,17 @@ export class Stato extends DurableObject {
         drone: v0.drone, pilota, luogo: esc(v0.luogo, 120), min: NUM(v0.min, 0, 600), stato: "completo", ctrl: !!v0.ctrl, ctrlOra: esc(v0.ctrlOra, 5),
         cliente: esc(v0.cliente, 200), note: esc(v0.note, 2000), importato: true, amano: false, cat: esc(v0.cat, 60), inc: "Nessuno",
         docLog: esc(b.docLog, 40), logNome: esc(v0.logNome, 120) }, L);
-      d.VOLI = d.VOLI || []; d.VOLI.unshift(v);
+      // il percorso GPS sta a parte (pesa troppo per stare nei dati di tutti)
+      const trk = v.trk; delete v.trk; v.haTrk = trk.length > 1;
+      d.VOLI = d.VOLI || [];
+      // se c'è il volo aperto dal controllo prima del volo (stesso pilota, drone e giorno), il registro lo completa
+      const att = d.VOLI.find(x => x.stato === "attesa" && !x.letto && x.pilota === v.pilota && x.drone === v.drone && x.data === v.data);
+      if (att) {
+        Object.assign(v, { id: att.id, ctrl: att.ctrl, ctrlOra: att.ctrlOra, cliente: v.cliente || att.cliente || "", codLav: att.codLav || "", meteo: att.meteo || "",
+          luogo: v.luogo || att.luogo, note: [att.note, v.note].filter(Boolean).join(" · "), cat: att.cat || v.cat });
+        d.VOLI[d.VOLI.indexOf(att)] = v;
+      } else d.VOLI.unshift(v);
+      if (v.haTrk) await st.put("trk:" + v.id, trk);
       applicaVolo(d, v);
       await scriviMain(d, m.row.ver + 1);
       return J({ ok: true, id: v.id, ver: m.row.ver + 1 });

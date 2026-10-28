@@ -600,6 +600,27 @@
   .cab-pf input{background:#0D1820!important;color:#E6EEF2!important;border-color:#3A5568!important;color-scheme:dark}
   .cab-pf .trovato{color:var(--ink)}
   .fl-oggi{margin-bottom:14px}
+
+  /* meteo e mappa */
+  .riga2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .riga2 .btn{width:100%}
+  .meteo{border:1px solid var(--bordo);border-radius:var(--r);overflow:hidden;margin-top:12px;background:#fff;color:var(--ink)}
+  .meteo .st{display:flex;align-items:center;gap:10px;padding:10px 14px;color:#fff;font:700 16px "Barlow",Arial,sans-serif}
+  .meteo .st.ok{background:var(--ok)}.meteo .st.warn{background:var(--warn)}.meteo .st.ko{background:var(--ko)}.meteo .st.neutro{background:var(--ink2)}
+  .meteo .st svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;flex:none}
+  .mgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:#E3E8EB}
+  .mgrid div{background:#fff;padding:10px 14px}
+  .mgrid small{display:block;font-size:14px;color:var(--ink3)}
+  .mgrid b{font:600 22px "Barlow Semi Condensed",Arial,sans-serif}
+  .mgrid b.warn{color:var(--warn)}.mgrid b.ko{color:var(--ko)}.mgrid b.ok{color:var(--ok)}
+  .ore{display:flex;gap:6px;padding:10px 14px;border-top:1px solid #E3E8EB;background:var(--sup2)}
+  .ore div{flex:1;text-align:center;font-size:13px;color:var(--ink3);min-width:0}
+  .ore b{display:block;font:600 16px "Barlow Semi Condensed",Arial,sans-serif;color:var(--ink)}
+  .ore i{display:block;height:5px;border-radius:2px;margin:4px 4px 0}
+  .meteo .fonte{font-size:13px;color:var(--ink3);padding:6px 14px;border-top:1px solid #E3E8EB}
+  .mappa{height:340px;border-radius:8px;border:1px solid var(--bordo);z-index:0;margin-top:6px}
+  .leg i{display:inline-block;width:18px;height:4px;vertical-align:middle;margin-right:6px}
+  .fld .v .btn.mini{min-height:32px;padding:0 10px;font-size:14px;margin-left:6px}
 </style>
 </head>
 <body>
@@ -704,6 +725,17 @@
       <div class="prog" id="prog"><span class="spin"></span><span id="prog-t"></span></div>
     </div>
     <div class="card" style="margin-top:12px">
+      <h2>Scarica il registro</h2>
+      <div style="font-size:15px;color:var(--muted)">PDF pronto da firmare per ENAC, assicurazione o cliente; Excel per i tuoi conti.</div>
+      <div class="fill" style="margin-top:10px">
+        <div><label for="rg-da">Dal</label><input type="date" id="rg-da"></div>
+        <div><label for="rg-a">Al</label><input type="date" id="rg-a"></div>
+        <div><label for="rg-p">Pilota</label><select id="rg-p"></select></div>
+        <div><label for="rg-d">Drone</label><select id="rg-d"></select></div>
+      </div>
+      <div class="row"><button class="btn" onclick="scaricaPdf(this)"><span class="spin"></span>Scarica PDF</button><button class="btn sec" onclick="scaricaExcel(this)"><span class="spin"></span>Scarica Excel</button></div>
+    </div>
+    <div class="card" style="margin-top:12px">
       <h2>Ultimi voli</h2>
       <ul class="vlist" id="vlist"></ul>
     </div>
@@ -726,6 +758,8 @@
         <div class="hcap">Quota durante il volo</div>
         <svg class="prof" viewBox="0 0 600 170" id="im-prof"></svg>
         <div class="leg"><span><i style="background:var(--accent)"></i>quota dal punto di decollo</span><span><i style="background:var(--ko);height:2px"></i>limite di 120 m</span></div>
+        <div class="hcap" id="im-mappa-t">Percorso del volo</div>
+        <div id="im-mappa" class="mappa"></div>
       </div>
       <div class="card" style="margin-top:14px">
         <h2>Drone e batteria</h2>
@@ -769,6 +803,11 @@
       <div class="fgrid" id="vo-dati"></div>
     </div>
 
+    <div class="card" id="vo-mappa-c" style="margin-top:12px;display:none">
+      <h2>Percorso del volo</h2>
+      <div id="vo-mappa" class="mappa"></div>
+      <div class="leg"><span><i style="background:#17793F;border-radius:50%;height:12px;width:12px"></i>decollo</span><span><i style="background:var(--accent)"></i>percorso</span><span><i style="background:var(--ko)"></i>sopra i 120 m</span></div>
+    </div>
     <div class="grid2" style="margin-top:12px">
       <div class="card">
         <h2>Tracciato</h2>
@@ -1295,7 +1334,8 @@ function disegnaHome(){
   document.getElementById('h-asp').innerHTML=ASP==='A'?homeA(todo):ASP==='C'?homeC(todo):homeB(todo);
   riempiSelect(vd,vp);
   ['h-data','h-cod','h-luogo'].forEach((i,k)=>{const e=document.getElementById(i); if(e&&tieni[k]) e.value=tieni[k];});
-  if(tieni[1]) cercaCodice(); LAVTROVATO=trov;
+  if(tieni[1]) cercaCodice(); LAVTROVATO=trov; disegnaMeteo();
+  const hd=document.getElementById('h-drone'); if(hd) hd.addEventListener('change',disegnaMeteo);
 }
 
 /* ---------- navigazione ---------- */
@@ -1348,7 +1388,7 @@ function campiLavoro(){
   return `<div class="hsel hlav"><div><label for="h-data">Data</label><input type="date" id="h-data" value="${iso}"></div>
       <div><label for="h-cod">Codice lavoro (se te l’ha dato l’azienda)</label><input type="text" id="h-cod" placeholder="es. L-2611" autocapitalize="characters" autocomplete="off" oninput="cercaCodice()"></div></div>
     <div id="h-trov" class="trovato hidden"></div>
-    <div id="h-luogo-w" class="hlav"><label for="h-luogo">Luogo</label><input type="text" id="h-luogo" placeholder="Via, paese (es. via Marcavallo, Ostellato)"></div>`;
+    <div id="h-luogo-w" class="hlav"><label for="h-luogo">Luogo</label><input type="text" id="h-luogo" placeholder="Via, paese (es. via Marcavallo, Ostellato)"></div>`+boxMeteo();
 }
 function cercaCodice(){
   const c=document.getElementById('h-cod').value.trim(), t=document.getElementById('h-trov'), w=document.getElementById('h-luogo-w');
@@ -1357,7 +1397,7 @@ function cercaCodice(){
   t.className='trovato no'; t.innerHTML='<span class="spin" style="display:inline-block;border-color:rgba(29,92,124,.25);border-top-color:var(--accent)"></span> Cerco il lavoro…';
   T_COD=setTimeout(()=>api('GET','/api/lavoro?c='+encodeURIComponent(c)).then(j=>{
     if(document.getElementById('h-cod').value.trim()!==c) return;
-    if(j.lavoro){ LAVTROVATO=j.lavoro; t.className='trovato'; w.classList.add('hidden');
+    if(j.lavoro){ LAVTROVATO=j.lavoro; t.className='trovato'; w.classList.add('hidden'); setTimeout(()=>meteoLuogo(),50);
       t.innerHTML=`<div class="mark ok">${svg('check')}</div><div><b>${ESC(j.lavoro.cliente)}</b> · ${ESC(j.lavoro.titolo)}<br><span style="color:var(--ink3);font-size:15px">${ESC(j.lavoro.luogo||'')}</span></div>`; }
     else { t.className='trovato no'; w.classList.remove('hidden'); t.textContent='Codice non trovato: controlla, oppure lascialo vuoto e scrivi il luogo.'; }
   }).catch(()=>{t.className='trovato no';t.textContent='Niente rete: riprova';}),450);
@@ -1382,6 +1422,9 @@ function verifiche(){
   L.push({l:'Manutenzione',s:d.manut==='ok'?'ok':'warn',d:d.manut==='ok'?'In regola':((SCHEDE[d.id]||{}).man?'Scade tra '+SCHEDE[d.id].man.mancano+' di volo':'Da fare presto')});
   L.push({l:'Batterie',s:d.batt==='ok'?'ok':'warn',d:d.batt==='ok'?'Tutte in buono stato':BATT.filter(x=>x.drone===d.id&&x.stato!=='ok').map(x=>x.nome).join(', ')+' da controllare: usare le altre'});
   if(d.cat==='specific') L.push({l:'Autorizzazione operativa ENAC',s:AUT_ENAC.agricola?'ok':'ko',d:AUT_ENAC.agricola?'Presente':'Manca: senza questa non si può volare'});
+  { const G=giudizioMeteo(d);
+    L.push(G?{l:'Meteo',s:G.tot,d:'Vento '+METEO.v+' km/h, raffiche '+METEO.g+' km/h (limite del drone '+G.max+')'+(METEO.p>0?', pioggia '+String(METEO.p).replace('.',',')+' mm':'')+' · '+METEO.luogo+' alle '+METEO.quando}
+      :{l:'Meteo',s:'warn',d:'Non controllato: nella pagina iniziale tocca «Meteo del luogo» o «Dove sono ora»'}); }
   L.push({l:'Zone verificate su D-Flight',s:zoneOk?'ok':'ko',d:zoneOk?'Verificate oggi alle '+ora():'Apri D-Flight, guarda la zona, poi segna fatto',act:'zone'});
   L.push({l:'Check list prima del decollo',s:checklistOk?'ok':'ko',d:checklistOk?'Completata':'Da spuntare sul posto',act:'check'});
   return L;
@@ -1412,7 +1455,7 @@ function salvaVolo(b){
   lavora(b,()=>{
     controlloSalvato={ora:ora(), drone:dSel.nome, pilota:pSel.nome, pid:pSel.id};
     VOLI.unshift({id:nuovoId(), data:CTRLINFO.data||oggi(), ora:controlloSalvato.ora, drone:dSel.nome, pilota:pSel.nome,
-      luogo:CTRLINFO.luogo||'—', cliente:CTRLINFO.cliente||'', codLav:CTRLINFO.codice||'', min:0, stato:'attesa', ctrl:true, ctrlOra:controlloSalvato.ora});
+      luogo:CTRLINFO.luogo||'—', cliente:CTRLINFO.cliente||'', codLav:CTRLINFO.codice||'', meteo:METEO?'vento '+METEO.v+' km/h, raffiche '+METEO.g+' km/h, '+(METEO.p>0?'pioggia':'niente pioggia')+', '+METEO.t+' °C':'', min:0, stato:'attesa', ctrl:true, ctrlOra:controlloSalvato.ora});
     apriVoli();
   });
 }
@@ -1442,6 +1485,7 @@ function apriVoli(){
       <span class="tag ${s[0]}">${s[1]}</span></li>`;
   }).join('');
   document.getElementById('prog').style.display='none';
+  disegnaScarica();
   vai('voli','Persone e attività &rsaquo; Registro voli');
 }
 
@@ -1472,7 +1516,7 @@ function apriVolo(id){
     ['Quota massima',v.quotaMax+' m'+(v.oltre120?' · '+v.oltre120+' s sopra i 120 m':'')],['Distanza percorsa',String(v.km).replace('.',',')+' km'],
     ['Velocità massima',v.velMax+' km/h'],['Foto e video',v.foto+' foto'+(v.videoS?' · '+Math.max(1,Math.round(v.videoS/60))+' min di video':'')],
     ['Drone',v.drone],['Numero di serie',v.sn||'—'],['Batteria',(BATT.find(b=>b.id===v.batt)||{}).nome||'—'],['Carica',v.cIni?'da '+v.cIni+'% a '+v.cFin+'%':'—'],
-    ['Temperatura batteria','fino a '+v.tMax+' °C'],['Celle',v.celle&&v.celle.length?v.celle.length+' · scostamento '+String(v.dev).replace('.',',')+' V':'—']
+    ['Temperatura batteria','fino a '+v.tMax+' °C'],['Distanza massima dal decollo',v.distMax?v.distMax+' m':'—'],['Meteo al controllo',v.meteo||'—'],['Celle',v.celle&&v.celle.length?v.celle.length+' · scostamento '+String(v.dev).replace('.',',')+' V':'—']
   ] : (!v.amano && (v.importato||v.stato==='completo')) ? [
     ['Data',v.data],['Decollo',v.ora],['Atterraggio',fine(v.ora,v.min)],
     ['Durata',v.min+' min'],['Luogo',v.luogo],['Coordinate','44.746 N · 11.940 E'],
@@ -1486,6 +1530,8 @@ function apriVolo(id){
     : (v.amano ? campiAMano(v) : `<div style="grid-column:1/-1;font-size:13px;color:var(--muted)">Nessun registro ancora: importa il file del drone dal registro voli.</div>`);
 
   // tracciato di prova
+  document.getElementById('vo-mappa-c').style.display=v.haTrk?'':'none';
+  if(v.haTrk) api('GET','/api/volo/trk?id='+v.id).then(j=>{ if(voloAperto===v) disegnaMappa('vo-mappa',j.trk||[]); }).catch(()=>{});
   if(v.letto&&v.prof&&v.prof.length>1){ const W=300,H=150,top=Math.max(140,v.quotaMax+15),y=q=>H-10-(Math.max(0,q)/top)*(H-20);
     const pts=v.prof.map((q,i)=>(8+i*(W-16)/(v.prof.length-1)).toFixed(1)+','+y(q).toFixed(1)).join(' ');
     document.getElementById('vo-track').innerHTML=`<line x1="8" y1="${y(120)}" x2="${W-8}" y2="${y(120)}" stroke="#AE2F28" stroke-width="1.5" stroke-dasharray="6 4" vector-effect="non-scaling-stroke"/><polyline points="${pts}" fill="none" stroke="#1D5C7C" stroke-width="2.5" vector-effect="non-scaling-stroke"/>`;
@@ -1596,6 +1642,7 @@ function apriDrone(id, da, apriBatt){
   const chk='<svg viewBox="0 0 24 24">'+IC.check+'</svg>';
   const dati=[['Marca e modello',d.nome],['Classe',s.classe],['Categoria di volo',s.cat],['Matricola',MATR[d.nome]],
     ['Peso',s.peso],['Codice D-Flight','ITA-xxxx · QR applicato'],['Remote ID',s.rid],['Acquistato il',s.acq],['Ore di volo',s.ore+' · '+s.voli+' voli'],
+    ['Vento massimo',VENTO_BASE(d)+' km/h'+(ADM?` <button class="btn sec mini" onclick="cambiaVento(${d.id})">Cambia</button>`:'')],
     ['Affidato a',(PILOTI.filter(p=>inDotazione(p).includes(d)).map(p=>p.nome).join(', '))||'nessun pilota']];
   document.getElementById('dr-dati').innerHTML=dati.map(x=>`<div class="fld"><div class="k">${chk}${x[0]}</div><div class="v">${x[1]}</div></div>`).join('');
 
@@ -3037,13 +3084,19 @@ function analizza(L,frames,nome,docId){
   const tMax=bt.reduce((a,b)=>Math.max(a,+b.maxTemperature||+b.temperature||0),0);
   const dev=bt.reduce((a,b)=>Math.max(a,+b.maxCellVoltageDeviation||+b.cellVoltageDeviation||0),0);
   const passo=Math.max(1,Math.ceil(h.length/120)), prof=[]; for(let i=0;i<h.length;i+=passo) prof.push(Math.round(h[i]));
+  // percorso: al massimo 400 punti [lat, lon, quota]
+  const gp=usa.filter(x=>x.osd&&Math.abs(+x.osd.latitude)>0.01&&Math.abs(+x.osd.longitude)>0.01), ps=Math.max(1,Math.ceil(gp.length/400)), trk=[];
+  for(let i=0;i<gp.length;i+=ps) trk.push([+gp[i].osd.latitude.toFixed(6),+gp[i].osd.longitude.toFixed(6),Math.round(+gp[i].osd.height||0)]);
+  if(gp.length&&(gp.length-1)%ps) {const z=gp[gp.length-1]; trk.push([+z.osd.latitude.toFixed(6),+z.osd.longitude.toFixed(6),Math.round(+z.osd.height||0)]);}
+  const rad=x=>x*Math.PI/180, dist=(a,b)=>{const R=6371000,dl=rad(b[0]-a[0]),dn=rad(b[1]-a[1]),h=Math.sin(dl/2)**2+Math.cos(rad(a[0]))*Math.cos(rad(b[0]))*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(h));};
+  const distMax=trk.length?Math.round(Math.max(...trk.map(p=>dist(trk[0],p)))):0;
   const sn=det.aircraftSn||(fr[0]&&fr[0].recover&&fr[0].recover.aircraftSn)||'';
   const bsn=det.batterySn||(fr[0]&&fr[0].recover&&fr[0].recover.batterySn)||'';
   const luogo=[det.city,det.street||det.area].filter(Boolean).join(', ');
   return {nome,docId,sn,bsn,nomeDrone:det.aircraftName||'',data:fmtData(t0),ora:fmtOra(t0),fine:fmtOra(t1),sec:Math.round(sec),min:Math.max(1,Math.round(sec/60)),
     luogo,km:Math.round((+det.totalDistance||0)/100)/10,quotaMax:Math.round(qMax),oltre120:Math.round(oltre),velMax:Math.round((+det.maxHorizontalSpeed||0)*3.6),
     foto:+det.captureNum||0,videoS:Math.round(+det.videoTime||0),cIni,cFin,tMax:Math.round(tMax),dev:Math.round(dev*100)/100,
-    celle:(ultima.cellVoltages||[]).map(x=>Math.round(x*100)/100),prof,logKey:sn+'|'+(det.startTime||'')};
+    celle:(ultima.cellVoltages||[]).map(x=>Math.round(x*100)/100),prof,trk,distMax,logKey:sn+'|'+(det.startTime||'')};
 }
 // drone: prima dal numero di serie (Matricola), poi dal nome
 function droneDaLog(x){
@@ -3063,7 +3116,7 @@ function mostraLettoVolo(){
     <div class="s">${supera?'Quota massima '+x.quotaMax+' m'+(x.oltre120?', per '+(x.oltre120<90?x.oltre120+' secondi':Math.round(x.oltre120/60)+' minuti'):'')+' · spiegalo nelle note del volo':'Mai sopra i 120 metri'+(d?' · drone riconosciuto':'')}</div></div>`;
   document.getElementById('im-volo').innerHTML=[fld('Data',x.data),fld('Decollo e atterraggio',x.ora+' – '+x.fine),fld('Durata',Math.floor(x.sec/60)+' min '+String(x.sec%60).padStart(2,'0')+' s'),
     fld('Luogo',ESC(x.luogo)||'—'),fld('Distanza percorsa',String(x.km).replace('.',',')+' km'),fld('Quota massima',x.quotaMax+' m',supera?'warn':'ok'),
-    fld('Velocità massima',x.velMax+' km/h'),fld('Foto e video',pl(x.foto,'foto','foto')+(x.videoS?' · '+Math.max(1,Math.round(x.videoS/60))+' min di video':''))].join('');
+    fld('Velocità massima',x.velMax+' km/h'),fld('Distanza massima dal decollo',x.distMax?x.distMax+' m':'—'),fld('Foto e video',pl(x.foto,'foto','foto')+(x.videoS?' · '+Math.max(1,Math.round(x.videoS/60))+' min di video':''))].join('');
   // profilo della quota con la linea dei 120 m
   const W=600,H=170,top=Math.max(140,x.quotaMax+15),y=q=>H-14-(q/top)*(H-28),P=x.prof.length>1?x.prof:[0,0];
   const pts=P.map((q,i)=>(24+i*(W-48)/(P.length-1)).toFixed(1)+','+y(Math.max(0,q)).toFixed(1)).join(' ');
@@ -3087,6 +3140,8 @@ function mostraLettoVolo(){
   document.getElementById('im-leggi').classList.add('hidden'); document.getElementById('im-letto').classList.remove('hidden');
   document.getElementById('crumb').innerHTML='Home &rsaquo; Registro voli &rsaquo; <b>Volo letto</b>';
   aggiornaAnteprimaAgg(); scrollTo(0,0);
+  document.getElementById('im-mappa-t').style.display=x.trk&&x.trk.length>1?'':'none';
+  setTimeout(()=>disegnaMappa('im-mappa',x.trk),30);
 }
 function disegnaBattImp(){
   const id=+document.getElementById('im-drone').value, sb=document.getElementById('im-batt'), mie=BATT.filter(b=>b.drone===id), pr=battDaLog(LETTO,id);
@@ -3115,7 +3170,7 @@ function confermaVolo(b){
   if(!pil){toast('Scegli chi ha volato');document.getElementById('im-pil').focus();return;}
   const volo={data:x.data,ora:x.ora,fine:x.fine,sec:x.sec,min:x.min,drone:d.nome,pilota:pil,luogo:x.luogo,cliente:document.getElementById('im-cli').value,note:document.getElementById('im-note').value,
     cat:d.cat==='specific'?'Specific con autorizzazione':d.classe==='C2'?'Open A2':'Open A1',logNome:x.nome,quotaMax:x.quotaMax,oltre120:x.oltre120,km:x.km,velMax:x.velMax,foto:x.foto,videoS:x.videoS,
-    cIni:x.cIni,cFin:x.cFin,tMax:x.tMax,dev:x.dev,celle:x.celle,batt:document.getElementById('im-batt').value,bsn:x.bsn,sn:x.sn,logKey:x.logKey,prof:x.prof};
+    cIni:x.cIni,cFin:x.cFin,tMax:x.tMax,dev:x.dev,celle:x.celle,batt:document.getElementById('im-batt').value,bsn:x.bsn,sn:x.sn,logKey:x.logKey,prof:x.prof,trk:x.trk,distMax:x.distMax};
   b.disabled=true;b.classList.add('busy');
   // prima si salva quello che c'è in sospeso, poi il volo
   const via=()=>api('POST','/api/volo/importa',{volo,docLog:x.docId}).then(j=>{
@@ -3126,6 +3181,125 @@ function confermaVolo(b){
     return ricarica().then(()=>{toast('Volo salvato: ore e cicli aggiornati');prossimoRegistro();});
   }).catch(()=>{b.disabled=false;b.classList.remove('busy');toast('Niente rete: riprova');});
   if(JSON.stringify(stato())!==LASTJ){ controllaModifiche(); setTimeout(via,1200); } else via();
+}
+
+/* ---------- meteo nel controllo prima del volo (Open-Meteo, gratis, senza chiavi) ---------- */
+let METEO=null, MPOS=null;
+const VENTO_BASE=d=>d.ventoMax|| (d.cat==='specific'?22: /mini|C0/i.test(d.nome+' '+d.classe)?38: 43);
+function livV(v,max){return v>max?'ko':v>max*0.8?'warn':'ok';}
+function boxMeteo(){return `<div class="hlav"><div class="riga2"><button class="btn sec mini" type="button" onclick="meteoLuogo(this)"><span class="spin"></span>Meteo del luogo</button><button class="btn sec mini" type="button" onclick="meteoGps(this)"><span class="spin"></span>Dove sono ora</button></div><div id="h-meteo"></div></div>`;}
+function droneScelto(){return DRONI.find(x=>x.id==(document.getElementById('h-drone')||{}).value);}
+function meteoLuogo(b){
+  const lv=LAVTROVATO, t=lv?lv.luogo:((document.getElementById('h-luogo')||{}).value||'');
+  const q=String(t).replace(/\(.*?\)/g,'').split(',').map(s=>s.trim()).filter(Boolean).pop();
+  if(!q){toast('Scrivi prima il luogo, oppure il codice lavoro');return;}
+  b&&(b.disabled=true,b.classList.add('busy'));
+  fetch('https://geocoding-api.open-meteo.com/v1/search?count=1&language=it&country=IT&name='+encodeURIComponent(q)).then(r=>r.json()).then(j=>{
+    const x=(j.results||[])[0]; if(!x){toast('Luogo non trovato: scrivi il nome del paese');return;}
+    MPOS={lat:x.latitude,lon:x.longitude,nome:x.name+(x.admin2?' ('+x.admin2+')':'')}; return caricaMeteo();
+  }).catch(()=>toast('Meteo non disponibile: controlla la rete')).finally(()=>{b&&(b.disabled=false,b.classList.remove('busy'));});
+}
+function meteoGps(b){
+  if(!navigator.geolocation){toast('Questo telefono non dà la posizione');return;}
+  b.disabled=true;b.classList.add('busy');
+  navigator.geolocation.getCurrentPosition(p=>{MPOS={lat:p.coords.latitude,lon:p.coords.longitude,nome:'La tua posizione'};caricaMeteo().finally(()=>{b.disabled=false;b.classList.remove('busy');});},
+    ()=>{b.disabled=false;b.classList.remove('busy');toast('Posizione non concessa: usa «Meteo del luogo»');},{timeout:10000});
+}
+function caricaMeteo(){
+  if(!MPOS) return Promise.resolve();
+  const u=`https://api.open-meteo.com/v1/forecast?latitude=${MPOS.lat}&longitude=${MPOS.lon}&current=temperature_2m,precipitation,wind_speed_10m,wind_gusts_10m,wind_direction_10m&hourly=wind_gusts_10m&forecast_hours=6&wind_speed_unit=kmh&timezone=auto`;
+  return fetch(u).then(r=>r.json()).then(j=>{
+    const c=j.current; METEO={luogo:MPOS.nome,v:Math.round(c.wind_speed_10m),g:Math.round(c.wind_gusts_10m),p:+c.precipitation||0,t:Math.round(c.temperature_2m),
+      dir:['N','NE','E','SE','S','SO','O','NO'][Math.round((+c.wind_direction_10m||0)/45)%8],ore:j.hourly.time.map((x,i)=>[x.slice(11,16),Math.round(j.hourly.wind_gusts_10m[i])]),quando:ora()};
+    disegnaMeteo();
+  }).catch(()=>{const e=document.getElementById('h-meteo'); if(e) e.innerHTML='<div class="nota">Meteo non disponibile: controlla la rete.</div>';});
+}
+function giudizioMeteo(d){
+  if(!METEO) return null;
+  const max=VENTO_BASE(d), lv=[livV(METEO.v,max),livV(METEO.g,max*1.1),METEO.p>0.2?'warn':'ok'];
+  return {lv, tot:lv.includes('ko')?'ko':lv.includes('warn')?'warn':'ok', max};
+}
+function disegnaMeteo(){
+  const e=document.getElementById('h-meteo'); if(!e||!METEO) return;
+  const d=droneScelto(), G=d?giudizioMeteo(d):{lv:['ok','ok',METEO.p>0.2?'warn':'ok'],tot:'ok',max:null};
+  const msg=!d?'Scegli il drone per confrontare il vento con i suoi limiti':{ok:'Meteo adatto al volo',warn:'Attenzione: vento o pioggia vicini al limite',ko:'Vento oltre il limite del drone: non volare'}[G.tot];
+  e.innerHTML=`<div class="meteo"><div class="st ${d?G.tot:'neutro'}"><svg viewBox="0 0 24 24">${ICO_ST[d?G.tot:'warn']}</svg>${msg}</div>
+    <div class="mgrid"><div><small>Vento</small><b class="${G.lv[0]}">${METEO.v} km/h</b> <small style="display:inline">da ${METEO.dir}</small></div><div><small>Raffiche</small><b class="${G.lv[1]}">${METEO.g} km/h</b></div>
+    <div><small>Pioggia</small><b class="${G.lv[2]}">${METEO.p>0?String(METEO.p).replace('.',',')+' mm':'no'}</b></div><div><small>Temperatura</small><b>${METEO.t} °C</b></div></div>
+    <div class="ore">${METEO.ore.map(x=>`<div>${x[0]}<b>${x[1]}</b>raffiche<i style="background:var(--${G.max?livV(x[1],G.max*1.1):'bordo2'})"></i></div>`).join('')}</div>
+    <div class="fonte">${ESC(METEO.luogo)}${G.max?' · limite del drone '+G.max+' km/h':''} · Open-Meteo, ore ${METEO.quando}</div></div>`;
+}
+
+/* ---------- mappa del volo (Leaflet, OpenStreetMap) ---------- */
+let LEAF=null;
+function caricaLeaflet(){
+  if(window.L) return Promise.resolve();
+  if(LEAF) return LEAF;
+  LEAF=new Promise((ok,no)=>{const c=document.createElement('link');c.rel='stylesheet';c.href='/leaflet/leaflet.css';document.head.appendChild(c);
+    const s=document.createElement('script');s.src='/leaflet/leaflet.js';s.onload=ok;s.onerror=no;document.head.appendChild(s);});
+  return LEAF;
+}
+let MAPPE={};
+function disegnaMappa(id,trk){
+  const el=document.getElementById(id); if(!el) return;
+  if(!trk||trk.length<2){el.style.display='none';return;}
+  el.style.display='';
+  caricaLeaflet().then(()=>{
+    if(MAPPE[id]){MAPPE[id].remove();delete MAPPE[id];}
+    const m=L.map(el,{scrollWheelZoom:false}); MAPPE[id]=m;
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(m);
+    const P=trk.map(p=>[p[0],p[1]]), line=L.polyline(P,{color:'#1D5C7C',weight:4}).addTo(m);
+    // i tratti sopra i 120 m in rosso
+    let seg=[]; trk.forEach((p,i)=>{ if(p[2]>120){ seg.push([p[0],p[1]]); } else if(seg.length){ if(i>0) seg.push([p[0],p[1]]); L.polyline(seg,{color:'#AE2F28',weight:6}).addTo(m); seg=[]; } });
+    if(seg.length>1) L.polyline(seg,{color:'#AE2F28',weight:6}).addTo(m);
+    L.circleMarker(P[0],{radius:8,color:'#fff',weight:3,fillColor:'#17793F',fillOpacity:1}).addTo(m).bindTooltip('Decollo');
+    m.fitBounds(line.getBounds(),{padding:[20,20]}); setTimeout(()=>m.invalidateSize(),60);
+  }).catch(()=>{el.innerHTML='<div class="nota" style="padding:16px">Mappa non disponibile: controlla la rete.</div>';});
+}
+
+/* ---------- registro voli in PDF ed Excel ---------- */
+function filtroRegistro(){
+  const g=id=>document.getElementById(id).value, da=dt(g('rg-da').split('-').reverse().join('/')), a=dt(g('rg-a').split('-').reverse().join('/'));
+  const p=ADM?g('rg-p'):IO.n, d=g('rg-d');
+  const L=VOLI.filter(v=>{const x=dt(v.data); return x&&(!da||x>=da)&&(!a||x<=a)&&(!p||v.pilota===p)&&(!d||v.drone===d);})
+    .sort((x,y)=>(dt(x.data)-dt(y.data))||String(x.ora).localeCompare(String(y.ora)));
+  return {L,da:g('rg-da').split('-').reverse().join('/'),a:g('rg-a').split('-').reverse().join('/'),p:p||'tutti i piloti',d:d||'tutti i droni'};
+}
+function righeRegistro(L){return L.map(v=>({data:v.data,ora:v.ora,durata:(+v.min||0)+' min',pilota:v.pilota,drone:v.drone,luogo:v.luogo||'',quota:v.letto?v.quotaMax+' m':'',
+  lavoro:[v.codLav,v.cliente].filter(Boolean).join(' '),controllo:v.ctrl?'fatto '+(v.ctrlOra||''):'non registrato',stato:STATO[v.stato]?STATO[v.stato][1]:'',sopra:v.letto&&(v.oltre120>0||v.quotaMax>120)}));}
+function scaricaPdf(b){
+  const F=filtroRegistro(); if(!F.L.length){toast('Nessun volo nel periodo scelto');return;}
+  const R=righeRegistro(F.L), min=F.L.reduce((s,v)=>s+(+v.min||0),0), sopra=R.filter(r=>r.sopra).length, senza=F.L.filter(v=>!v.ctrl).length;
+  lavora(b,()=>stampa('Registro dei voli',`<div style="display:flex;justify-content:space-between;gap:16px;border-bottom:2px solid #132A3A;padding-bottom:10px">
+    <div><h1>Registro dei voli</h1><div class="m">${ESC(OP.nome||'')} · operatore ${ESC(OP.codice||'')}<br>dal ${F.da} al ${F.a} · ${ESC(F.p)} · ${ESC(F.d)}</div></div><div class="m" style="text-align:right">Quota 120<br>stampato il ${oggi()}</div></div>
+    <table><tr><th>Data</th><th>Ora</th><th>Durata</th><th>Pilota</th><th>Drone</th><th>Luogo</th><th>Quota max</th><th>Lavoro</th><th>Controllo</th></tr>
+    ${R.map(r=>`<tr><td>${r.data}</td><td>${r.ora}</td><td>${r.durata}</td><td>${ESC(r.pilota)}</td><td>${ESC(r.drone)}</td><td>${ESC(r.luogo)}</td><td style="${r.sopra?'color:#AE2F28;font-weight:700':''}">${r.quota||'—'}</td><td>${ESC(r.lavoro)||'—'}</td><td style="${r.controllo==='non registrato'?'color:#AE2F28;font-weight:700':''}">${r.controllo}</td></tr>`).join('')}</table>
+    <p style="margin-top:14px"><b>${pl(F.L.length,'volo','voli')}</b> · <b>${Math.floor(min/60)} h ${String(min%60).padStart(2,'0')} min</b> di volo · <b>${sopra}</b> sopra i 120 m · <b>${senza}</b> senza controllo registrato</p>
+    <div style="display:flex;justify-content:space-between;gap:30px;margin-top:40px;color:#5f6b78"><div style="border-top:1px solid #9FAEB8;padding-top:4px;min-width:220px">Il responsabile dell’operatore</div><div style="border-top:1px solid #9FAEB8;padding-top:4px;min-width:160px">Data</div></div>`));
+}
+function scaricaExcel(b){
+  const F=filtroRegistro(); if(!F.L.length){toast('Nessun volo nel periodo scelto');return;}
+  const q=x=>'"'+String(x==null?'':x).replace(/"/g,'""')+'"';
+  const T=['Data','Ora','Durata (min)','Pilota','Drone','Luogo','Quota massima (m)','Sopra 120 m (s)','Distanza (km)','Lavoro','Controllo','Stato'];
+  const rows=F.L.map(v=>[v.data,v.ora,+v.min||0,v.pilota,v.drone,v.luogo||'',v.letto?v.quotaMax:'',v.letto?v.oltre120:'',v.letto?String(v.km).replace('.',','):'',[v.codLav,v.cliente].filter(Boolean).join(' '),v.ctrl?'fatto '+(v.ctrlOra||''):'non registrato',STATO[v.stato]?STATO[v.stato][1]:'']);
+  const csv='﻿'+[T].concat(rows).map(r=>r.map(q).join(';')).join('\r\n');
+  lavora(b,()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+    a.download='registro-voli_'+F.da.replace(/\//g,'-')+'_'+F.a.replace(/\//g,'-')+'.csv';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);toast('Registro scaricato: si apre con Excel');});
+}
+function disegnaScarica(){
+  const o=new Date(), i=x=>x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');
+  const da=document.getElementById('rg-da'), a=document.getElementById('rg-a');
+  if(!da.value){da.value=i(new Date(o.getFullYear(),o.getMonth(),1)); a.value=i(o);}
+  const sp=document.getElementById('rg-p'), sd=document.getElementById('rg-d'), vp=sp.value, vd=sd.value;
+  sp.parentNode.style.display=ADM?'':'none';
+  sp.innerHTML='<option value="">Tutti i piloti</option>'+PILOTI.map(p=>`<option>${ESC(p.nome)}</option>`).join(''); sp.value=vp;
+  sd.innerHTML='<option value="">Tutti i droni</option>'+(ADM?DRONI:droniMiei()).map(d=>`<option>${ESC(d.nome)}</option>`).join(''); sd.value=vd;
+}
+/* limite di vento del drone: lo decide l'Admin nella scheda del drone */
+function cambiaVento(id){
+  const d=DRONI.find(x=>x.id===id);
+  modulo('Vento massimo per '+d.nome,[{k:'v',l:'Vento massimo in km/h (dal manuale del drone)',t:'num',v:VENTO_BASE(d),req:1}],
+    {check:v=>v.v>5&&v.v<150?'':'Scrivi un numero tra 5 e 150',salva:v=>{d.ventoMax=Math.round(v.v);apriDrone(id,'droni');toast('Limite di vento salvato');}});
 }
 
 avvio();
