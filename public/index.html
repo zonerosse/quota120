@@ -2864,7 +2864,7 @@ function salvaMatr(id,b){
   const d=matrDoppia(m,id); if(d){toast('Questa matricola è già di '+d.nome);return;}
   lavora(b,()=>{p.matr=m;disegnaPermAdm(id);toast('Matricola salvata: ora può entrare');});
 }
-const CAMPI_OP=[['nome','Nome dell’operatore'],['codice','Codice operatore ENAC'],['resp','Responsabile (Admin)'],['dfReg','Registrato su D-Flight il'],['dfAbb','Abbonamento D-Flight fino al'],['email','Email'],['tel','Telefono']];
+const CAMPI_OP=[['nome','Nome dell’operatore'],['codice','Codice operatore UAS (D-Flight)'],['resp','Responsabile (Admin)'],['dfReg','Registrato su D-Flight il'],['dfAbb','Abbonamento D-Flight fino al'],['email','Email'],['tel','Telefono']];
 function disegnaDatiOp(mod){
   const chk='<svg viewBox="0 0 24 24">'+IC.check+'</svg>', q=v=>String(v==null?'':v).replace(/"/g,'&quot;');
   document.getElementById('ad-dati').innerHTML=CAMPI_OP.map(([k,l])=>`<div class="fld"><div class="k">${mod||!OP[k]?'':chk}${l}</div>${mod?`<input class="adm-in" id="op-${k}" value="${q(OP[k])}" ${/df/.test(k)?'placeholder="gg/mm/aaaa"':''}>`:`<div class="v">${OP[k]||'<span style="color:var(--warn)">da completare</span>'}</div>`}</div>`).join('');
