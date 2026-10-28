@@ -412,6 +412,19 @@
   .chip i{font-style:normal;width:34px;height:34px;border-radius:50%;background:#5B7F6E;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
   @media(max-width:560px){header .marchio .motto{display:none} .hbtn.asp-btn span{display:none} .hbtn{padding:0 10px}}
   @media(max-width:360px){.chip span{display:none}}
+  .htabs{display:none;gap:8px;margin-left:auto}
+  .hbtn.tab{position:relative}
+  .hbtn.tab.on{background:#fff;color:var(--notte);border-color:#fff}
+  .hbtn.tab i.admdot{position:static;display:none;width:9px;height:9px;border-radius:50%;background:#C8432F;border:0;margin-left:2px}
+  .hsep{display:none;width:1px;height:30px;background:#3A5568;margin:0 2px}
+  body.adm .htabs,body.come .htabs{display:flex} body.adm .hsep,body.come .hsep{display:block}
+  @media(max-width:900px){body.adm header,body.come header{height:auto;flex-wrap:wrap;padding:10px 12px;row-gap:8px}
+    body.adm .htabs,body.come .htabs{order:9;width:100%;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:0}
+    .htabs .hbtn{flex-direction:column;height:54px;gap:3px;font-size:13px;padding:0 4px} .hsep{display:none!important} header .marchio{margin-right:auto}}
+  .come-banda{display:none;background:#FBF3E4;border:1px solid #E7C98F;color:#5B3B05;border-radius:10px;padding:10px 14px;align-items:center;gap:10px;flex-wrap:wrap;font-size:15px;margin:12px 0}
+  body.come .come-banda{display:flex}
+  .come-banda select{font:500 15px "Barlow",Arial,sans-serif;padding:7px 10px;border:1px solid #D5DDE2;border-radius:8px;min-width:200px;background:#fff}
+  .come-banda .btn{margin-left:auto}
   .err{display:none;margin-top:10px;background:#fff;border:1px solid var(--bordo);border-left:4px solid var(--ko);border-radius:8px;padding:10px 12px;font-size:16px}
   .sapere{text-align:left;font-size:15px;margin-top:14px;border-top:1px solid var(--bordo);padding-top:12px;color:var(--ink2)}
   .sapere>div{padding:3px 0 3px 14px;position:relative}
@@ -682,15 +695,21 @@
     <path d="M28 44 H92" stroke="#fff" stroke-width="3.5" stroke-dasharray="7 5"/>
     <text x="92" y="37" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="14" fill="#fff">120 m</text>
     <g stroke="#fff" stroke-width="5" stroke-linecap="round" fill="none"><path d="M50 72 H70"/><path d="M48 72 V65 M72 72 V65"/><path d="M32 63 H52 M68 63 H88"/></g>
-    <rect x="52" y="71" width="16" height="11" rx="2.5" fill="#fff"/></svg><div><h1>Quota 120</h1><div class="motto">Gestione operatori droni</div></div></div>
+    <rect x="52" y="71" width="16" height="11" rx="2.5" fill="#fff"/></svg><div><h1>Quota 120</h1></div></div>
   <div class="op" id="op-head"></div>
-  <button class="hbtn sole-btn" id="sole-btn" aria-pressed="false" title="Modalità sole: contrasto massimo" aria-label="Modalità sole" onclick="sole(this)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg></button>
+  <div class="htabs" id="htabs">
+    <button class="hbtn tab" id="tb-home" onclick="tabHome()"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg><span>Home</span></button>
+    <button class="hbtn tab" id="admbtn" onclick="tabAdmin()"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg><span>Pannello Admin</span><i class="admdot" id="admdot"></i></button>
+    <button class="hbtn tab" id="tb-op" onclick="tabOperatore()"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg><span>Vista operatore</span></button>
+  </div>
+  <span class="hsep" id="hsep"></span>
   <button class="hbtn asp-btn" id="asp-btn" style="display:none" onclick="apriAspetto()" aria-label="Aspetto"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>Aspetto</span></button>
+  <button class="hbtn sole-btn" id="sole-btn" aria-pressed="false" title="Modalità sole: contrasto massimo" aria-label="Modalità sole" onclick="sole(this)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg></button>
   <div class="chip" id="chip"></div>
-  <button class="admbtn" id="admbtn" style="display:none" onclick="apriAdmin()"><svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg><span class="lungo">Pannello </span>Admin<i class="admdot" id="admdot"></i></button>
 </header>
 
 <div class="wrap">
+  <div class="come-banda" id="come-banda"><span>Stai vedendo come</span><select id="come-sel" onchange="tabOperatore(this.value)"></select><b>Solo da guardare: qui non si modifica niente.</b><button class="btn" onclick="tornaAdmin(this)"><span class="spin"></span>Torna Admin</button></div>
   <div class="demo" id="demo">Versione di prova · i dati di esempio sono inventati</div>
 
   <!-- ================= ENTRATA ================= -->
@@ -2429,10 +2448,11 @@ function contaRiquadri(){
 
 /* ---------- entrata ---------- */
 let BLOCCHI={}, ASP='B', AVVISI={ora:7,giorni:[60,30,7,0],adm:{email:'',on:true},piloti:{}};
-let ME=null, IO={r:'',n:''}, ADM=false, VER=0, DISP=[], LASTJ='', SAVING=false, BASE='', VISTA='', T_ATT=0, T_SAL=0, T_POLL=0;
+let COME=null, ME=null, IO={r:'',n:''}, ADM=false, VER=0, DISP=[], LASTJ='', SAVING=false, BASE='', VISTA='', T_ATT=0, T_SAL=0, T_POLL=0;
 try{ME=JSON.parse(localStorage.getItem('quota120Disp')||'null');}catch(e){}
 function meSave(){try{if(ME)localStorage.setItem('quota120Disp',JSON.stringify(ME));else localStorage.removeItem('quota120Disp');}catch(e){}}
-function api(m,path,b){return fetch(path,{method:m,headers:{'content-type':'application/json','x-disp':ME?ME.id+':'+ME.k:''},body:b?JSON.stringify(b):undefined})
+function api(m,path,b){if(COME&&m!=='GET'){toast('Sei in Vista operatore: qui non si modifica niente');return Promise.resolve({errore:'Vista operatore: solo da guardare',_s:0});}
+  return fetch(path,{method:m,headers:{'content-type':'application/json','x-disp':ME?ME.id+':'+ME.k:''},body:b?JSON.stringify(b):undefined})
   .then(r=>r.json().then(j=>{j._s=r.status;return j;}));}
 function vai(v, crumb){
   if(v==='home') disegnaHome();
@@ -2443,10 +2463,16 @@ function vai(v, crumb){
   document.getElementById('crumb').innerHTML = v==='home' ? '<b>Home</b>' : 'Home &rsaquo; <b>'+crumb+'</b>';
   VISTA=v; window.scrollTo(0,0); scuro();
   [['nb-home','home'],['nb-voli','voli'],['nb-doc','documenti']].forEach(([i,p])=>document.getElementById(i).classList.toggle('on',v===p));
+  segnaTab();
+}
+function segnaTab(){
+  document.getElementById('tb-home').classList.toggle('on',!COME&&VISTA==='home');
+  document.getElementById('admbtn').classList.toggle('on',!COME&&VISTA==='admin');
+  document.getElementById('tb-op').classList.toggle('on',!!COME);
 }
 function schermata(v){
   document.querySelectorAll('.wrap > [id^="v-"]').forEach(e=>e.classList.toggle('hidden',e.id!=='v-'+v));
-  document.querySelector('.nav').style.display='none'; document.getElementById('op-head').innerHTML=''; document.getElementById('admbtn').style.display='none';
+  document.querySelector('.nav').style.display='none'; document.getElementById('op-head').innerHTML=''; document.body.classList.remove('adm','come');
   document.getElementById('asp-btn').style.display='none'; document.getElementById('chip').style.display='none'; document.getElementById('basso').style.display='none'; VISTA=v; scuro();
 }
 function avvio(){
@@ -2504,7 +2530,7 @@ function entra(){
     if(j._s===403&&j.stato==='attesa'){ME.stato='attesa';meSave();attesa();return;}
     if(j._s===403&&j.stato==='bloccato'){esci();toast('Il tuo accesso è bloccato: parla con l’Admin');return;}
     if(j._s===401||j._s===403||j.vuoto){esci();return;}
-    IO=j.io; ADM=IO.r==='adm'; document.body.classList.toggle('op',!ADM);
+    COME=null; IO=j.io; ADM=IO.r==='adm'; document.body.classList.toggle('op',!ADM); document.body.classList.toggle('adm',ADM); document.body.classList.remove('come');
     DISP=j.disp||[]; BLOCCHI=j.blocchi||{}; if(IO.asp) ASP=IO.asp; VER=j.ver; apply(j.data); LASTJ=MIGRATO?'':JSON.stringify(stato());MIGRATO=false;
     testata(); vai('home');
     clearInterval(T_SAL); T_SAL=setInterval(controllaModifiche,1500);
@@ -2512,12 +2538,40 @@ function entra(){
   }).catch(()=>{schermata('login');toast('Niente rete: riprova tra poco');});
 }
 function testata(){
-  document.getElementById('admbtn').style.display=ADM?'inline-flex':'none';
   document.getElementById('asp-btn').style.display='inline-flex'; document.getElementById('basso').style.display='';
   document.getElementById('sole-btn').setAttribute('aria-pressed',document.body.classList.contains('sole'));
   // niente «Esci» per i piloti: restano dentro finché l'Admin non li blocca
-  document.getElementById('op-head').innerHTML=`<span class="lungo">${OP.codice||''} · ${OP.nome||''}</span>`;
-  const ch=document.getElementById('chip'); ch.style.display=ADM?'none':'flex'; ch.innerHTML=ADM?'':`<i>${iniziali(IO.n||'')}</i><span>${(IO.n||'').split(' ')[0]}</span>`;
+  document.getElementById('op-head').innerHTML='';
+  const ch=document.getElementById('chip'); ch.style.display=ADM||COME?'none':'flex'; ch.innerHTML=ADM?'':`<i>${iniziali(IO.n||'')}</i><span>${(IO.n||'').split(' ')[0]}</span>`;
+}
+/* tasti in alto: Home, Pannello Admin, Vista operatore */
+function tabHome(){ if(COME) return tornaAdmin(null,'home'); vai('home'); }
+function tabAdmin(){ if(COME) return tornaAdmin(null,'admin'); apriAdmin(); }
+let COMEULT='';
+function tabOperatore(nome){
+  if(!ADM&&!COME) return;
+  const lista=COME?[...document.getElementById('come-sel').options].map(o=>o.value):PILOTI.map(p=>p.nome);
+  if(!lista.length){toast('Non ci sono ancora piloti: aggiungili da Piloti');return;}
+  nome=nome||(lista.includes(COMEULT)?COMEULT:lista[0]);
+  const via=()=>fetch('/api/stato?all=1&come='+encodeURIComponent(nome),{headers:{'x-disp':ME.id+':'+ME.k}}).then(r=>r.json()).then(j=>{
+    if(!j.data){toast(j.errore||'Non riesco ad aprire la vista operatore');return;}
+    COME=nome; COMEULT=nome; IO=j.io; ADM=false;
+    document.body.classList.add('op','come'); document.body.classList.remove('adm');
+    document.getElementById('come-sel').innerHTML=lista.map(n=>`<option ${n===nome?'selected':''}>${ESC(n)}</option>`).join('');
+    if(IO.asp) ASP=IO.asp; apply(j.data); LASTJ=JSON.stringify(stato()); testata(); vai('home');
+  }).catch(()=>toast('Niente rete: riprova'));
+  if(!COME&&JSON.stringify(stato())!==LASTJ){controllaModifiche();setTimeout(via,1200);} else via();
+}
+function tornaAdmin(b,dove){
+  if(b){b.disabled=true;b.classList.add('busy');}
+  COME=null;
+  api('GET','/api/stato?all=1').then(j=>{
+    if(b){b.disabled=false;b.classList.remove('busy');}
+    if(!j.data){toast('Niente rete: riprova');return;}
+    IO=j.io; ADM=IO.r==='adm'; document.body.classList.remove('come'); document.body.classList.toggle('op',!ADM); document.body.classList.toggle('adm',ADM);
+    DISP=j.disp||DISP; BLOCCHI=j.blocchi||BLOCCHI; if(IO.asp) ASP=IO.asp; VER=j.ver; apply(j.data); LASTJ=MIGRATO?'':JSON.stringify(stato()); MIGRATO=false;
+    testata(); if(dove==='admin') apriAdmin(); else vai('home');
+  }).catch(()=>{if(b){b.disabled=false;b.classList.remove('busy');}toast('Niente rete: riprova');});
 }
 function esci(){
   if(ME) fetch('/api/disp/esci',{method:'POST',headers:{'x-disp':ME.id+':'+ME.k}}).catch(()=>{});
@@ -2527,7 +2581,7 @@ function esci(){
 }
 /* salvataggio: ogni modifica parte da sola verso il server */
 function controllaModifiche(){
-  if(SAVING||!IO.r) return;
+  if(SAVING||!IO.r||COME) return;
   const s=JSON.stringify(stato()); if(s===LASTJ) return;
   SAVING=true;
   api('PUT','/api/stato',{ver:VER,data:JSON.parse(s)}).then(j=>{
@@ -2538,7 +2592,7 @@ function controllaModifiche(){
   }).catch(()=>{SAVING=false;});
 }
 function aggiorna(){
-  if(SAVING||!IO.r) return;
+  if(SAVING||!IO.r||COME) return;
   api('GET','/api/stato?since='+VER).then(j=>{
     if(j._s===401||j._s===403){esci();if(j.stato==='bloccato')toast('Il tuo accesso è bloccato: parla con l’Admin');return;}
     let ch=false;

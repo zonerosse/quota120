@@ -440,6 +440,10 @@ export class Stato extends DurableObject {
       const { row } = m, io = { r: me.ruolo, n: me.n, id, asp: aspetti[me.n] || ASP_BASE }, extra = adm ? { disp: pub(), blocchi } : {};
       if (request.method === "GET") {
         if (adm && !/localhost|127\.0\.0\.1/.test(url.origin) && (await st.get("origine")) !== url.origin) await st.put("origine", url.origin);
+        // l'Admin guarda il programma come lo vede un pilota (solo lettura)
+        const come = adm && url.searchParams.get("come");
+        if (come) { const pc = pilotaDi(m.d, come); if (!pc) return J({ errore: "Pilota non trovato" }, 404);
+          return J({ ver: row.ver, data: vista(m.d, pc.nome), io: { r: "op", n: pc.nome, id, asp: aspetti[pc.nome] || ASP_BASE, come: true } }); }
         if (+url.searchParams.get("since") === row.ver && !url.searchParams.get("all")) return J(Object.assign({ same: true, ver: row.ver }, extra));
         return J(Object.assign({ ver: row.ver, data: adm ? m.d : vista(m.d, me.n), io }, extra));
       }
