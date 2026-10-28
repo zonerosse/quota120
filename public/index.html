@@ -3332,7 +3332,7 @@ function scaricaPdf(b){
   const F=filtroRegistro(); if(!F.L.length){toast('Nessun volo nel periodo scelto');return;}
   const R=righeRegistro(F.L), min=F.L.reduce((s,v)=>s+(+v.min||0),0), sopra=R.filter(r=>r.sopra).length, senza=F.L.filter(v=>!v.ctrl).length;
   lavora(b,()=>stampa('Registro dei voli',`<div style="display:flex;justify-content:space-between;gap:16px;border-bottom:2px solid #132A3A;padding-bottom:10px">
-    <div><h1>Registro dei voli</h1><div class="m">${ESC(OP.nome||'')} · operatore ${ESC(OP.codice||'')}<br>dal ${F.da} al ${F.a} · ${ESC(F.p)} · ${ESC(F.d)}</div></div><div class="m" style="text-align:right">Quota 120<br>stampato il ${oggi()}</div></div>
+    <div><h1>Registro dei voli</h1><div class="m">${ESC(OP.nome||'')}${OP.codice&&!/x{3}/i.test(OP.codice)?' · operatore '+ESC(OP.codice):''}<br>dal ${F.da} al ${F.a} · ${ESC(F.p)} · ${ESC(F.d)}</div></div><div class="m" style="text-align:right">Quota 120<br>stampato il ${oggi()}</div></div>
     <table><tr><th>Data</th><th>Ora</th><th>Durata</th><th>Pilota</th><th>Drone</th><th>Luogo</th><th>Quota max</th><th>Lavoro</th><th>Controllo</th></tr>
     ${R.map(r=>`<tr><td>${r.data}</td><td>${r.ora}</td><td>${r.durata}</td><td>${ESC(r.pilota)}</td><td>${ESC(r.drone)}</td><td>${ESC(r.luogo)}</td><td style="${r.sopra?'color:#AE2F28;font-weight:700':''}">${r.quota||'—'}</td><td>${ESC(r.lavoro)||'—'}</td><td style="${r.controllo==='non registrato'?'color:#AE2F28;font-weight:700':''}">${r.controllo}</td></tr>`).join('')}</table>
     <p style="margin-top:14px"><b>${pl(F.L.length,'volo','voli')}</b> · <b>${Math.floor(min/60)} h ${String(min%60).padStart(2,'0')} min</b> di volo · <b>${sopra}</b> sopra i 120 m · <b>${senza}</b> senza controllo registrato</p>
