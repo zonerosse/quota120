@@ -214,13 +214,13 @@ async function mandaMail(env, a, oggetto, html) {
   // Resend (se c'è la sua chiave) oppure Brevo
   if (env.RESEND_API_KEY && env.MITTENTE) {
     const r = await fetch("https://api.resend.com/emails", { method: "POST", headers: { authorization: "Bearer " + env.RESEND_API_KEY, "content-type": "application/json" },
-      body: JSON.stringify({ from: "Quota 120 <" + env.MITTENTE + ">", to: [a], subject: oggetto, html }) });
+      body: JSON.stringify(Object.assign({ from: "Quota 120 <" + env.MITTENTE + ">", to: [a], subject: oggetto, html }, env.RISPOSTE ? { reply_to: env.RISPOSTE } : {})) });
     if (!r.ok) { const t = await r.text().catch(() => ""); throw new Error("La posta non ha accettato la mail (" + r.status + ") " + t.slice(0, 160)); }
     return;
   }
   if (!env.BREVO_API_KEY || !env.MITTENTE) throw new Error("posta");
   const r = await fetch("https://api.brevo.com/v3/smtp/email", { method: "POST", headers: { "api-key": env.BREVO_API_KEY, "content-type": "application/json", accept: "application/json" },
-    body: JSON.stringify({ sender: { name: "Quota 120", email: env.MITTENTE }, to: [{ email: a }], subject: oggetto, htmlContent: html }) });
+    body: JSON.stringify(Object.assign({ sender: { name: "Quota 120", email: env.MITTENTE }, to: [{ email: a }], subject: oggetto, htmlContent: html }, env.RISPOSTE ? { replyTo: { email: env.RISPOSTE } } : {})) });
   if (!r.ok) { const t = await r.text().catch(() => ""); throw new Error("La posta non ha accettato la mail (" + r.status + ") " + t.slice(0, 160)); }
 }
 const EMAIL = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e || "").trim());

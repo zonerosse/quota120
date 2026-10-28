@@ -7,7 +7,7 @@
   "durable_objects": { "bindings": [{ "name": "STATO", "class_name": "Stato" }] },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Stato"] }],
   "triggers": { "crons": ["5 * * * *"] },
-  // il mittente degli avvisi (non è segreto); le chiavi stanno nei segreti di Cloudflare
-  "vars": { "MITTENTE": "avvisi@kennelmanager.app" },
+  // mittente degli avvisi e indirizzo che riceve le risposte (non sono segreti); le chiavi stanno nei segreti di Cloudflare
+  "vars": { "MITTENTE": "avvisi@kennelmanager.app", "RISPOSTE": "assistenza@kennelmanager.app" },
   "keep_vars": true
 }
