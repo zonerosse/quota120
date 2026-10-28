@@ -1652,7 +1652,7 @@ function apriVolo(id){
   const dati = v.letto ? [
     ['Data',v.data],['Decollo e atterraggio',v.ora+(v.fine?' – '+v.fine:'')],['Durata',v.sec?hm(v.sec):v.min+' min'],['Luogo',v.luogo||'—'],
     ['Quota massima',v.quotaMax+' m'+(v.oltre120?' · '+v.oltre120+' s sopra i 120 m':'')],['Distanza percorsa',String(v.km).replace('.',',')+' km'],
-    ['Velocità massima',v.velMax+' km/h'],['Foto e video',v.foto+' foto'+(v.videoS?' · '+Math.max(1,Math.round(v.videoS/60))+' min di video':'')],
+    ['Velocità massima',v.velMax?String(v.velMax).replace('.',',')+' km/h':'—'],['Foto e video',v.foto||v.video||v.videoS?pl(v.foto||0,'foto','foto')+(v.video?' · '+pl(v.video,'video','video'):'')+(v.videoS?' · '+Math.max(1,Math.round(v.videoS/60))+' min di video':''):'—'],
     ['Drone',v.drone],['Numero di serie',v.sn||'—'],['Batteria',(BATT.find(b=>b.id===v.batt)||{}).nome||'—'],['Carica',v.cIni?'da '+v.cIni+'% a '+v.cFin+'%':'—'],
     ['Temperatura batteria',v.tMax?'fino a '+v.tMax+' °C':'—'],['Distanza massima dal decollo',v.distMax?v.distMax+' m':'—'],['Meteo al controllo',v.meteo||'—'],['Celle',v.celle&&v.celle.length?v.celle.length+' · scostamento '+String(v.dev).replace('.',',')+' V':'—']
   ] : (!v.amano && (v.importato||v.stato==='completo')) ? [
@@ -1676,9 +1676,10 @@ function apriVolo(id){
     document.getElementById('vo-track').previousElementSibling.textContent='Quota durante il volo';
     document.getElementById('vo-track-n').textContent='Linea rossa: limite di 120 m. Quota massima '+v.quotaMax+' m.';
   } else { document.getElementById('vo-track').previousElementSibling.textContent='Tracciato';
-  document.getElementById('vo-track').innerHTML = dati
+  document.getElementById('vo-track').innerHTML = dati && !v.letto
     ? '<polyline points="40,120 70,95 110,90 150,60 190,55 230,40 250,70 215,95 170,110 120,118 60,125 40,120" fill="none" stroke="#3d5f80" stroke-width="2.5" stroke-linejoin="round" vector-effect="non-scaling-stroke"/><circle cx="40" cy="120" r="5" fill="#3f7d5a"/><text x="50" y="140" font-size="11" fill="#5f6b78">Decollo e atterraggio</text>'
-    : '<text x="150" y="80" text-anchor="middle" font-size="12" fill="#5f6b78">Nessun tracciato</text>'; }
+    : '<text x="150" y="80" text-anchor="middle" font-size="12" fill="#5f6b78">Nessun tracciato</text>';
+    document.getElementById('vo-track-n').textContent=!v.letto?'La mappa con il percorso arriva con la lettura automatica dei registri DJI.':v.daFoto?'Dalla foto non arriva il percorso: arriva caricando il file del registro con «Aggiungi il file».':'In questo registro non c’è il percorso.'; }
 
   // campi da completare
   document.getElementById('vo-pil').innerHTML=(ADM?PILOTI:PILOTI.filter(p=>p.nome===IO.n)).map(p=>`<option ${p.nome===v.pilota?'selected':''}>${p.nome}</option>`).join('');
@@ -3521,7 +3522,8 @@ function confermaFoto(b){
   const sec=(+m[1])*60+(+(m[2]||0)), num=id=>{const v=parseFloat(g(id).replace(',','.'));return isNaN(v)?0:v;};
   const volo={data,ora,sec,min:Math.max(1,Math.round(sec/60)),drone:d.nome,pilota:pil,luogo:g('fv-luogo'),codLav:g('fv-cod'),note:g('fv-note'),
     cat:d.cat==='specific'?'Specific con autorizzazione':d.classe==='C2'?'Open A2':'Open A1',logNome:'Foto del riepilogo',
-    km:num('fv-km'),quotaMax:Math.round(num('fv-q')),distMax:Math.round(num('fv-dm')),oltre120:0,batt:g('fv-batt'),daFoto:true};
+    km:num('fv-km'),quotaMax:Math.round(num('fv-q')),distMax:Math.round(num('fv-dm')),oltre120:0,batt:g('fv-batt'),daFoto:true,
+    velMax:+FLETTO.velMaxKmh||0,foto:+FLETTO.foto||0,video:+FLETTO.video||0,cIni:+FLETTO.caricaIni||0,cFin:+FLETTO.caricaFin||0};
   b.disabled=true;b.classList.add('busy');
   const via=()=>api('POST','/api/volo/importa',{volo,docLog:FLETTO.docId}).then(j=>{
     b.disabled=false;b.classList.remove('busy');

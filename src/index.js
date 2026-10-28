@@ -51,7 +51,7 @@ function applicaVolo(d, v) {
 // i campi di un volo letto dal registro, ripuliti
 function pulisciLetto(v) {
   return { letto: !!v.letto, quotaMax: NUM(v.quotaMax, 0, 9999), oltre120: NUM(v.oltre120, 0, 99999), km: NUM(v.km, 0, 9999), velMax: NUM(v.velMax, 0, 999),
-    foto: NUM(v.foto, 0, 99999), videoS: NUM(v.videoS, 0, 999999), cIni: NUM(v.cIni, 0, 100), cFin: NUM(v.cFin, 0, 100), tMax: NUM(v.tMax, -50, 150),
+    foto: NUM(v.foto, 0, 99999), video: NUM(v.video, 0, 9999), videoS: NUM(v.videoS, 0, 999999), cIni: NUM(v.cIni, 0, 100), cFin: NUM(v.cFin, 0, 100), tMax: NUM(v.tMax, -50, 150),
     dev: NUM(v.dev, 0, 5), celle: Array.isArray(v.celle) ? v.celle.slice(0, 14).map(x => NUM(x, 0, 10)) : [], batt: esc(v.batt, 40), bsn: esc(v.bsn, 60),
     sn: esc(v.sn, 60), logKey: esc(v.logKey, 120), fine: esc(v.fine, 5), sec: NUM(v.sec, 0, 86400),
     prof: Array.isArray(v.prof) ? v.prof.slice(0, 160).map(x => Math.round(NUM(x, -999, 9999))) : [],
@@ -176,7 +176,7 @@ async function leggiFotoVolo(env, b64s, mime, droni) {
     "Droni dell'operatore: " + (droni || "nessuno") + ". Se il nome del drone nella foto corrisponde a uno di questi, mettilo in droneOperatore con il nome esatto della lista. " +
     "Rispondi SOLO con un oggetto JSON: {\"ok\":true|false,\"motivo\":\"se ok è false: cosa manca o perché non è un riepilogo di volo\"," +
     "\"data\":\"GG/MM/AAAA\",\"ora\":\"HH:MM (decollo)\",\"durataSec\":numero,\"distanzaKm\":numero,\"quotaMaxM\":numero,\"distMaxM\":numero," +
-    "\"velMaxKmh\":numero,\"droneFoto\":\"nome del drone come scritto\",\"droneOperatore\":\"nome dalla lista o vuoto\",\"luogo\":\"se scritto\"} " +
+    "\"velMaxKmh\":numero,\"foto\":numero di foto,\"video\":numero di video,\"caricaIni\":% batteria al decollo,\"caricaFin\":% batteria all'atterraggio,\"droneFoto\":\"nome del drone come scritto\",\"droneOperatore\":\"nome dalla lista o vuoto\",\"luogo\":\"se scritto\"} " +
     "Metti null per i valori che non si leggono.";
   const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST",
     headers: { "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
@@ -383,6 +383,8 @@ export class Stato extends DurableObject {
       if (v0.codLav && !v0.cliente) { const lw = (d.LAVORI || []).find(x => norm(x.codice).replace(/\s/g, "") === norm(v0.codLav).replace(/\s/g, "")); if (lw) { v0.cliente = lw.cliente + ": " + String(lw.titolo || "").toLowerCase(); if (!v0.luogo) v0.luogo = lw.luogo; } }
       if (L.daFoto) L.logKey = "foto|" + esc(v0.drone, 80) + "|" + (DATA(v0.data) || "") + "|" + esc(v0.ora, 5);
       if (L.logKey && (d.VOLI || []).some(x => x.logKey === L.logKey)) return J({ errore: "doppio" }, 409);
+      // la stessa foto (o un'altra foto dello stesso volo) caricata due volte: non si conta due volte
+      if (L.daFoto && (d.VOLI || []).some(x => x.daFoto && x.pilota === pilota && x.drone === v0.drone && x.data === (DATA(v0.data) || oggi()) && x.ora === v0.ora)) return J({ errore: "doppio" }, 409);
       if (b.docLog) { const info = await st.get("docinfo:" + b.docLog); if (!info || (!adm && info.da !== me.n)) b.docLog = ""; }
       const v = Object.assign({ id: Date.now() * 10 + Math.floor(Math.random() * 10), data: DATA(v0.data) || oggi(), ora: /^\d{2}:\d{2}$/.test(v0.ora || "") ? v0.ora : "00:00",
         drone: v0.drone, pilota, luogo: esc(v0.luogo, 120), min: NUM(v0.min, 0, 600), stato: "completo", ctrl: !!v0.ctrl, ctrlOra: esc(v0.ctrlOra, 5),
