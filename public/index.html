@@ -636,6 +636,29 @@
   .fld.ko{border-color:#E8B4AF;background:#FBECEA}.fld.ko input{color:var(--ko)}
   .avviso{border:1px solid var(--bordo);border-left:4px solid var(--warn);border-radius:8px;padding:10px 12px;font-size:15px;margin-top:12px;background:#fff}
   .fill input[type=text]{min-height:48px}
+
+  /* rapporto per il cliente */
+  .spunte{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  @media(max-width:600px){.spunte{grid-template-columns:minmax(0,1fr)}}
+  .spunte label{display:flex;align-items:center;gap:10px;margin:0;border:1px solid var(--bordo);border-radius:8px;padding:10px 12px;font-weight:500;font-size:16px;cursor:pointer;background:var(--sup2);color:var(--ink)}
+  .spunte input{width:20px;height:20px;accent-color:var(--accent)}
+  .rp-stampa{position:fixed;left:-10000px;top:0;width:794px;background:#fff}
+  .rp{width:794px;padding:40px 44px;font:500 13.5px/1.45 "Barlow",Arial,sans-serif;color:#0F1C26;background:#fff}
+  .rp .ft{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;border-bottom:2px solid #132A3A;padding-bottom:12px}
+  .rp .op{display:flex;gap:10px;align-items:center} .rp h3{margin:0;font:600 24px "Barlow Semi Condensed",Arial;line-height:1.1} .rp .op span{color:#5E6D77}
+  .rp .dx{text-align:right;color:#5E6D77;font-size:13px} .rp .dx b{font:600 18px "Barlow Semi Condensed",Arial;color:#132A3A}
+  .rp .blocchi{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0}
+  .rp .blocco{border:1px solid #D3DBE0;border-radius:6px;padding:10px 12px} .rp .blocco small{display:block;color:#5E6D77;font-size:11.5px;font-weight:600}
+  .rp .numeri{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid #D3DBE0;border-radius:6px;margin-bottom:16px}
+  .rp .numeri div{padding:10px 12px;border-left:1px solid #D3DBE0} .rp .numeri div:first-child{border-left:0}
+  .rp .numeri b{display:block;font:600 24px "Barlow Semi Condensed",Arial} .rp .numeri span{color:#5E6D77;font-size:12px} .rp .ok{color:#17793F}
+  .rp h4{font:600 15px "Barlow Semi Condensed",Arial;margin:18px 0 6px;color:#132A3A}
+  .rp table{width:100%;border-collapse:collapse} .rp th{text-align:left;font-size:11px;color:#5E6D77;border-bottom:1px solid #9FAEB8;padding:5px 6px;font-weight:600}
+  .rp td{padding:6px;border-bottom:1px solid #E3E8EB;vertical-align:top}
+  .rp .voli{display:grid;grid-template-columns:1fr 1fr;gap:12px} .rp .volo{border:1px solid #D3DBE0;border-radius:6px;overflow:hidden} .rp .volo div{padding:6px 10px;font-size:12.5px}
+  .rp .nota{color:#5E6D77;font-size:12px;margin-top:14px} .rp .firme{display:flex;justify-content:space-between;gap:30px;margin-top:40px;color:#5E6D77}
+  .rp .firme div{border-top:1px solid #9FAEB8;padding-top:4px;min-width:240px}
+  .rp .piede{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:26px;padding-top:10px;border-top:1px solid #E3E8EB;color:#5E6D77;font-size:12px}
 </style>
 </head>
 <body>
@@ -1060,12 +1083,37 @@
     <div class="card">
       <h2>Lavori</h2>
       <ul class="dlist" id="lv-list"></ul>
-      <div class="row"><button class="btn sec" onclick="apriPreventivi()">Nuovo lavoro da un preventivo</button></div>
+      <div class="row"><button class="btn sec" onclick="apriPreventivi()">Nuovo lavoro da un preventivo</button><button class="btn" onclick="apriRapporto()">Rapporto per il cliente</button></div>
     </div>
     <div class="card" style="margin-top:12px">
       <h2>Clienti</h2>
       <ul class="dlist" id="cl-list"></ul>
       <div class="row"><button class="btn sec" onclick="nuovoCliente(()=>apriLavori())">Aggiungi cliente</button></div>
+    </div>
+  </div>
+
+  <!-- ================= RAPPORTO PER IL CLIENTE ================= -->
+  <div id="v-rapporto" class="hidden">
+    <div class="card">
+      <h2>Rapporto per il cliente</h2>
+      <div style="font-size:15px;color:var(--muted)">Un PDF con tutti i voli fatti per un cliente, pronto da mandare all'azienda che ha commissionato il lavoro.</div>
+      <div class="fill" style="margin-top:10px">
+        <div><label for="rp-cl">Cliente</label><select id="rp-cl"></select></div>
+        <div><label for="rp-lv">Lavoro</label><select id="rp-lv"></select></div>
+        <div><label for="rp-da">Dal</label><input type="date" id="rp-da"></div>
+        <div><label for="rp-a">Al</label><input type="date" id="rp-a"></div>
+      </div>
+      <div class="hcap" style="margin:18px 0 8px">Cosa mettere nel rapporto</div>
+      <div class="spunte">
+        <label><input type="checkbox" id="rp-mappe" checked>Mappa di ogni volo</label>
+        <label><input type="checkbox" id="rp-meteo" checked>Meteo al decollo</label>
+        <label><input type="checkbox" id="rp-piloti" checked>Piloti e loro attestati</label>
+        <label><input type="checkbox" id="rp-assic" checked>Assicurazione e codice operatore</label>
+        <label><input type="checkbox" id="rp-note">Note dei voli</label>
+        <label><input type="checkbox" id="rp-ore">Ore di volo per la fattura</label>
+      </div>
+      <div class="row"><button class="btn" onclick="creaRapporto(this,false)"><span class="spin"></span>Crea il PDF</button><button class="btn sec" onclick="creaRapporto(this,true)"><span class="spin"></span>Manda il PDF</button></div>
+      <div class="nota">«Manda il PDF» dal telefono apre la scelta di Mail, WhatsApp e simili con il PDF già allegato. Dal computer scarica il PDF e apre una mail da completare.</div>
     </div>
   </div>
 
@@ -1953,6 +2001,7 @@ function apriLavoro(id){
   document.getElementById('lw-s').textContent= prob.length ? 'Così non si può volare: '+prob.join(' · ') : s[1]+' · '+l.data+(l.stato==='concluso'?'':' · drone e pilota in regola');
   document.getElementById('lw-azioni').innerHTML = l.stato==='concluso' ? '' :
     `<button class="btn" onclick="controlloDaLavoro(${l.id},this)"><span class="spin"></span>Fai il controllo prima del volo</button>`+
+    `<button class="btn sec" onclick="apriRapporto(LAVORI.find(x=>x.id===${l.id}).cliente,LAVORI.find(x=>x.id===${l.id}).codice)">Rapporto per il cliente</button>`+
     (l.stato==='incorso'?`<button class="btn sec" onclick="lavora(this,()=>{LAVORI.find(x=>x.id===${l.id}).stato='concluso';apriLavoro(${l.id});})"><span class="spin"></span>Segna concluso</button>`:'');
   const chk='<svg viewBox="0 0 24 24">'+IC.check+'</svg>';
   document.getElementById('lw-dati').innerHTML=[['Cliente',l.cliente],['Tipo',l.tipo],['Luogo',l.luogo],['Data',l.data],['Importo',euro(l.importo)],['Stato',s[1]]]
@@ -3451,6 +3500,99 @@ function confermaFoto(b){
     FIMP.fatti++; return ricarica().then(()=>{toast('Volo salvato: ore e cicli aggiornati');prossimaFoto();});
   }).catch(()=>{b.disabled=false;b.classList.remove('busy');toast('Niente rete: riprova');});
   if(JSON.stringify(stato())!==LASTJ){controllaModifiche();setTimeout(via,1200);} else via();
+}
+
+/* ---------- rapporto dell'attività da mandare al cliente (PDF vero) ---------- */
+const LOGO_Q120='<svg viewBox="0 0 120 120" width="46" height="46"><path d="M60 6 L104 22 V58 C104 86 86 104 60 114 C34 104 16 86 16 58 V22Z" fill="#1E6B6F"/><path d="M28 44 H92" stroke="#fff" stroke-width="3.5" stroke-dasharray="7 5"/><text x="92" y="37" text-anchor="end" font-family="Arial" font-weight="700" font-size="14" fill="#fff">120 m</text><g stroke="#fff" stroke-width="5" stroke-linecap="round" fill="none"><path d="M50 72 H70"/><path d="M48 72 V65 M72 72 V65"/><path d="M32 63 H52 M68 63 H88"/></g><rect x="52" y="71" width="16" height="11" rx="2.5" fill="#fff"/></svg>';
+let LIBPDF=null;
+function caricaPdfLib(){
+  if(window.jspdf&&window.html2canvas) return Promise.resolve();
+  if(LIBPDF) return LIBPDF;
+  const js=src=>new Promise((ok,no)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=no;document.head.appendChild(s);});
+  LIBPDF=Promise.all([js('/lib/jspdf.umd.min.js'),js('/lib/html2canvas.min.js')]); return LIBPDF;
+}
+function apriRapporto(cliente,codice){
+  vai('rapporto','Persone e attività &rsaquo; Clienti e lavori &rsaquo; Rapporto per il cliente');
+  document.getElementById('back').onclick=()=>apriLavori();
+  const sc=document.getElementById('rp-cl'), cl=[...new Set(LAVORI.map(l=>l.cliente).concat(CLIENTI))];
+  sc.innerHTML=cl.map(c=>`<option>${ESC(c)}</option>`).join(''); if(cliente) sc.value=cliente;
+  sc.onchange=()=>lavoriRapporto(); lavoriRapporto(codice);
+  const o=new Date(), i=x=>x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');
+  document.getElementById('rp-da').value=i(new Date(o.getFullYear(),o.getMonth(),1)); document.getElementById('rp-a').value=i(o);
+}
+function lavoriRapporto(codice){
+  const c=document.getElementById('rp-cl').value, sl=document.getElementById('rp-lv');
+  const L=LAVORI.filter(l=>l.cliente===c);
+  sl.innerHTML='<option value="">Tutti i lavori del cliente</option>'+L.map(l=>`<option value="${ESC(l.codice||'')}">${ESC(l.codice||'')} · ${ESC(l.titolo)}</option>`).join('');
+  if(codice) sl.value=codice; else if(L.length===1) sl.value=L[0].codice||'';
+}
+function voliRapporto(){
+  const g=id=>document.getElementById(id).value, c=g('rp-cl'), cod=g('rp-lv'), da=dt(g('rp-da').split('-').reverse().join('/')), a=dt(g('rp-a').split('-').reverse().join('/'));
+  const lav=LAVORI.filter(l=>l.cliente===c&&(!cod||l.codice===cod));
+  const tit=lav.map(l=>(l.cliente+': '+String(l.titolo||'').toLowerCase()));
+  return {c,cod,lav,da:g('rp-da').split('-').reverse().join('/'),a:g('rp-a').split('-').reverse().join('/'),
+    L:VOLI.filter(v=>{const x=dt(v.data); if(!x||(da&&x<da)||(a&&x>a)) return false;
+      return (v.codLav&&lav.some(l=>l.codice===v.codLav))||(v.cliente&&tit.includes(v.cliente))||(!cod&&v.cliente&&v.cliente.startsWith(c+':'));})
+      .sort((x,y)=>(dt(x.data)-dt(y.data))||String(x.ora).localeCompare(String(y.ora)))};
+}
+// il percorso del volo disegnato senza cartina, così nel PDF esce sempre
+function svgPercorso(trk){
+  if(!trk||trk.length<2) return '';
+  const k=Math.cos(trk[0][0]*Math.PI/180), xs=trk.map(p=>p[1]*k), ys=trk.map(p=>p[0]);
+  const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys), W=300,H=150,m=14, sc=Math.min((W-2*m)/((x1-x0)||1e-6),(H-2*m)/((y1-y0)||1e-6));
+  const ox=(W-(x1-x0)*sc)/2, oy=(H-(y1-y0)*sc)/2, P=trk.map((p,i)=>[(ox+(xs[i]-x0)*sc).toFixed(1),(H-oy-(ys[i]-y0)*sc).toFixed(1)]);
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%"><rect width="${W}" height="${H}" fill="#EEF2F0"/><polyline points="${P.map(p=>p.join(',')).join(' ')}" fill="none" stroke="#1D5C7C" stroke-width="2.5" stroke-linejoin="round"/><circle cx="${P[0][0]}" cy="${P[0][1]}" r="5" fill="#17793F" stroke="#fff" stroke-width="2"/></svg>`;
+}
+function creaRapporto(b,manda){
+  const R=voliRapporto(); if(!R.L.length){toast('Nessun volo per questo cliente nel periodo scelto');return;}
+  const opz=k=>document.getElementById('rp-'+k).checked;
+  b.disabled=true;b.classList.add('busy');
+  const tr=opz('mappe')?Promise.all(R.L.map(v=>v.haTrk?api('GET','/api/volo/trk?id='+v.id).then(j=>j.trk||[]).catch(()=>[]):Promise.resolve([]))):Promise.resolve(R.L.map(()=>[]));
+  Promise.all([tr,caricaPdfLib()]).then(([trk])=>{
+    const anno=new Date().getFullYear(); OP.rap=OP.rap&&OP.rap.anno===anno?{anno,n:OP.rap.n+1}:{anno,n:1};
+    const num=anno+'-'+String(OP.rap.n).padStart(3,'0'), min=R.L.reduce((s,v)=>s+(+v.min||0),0), hm=m=>Math.floor(m/60)+' h '+String(m%60).padStart(2,'0')+' min';
+    const foto=R.L.reduce((s,v)=>s+(+v.foto||0),0), video=Math.round(R.L.reduce((s,v)=>s+(+v.videoS||0),0)/60), ctrl=R.L.filter(v=>v.ctrl).length;
+    const piloti=[...new Set(R.L.map(v=>v.pilota))].map(n=>PILOTI.find(p=>p.nome===n)).filter(Boolean);
+    const cod=OP.codice&&!/x{3}/i.test(OP.codice)?OP.codice:'', sopra=R.L.filter(v=>v.letto&&(v.oltre120>0||v.quotaMax>120)).length;
+    const lavTxt=R.lav.length===1?`Lavoro ${ESC(R.lav[0].codice||'')} · ${ESC(R.lav[0].titolo)}<br>${ESC(R.lav[0].luogo||'')}`:`${pl(R.lav.length,'lavoro','lavori')}`;
+    const html=`<div class="rp">
+      <div class="ft"><div class="op">${LOGO_Q120}<div><h3>Rapporto dell'attività con drone</h3><span>${ESC((OP.nome||'').replace(/ \(dati di esempio\)/,''))}${cod?' · operatore UAS '+ESC(cod):''}</span></div></div>
+        <div class="dx"><b>Quota 120</b><br>Rapporto n. ${num}<br>emesso il ${oggi()}</div></div>
+      <div class="blocchi"><div class="blocco"><small>CLIENTE</small><b>${ESC(R.c)}</b><br>${lavTxt}</div>
+        <div class="blocco"><small>PERIODO E OPERATORE</small>dal ${R.da} al ${R.a}${opz('assic')?`<br>Assicurazione RC ${ASSIC.scad?'valida fino al '+ASSIC.scad:'—'}${cod?'<br>Registrato su D-Flight · codice '+ESC(cod):''}`:''}</div></div>
+      <div class="numeri"><div><b>${R.L.length}</b><span>${R.L.length===1?'volo':'voli'}</span></div><div><b>${hm(min)}</b><span>tempo di volo</span></div>
+        <div><b>${foto}</b><span>foto${video?' · '+video+' min di video':''}</span></div><div><b class="${ctrl===R.L.length?'ok':''}">${ctrl} su ${R.L.length}</b><span>controlli prima del volo</span></div></div>
+      <h4>I voli</h4>
+      <table><tr><th>Data</th><th>Ora</th><th>Durata</th><th>Luogo</th><th>Pilota</th><th>Drone</th><th>Quota max</th>${opz('meteo')?'<th>Meteo al decollo</th>':''}${opz('note')?'<th>Note</th>':''}</tr>
+      ${R.L.map(v=>`<tr><td>${v.data}</td><td>${v.ora}</td><td>${+v.min||0} min</td><td>${ESC(v.luogo||'')}</td><td>${ESC(v.pilota)}</td><td>${ESC(v.drone)}</td><td>${v.letto?v.quotaMax+' m':'—'}</td>${opz('meteo')?`<td>${ESC(v.meteo||'—')}</td>`:''}${opz('note')?`<td>${ESC(v.note||'')}</td>`:''}</tr>`).join('')}</table>
+      ${opz('ore')?`<p style="margin:10px 0 0"><b>Ore di volo da fatturare: ${hm(min)}</b></p>`:''}
+      ${opz('mappe')&&trk.some(t=>t.length>1)?`<h4>Mappe dei voli</h4><div class="voli">${R.L.map((v,i)=>trk[i].length>1?`<div class="volo">${svgPercorso(trk[i])}<div><b>${v.data.slice(0,5)} · ${v.ora}</b> · ${+v.min||0} min${v.km?' · '+String(v.km).replace('.',',')+' km':''}</div></div>`:'').join('')}</div>`:''}
+      ${opz('piloti')&&piloti.length?`<h4>Piloti</h4><table><tr><th>Pilota</th><th>Attestati</th><th>Validi fino al</th></tr>${piloti.map(p=>`<tr><td>${ESC(p.nome)}</td><td>${(p.att||[]).join(', ')||'—'}</td><td>${p.scad||'—'}</td></tr>`).join('')}</table>`:''}
+      <p class="nota">${sopra?pl(sopra,'volo','voli')+' sopra i 120 metri: vedi le note.':'Tutti i voli sono stati fatti entro i 120 metri di quota.'} ${ctrl===R.L.length?'Per ogni volo è registrato il controllo prima del volo.':''} I dati vengono dai registri di volo dei droni.</p>
+      <div class="firme"><div>Il responsabile dell'operatore</div><div>Per ricevuta · ${ESC(R.c)}</div></div>
+      <div class="piede">${LOGO_Q120.replace('width="46" height="46"','width="18" height="18"')}Rapporto creato con Quota 120 · gestione operatori droni</div></div>`;
+    const box=document.createElement('div'); box.className='rp-stampa'; box.innerHTML=html; document.body.appendChild(box);
+    return (document.fonts?document.fonts.ready:Promise.resolve()).then(()=>html2canvas(box.firstChild,{scale:2,backgroundColor:'#ffffff'})).then(cv=>{
+      box.remove();
+      const {jsPDF}=window.jspdf, pdf=new jsPDF({unit:'mm',format:'a4'}), W=210, H=297, m=10, pw=W-2*m, ph=H-2*m;
+      const pxPerMm=cv.width/pw, pagePx=Math.floor(ph*pxPerMm);
+      for(let y=0,pg=0;y<cv.height;y+=pagePx,pg++){
+        const h=Math.min(pagePx,cv.height-y), c=document.createElement('canvas'); c.width=cv.width; c.height=h;
+        c.getContext('2d').drawImage(cv,0,y,cv.width,h,0,0,cv.width,h);
+        if(pg) pdf.addPage(); pdf.addImage(c.toDataURL('image/jpeg',0.92),'JPEG',m,m,pw,h/pxPerMm);
+      }
+      const nome='Rapporto_'+R.c.replace(/[^\w]+/g,'_')+'_'+num+'.pdf', blob=pdf.output('blob'), file=new File([blob],nome,{type:'application/pdf'});
+      b.disabled=false;b.classList.remove('busy');
+      if(manda&&navigator.canShare&&navigator.canShare({files:[file]})){
+        navigator.share({files:[file],title:'Rapporto '+num,text:'Rapporto dell’attività con drone per '+R.c+', dal '+R.da+' al '+R.a+'.'}).catch(()=>{});
+      } else {
+        const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=nome; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},800);
+        if(manda){ location.href='mailto:?subject='+encodeURIComponent('Rapporto attività con drone '+num)+'&body='+encodeURIComponent('Buongiorno,\n\nin allegato il rapporto dell’attività con drone dal '+R.da+' al '+R.a+'.\n\nCordiali saluti');
+          toast('PDF scaricato: allegalo alla mail che si è aperta'); }
+        else toast('Rapporto '+num+' scaricato');
+      }
+    });
+  }).catch(e=>{b.disabled=false;b.classList.remove('busy');document.querySelectorAll('.rp-stampa').forEach(x=>x.remove());toast('PDF non riuscito: '+(e&&e.message||'riprova'));});
 }
 
 avvio();
