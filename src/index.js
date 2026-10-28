@@ -277,6 +277,9 @@ export class Stato extends DurableObject {
     if (p === "/interno/avvisi") return J(await this.avvisi(false, url.origin));
     if (p === "/interno/posta" && this.env.POSTA_FINTA === "1") return J(globalThis.__POSTA || []);
 
+    // ---- controllo pubblico: dice solo SE le impostazioni ci sono (mai i valori) ----
+    if (p === "/api/salute") { const c = n => !!(this.env[n] && String(this.env[n]).trim()); return J({ versione: "c9", posta: c("RESEND_API_KEY") || c("BREVO_API_KEY"), RESEND_API_KEY: c("RESEND_API_KEY"), BREVO_API_KEY: c("BREVO_API_KEY"), MITTENTE: c("MITTENTE"), RISPOSTE: c("RISPOSTE"), ANTHROPIC_API_KEY: c("ANTHROPIC_API_KEY"), DJI_API_KEY: c("DJI_API_KEY") }); }
+
     // ---- da qui serve un dispositivo riconosciuto ----
     let id = url.searchParams.get("id") || "", k = url.searchParams.get("k") || "";
     const h = request.headers.get("x-disp") || ""; if (h.includes(":")) [id, k] = h.split(":");
