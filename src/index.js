@@ -185,6 +185,38 @@ async function leggiFotoVolo(env, b64s, mime, droni) {
   const j = await r.json(), txt = (j.content || []).map(c => c.text || "").join("");
   return JSON.parse(txt.slice(txt.indexOf("{"), txt.lastIndexOf("}") + 1));
 }
+// ---- avvisi via email per le scadenze (Brevo, gratis fino a 300 mail al giorno) ----
+const dtS = s => { const m = /(\d{2})\/(\d{2})\/(\d{4})/.exec(s || ""); return m ? Date.UTC(+m[3], +m[2] - 1, +m[1]) : null; };
+function oggiRoma() { const p = new Intl.DateTimeFormat("it-IT", { timeZone: "Europe/Rome", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", hour12: false }).formatToParts(new Date()); const g = k => +(p.find(x => x.type === k) || {}).value; return { data: String(g("day")).padStart(2, "0") + "/" + String(g("month")).padStart(2, "0") + "/" + g("year"), ora: g("hour") % 24, t: Date.UTC(g("year"), g("month") - 1, g("day")) }; }
+// le scadenze: [chiave, testo, dettaglio, data, id pilota o null]
+function scadenze(d) {
+  const L = [], piloti = d.PILOTI || [];
+  for (const p of piloti) {
+    for (const [k, a] of Object.entries(((d.SCHEDEP || {})[p.id] || {}).att || {})) if (a.scad) L.push(["att|" + p.id + "|" + k, "Attestato " + k + " di " + p.nome, "scade il " + a.scad + " · senza, " + p.nome.split(" ")[0] + " non può volare con i droni che lo richiedono", a.scad, p.id]);
+    const pt = (d.PATENTINO || {})[p.id]; if (pt && dtS(pt)) L.push(["pat|" + p.id, "Patentino fitosanitario di " + p.nome, pt, (/(\d{2}\/\d{2}\/\d{4})/.exec(pt) || [])[1], p.id]);
+  }
+  if ((d.ASSIC || {}).scad) L.push(["assic", "Assicurazione RC dell'operatore", "scade il " + d.ASSIC.scad, d.ASSIC.scad, null]);
+  if ((d.OP || {}).dfAbb) L.push(["dflight", "Abbonamento D-Flight", "scade il " + d.OP.dfAbb, d.OP.dfAbb, null]);
+  return L;
+}
+function manutenzioni(d) { return (d.DRONI || []).map(x => [x, (d.SCHEDE || {})[x.id]]).filter(([x, s]) => s && s.man && s.man.liv !== "ok").map(([x, s]) => ["man|" + x.id + "|" + s.man.prox, "Manutenzione " + x.nome, s.man.prox + " · " + (s.man.mancano === "da fare subito" ? "da fare subito" : "mancano " + s.man.mancano + " di volo")]); }
+function mailHtml(nomeOp, righe, perAdmin, url) {
+  const col = g => g <= 7 ? "#AE2F28" : "#A5660A", et = g => g < 0 ? "scaduto" : g === 0 ? "oggi" : g === 1 ? "domani" : "tra " + g + " giorni";
+  return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;color:#0F1C26;font-size:15px;line-height:1.45">
+    <div style="border-bottom:2px solid #132A3A;padding-bottom:10px;margin-bottom:14px;font-size:20px;font-weight:bold;color:#132A3A">Quota 120</div>
+    Buongiorno, ecco cosa sta per scadere${nomeOp ? " per " + esc(nomeOp) : ""}:
+    <table style="width:100%;border-collapse:collapse;margin-top:10px">${righe.map(r => `<tr><td style="padding:10px 10px 10px 0;border-top:1px solid #E3E8EB;vertical-align:top;width:96px"><span style="display:inline-block;background:${r.g == null ? "#A5660A" : col(r.g)};color:#fff;font-weight:bold;font-size:13px;padding:3px 8px;border-radius:5px;white-space:nowrap">${r.g == null ? "presto" : et(r.g)}</span></td><td style="padding:10px 0;border-top:1px solid #E3E8EB"><b>${esc(r.t)}</b><br><span style="color:#5E6D77;font-size:13.5px">${esc(r.s)}</span></td></tr>`).join("")}</table>
+    <a href="${url}" style="display:inline-block;margin-top:16px;background:#1D5C7C;color:#fff;border-radius:8px;padding:12px 18px;font-weight:bold;text-decoration:none">Apri Quota 120</a>
+    <p style="font-size:12.5px;color:#5E6D77;margin-top:18px;border-top:1px solid #E3E8EB;padding-top:10px">Ricevi questa mail perché ${perAdmin ? "sei l'Admin" : "sei un pilota"}${nomeOp ? " di " + esc(nomeOp) : ""} su Quota 120.${perAdmin ? " Per cambiare cosa ricevi: Pannello Admin › Avvisi via email." : " Per non riceverle più, chiedi all'Admin."}</p></div>`;
+}
+async function mandaMail(env, a, oggetto, html) {
+  if (env.POSTA_FINTA === "1") { (globalThis.__POSTA = globalThis.__POSTA || []).push({ a, oggetto, html }); return; }   // solo per le prove in locale
+  if (!env.BREVO_API_KEY || !env.MITTENTE) throw new Error("posta");
+  const r = await fetch("https://api.brevo.com/v3/smtp/email", { method: "POST", headers: { "api-key": env.BREVO_API_KEY, "content-type": "application/json", accept: "application/json" },
+    body: JSON.stringify({ sender: { name: "Quota 120", email: env.MITTENTE }, to: [{ email: a }], subject: oggetto, htmlContent: html }) });
+  if (!r.ok) { const t = await r.text().catch(() => ""); throw new Error("La posta non ha accettato la mail (" + r.status + ") " + t.slice(0, 160)); }
+}
+const EMAIL = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e || "").trim());
 const b64 = buf => { let s = ""; const u = new Uint8Array(buf); for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); };
 
 export class Stato extends DurableObject {
@@ -233,6 +265,10 @@ export class Stato extends DurableObject {
       await st.put("disp", disp);
       return J({ id, k, n: disp[id].n, stato: disp[id].stato, codice: disp[id].codice, asp: aspetti[disp[id].n] || ASP_BASE });
     }
+
+    // ---- invio programmato degli avvisi: lo chiama solo il cron (non passa da /api) ----
+    if (p === "/interno/avvisi") return J(await this.avvisi(false, url.origin));
+    if (p === "/interno/posta" && this.env.POSTA_FINTA === "1") return J(globalThis.__POSTA || []);
 
     // ---- da qui serve un dispositivo riconosciuto ----
     let id = url.searchParams.get("id") || "", k = url.searchParams.get("k") || "";
@@ -286,6 +322,10 @@ export class Stato extends DurableObject {
       const c = norm(url.searchParams.get("c")).replace(/\s/g, ""), m = await leggiMain();
       const l = c && m && (m.d.LAVORI || []).find(x => norm(x.codice).replace(/\s/g, "") === c && x.stato !== "concluso");
       return J({ lavoro: l ? { id: l.id, codice: l.codice, cliente: l.cliente, titolo: l.titolo, luogo: l.luogo, data: l.data } : null });
+    }
+    if (p === "/api/avvisi/prova" && request.method === "POST") {
+      if (!adm) return J({ errore: "Solo l'Admin" }, 403);
+      try { return J(await this.avvisi(true, url.origin)); } catch (e) { return J({ errore: e.message === "posta" ? "posta" : String(e.message || e) }, 502); }
     }
     if (p === "/api/volo/trk") {
       const vid = +url.searchParams.get("id"), m = await leggiMain(), v = m && (m.d.VOLI || []).find(x => x.id === vid);
@@ -360,6 +400,7 @@ export class Stato extends DurableObject {
       if (!m) return J({ vuoto: true });
       const { row } = m, io = { r: me.ruolo, n: me.n, id, asp: aspetti[me.n] || ASP_BASE }, extra = adm ? { disp: pub(), blocchi } : {};
       if (request.method === "GET") {
+        if (adm && !/localhost|127\.0\.0\.1/.test(url.origin) && (await st.get("origine")) !== url.origin) await st.put("origine", url.origin);
         if (+url.searchParams.get("since") === row.ver && !url.searchParams.get("all")) return J(Object.assign({ same: true, ver: row.ver }, extra));
         return J(Object.assign({ ver: row.ver, data: adm ? m.d : vista(m.d, me.n), io }, extra));
       }
@@ -431,10 +472,56 @@ export class Stato extends DurableObject {
   }
 }
 
+Stato.prototype.avvisi = async function (prova, origine) {
+  const st = this.ctx.storage, row = await st.get("main"); if (!row) return { ok: false, motivo: "nessun dato" };
+  const d = JSON.parse(row.json), A = d.AVVISI || {}, oggi = oggiRoma();
+  if (!prova) {
+    if ((+A.ora || 7) !== oggi.ora) return { ok: true, saltato: "non è l'ora" };
+    if ((await st.get("avvisi:giorno")) === oggi.data) return { ok: true, saltato: "già fatto oggi" };
+    await st.put("avvisi:giorno", oggi.data);
+  }
+  const soglie = (Array.isArray(A.giorni) && A.giorni.length ? A.giorni : [60, 30, 7, 0]).map(Number).sort((a, b) => b - a);
+  const inviati = (await st.get("avvisi:inviati")) || {}, nuovi = [];
+  // una scadenza si manda quando passa una soglia (e una volta sola per soglia)
+  const righe = [];
+  for (const [k, t, s, data, pid] of scadenze(d)) {
+    const ts = dtS(data); if (ts == null) continue;
+    const g = Math.round((ts - oggi.t) / 86400000), dentro = soglie.filter(x => x >= g), sg = dentro.length ? Math.min(...dentro) : null;
+    if (sg == null && g >= 0) continue;
+    const chiave = k + "|" + data + "|" + (g < 0 ? "scaduto" : sg);
+    if (!prova && inviati[chiave]) continue;
+    if (prova && g > soglie[0]) continue;
+    righe.push({ t, s, g, pid }); if (!prova) nuovi.push(chiave);
+  }
+  for (const [k, t, s] of manutenzioni(d)) { if (!prova && inviati[k]) continue; righe.push({ t, s, g: null, pid: null }); if (!prova) nuovi.push(k); }
+  righe.sort((a, b) => (a.g == null ? 999 : a.g) - (b.g == null ? 999 : b.g));
+  const nomeOp = String((d.OP || {}).nome || "").replace(/ \(dati di esempio\)/, ""), url = (await st.get("origine")) || origine || "", esiti = [];
+  const adm = A.adm || {};
+  if (prova && !EMAIL(adm.email)) throw new Error("Scrivi prima la tua email e salva");
+  if (adm.on !== false && EMAIL(adm.email) && (righe.length || prova)) {
+    const ogg = prova ? "Prova degli avvisi di Quota 120" : pl0(righe.length, "scadenza in arrivo", "scadenze in arrivo") + (nomeOp ? " · " + nomeOp : "");
+    await mandaMail(this.env, adm.email.trim(), ogg, righe.length ? mailHtml(nomeOp, righe, true, url) : mailHtml(nomeOp, [{ t: "Nessuna scadenza in arrivo", s: "Gli avvisi funzionano: quando qualcosa starà per scadere riceverai una mail come questa.", g: null }], true, url));
+    esiti.push(adm.email.trim());
+  }
+  if (!prova) for (const p of d.PILOTI || []) {
+    const c = (A.piloti || {})[p.id] || {}; if (!c.on || !EMAIL(c.email)) continue;
+    const mie = righe.filter(r => r.pid === p.id); if (!mie.length) continue;
+    await mandaMail(this.env, c.email.trim(), pl0(mie.length, "tua scadenza in arrivo", "tue scadenze in arrivo"), mailHtml(nomeOp, mie, false, url)); esiti.push(c.email.trim());
+  }
+  if (nuovi.length) { for (const k of nuovi) inviati[k] = oggi.data; await st.put("avvisi:inviati", inviati); }
+  return { ok: true, mandate: esiti, righe: righe.length };
+};
+const pl0 = (n, s, p) => n + " " + (n === 1 ? s : p);
+
 export default {
+  async scheduled(evento, env, ctx) {
+    const stub = env.STATO.get(env.STATO.idFromName("main"));
+    ctx.waitUntil(stub.fetch("https://quota120.interno/interno/avvisi").catch(() => {}));
+  },
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname.startsWith("/api/")) return env.STATO.get(env.STATO.idFromName("main")).fetch(request);
+    if (url.pathname.startsWith("/interno/") && env.POSTA_FINTA === "1") return env.STATO.get(env.STATO.idFromName("main")).fetch(request);
     return env.ASSETS.fetch(request);
   }
 };
