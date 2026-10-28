@@ -919,6 +919,8 @@
         </div>
         <div style="margin-top:8px"><label style="font-size:12px;color:var(--muted)">Note</label><textarea id="vo-note" placeholder="Meteo, vento, osservazioni…"></textarea></div>
         <div class="row"><button class="btn" onclick="salvaScheda(this)"><span class="spin"></span>Salva il volo</button></div>
+        <div id="vo-elim-w" style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)"><button class="btn sec" id="vo-elim" onclick="eliminaVolo(this)"><span class="spin"></span>Elimina il volo</button>
+          <div style="font-size:12px;color:var(--muted);margin-top:6px" id="vo-elim-n">Le ore del drone e del pilota e i cicli della batteria tornano come prima.</div></div>
       </div>
     </div>
   </div>
@@ -1628,6 +1630,8 @@ function apriVoli(){
 let voloAperto=null;
 function apriVolo(id){
   const v=VOLI.find(x=>x.id===id); voloAperto=v;
+  { const e=document.getElementById('vo-elim'); document.getElementById('vo-elim-w').style.display=ADM?'':'none'; delete e.dataset.sicuro; e.lastChild.textContent='Elimina il volo'; e.style.color='';
+    document.getElementById('vo-elim-n').textContent='Le ore del drone e del pilota e i cicli della batteria tornano come prima.'; }
   const s=STATO[v.stato];
   const L=document.getElementById('vo-light'); L.className='light '+(v.stato==='completo'?'ok':'warn');
   document.getElementById('vo-t').textContent= v.stato==='completo'?'Volo completo':v.stato==='attesa'?'Manca il registro del drone':'Volo da completare';
@@ -2543,6 +2547,16 @@ function aggiorna(){
     if(j.data){ if(JSON.stringify(stato())!==LASTJ) return; VER=j.ver; apply(j.data); LASTJ=MIGRATO?'':JSON.stringify(stato());MIGRATO=false; ch=true; }
     if(ch) ridisegna();
   }).catch(()=>{});
+}
+function eliminaVolo(b){
+  const v=voloAperto; if(!v||!ADM) return;
+  if(!b.dataset.sicuro){ b.dataset.sicuro='1'; b.lastChild.textContent='Tocca di nuovo per eliminarlo'; b.style.color='var(--ko)';
+    document.getElementById('vo-elim-n').textContent='Volo del '+v.data+' delle '+v.ora+' · '+v.drone+'. Non si può annullare.'; return; }
+  b.disabled=true; b.classList.add('busy');
+  const via=()=>api('POST','/api/volo/elimina',{id:v.id}).then(j=>{ b.disabled=false; b.classList.remove('busy');
+    if(j.errore){toast(j.errore);return;} return ricarica().then(()=>{apriVoli();toast('Volo eliminato');}); })
+    .catch(()=>{b.disabled=false;b.classList.remove('busy');toast('Niente rete: riprova');});
+  if(JSON.stringify(stato())!==LASTJ){controllaModifiche();setTimeout(via,1200);} else via();
 }
 function ricarica(){return api('GET','/api/stato?all=1').then(j=>{if(j.data){VER=j.ver;apply(j.data);LASTJ=MIGRATO?'':JSON.stringify(stato());MIGRATO=false;DISP=j.disp||DISP;}});}
 function ridisegna(){

@@ -48,6 +48,17 @@ function applicaVolo(d, v) {
     sp.ore = hDi(minDi(sp.ore) + min); sp.voli = (+sp.voli || 0) + 1; sp.ore90 = hDi(minDi(sp.ore90) + min); }
   return d;
 }
+// toglie un volo: ore, voli e cicli tornano come prima (solo se il volo era stato contato)
+function togliVolo(d, v) {
+  if (!(v.contato || (v.importato && v.stato === "completo"))) return d;
+  const min = v.min || 0, dr = (d.DRONI || []).find(x => x.nome === v.drone), giu = (h, m) => hDi(Math.max(0, minDi(h) - m));
+  if (dr && d.SCHEDE && d.SCHEDE[dr.id]) { const sc = d.SCHEDE[dr.id]; sc.ore = giu(sc.ore, min); sc.voli = Math.max(0, (+sc.voli || 0) - 1);
+    if (sc.man && minDi(sc.man.mancano) > 0) sc.man.mancano = oreDi(minDi(sc.man.mancano) + min); }
+  const b = (d.BATT || []).find(x => x.id === v.batt); if (b) b.cicli = Math.max(0, (+b.cicli || 0) - 1);
+  const p = (d.PILOTI || []).find(x => x.nome === v.pilota), sp = p && (d.SCHEDEP || {})[p.id];
+  if (sp) { sp.ore = giu(sp.ore, min); sp.voli = Math.max(0, (+sp.voli || 0) - 1); sp.ore90 = giu(sp.ore90, min); }
+  return d;
+}
 // i campi di un volo letto dal registro, ripuliti
 function pulisciLetto(v) {
   return { letto: !!v.letto, quotaMax: NUM(v.quotaMax, 0, 9999), oltre120: NUM(v.oltre120, 0, 99999), km: NUM(v.km, 0, 9999), velMax: NUM(v.velMax, 0, 999),
@@ -371,6 +382,16 @@ export class Stato extends DurableObject {
       try { return J({ letto: await leggiFotoVolo(this.env, b64(tutto.buffer), info.mime, droni) }); }
       catch (e) { return J({ errore: String(e.message || e) }, 502); }
     }
+    if (p === "/api/volo/elimina" && request.method === "POST") {
+      if (!adm) return J({ errore: "Solo l'Admin può eliminare un volo" }, 403);
+      let b; try { b = await request.json(); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
+      const m = await leggiMain(); if (!m) return J({ errore: "Nessun dato" }, 409);
+      const d = m.d, v = (d.VOLI || []).find(x => x.id === +b.id);
+      if (!v) return J({ errore: "Volo non trovato" }, 404);
+      togliVolo(d, v); d.VOLI.splice(d.VOLI.indexOf(v), 1); await st.delete("trk:" + v.id);
+      await scriviMain(d, m.row.ver + 1);
+      return J({ ok: true, ver: m.row.ver + 1 });
+    }
     if (p === "/api/volo/importa" && request.method === "POST") {
       let b; try { b = await request.json(); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
       const m = await leggiMain(); if (!m) return J({ errore: "Nessun dato" }, 409);
@@ -407,6 +428,7 @@ export class Stato extends DurableObject {
       } else d.VOLI.unshift(v);
       if (v.haTrk) await st.put("trk:" + v.id, trk);
       if (!daFoto) applicaVolo(d, v);
+      v.contato = true;
       await scriviMain(d, m.row.ver + 1);
       return J({ ok: true, id: v.id, ver: m.row.ver + 1 });
     }
