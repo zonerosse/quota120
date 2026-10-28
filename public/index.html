@@ -356,7 +356,7 @@
 
   .demo{font-size:14px;border-radius:8px;background:transparent;border:1px dashed var(--bordo2);color:var(--ink3)}
   .note{font-size:14px;color:var(--ink3)}
-  .toast{font-size:16px;padding:13px 18px;border-radius:8px;bottom:96px;background:var(--notte)}
+  .toast{font-size:16px;padding:13px 18px;border-radius:8px;bottom:96px;background:var(--notte);z-index:100010}
 
   /* barra in basso sul telefono: bianca, chiara, la voce attiva in colore */
   .basso{display:none}
@@ -1568,8 +1568,10 @@ function avviaControllo(b){
   const p=PILOTI.find(x=>x.id==document.getElementById('h-pilota').value);
   if(!d||!p){ toast(!d?'Scegli prima il drone':'Scegli prima il pilota'); return; }
   const g=id=>(document.getElementById(id)||{}).value||'';
-  const iso=g('h-data'), data=iso?iso.split('-').reverse().join('/'):oggi(), lv=LAVTROVATO, luogo=g('h-luogo').trim();
-  if(!lv&&!luogo){ toast('Scrivi il luogo, oppure il codice lavoro'); const e=document.getElementById(g('h-cod').trim()?'h-cod':'h-luogo'); if(e) e.focus(); return; }
+  const iso=g('h-data'), data=iso?iso.split('-').reverse().join('/'):oggi(), lv=LAVTROVATO;
+  // se il luogo non è scritto ma c'è la posizione (Dove sono ora / Meteo del luogo), vale quella
+  const luogo=g('h-luogo').trim()||(MPOS?(MPOS.nome==='La tua posizione'?'Posizione GPS '+(+MPOS.lat).toFixed(5)+', '+(+MPOS.lon).toFixed(5):MPOS.nome):'');
+  if(!lv&&!luogo){ toast('Scrivi il luogo (o il codice lavoro), oppure tocca «Dove sono ora»'); const e=document.getElementById(g('h-cod').trim()?'h-cod':'h-luogo'); if(e) e.focus(); return; }
   lavora(b,()=>{ dSel=d; pSel=p; zoneOk=false; checklistOk=false;
     CTRLINFO={data, luogo:lv?lv.luogo:luogo, cliente:lv?lv.cliente+': '+String(lv.titolo||'').toLowerCase():'', codice:lv?lv.codice:''};
     disegnaControllo(); vai('controllo','Controllo prima del volo'); });
@@ -3720,9 +3722,9 @@ const GUIDES={
    {t:'Scegli il drone',p:'Dal menu «Drone…». Ci sono solo i droni che puoi usare.',w:'Ogni drone ha regole sue: classe, categoria, limite di vento.',el:()=>gdVis('#h-drone')||gdVis('.fl-dr .az'),ok:()=>!!(document.getElementById('h-drone')||{}).value||VISTA==='controllo'},
    {t:'Scegli chi vola',p:'Dal menu dei piloti.',w:'Quota 120 controlla che abbia l’attestato giusto per quel drone.',el:()=>gdVis('#h-pilota'),ok:()=>!!(document.getElementById('h-pilota')||{}).value||!ADM||VISTA==='controllo',opt:1},
    {t:'Scrivi il codice lavoro oppure il luogo',p:'Se l’azienda ti ha dato un codice (es. L-2611) scrivi quello: cliente e luogo arrivano da soli.',w:'Così il volo finisce nel lavoro giusto e nel rapporto per il cliente.',el:()=>gdVis('#h-cod')||gdVis('#h-luogo'),nx:1,opt:1},
-   {t:'Tocca «Dove sono ora»',p:'Il telefono dà la posizione: arrivano meteo e zona di volo di quel punto.',w:'«Meteo del luogo» usa il centro del paese; «Dove sono ora» il punto esatto.',el:()=>gdTesto('#v-home button','Dove sono ora'),ok:()=>!!METEO||VISTA==='controllo',opt:1},
+   {t:'Tocca «Dove sono ora»',p:'Il telefono dà la posizione: arrivano meteo e zona di volo di quel punto.',w:'«Meteo del luogo» usa il centro del paese; «Dove sono ora» il punto esatto.',el:()=>gdTesto('#v-home button','Dove sono ora'),ok:()=>!!METEO||!!MPOS||VISTA==='controllo',opt:1},
    {t:'Leggi meteo e zona',p:'Verde si vola, arancione con attenzione o con un limite di altezza, rosso no.',w:'Il vento è confrontato con il limite del tuo drone.',el:()=>gdVis('#h-zona .meteo')||gdVis('#h-meteo .meteo'),nx:1,opt:1},
-   {t:'Tocca «Fai il controllo»',p:'In fondo al riquadro.',w:'Quota 120 controlla tutto il resto da solo.',el:()=>gdVis('#h-btn'),ok:()=>VISTA==='controllo'},
+   {t:'Tocca «Inizia il controllo»',p:'In fondo al riquadro (nella pagina iniziale Cabina si chiama «Fai il controllo»).',w:'Quota 120 controlla tutto il resto da solo.',el:()=>gdVis('#h-btn'),ok:()=>VISTA==='controllo'},
    {t:'Leggi le verifiche',p:'Ogni riga ha il suo esito. Quelle con un tasto vanno fatte sul posto.',w:'Una riga rossa senza tasto vuol dire che oggi non si vola.',el:()=>gdVis('#checks'),nx:1},
    {t:'Tocca «Salva e apri il registro volo»',p:'In fondo alla pagina.',w:'Il controllo resta scritto, con ora, meteo e zona.',el:()=>gdVis('#c-btn'),ok:()=>VISTA==='voli'}]},
  dji:{n:'Volo dal file DJI',r:'tutti',base:()=>VOLI.filter(v=>v.letto).length,done:b=>VOLI.filter(v=>v.letto).length>b,
