@@ -7,7 +7,9 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#2b3a4a">
+<meta name="theme-color" content="#132A3A">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&family=Barlow+Semi+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#eef1f4; --card:#ffffff; --line:#d9dee4; --text:#1f2a36; --muted:#5f6b78;
@@ -228,14 +230,353 @@
   body.op .ro input,body.op .ro select,body.op .ro textarea{pointer-events:none;background:#f3f5f7}
   .todo li.go{cursor:pointer}
   .demo{background:#e3e8ee;border:1px solid var(--line);color:var(--muted);font-size:12px;padding:6px 10px;border-radius:8px;margin-bottom:10px}
+  /* ===== STILE PROFESSIONALE (anteprime 20-22) =====
+     Piatto e preciso come gli strumenti di bordo: niente lucidi, niente rilievi finti.
+     Il colore serve solo a dire lo stato. */
+  :root{
+    --notte:#132A3A; --notte2:#1C3A4F; --pagina:#E8EDF0; --sup:#FFFFFF; --sup2:#F5F7F8;
+    --bordo:#D3DBE0; --bordo2:#9FAEB8; --ink:#0F1C26; --ink2:#3A4A55; --ink3:#5E6D77;
+    --accent:#1D5C7C; --accent-scuro:#154862; --teal:#1E6B6F;
+    --ok:#17793F; --ok-bg:#E4F2EA; --warn:#A5660A; --warn-bg:#FAF0DE; --ko:#AE2F28; --ko-bg:#F8E3E1;
+    --muted:#3A4A55; --text:#0F1C26; --line:#D3DBE0;
+    --r:10px; --ombra:0 1px 2px rgba(15,28,38,.06);
+  }
+  body{background:var(--pagina);color:var(--ink);font-family:"Barlow",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:17px;font-weight:500;line-height:1.45;
+       -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+  h1,.card h2,.sect h3,.sem .t,.tile .n,.tot b,.pannello .tit{font-family:"Barlow Semi Condensed","Barlow",Arial,sans-serif}
+  b,strong{font-weight:700}
+  .wrap{max-width:1080px;padding:16px 16px 110px}
+
+  /* barra in alto: piatta, scura, ordinata */
+  header{background:var(--notte);padding:0 20px;height:60px;gap:14px;box-shadow:none;border-bottom:1px solid #0A1B26}
+  header .marchio{gap:11px}
+  header .marchio svg{filter:none}
+  header h1{font-size:22px;font-weight:600;letter-spacing:.01em;color:#fff}
+  header h1 span{color:#fff}
+  header .motto{font-size:13px;opacity:1;color:#9FB5C3;letter-spacing:0;text-transform:none;font-weight:500}
+  header .op{opacity:1;color:#C5D4DD;font-size:15px;padding-right:4px}
+  .sole-btn{width:42px;height:42px;border-radius:8px;background:transparent;border:1px solid #3A5568;box-shadow:none}
+  .sole-btn svg{stroke:#E8C15A;width:22px;height:22px}
+  .sole-btn[aria-pressed=true]{background:#E8C15A;border-color:#E8C15A}
+  .admbtn{margin-left:0;height:42px;border-radius:8px;padding:0 14px;background:#fff;color:var(--notte);font-size:15px;font-weight:700;box-shadow:none;border:0}
+  .admbtn:active{background:#DCE5EA}
+  .admbtn i.admdot{border-color:var(--notte)}
+
+  /* superfici: bordo sottile, angoli moderati, ombra appena accennata */
+  .card,.docbar{background:var(--sup);border:1px solid var(--bordo);border-radius:var(--r);box-shadow:var(--ombra);padding:18px}
+  .card h2{font-size:19px;font-weight:600;color:var(--ink);text-transform:none;letter-spacing:0;margin:0 0 12px}
+  .sect{margin-top:24px}
+  .sect h3{display:flex;align-items:center;gap:12px;font-size:17px;font-weight:600;color:var(--ink2);text-transform:none;letter-spacing:.01em;margin:0 0 10px}
+  .sect h3::after{content:'';flex:1;height:1px;background:var(--bordo2);opacity:.6}
+
+  /* tasti: pieni, piatti, alti abbastanza per il pollice */
+  .btn{min-height:48px;padding:0 20px;font-size:17px;font-weight:600;border-radius:8px;background:var(--accent);color:#fff;box-shadow:none;border:0;justify-content:center;transition:background .12s}
+  .btn:hover{background:var(--accent-scuro)}
+  .btn:active{background:#0F3A50;transform:none;box-shadow:none}
+  .btn.sec{background:#fff;color:var(--accent);border:1.5px solid var(--accent);box-shadow:none}
+  .btn.sec:hover{background:#EEF4F7}
+  .btn.sec:active{background:#E0EBF1}
+  .btn.mini{min-height:40px;padding:0 14px;font-size:15px;border-radius:8px}
+  .btn:focus-visible,.tile:focus-visible,select:focus-visible,input:focus-visible,.back:focus-visible,.basso button:focus-visible{outline:3px solid #E8A317;outline-offset:2px}
+
+  /* indietro + percorso */
+  .nav{margin:2px 0 16px;gap:12px}
+  .back{min-height:42px;font-size:16px;font-weight:600;border-radius:8px;border:1.5px solid var(--bordo2);box-shadow:none;padding:0 14px;background:#fff;color:var(--ink)}
+  .crumb{font-size:15px;color:var(--ink3)} .crumb b{color:var(--ink);font-weight:700}
+
+  /* stato del volo: una fascia piena di colore, si legge da lontano */
+  .sem{gap:16px;align-items:center;border-radius:8px;padding:16px 18px;background:var(--notte2);color:#fff;margin:-2px 0 0}
+  .sem:has(.light.ok){background:var(--ok)}
+  .sem:has(.light.warn){background:var(--warn)}
+  .sem:has(.light.ko){background:var(--ko)}
+  .sem .t{font-size:26px;font-weight:600;line-height:1.1;color:#fff}
+  .sem .s{font-size:16px;color:rgba(255,255,255,.88);margin-top:3px}
+  .light{width:44px;height:44px;border-radius:50%;border:2px solid rgba(255,255,255,.85);box-shadow:none;background:transparent no-repeat center/24px;
+         background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17h.01'/%3E%3C/svg%3E")}
+  .light::after{display:none}
+  .light.ok,.light.warn,.light.ko{background-color:transparent}
+  .light.ok{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E")}
+  .light.warn{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round'%3E%3Cpath d='M12 6v8M12 18h.01'/%3E%3C/svg%3E")}
+  .light.ko{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round'%3E%3Cpath d='M7 7l10 10M17 7L7 17'/%3E%3C/svg%3E")}
+  .card>.sem:only-child{margin:0}
+  .card:has(>.sem:only-child){padding:0;border:0;background:none;box-shadow:none}
+
+  /* riquadri del menu: compatti, piatti, ordinati */
+  .tiles{gap:10px}
+  .tile{min-height:72px;padding:12px 14px;border-radius:var(--r);border:1px solid var(--bordo);background:var(--sup);box-shadow:var(--ombra);gap:12px;transition:border-color .12s}
+  .tile:hover{border-color:var(--accent)}
+  .tile:active{background:var(--sup2);transform:none;box-shadow:none}
+  .tile .n{font-size:18px;font-weight:600;line-height:1.15;color:var(--ink)}
+  .tile .c{font-size:15px;color:var(--ink3);margin-top:2px;font-weight:500}
+  .tile .dot{width:10px;height:10px;top:10px;right:10px;border:0;box-shadow:none}
+  .ico{width:40px;height:40px;border-radius:8px;box-shadow:none}
+  .ico svg{width:22px;height:22px;stroke-width:1.9}
+
+  /* da sistemare: righe come una tabella, etichetta a larghezza fissa, data allineata */
+  .todo li{padding:12px 2px;font-size:17px;border-left:0;margin-left:0;gap:14px;align-items:center}
+  .todo .tag{flex:none;width:86px;text-align:center}
+  .todo .when{font-size:15px;color:var(--ink2);font-weight:600;font-variant-numeric:tabular-nums}
+  .tag{font-size:14px;font-weight:700;padding:4px 8px;border-radius:5px;letter-spacing:.01em}
+  .tag.ok{background:var(--ok);color:#fff}.tag.warn{background:var(--warn);color:#fff}.tag.ko{background:var(--ko);color:#fff}
+  .todo li.go:hover{background:var(--sup2)}
+
+  /* elenchi e schede */
+  .dlist li,.vlist li{padding:12px 6px;min-height:60px}
+  .dlist li:hover,.vlist li:hover{background:var(--sup2)}
+  .dlist .a,.vlist .main .a,.checks .lbl,.att .a,.puo .a,.batt summary .a,.step .a,.docbar .a{font-size:17px;font-weight:600}
+  .dlist .b,.vlist .main .b,.checks .det,.att .b,.puo .b,.batt summary .b,.allegato .f,.step .b,.docbar .b{font-size:15px;color:var(--ink3)}
+  .checks li{padding:13px 0;gap:12px}
+  .mark{width:28px;height:28px}.mark svg{width:15px;height:15px}
+  .fld{border-radius:8px;border:1px solid var(--bordo);background:var(--sup2);padding:9px 12px}
+  .fld .k{font-size:13px;color:var(--ink3);text-transform:none;letter-spacing:0;font-weight:600}
+  .fld .v{font-size:17px;font-weight:600}
+  .allegato{border-radius:8px;padding:11px 12px;border-color:#B9DCC8}
+  .batt,.att,.step,.fonte,.dest{border-radius:var(--r);border-color:var(--bordo);background:var(--sup2)}
+  .tot div{border-radius:var(--r);box-shadow:var(--ombra);border-color:var(--bordo);padding:10px 12px}
+  .tot b{font-size:26px;font-weight:600}
+  .tot span{font-size:14px;color:var(--ink3)}
+  .ini{width:40px;height:40px;font-size:15px;border-radius:8px}
+  .bar{height:8px;border-radius:2px;background:#DDE4E8}.bar i{border-radius:2px}
+
+  /* campi da compilare */
+  select,input[type=text],textarea,.fill select{min-height:48px;font-size:17px;font-family:inherit;font-weight:500;border:1.5px solid var(--bordo2);border-radius:8px;padding:10px 12px;background:#fff;color:var(--ink)}
+  select:focus,input:focus,textarea:focus{border-color:var(--accent)}
+  label,.fill label{font-size:15px;color:var(--ink2);font-weight:600}
+
+  /* pannello Admin: bianco, con la riga di colore a sinistra */
+  .pannello{background:var(--sup);border:1px solid var(--bordo);border-left:5px solid var(--teal);box-shadow:var(--ombra)}
+  .pannello .tit{color:var(--teal);font-size:20px;font-weight:600;text-transform:none;letter-spacing:0}
+  .pannello .sub{font-size:15px;color:var(--ink3)}
+  .pannello .ico{background:var(--teal)!important}
+  .pannello .tile{background:var(--sup2)}
+  .richiesta{border-radius:8px;padding:12px 14px;box-shadow:none;border:1px solid var(--bordo);border-left:5px solid var(--ko);background:#fff}
+  .richiesta .main{font-size:16px}
+  .privtag{font-size:12px;background:#DCEBEC;color:var(--teal);border-radius:4px}
+
+  .demo{font-size:14px;border-radius:8px;background:transparent;border:1px dashed var(--bordo2);color:var(--ink3)}
+  .note{font-size:14px;color:var(--ink3)}
+  .toast{font-size:16px;padding:13px 18px;border-radius:8px;bottom:96px;background:var(--notte)}
+
+  /* barra in basso sul telefono: bianca, chiara, la voce attiva in colore */
+  .basso{display:none}
+  @media(max-width:760px){
+    header{padding:0 12px;height:56px}
+    .basso{display:grid;grid-template-columns:repeat(4,1fr);position:fixed;left:0;right:0;bottom:0;z-index:40;background:#fff;
+      padding:0 4px env(safe-area-inset-bottom);gap:0;border-top:1px solid var(--bordo2);box-shadow:0 -2px 8px rgba(15,28,38,.06)}
+    .basso button{background:none;border:0;border-top:3px solid transparent;color:var(--ink3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+      font:600 14px "Barlow",Arial,sans-serif;padding:7px 0 8px;border-radius:0;min-height:62px;cursor:pointer;box-shadow:none}
+    .basso button svg{width:25px;height:25px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+    .basso button.on{color:var(--accent);border-top-color:var(--accent);background:none}
+    .basso button.prima{color:var(--ok);background:none;box-shadow:none}
+    header .op{display:none}
+  }
+
+  /* niente esce dallo schermo del telefono */
+  .tiles{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .grid2{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+  .tile>div:not(.ico),.grid2>*,.sem>div{min-width:0}
+  .tile .n,.tile .c{overflow-wrap:break-word;hyphens:auto}
+  @media(max-width:760px){
+    .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .grid2{grid-template-columns:minmax(0,1fr)}
+    .todo li{flex-wrap:wrap;row-gap:4px}
+    .todo li>span:nth-child(2){flex:1 1 55%;min-width:0}
+    .todo .when{flex-basis:100%;margin-left:100px;white-space:normal}
+    .tile{min-height:68px;padding:11px 12px;gap:10px}
+    .tile .n{font-size:17px}
+    .tile .c{font-size:14px}
+    .ico{width:36px;height:36px}.ico svg{width:20px;height:20px}
+    .sem .t{font-size:23px}
+    .card,.docbar{padding:16px}
+  }
+
+  /* modalità sole: contrasto massimo e testi più grandi (approvata) */
+  body.sole{--pagina:#FFFFFF;--bordo:#5E6E79;--bordo2:#3E4C56;--ink2:#141E25;--ink3:#141E25;--muted:#141E25;font-size:19px;background:#fff;font-weight:600}
+  body.sole .card,body.sole .tile,body.sole .docbar{border-width:2px;box-shadow:none}
+  body.sole .tile .n{font-size:20px}
+  body.sole .todo li,body.sole .dlist .a{font-size:19px}
+  body.sole .fld{background:#fff;border-width:2px}
+  body.sole .basso{border-top:2px solid #000}
+  body.sole .basso button{color:#141E25}
+
+  /* ===== testata, accesso, aspetti della pagina iniziale ===== */
+  header .marchio{display:flex;align-items:center;gap:11px;min-width:0}
+  header .marchio svg{flex:none}
+  header .marchio .motto{display:block}
+  header .op{margin-left:auto}
+  .hbtn{flex:none;height:42px;border-radius:8px;border:1px solid #3A5568;background:transparent;color:#fff;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:0 11px;font:600 15px "Barlow",Arial,sans-serif;cursor:pointer}
+  .hbtn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+  .sole-btn svg{stroke:#E8C15A}
+  .sole-btn[aria-pressed=true]{background:#E8C15A;border-color:#E8C15A}.sole-btn[aria-pressed=true] svg{stroke:var(--notte)}
+  .chip{display:none;align-items:center;gap:8px;font:600 15px "Barlow",Arial,sans-serif;color:#fff;flex:none}
+  .chip i{font-style:normal;width:34px;height:34px;border-radius:50%;background:#5B7F6E;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+  @media(max-width:560px){header .marchio .motto{display:none} .hbtn.asp-btn span{display:none} .hbtn{padding:0 10px}}
+  @media(max-width:360px){.chip span{display:none}}
+  .err{display:none;margin-top:10px;background:#fff;border:1px solid var(--bordo);border-left:4px solid var(--ko);border-radius:8px;padding:10px 12px;font-size:16px}
+  .sapere{text-align:left;font-size:15px;margin-top:14px;border-top:1px solid var(--bordo);padding-top:12px;color:var(--ink2)}
+  .sapere>div{padding:3px 0 3px 14px;position:relative}
+  .sapere>div::before{content:'';position:absolute;left:2px;top:12px;width:5px;height:5px;border-radius:50%;background:var(--ink3)}
+  #v-login input[type=text],#v-login input[type=password]{width:100%;min-height:50px;font-size:18px}
+  #v-login .fill label{margin-top:8px}
+  .row.tutti{margin:0 0 10px;align-items:center}
+  .row.tutti b{font-size:16px}
+
+  /* foglio «Aspetto» */
+  .foglio{position:fixed;inset:0;background:rgba(10,20,28,.55);z-index:55;display:flex;align-items:flex-end;justify-content:center}
+  .foglio .in{background:#fff;color:var(--ink);width:100%;max-width:480px;border-radius:16px 16px 0 0;padding:18px 16px calc(20px + env(safe-area-inset-bottom))}
+  @media(min-width:761px){.foglio{align-items:center}.foglio .in{border-radius:12px}}
+  .foglio h3{margin:0;font:600 22px "Barlow Semi Condensed",Arial,sans-serif}
+  .foglio p{margin:4px 0 14px;font-size:15px;color:var(--ink3)}
+  .op3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  .op3 button{border:2px solid #C3CDD3;border-radius:10px;background:#fff;padding:8px 8px 10px;cursor:pointer;font:600 16px "Barlow",Arial,sans-serif;color:var(--ink);position:relative;line-height:1.2}
+  .op3 button svg.m{width:100%;height:auto;display:block;border-radius:6px;margin-bottom:6px}
+  .op3 button small{display:block;font-weight:500;font-size:12px;color:var(--ink3)}
+  .op3 button.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+  .op3 .ck{position:absolute;top:-8px;right:-8px;width:24px;height:24px;border-radius:50%;background:var(--ok);display:none;align-items:center;justify-content:center}
+  .op3 button.sel .ck{display:flex}
+  .op3 .ck svg{width:14px;height:14px;stroke:#fff;stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .op3 button .spin{position:absolute;top:8px;left:8px;border-color:rgba(29,92,124,.25);border-top-color:var(--accent)}
+  .foglio .nota{font-size:14px;color:var(--ink3);margin:14px 0 0}
+  .foglio .btn{width:100%;margin-top:14px}
+
+  /* elementi comuni alle tre pagine iniziali */
+  .hsel{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+  .hsel select{width:100%;min-width:0}
+  .hsel.uno{grid-template-columns:minmax(0,1fr)}
+  .hdoc{margin-top:16px}
+  .hcap{display:flex;align-items:baseline;justify-content:space-between;gap:12px;font:600 18px "Barlow Semi Condensed",Arial,sans-serif;color:var(--ink2);margin:24px 0 10px}
+  .hcap small{font:500 15px "Barlow",Arial,sans-serif;color:var(--ink3)}
+  .hcap button{background:none;border:0;font:600 15px "Barlow",Arial,sans-serif;color:var(--accent);cursor:pointer;padding:6px 0}
+
+  /* B · Plancia */
+  .pl-data{font-size:15px;color:var(--ink3);margin:4px 0 0}
+  .pl-data b{display:block;font:600 28px "Barlow Semi Condensed",Arial,sans-serif;color:var(--ink);line-height:1.15}
+  .pl-quadro{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:14px;background:var(--sup);border:1px solid var(--bordo);border-radius:var(--r);box-shadow:var(--ombra)}
+  .pl-quadro div{padding:14px 14px;border-left:1px solid #E3E8EB;min-width:0}
+  .pl-quadro div:first-child{border-left:0}
+  .pl-quadro b{display:block;font:600 34px "Barlow Semi Condensed",Arial,sans-serif;line-height:1}
+  .pl-quadro b small{font-size:19px;color:var(--ink3);font-weight:500}
+  .pl-quadro span{display:block;font-size:15px;color:var(--ink2);margin-top:6px;line-height:1.25}
+  .pl-quadro .ko b{color:var(--ko)} .pl-quadro .warn b{color:var(--warn)} .pl-quadro .ok b{color:var(--ok)}
+  .pl-ctrl{margin-top:14px}
+  .pl-ctrl .btn{width:100%;margin-top:10px}
+  .lista{background:var(--sup);border:1px solid var(--bordo);border-radius:var(--r);box-shadow:var(--ombra);list-style:none;margin:0;padding:0}
+  .lista>li{display:flex;align-items:center;gap:14px;padding:11px 14px;border-top:1px solid #E3E8EB;min-height:62px}
+  .lista>li:first-child{border-top:0}
+  .lista>li.go{cursor:pointer}.lista>li.go:hover{background:var(--sup2)}
+  .lista p{margin:0;flex:1;min-width:0;font-size:17px;line-height:1.3}
+  .lista p small{display:block;font-size:15px;color:var(--ink3)}
+  .cal{width:54px;flex:none;text-align:center;border-radius:6px;border:1.5px solid var(--bordo2);overflow:hidden;background:#fff}
+  .cal small{display:block;font:700 12px "Barlow",Arial,sans-serif;background:var(--ink2);color:#fff;padding:1px 0;letter-spacing:.03em}
+  .cal b{display:block;font:600 22px "Barlow Semi Condensed",Arial,sans-serif;line-height:1.15;padding:1px 0}
+  .cal.ko{border-color:var(--ko)}.cal.ko small{background:var(--ko)}.cal.ko b{color:var(--ko)}
+  .cal.warn{border-color:var(--warn)}.cal.warn small{background:var(--warn)}
+  .cal.ok{border-color:var(--ok)}.cal.ok small{background:var(--ok)}
+  .lista .q{width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex:none}
+  .lista .q svg{width:21px;height:21px;stroke:#fff;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+  .lista .q+p{font-weight:600}
+  .lista .q+p small{display:inline;margin-left:6px;font-weight:500}
+  .lista .n{font:700 14px "Barlow",Arial,sans-serif;color:#fff;border-radius:11px;padding:1px 9px;flex:none}
+  .lista .n.warn{background:var(--warn)}.lista .n.ko{background:var(--ko)}
+  .lista .ch{width:20px;height:20px;stroke:var(--bordo2);fill:none;stroke-width:2;flex:none}
+  @media(min-width:761px){.pl-due{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}.pl-due .hcap{margin-top:20px}}
+
+  /* A · Cabina: la pagina iniziale scura, come le app di volo */
+  body.scuro{background:#0D1820;color:#E6EEF2}
+  body.scuro header{background:#0D1820;border-bottom-color:#1F3241}
+  body.scuro .crumb{color:#8FA6B4} body.scuro .crumb b{color:#E6EEF2}
+  body.scuro .demo{color:#8FA6B4;border-color:#27404F}
+  body.scuro .pannello{background:#122330;border-color:#27404F;border-left-color:#3FA7A6;box-shadow:none}
+  body.scuro .pannello .tit{color:#7FD1C8} body.scuro .pannello .sub{color:#8FA6B4}
+  body.scuro .pannello .tile{background:#0F1E29;border-color:#27404F}
+  body.scuro .tile{background:#122330;border-color:#27404F;box-shadow:none}
+  body.scuro .tile .n{color:#E6EEF2} body.scuro .tile .c{color:#8FA6B4}
+  body.scuro .richiesta{background:#0F1E29;border-color:#27404F;border-left-color:#E5534B;color:#E6EEF2}
+  body.scuro .richiesta span[style]{color:#8FA6B4!important}
+  body.scuro .row.tutti b{color:#E6EEF2}
+  body.scuro .docbar{background:#122330;border-color:#27404F;box-shadow:none}
+  body.scuro .docbar .b{color:#8FA6B4}
+  body.scuro .hcap{color:#8FA6B4}
+  body.scuro .basso{background:#0A141B;border-top-color:#1F3241;box-shadow:none}
+  body.scuro .basso button{color:#8FA6B4} body.scuro .basso button.on{color:#5FD3A0;border-top-color:#5FD3A0}
+  .cab-riga{display:flex;justify-content:space-between;gap:10px;font-size:15px;color:#8FA6B4;padding:0 0 12px;border-bottom:1px solid #1F3241;margin-bottom:16px}
+  .cab-riga b{color:#E6EEF2;font-weight:600}
+  .cab-pf{border:1px solid #27404F;border-radius:10px;background:#122330;overflow:hidden}
+  .cab-pf .h{font:600 15px "Barlow Semi Condensed",Arial,sans-serif;letter-spacing:.06em;color:#8FA6B4;padding:12px 14px 0}
+  .cab-pf .hsel{padding:10px 14px 14px}
+  .cab-pf select{background:#0D1820;color:#E6EEF2;border-color:#3A5568}
+  .cab-pf .go{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;border:0;min-height:60px;background:#2FA36B;color:#06140C;font:700 19px "Barlow",Arial,sans-serif;cursor:pointer;border-radius:0}
+  .cab-pf .go:active{background:#26895A}
+  .cab-pf .go .spin{border-color:rgba(0,0,0,.25);border-top-color:#06140C}
+  .cab-h{font:600 15px "Barlow Semi Condensed",Arial,sans-serif;letter-spacing:.06em;color:#8FA6B4;margin:22px 0 8px}
+  .cab-str{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  @media(min-width:761px){.cab-str{grid-template-columns:repeat(4,minmax(0,1fr))}}
+  .cab-str button{text-align:left;background:#122330;border:1px solid #27404F;border-radius:10px;padding:12px 10px;border-top:4px solid #2FA36B;color:#E6EEF2;font:inherit;cursor:pointer;min-width:0}
+  .cab-str button.warn{border-top-color:#E09A2D}.cab-str button.ko{border-top-color:#E5534B}
+  .cab-str b{display:block;font:600 18px "Barlow Semi Condensed",Arial,sans-serif;line-height:1.15;overflow-wrap:break-word}
+  .cab-str span{display:block;font-size:14px;color:#8FA6B4;margin-top:4px}
+  .cab-str em{display:block;font-style:normal;font:700 15px "Barlow",Arial,sans-serif;margin-top:8px;color:#5FD3A0}
+  .cab-str .warn em{color:#F0AE45}.cab-str .ko em{color:#F07068}
+  .cab-av{border:1px solid #27404F;border-radius:10px;background:#122330;list-style:none;margin:0;padding:0}
+  .cab-av li{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-top:1px solid #1F3241}
+  .cab-av li:first-child{border-top:0}
+  .cab-av li.go{cursor:pointer}
+  .cab-av i{width:11px;height:11px;border-radius:50%;margin-top:7px;flex:none;background:#E09A2D}
+  .cab-av i.ko{background:#E5534B}.cab-av i.ok{background:#2FA36B}
+  .cab-av p{margin:0;font-size:17px;line-height:1.35}
+  .cab-av p small{display:block;color:#8FA6B4;font-size:15px}
+
+  /* C · Flotta: si parte dal drone */
+  .fl-chi{display:flex;align-items:center;gap:12px;background:var(--sup);border:1px solid var(--bordo);border-radius:var(--r);padding:10px 14px;margin-bottom:12px}
+  .fl-chi b{flex:none;font-size:16px}
+  .fl-chi select{flex:1;min-width:0}
+  .fl-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+  @media(min-width:761px){.fl-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .fl-dr{background:var(--sup);border:1px solid var(--bordo);border-radius:12px;overflow:hidden;box-shadow:var(--ombra);display:flex;flex-direction:column}
+  .fl-dr .st{display:flex;align-items:center;gap:8px;padding:9px 14px;color:#fff;font:700 15px "Barlow",Arial,sans-serif}
+  .fl-dr .st.ok{background:var(--ok)}.fl-dr .st.warn{background:var(--warn)}.fl-dr .st.ko{background:var(--ko)}
+  .fl-dr .st svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
+  .fl-dr .bd{display:flex;gap:14px;padding:14px;flex:1}
+  .fl-sil{width:84px;height:84px;flex:none;border-radius:10px;background:#EEF2F4;display:flex;align-items:center;justify-content:center}
+  .fl-sil svg{width:64px;height:64px;stroke:var(--notte);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+  .fl-sil.ini{border-radius:50%;background:#5B7F6E;color:#fff;font:700 20px "Barlow",Arial,sans-serif;width:64px;height:64px}
+  .fl-dr h5{margin:0;font:600 21px "Barlow Semi Condensed",Arial,sans-serif;line-height:1.15}
+  .fl-dr .m{font-size:15px;color:var(--ink3)}
+  .fl-num{display:flex;gap:18px;margin-top:8px;flex-wrap:wrap}
+  .fl-num div{font-size:14px;color:var(--ink3)}
+  .fl-num b{display:block;font:600 20px "Barlow Semi Condensed",Arial,sans-serif;color:var(--ink)}
+  .fl-dr .az{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:54px;border:0;border-top:1px solid var(--bordo);background:#fff;color:var(--accent);font:700 17px "Barlow",Arial,sans-serif;cursor:pointer}
+  .fl-dr .az:hover{background:var(--sup2)}
+  .fl-dr .az .spin{border-color:rgba(29,92,124,.25);border-top-color:var(--accent)}
+  .fl-dr.ko .az{color:var(--ink2)}
+  .fl-pil{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  @media(min-width:761px){.fl-pil{grid-template-columns:repeat(6,minmax(0,1fr))}}
+  .fl-pil button{background:var(--sup);border:1px solid var(--bordo);border-radius:10px;padding:12px 6px;text-align:center;font:inherit;color:inherit;cursor:pointer;min-width:0}
+  .fl-pil .av{width:48px;height:48px;border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font:700 17px "Barlow",Arial,sans-serif;background:#5B7F6E;color:#fff;box-shadow:0 0 0 3px #fff,0 0 0 6px var(--ok)}
+  .fl-pil .av.warn{box-shadow:0 0 0 3px #fff,0 0 0 6px var(--warn)}.fl-pil .av.ko{box-shadow:0 0 0 3px #fff,0 0 0 6px var(--ko)}
+  .fl-pil b{display:block;font:600 16px "Barlow Semi Condensed",Arial,sans-serif;line-height:1.15;overflow-wrap:break-word}
+  .fl-pil span{font-size:13px;color:var(--ink3)}
+
+  /* modalità sole anche sulle pagine iniziali */
+  body.sole.scuro{background:#000}
+  body.sole .cab-str span,body.sole .cab-av p small,body.sole .cab-riga{color:#C9D6DE}
+  body.sole .lista,body.sole .pl-quadro,body.sole .fl-dr,body.sole .fl-pil button{border-width:2px;box-shadow:none}
+  body.sole .pl-quadro span,body.sole .lista p small,body.sole .fl-num div,body.sole .fl-dr .m{color:#141E25}
 </style>
 </head>
 <body>
 
 <header>
-  <div class="logo"><svg viewBox="0 0 24 24" width="18" height="18" stroke="#fff" fill="none" stroke-width="1.8" stroke-linecap="round"><circle cx="5" cy="5" r="2.5"/><circle cx="19" cy="5" r="2.5"/><circle cx="5" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/><rect x="9" y="9" width="6" height="6" rx="1"/><path d="M7 7l2 2M17 7l-2 2M7 17l2-2M17 17l-2-2"/></svg></div>
-  <h1>Quota 120</h1>
+  <div class="marchio"><svg viewBox="0 0 120 120" width="36" height="36" aria-hidden="true">
+    <path d="M60 6 L104 22 V58 C104 86 86 104 60 114 C34 104 16 86 16 58 V22Z" fill="#1E6B6F"/>
+    <path d="M28 44 H92" stroke="#fff" stroke-width="3.5" stroke-dasharray="7 5"/>
+    <text x="92" y="37" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="14" fill="#fff">120 m</text>
+    <g stroke="#fff" stroke-width="5" stroke-linecap="round" fill="none"><path d="M50 72 H70"/><path d="M48 72 V65 M72 72 V65"/><path d="M32 63 H52 M68 63 H88"/></g>
+    <rect x="52" y="71" width="16" height="11" rx="2.5" fill="#fff"/></svg><div><h1>Quota 120</h1><div class="motto">Gestione operatori droni</div></div></div>
   <div class="op" id="op-head"></div>
+  <button class="hbtn sole-btn" id="sole-btn" aria-pressed="false" title="Modalità sole: contrasto massimo" aria-label="Modalità sole" onclick="sole(this)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg></button>
+  <button class="hbtn asp-btn" id="asp-btn" style="display:none" onclick="apriAspetto()" aria-label="Aspetto"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>Aspetto</span></button>
+  <div class="chip" id="chip"></div>
   <button class="admbtn" id="admbtn" style="display:none" onclick="apriAdmin()"><svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg><span class="lungo">Pannello </span>Admin<i class="admdot" id="admdot"></i></button>
 </header>
 
@@ -249,7 +590,7 @@
       <div style="font-size:13px;color:var(--muted)">Chi sei?</div>
       <div class="fonti" style="grid-template-columns:1fr 1fr">
         <button class="fonte" onclick="scegliRuolo('adm')"><div class="ico" style="background:var(--accent)"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg></div><div><div class="a">Admin</div><div class="b">Il responsabile: vede tutto</div></div></button>
-        <button class="fonte" onclick="scegliRuolo('op')"><div class="ico" style="background:var(--f-persone)"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1-4 4-6 7-6s6 2 7 6"/></svg></div><div><div class="a">Operatore</div><div class="b">Pilota con il suo nome</div></div></button>
+        <button class="fonte" onclick="scegliRuolo('op')"><div class="ico" style="background:var(--f-persone)"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1-4 4-6 7-6s6 2 7 6"/></svg></div><div><div class="a">Pilota</div><div class="b">Nome e matricola</div></div></button>
       </div>
       <div id="lg-form" style="margin-top:12px"></div>
     </div>
@@ -257,10 +598,16 @@
   <div id="v-attesa" class="hidden">
     <div class="card" style="max-width:520px;margin:20px auto 0;text-align:center">
       <h2>In attesa dell'Admin</h2>
-      <div style="font-size:14px">L'Admin deve approvare questo telefono. Digli questo codice:</div>
-      <div id="at-cod" style="font-size:34px;font-weight:700;letter-spacing:.15em;margin:12px 0"></div>
+      <div style="font-size:16px">Ciao <b id="at-chi"></b>, è la prima volta che entri da questo telefono.<br>Dì all'Admin questo codice:</div>
+      <div id="at-cod" style="font-size:40px;font-weight:700;letter-spacing:.18em;margin:14px 0"></div>
       <div class="prog" style="display:flex;justify-content:center"><span class="spin"></span><span>Si apre da solo appena approvato</span></div>
-      <div class="row" style="justify-content:center"><button class="btn sec" onclick="esci()">Annulla</button></div>
+      <div class="sapere">
+        <b>Da sapere</b>
+        <div>Si fa <b>una volta sola</b>: da domani apri Quota 120 e sei già dentro.</div>
+        <div>Mettilo nella schermata Home: in Safari tocca <b>Condividi</b>, poi <b>Aggiungi alla schermata Home</b>.</div>
+        <div>Non cancellare i dati del browser: dovresti chiedere di nuovo l'approvazione.</div>
+        <div>Se cambi telefono, rifai solo questo passo.</div></div>
+      <div class="row" style="justify-content:center"><button class="btn sec" onclick="esci()">Non sono io</button></div>
     </div>
   </div>
 
@@ -277,46 +624,7 @@
       <div id="pa-rich"></div>
       <div class="tiles" id="t-admin"></div>
     </div>
-    <div class="grid2">
-      <div class="card">
-        <h2>Controllo prima del volo</h2>
-        <div class="sem">
-          <div class="light warn" id="h-light"></div>
-          <div><div class="t" id="h-t">Scegli drone e pilota</div><div class="s" id="h-s">Il controllo dice se si può volare</div></div>
-        </div>
-        <div class="row">
-          <select id="h-drone"></select>
-          <select id="h-pilota"></select>
-        </div>
-        <div class="row">
-          <button class="btn" id="h-btn" onclick="avviaControllo(this)"><span class="spin"></span>Avvia controllo</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>Da sistemare</h2>
-        <ul class="todo" id="todo"></ul>
-      </div>
-    </div>
-
-    <div class="docbar">
-      <div class="ico" style="background:var(--accent)"><svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z"/><path d="M12 17v-6M9 13l3-3 3 3"/></svg></div>
-      <div class="main"><div class="a">Documenti</div><div class="b" id="doc-cont"></div></div>
-      <button class="btn" onclick="apriDocumenti()">Carica documento</button>
-    </div>
-
-    <div class="sect">
-      <h3>Flotta</h3>
-      <div class="tiles" id="t-flotta"></div>
-    </div>
-    <div class="sect">
-      <h3>Persone e attività</h3>
-      <div class="tiles" id="t-attivita"></div>
-    </div>
-    <div class="sect">
-      <h3>Regole e agricoltura</h3>
-      <div class="tiles" id="t-regole"></div>
-    </div>
+    <div id="h-asp"></div>
   </div>
 
   <!-- ================= CONTROLLO ================= -->
@@ -458,12 +766,12 @@
     <div class="card pannello" style="margin-bottom:0;padding:10px 14px"><div class="tit"><svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg> Pannello Admin</div><div class="sub" style="margin-bottom:0">Comandi riservati: solo l'Admin vede questa pagina.</div></div>
     <div class="card" id="ad-tel" style="margin-top:12px">
       <h2>Telefoni e computer collegati</h2>
-      <div style="font-size:13px;color:var(--muted)">Un pilota entra con il suo nome: il suo telefono resta in attesa finché non lo approvi qui.</div>
+      <div style="font-size:14px;color:var(--muted)">Il pilota entra scrivendo nome e matricola. Ogni telefono si approva <b>una volta sola</b>: da lì il pilota resta dentro. Per fermare un pilota usa <b>Blocca</b> in Utenti e permessi.</div>
       <ul class="dlist" id="pl-disp" style="margin-top:6px"></ul>
     </div>
     <div class="card" id="ad-ute" style="margin-top:12px">
       <h2>Utenti e permessi</h2>
-      <div style="font-size:13px;color:var(--muted)">Ogni pilota inserito in Piloti può entrare con il suo nome. Qui decidi cosa può vedere, uno per uno: tocca un nome per aprirlo.</div>
+      <div style="font-size:14px;color:var(--muted)">Ogni pilota entra con nome e matricola. Qui decidi la matricola, cosa può vedere e se bloccarlo: tocca un nome per aprirlo.</div>
       <div id="ad-perm"></div>
       <div class="row"><button class="btn sec" onclick="nuovoPilota()">Aggiungi pilota</button></div>
     </div>
@@ -819,6 +1127,12 @@
   </div>
 </div>
 
+<nav class="basso" aria-label="Navigazione" id="basso" style="display:none">
+  <button id="nb-home" onclick="vai('home')"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home</button>
+  <button id="nb-ctrl" class="prima" onclick="vaiControllo()"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg>Controllo</button>
+  <button id="nb-voli" onclick="apriVoli()"><svg viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"/><path d="M8 10h8M8 14h8M8 18h5"/></svg>Voli</button>
+  <button id="nb-doc" onclick="apriDocumenti()"><svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z"/><path d="M12 17v-6M9 13l3-3 3 3"/></svg>Documenti</button>
+</nav>
 <script>
 const IC = {
   drone:'<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/>',
@@ -844,9 +1158,9 @@ let DRONI = [
   {id:3,nome:'DJI Agras T25',classe:'agricolo',cat:'specific',qr:true,manut:'ok',batt:'ok'}
 ];
 let PILOTI = [
-  {id:1,nome:'Mario Rossi',att:['A1-A3','A2'],scad:'12/03/2028',ok:true,sts:false},
-  {id:2,nome:'Luca Bianchi',att:['A1-A3'],scad:'17/11/2026',ok:true,sts:false,quasi:true},
-  {id:3,nome:'Giulia Verdi',att:['A1-A3','A2','STS-01'],scad:'05/06/2029',ok:true,sts:true}
+  {id:1,nome:'Mario Rossi',matr:'0412',att:['A1-A3','A2'],scad:'12/03/2028',ok:true,sts:false},
+  {id:2,nome:'Luca Bianchi',matr:'0587',att:['A1-A3'],scad:'17/11/2026',ok:true,sts:false,quasi:true},
+  {id:3,nome:'Giulia Verdi',matr:'0633',att:['A1-A3','A2','STS-01'],scad:'05/06/2029',ok:true,sts:true}
 ];
 let ASSIC = {scad:'31/12/2026', ok:true};
 let AUT_ENAC = {agricola:false}; // autorizzazione operativa ENAC per agricoltura: manca
@@ -883,30 +1197,15 @@ const TILES = {
 
 /* ---------- home ---------- */
 function disegnaHome(){
-  const hd=document.getElementById('h-drone'), hp=document.getElementById('h-pilota');
-  hd.innerHTML='<option value="">Drone…</option>'+DRONI.map(d=>`<option value="${d.id}">${d.nome}</option>`).join('');
-  const pp=ADM?PILOTI:PILOTI.filter(p=>p.nome===IO.n);
-  hp.innerHTML=(pp.length===1?'':'<option value="">Pilota…</option>')+pp.map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
-  document.getElementById('todo').innerHTML=calcolaTodo().map((x,i)=>{
-    const lab={ko:'Urgente',warn:'Presto',ok:'In regola'}[x.liv];
-    return `<li class="${x.go?'go':''}" ${x.go?`onclick="TODOGO[${i}]()"`:''}><span class="tag ${x.liv}">${lab}</span><span>${x.t}</span><span class="when">${x.w}</span></li>`;
-  }).join('');
+  const vd=(document.getElementById('h-drone')||{}).value||'', vp=(document.getElementById('h-pilota')||{}).value||'';
   contaRiquadri(); disegnaPannello();
   { const a=LAVORI.filter(l=>l.stato!=='concluso').length; TILES.attivita[2].c=pl(a,'lavoro aperto','lavori aperti'); }
   { const n=Object.values(SCHEDE).filter(s=>s.man.liv!=='ok').length; TILES.flotta[2].c=n?pl(n,'in scadenza','in scadenza'):'in regola'; TILES.flotta[2].d=n?'warn':''; }
   { const n=TRATT.filter(t=>t.stato!=='ok').length; TILES.regole[3].c=n?pl(n,'da completare','da completare'):'quaderno in regola'; TILES.regole[3].d=n?'warn':''; }
   TILES.attivita[3].c=PREV.filter(p=>p.stato==='bozza').length+' da inviare';
-  { const n=DOCS.length; document.getElementById('doc-cont').textContent=(n?pl(n,'caricato','caricati')+' · ':'')+'si leggono da soli e vanno nella scheda giusta'; }
-  for(const g in TILES){
-    const vis=TILES[g].filter(t=>puoVedere(t.n));
-    document.getElementById('t-'+g).closest('.sect').style.display=vis.length?'':'none';
-    document.getElementById('t-'+g).innerHTML=vis.map(t=>
-      `<button class="tile" onclick="apriPagina('${t.n}','${g}')">
-        <div class="ico" style="background:var(${t.f})">${svg(t.k)}</div>
-        <div><div class="n">${t.n}</div><div class="c">${t.c}</div></div>
-        ${t.d?`<span class="dot ${t.d}"></span>`:''}
-      </button>`).join('');
-  }
+  const todo=calcolaTodo();
+  document.getElementById('h-asp').innerHTML=ASP==='A'?homeA(todo):ASP==='C'?homeC(todo):homeB(todo);
+  riempiSelect(vd,vp);
 }
 
 /* ---------- navigazione ---------- */
@@ -943,7 +1242,7 @@ let zoneOk=false, checklistOk=false, dSel, pSel;
 function avviaControllo(b){
   const d=DRONI.find(x=>x.id==document.getElementById('h-drone').value);
   const p=PILOTI.find(x=>x.id==document.getElementById('h-pilota').value);
-  if(!d||!p){ document.getElementById('h-t').textContent='Scegli prima drone e pilota'; return; }
+  if(!d||!p){ toast(!d?'Scegli prima il drone':'Scegli prima il pilota'); return; }
   lavora(b,()=>{ dSel=d; pSel=p; zoneOk=false; checklistOk=false; disegnaControllo(); vai('controllo','Controllo prima del volo'); });
 }
 
@@ -980,7 +1279,7 @@ function disegnaControllo(){
   const light=document.getElementById('c-light'), t=document.getElementById('c-t'), s=document.getElementById('c-s');
   light.className='light '+(bloccanti?'ko':(daFare||avvisi)?'warn':'ok');
   t.textContent = bloccanti?'Non si può volare':daFare?'Quasi pronto':avvisi?'Si può volare, con attenzione':'Si può volare';
-  s.textContent = dSel.nome+' · '+pSel.nome+' · '+(bloccanti?bloccanti+' problema/i da risolvere':daFare?daFare+' verifica/he da fare sul posto':avvisi?avvisi+' avviso/i':'tutto in regola');
+  s.textContent = dSel.nome+' · '+pSel.nome+' · '+(bloccanti?pl(bloccanti,'problema','problemi')+' da risolvere':daFare?pl(daFare,'verifica','verifiche')+' da fare sul posto':avvisi?pl(avvisi,'avviso','avvisi'):'tutto in regola');
   document.getElementById('checks').innerHTML=L.map(x=>{
     const m=x.s==='ok'?svg('check'):x.s==='ko'?svg('x'):svg('esc');
     let act='';
@@ -1739,6 +2038,9 @@ let MIGRATO=false;
 function ricalcola(){
   for(const id of Object.keys(PERM)){ if(PERM[id]&&PERM[id].admin){ MIGRATO=true; PERM[id]={voliTutti:true,flotta:true,documenti:false,clienti:true,prezzi:false,enac:true,agri:false};
     if(SCHEDEP[id]&&/admin/i.test(SCHEDEP[id].ruolo||'')) SCHEDEP[id].ruolo='Pilota'; } }
+  // dati di esempio salvati prima delle matricole: si danno quelle di prova
+  const MATR_PROVA={'Mario Rossi':'0412','Luca Bianchi':'0587','Giulia Verdi':'0633'};
+  if(/dati di esempio/.test(OP.nome||'')) for(const p of PILOTI) if(!p.matr&&MATR_PROVA[p.nome]){p.matr=MATR_PROVA[p.nome];MIGRATO=true;}
   for(const p of PILOTI){
     const s=SCHEDEP[p.id]; if(!s) continue; s.att=s.att||{};
     for(const a of Object.values(s.att)) a.liv=a.scad?livData(a.scad):'warn';
@@ -1800,6 +2102,7 @@ function contaRiquadri(){
 }
 
 /* ---------- entrata ---------- */
+let BLOCCHI={}, ASP='B';
 let ME=null, IO={r:'',n:''}, ADM=false, VER=0, DISP=[], LASTJ='', SAVING=false, BASE='', VISTA='', T_ATT=0, T_SAL=0, T_POLL=0;
 try{ME=JSON.parse(localStorage.getItem('quota120Disp')||'null');}catch(e){}
 function meSave(){try{if(ME)localStorage.setItem('quota120Disp',JSON.stringify(ME));else localStorage.removeItem('quota120Disp');}catch(e){}}
@@ -1812,11 +2115,13 @@ function vai(v, crumb){
   document.querySelector('.nav').style.display='';
   document.getElementById('back').style.display = v==='home'?'none':'inline-flex';
   document.getElementById('crumb').innerHTML = v==='home' ? '<b>Home</b>' : 'Home &rsaquo; <b>'+crumb+'</b>';
-  VISTA=v; window.scrollTo(0,0);
+  VISTA=v; window.scrollTo(0,0); scuro();
+  [['nb-home','home'],['nb-voli','voli'],['nb-doc','documenti']].forEach(([i,p])=>document.getElementById(i).classList.toggle('on',v===p));
 }
 function schermata(v){
   document.querySelectorAll('.wrap > [id^="v-"]').forEach(e=>e.classList.toggle('hidden',e.id!=='v-'+v));
-  document.querySelector('.nav').style.display='none'; document.getElementById('op-head').innerHTML=''; document.getElementById('admbtn').style.display='none'; VISTA=v;
+  document.querySelector('.nav').style.display='none'; document.getElementById('op-head').innerHTML=''; document.getElementById('admbtn').style.display='none';
+  document.getElementById('asp-btn').style.display='none'; document.getElementById('chip').style.display='none'; document.getElementById('basso').style.display='none'; VISTA=v; scuro();
 }
 function avvio(){
   BASE=JSON.stringify(stato());
@@ -1833,43 +2138,48 @@ function scegliRuolo(r){
   if(r==='adm'){
     f.innerHTML=`<div class="fill" style="grid-template-columns:1fr"><div><label>Codice dell'Admin (4 cifre)</label><input type="password" id="lg-pin" inputmode="numeric" maxlength="4" autocomplete="off"></div></div>
       <div class="row"><button class="btn" onclick="richiesta('adm',this)"><span class="spin"></span>Entra come Admin</button></div>
-      <div style="font-size:12px;color:var(--muted);margin-top:6px">Nella versione di prova il codice è 1234: cambialo da Piloti appena entri.</div><div id="lg-err" style="color:var(--ko);font-size:13px;margin-top:6px"></div>`;
+      <div style="font-size:12px;color:var(--muted);margin-top:6px">Nella versione di prova il codice è 1234: cambialo da Piloti appena entri.</div><div class="err" id="lg-err"></div>`;
     setTimeout(()=>document.getElementById('lg-pin').focus(),50);
     return;
   }
-  f.innerHTML='<div class="prog" style="display:flex"><span class="spin"></span><span>Cerco i nomi dei piloti…</span></div>';
-  fetch('/api/nomi').then(x=>x.json()).then(j=>{
-    if(!j.nomi||!j.nomi.length){f.innerHTML='<div style="font-size:14px">L’Admin deve entrare per primo e inserire i piloti. Poi qui troverai il tuo nome.</div>';return;}
-    f.innerHTML=`<div class="fill" style="grid-template-columns:1fr"><div><label>Il tuo nome</label><select id="lg-n">${j.nomi.map(n=>`<option>${n}</option>`).join('')}</select></div></div>
-      <div class="row"><button class="btn" onclick="richiesta('op',this)"><span class="spin"></span>Entra</button></div><div id="lg-err" style="color:var(--ko);font-size:13px;margin-top:6px"></div>`;
-  }).catch(()=>{f.innerHTML='<div style="color:var(--ko)">Niente rete: riprova.</div>';});
+  // il pilota scrive nome e matricola: l'elenco dei piloti non si vede mai
+  f.innerHTML=`<div class="fill" style="grid-template-columns:1fr">
+      <div><label for="lg-n">Nome e cognome</label><input type="text" id="lg-n" autocomplete="name" autocapitalize="words" placeholder="Nome e Cognome" onkeydown="if(event.key==='Enter')document.getElementById('lg-m').focus()"></div>
+      <div><label for="lg-m">Matricola</label><input type="text" id="lg-m" autocomplete="off" autocapitalize="characters" placeholder="La tua matricola Aziendale" onkeydown="if(event.key==='Enter')document.getElementById('lg-ok').click()"></div></div>
+    <div class="row"><button class="btn" id="lg-ok" onclick="richiesta('op',this)"><span class="spin"></span>Entra</button></div><div class="err" id="lg-err"></div>`;
+  setTimeout(()=>document.getElementById('lg-n').focus(),50);
 }
 function richiesta(r,b){
   const body={ruolo:r};
-  if(r==='adm'){body.pin=document.getElementById('lg-pin').value.trim();body.data=JSON.parse(BASE);} else body.n=document.getElementById('lg-n').value;
+  const err=document.getElementById('lg-err'), mostra=t=>{err.innerHTML=t;err.style.display='block';};
+  err.style.display='none';
+  if(r==='adm'){body.pin=document.getElementById('lg-pin').value.trim();body.data=JSON.parse(BASE);}
+  else{ body.n=document.getElementById('lg-n').value; body.matr=document.getElementById('lg-m').value;
+    if(!body.n.trim()||!body.matr.trim()){mostra('Scrivi nome e cognome e la tua matricola.');return;} }
   b.disabled=true;b.classList.add('busy');
   api('POST','/api/disp/richiesta',body).then(j=>{
     b.disabled=false;b.classList.remove('busy');
-    if(j.errore){document.getElementById('lg-err').textContent=j.errore;return;}
-    ME={id:j.id,k:j.k,stato:j.stato,codice:j.codice}; meSave();
+    if(j.errore){mostra(j.errore==='bloccato'?'<b>Il tuo accesso è bloccato.</b><br>Parla con l’Admin.':j.errore==='Nome o matricola non corretti'?'<b>Nome o matricola non corretti.</b><br>Controlla di averli scritti giusti. La matricola te la dà l’Admin.':j.errore);return;}
+    ME={id:j.id,k:j.k,stato:j.stato,codice:j.codice,n:j.n}; meSave(); if(j.asp) ASP=j.asp;
     if(j.stato==='ok') entra(); else attesa();
-  }).catch(()=>{b.disabled=false;b.classList.remove('busy');document.getElementById('lg-err').textContent='Niente rete: riprova';});
+  }).catch(()=>{b.disabled=false;b.classList.remove('busy');mostra('Niente rete: riprova');});
 }
 function attesa(){
-  schermata('attesa'); document.getElementById('at-cod').textContent=ME.codice||'';
+  schermata('attesa'); document.getElementById('at-cod').textContent=ME.codice||''; document.getElementById('at-chi').textContent=ME.n||'';
   clearInterval(T_ATT);
   T_ATT=setInterval(()=>api('GET','/api/disp/stato').then(j=>{
     if(j._s===401){clearInterval(T_ATT);esci();return;}
     if(j.stato==='ok'){clearInterval(T_ATT);ME.stato='ok';meSave();entra();}
-    else if(j.stato==='rifiutato'||j.stato==='tolto'){clearInterval(T_ATT);esci();toast('L’Admin non ha approvato questo telefono');}
+    else if(j.stato==='rifiutato'||j.stato==='tolto'||j.stato==='bloccato'){clearInterval(T_ATT);esci();toast('L’Admin non ha approvato questo telefono');}
   }).catch(()=>{}),5000);
 }
 function entra(){
   api('GET','/api/stato?all=1').then(j=>{
     if(j._s===403&&j.stato==='attesa'){ME.stato='attesa';meSave();attesa();return;}
+    if(j._s===403&&j.stato==='bloccato'){esci();toast('Il tuo accesso è bloccato: parla con l’Admin');return;}
     if(j._s===401||j._s===403||j.vuoto){esci();return;}
     IO=j.io; ADM=IO.r==='adm'; document.body.classList.toggle('op',!ADM);
-    DISP=j.disp||[]; VER=j.ver; apply(j.data); LASTJ=MIGRATO?'':JSON.stringify(stato());MIGRATO=false;
+    DISP=j.disp||[]; BLOCCHI=j.blocchi||{}; if(IO.asp) ASP=IO.asp; VER=j.ver; apply(j.data); LASTJ=MIGRATO?'':JSON.stringify(stato());MIGRATO=false;
     testata(); vai('home');
     clearInterval(T_SAL); T_SAL=setInterval(controllaModifiche,1500);
     clearInterval(T_POLL); T_POLL=setInterval(aggiorna,15000);
@@ -1877,7 +2187,11 @@ function entra(){
 }
 function testata(){
   document.getElementById('admbtn').style.display=ADM?'inline-flex':'none';
-  document.getElementById('op-head').innerHTML=`<span class="lungo">${OP.codice||''} · ${OP.nome||''}<br></span>${ADM?'Admin':IO.n} <button onclick="esci()">Esci</button>`;
+  document.getElementById('asp-btn').style.display='inline-flex'; document.getElementById('basso').style.display='';
+  document.getElementById('sole-btn').setAttribute('aria-pressed',document.body.classList.contains('sole'));
+  // niente «Esci» per i piloti: restano dentro finché l'Admin non li blocca
+  document.getElementById('op-head').innerHTML=`<span class="lungo">${OP.codice||''} · ${OP.nome||''}</span>`;
+  const ch=document.getElementById('chip'); ch.style.display=ADM?'none':'flex'; ch.innerHTML=ADM?'':`<i>${iniziali(IO.n||'')}</i><span>${(IO.n||'').split(' ')[0]}</span>`;
 }
 function esci(){
   if(ME) fetch('/api/disp/esci',{method:'POST',headers:{'x-disp':ME.id+':'+ME.k}}).catch(()=>{});
@@ -1900,9 +2214,10 @@ function controllaModifiche(){
 function aggiorna(){
   if(SAVING||!IO.r) return;
   api('GET','/api/stato?since='+VER).then(j=>{
-    if(j._s===401||j._s===403){esci();return;}
+    if(j._s===401||j._s===403){esci();if(j.stato==='bloccato')toast('Il tuo accesso è bloccato: parla con l’Admin');return;}
     let ch=false;
     if(j.disp&&JSON.stringify(j.disp)!==JSON.stringify(DISP)){DISP=j.disp;ch=true;}
+    if(j.blocchi) BLOCCHI=j.blocchi;
     if(j.data){ if(JSON.stringify(stato())!==LASTJ) return; VER=j.ver; apply(j.data); LASTJ=MIGRATO?'':JSON.stringify(stato());MIGRATO=false; ch=true; }
     if(ch) ridisegna();
   }).catch(()=>{});
@@ -1949,12 +2264,12 @@ function modulo(tit,campi,fn,testoBtn){
 }
 function nuovoPilota(){
   const f=v=>{const id=nuovoId();
-    PILOTI.push({id,nome:v.nome,att:[],scad:'',ok:true,sts:false});
+    PILOTI.push({id,nome:v.nome,matr:v.matr,att:[],scad:'',ok:true,sts:false});
     SCHEDEP[id]={ruolo:v.ruolo,tel:'',ore:'0 h',voli:0,ore90:'0 h',inc:0,att:{}};
     PERM[id]={admin:false,voliTutti:false,flotta:true,documenti:false,clienti:false,prezzi:false,enac:false,agri:false};
     ricalcola(); apriPilota(id); toast('Ora carica i suoi attestati da Documenti');};
-  f.check=v=>PILOTI.some(p=>p.nome.toLowerCase()===v.nome.toLowerCase())?'C’è già un pilota con questo nome':'';
-  modulo('Nuovo pilota',[{k:'nome',l:'Nome e cognome',req:1},{k:'ruolo',l:'Ruolo',t:'sel',o:['Pilota','Pilota agricolo','Osservatore'],v:'Pilota',req:1}],f);
+  f.check=v=>PILOTI.some(p=>normM(p.nome)===normM(v.nome))?'C’è già un pilota con questo nome':(d=>d?'Questa matricola è già di '+d.nome:'')(matrDoppia(v.matr));
+  modulo('Nuovo pilota',[{k:'nome',l:'Nome e cognome',req:1,p:'Nome e Cognome'},{k:'matr',l:'Matricola aziendale (serve per entrare)',req:1},{k:'ruolo',l:'Ruolo',t:'sel',o:['Pilota','Pilota agricolo','Osservatore'],v:'Pilota',req:1}],f);
 }
 function nuovoDrone(){
   const f=v=>{const id=nuovoId(), spec=v.cat==='specific';
@@ -2017,10 +2332,14 @@ function disegnaDisp(){
         :(io?'':`<button class="btn sec mini" onclick="dispAz('togli','${x.id}',this)"><span class="spin"></span>Togli</button>`)}</li>`;}).join('')
     :'<li style="cursor:default"><div class="b">Nessun telefono collegato</div></li>';
 }
-function dispAz(op,id,b){
+function dispAz(op,id,b,pid){
   b.disabled=true;b.classList.add('busy');
-  api('POST','/api/disp/azione',{op,id}).then(j=>{b.disabled=false;b.classList.remove('busy');
-    if(j.disp)DISP=j.disp; toast(op==='approva'?'Approvato: sul suo telefono si apre da solo':op==='rifiuta'?'Rifiutato':'Tolto'); disegnaDisp(); disegnaPannello(); if(VISTA==='admin') disegnaPermAdm();})
+  api('POST','/api/disp/azione',{op,id,pid}).then(j=>{b.disabled=false;b.classList.remove('busy');
+    if(j.errore){toast(j.errore);return;}
+    if(j.disp)DISP=j.disp; if(j.blocchi)BLOCCHI=j.blocchi;
+    toast({approva:'Approvato: sul suo telefono si apre da solo',approvaTutti:'Approvati tutti: sui loro telefoni si apre da solo',rifiuta:'Rifiutato',
+      blocca:'Bloccato: è uscito subito da tutti i suoi telefoni',sblocca:'Sbloccato: al prossimo accesso chiede di nuovo l’approvazione'}[op]||'Tolto');
+    if(VISTA==='home') disegnaHome(); disegnaDisp(); disegnaPannello(); if(VISTA==='admin') disegnaPermAdm(pid);})
   .catch(()=>{b.disabled=false;b.classList.remove('busy');toast('Niente rete');});
 }
 
@@ -2232,9 +2551,10 @@ function disegnaPannello(){
   if(!ADM) return;
   const att=DISP.filter(x=>x.stato==='attesa');
   document.getElementById('admdot').style.display=att.length?'block':'none';
-  document.getElementById('pa-rich').innerHTML=att.map(x=>`<div class="richiesta">
+  document.getElementById('pa-rich').innerHTML=(att.length>1?`<div class="row tutti"><b>${att.length} telefoni chiedono di entrare</b>
+    <button class="btn mini" onclick="dispAz('approvaTutti','',this)"><span class="spin"></span>Approva tutti</button></div>`:'')+att.map(x=>`<div class="richiesta">
     <div class="ini" style="background:var(--f-persone)">${iniziali(x.n)}</div>
-    <div class="main"><b>${x.n}</b> chiede di entrare · codice <b>${x.codice}</b><br><span style="font-size:12px;color:var(--muted)">Approva solo se il codice è quello che vedi sul suo telefono</span></div>
+    <div class="main"><b>${x.n}</b> chiede di entrare${x.nuovo?' da un <b>telefono nuovo</b>':''} · codice <b>${x.codice}</b><br><span style="font-size:12px;color:var(--muted)">Approva solo se il codice è quello che vedi sul suo telefono</span></div>
     <button class="btn mini" onclick="dispAz('approva','${x.id}',this)"><span class="spin"></span>Approva</button>
     <button class="btn sec mini" onclick="dispAz('rifiuta','${x.id}',this)"><span class="spin"></span>Rifiuta</button></div>`).join('');
   const T=[{i:SHIELD,n:'Telefoni collegati',c:att.length?pl(att.length,'da approvare','da approvare'):'tutti approvati',d:att.length?'ko':'',go:"apriAdmin('ad-tel')"},
@@ -2258,16 +2578,34 @@ function disegnaPermAdm(apri){
   if(!PILOTI.length){el.innerHTML='<div style="font-size:13px;color:var(--muted);margin-top:8px">Nessun pilota ancora: aggiungine uno.</div>';return;}
   el.innerHTML=PILOTI.map(p=>{
     const P=PERM[p.id]||{}, si=PERMESSI.filter(([k])=>P[k]).map(([k,t])=>(s=>s.charAt(0).toLowerCase()+s.slice(1))(t.split(' (')[0]));
-    const conn=DISP.some(d=>d.n===p.nome&&d.stato==='ok'), att=DISP.some(d=>d.n===p.nome&&d.stato==='attesa');
+    const conn=DISP.some(d=>d.n===p.nome&&d.stato==='ok'), att=DISP.some(d=>d.n===p.nome&&d.stato==='attesa'), bl=!!BLOCCHI[p.id];
+    const nTel=DISP.filter(d=>d.n===p.nome&&d.stato==='ok').length, q=v=>String(v==null?'':v).replace(/"/g,'&quot;');
     return `<details class="batt" ${apri===p.id?'open':''}><summary>
       <div class="ini">${iniziali(p.nome)}</div>
-      <div class="main"><div class="a">${p.nome}</div><div class="b">Vede: i suoi voli${si.length?', '+si.join(', '):''}</div></div>
-      <span class="tag ${att?'ko':conn?'ok':'warn'}">${att?'Da approvare':conn?'Collegato':'Mai entrato'}</span>${chev}</summary>
-      <div class="in"><div style="font-size:12px;color:var(--muted)">Fa sempre il controllo prima del volo e importa i suoi registri. Il resto lo decidi tu:</div>
+      <div class="main"><div class="a">${p.nome}</div><div class="b">${p.matr?'Matricola '+p.matr+' · ':''}Vede: i suoi voli${si.length?', '+si.join(', '):''}</div></div>
+      <span class="tag ${bl||att||!p.matr?'ko':conn?'ok':'warn'}">${bl?'Bloccato':!p.matr?'Manca matricola':att?'Da approvare':conn?'Collegato':'Mai entrato'}</span>${chev}</summary>
+      <div class="in">
+      <div class="fld" style="margin-bottom:10px"><div class="k">${p.matr?'<svg viewBox="0 0 24 24">'+IC.check+'</svg>':''}Matricola aziendale · serve per entrare</div>
+        <div class="row" style="margin-top:4px;flex-wrap:nowrap"><input type="text" id="mt-${p.id}" value="${q(p.matr)}" placeholder="da inserire" style="min-height:44px"><button class="btn mini" onclick="salvaMatr(${p.id},this)"><span class="spin"></span>Salva</button></div>
+        ${p.matr?'':'<div style="color:var(--ko);font-size:14px;margin-top:4px">Senza matricola non può entrare.</div>'}</div>
+      <div class="allegato" style="margin-top:0;background:${bl?'#fff':'var(--sup2)'};${bl?'border-left:4px solid var(--ko)':''}"><div class="f">${bl
+        ?'<b>Bloccato</b><br>Non può entrare da nessun telefono. I suoi dati e i suoi voli restano.'
+        :'<b>'+(nTel?pl(nTel,'telefono collegato','telefoni collegati'):'Nessun telefono collegato')+'</b><br>Resta dentro finché non lo blocchi: non deve rientrare ogni giorno.'}</div>
+        ${bl?`<button class="btn mini" onclick="dispAz('sblocca','',this,${p.id})"><span class="spin"></span>Sblocca</button>`
+            :`<button class="btn sec mini" onclick="dispAz('blocca','',this,${p.id})"><span class="spin"></span>Blocca</button>`}</div>
+      ${bl?'':`<div style="font-size:14px;color:var(--muted);margin-top:10px">Fa sempre il controllo prima del volo e importa i suoi registri. Il resto lo decidi tu:</div>
       <ul class="puo">${PERMESSI.map(([k,t])=>`<li><div class="mark ${P[k]?'ok':''}" style="${P[k]?'':'background:#c3cad2'}">${svg(P[k]?'check':'x')}</div>
         <div class="main"><div class="a" style="font-weight:500">${t}</div></div>
-        <button class="btn ${P[k]?'sec':''} mini" onclick="lavora(this,()=>{PERM[${p.id}]=PERM[${p.id}]||{};PERM[${p.id}].${k}=!PERM[${p.id}].${k};disegnaPermAdm(${p.id});})"><span class="spin"></span>${P[k]?'Togli':'Concedi'}</button></li>`).join('')}</ul>
+        <button class="btn ${P[k]?'sec':''} mini" onclick="lavora(this,()=>{PERM[${p.id}]=PERM[${p.id}]||{};PERM[${p.id}].${k}=!PERM[${p.id}].${k};disegnaPermAdm(${p.id});})"><span class="spin"></span>${P[k]?'Togli':'Concedi'}</button></li>`).join('')}</ul>`}
       </div></details>`;}).join('');
+}
+const normM=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toLowerCase();
+function matrDoppia(m,id){return PILOTI.find(p=>p.id!==id&&p.matr&&normM(p.matr)===normM(m));}
+function salvaMatr(id,b){
+  const p=PILOTI.find(x=>x.id===id), m=document.getElementById('mt-'+id).value.trim();
+  if(!m){toast('Scrivi la matricola');return;}
+  const d=matrDoppia(m,id); if(d){toast('Questa matricola è già di '+d.nome);return;}
+  lavora(b,()=>{p.matr=m;disegnaPermAdm(id);toast('Matricola salvata: ora può entrare');});
 }
 const CAMPI_OP=[['nome','Nome dell’operatore'],['codice','Codice operatore ENAC'],['resp','Responsabile (Admin)'],['dfReg','Registrato su D-Flight il'],['dfAbb','Abbonamento D-Flight fino al'],['email','Email'],['tel','Telefono']];
 function disegnaDatiOp(mod){
@@ -2282,6 +2620,186 @@ function salvaDatiOp(b){
   for(const k of ['dfReg','dfAbb']) if(v[k]&&!dt(v[k])){toast('Le date vanno scritte come gg/mm/aaaa');return;}
   lavora(b,()=>{Object.assign(OP,v);disegnaDatiOp(false);testata();toast('Dati salvati');});
 }
+
+/* ---------- pagina iniziale: tre aspetti, ognuno sceglie il suo (A Cabina, B Plancia, C Flotta) ---------- */
+const ASPNOMI={A:'Cabina',B:'Plancia',C:'Flotta'};
+const MESI=['GEN','FEB','MAR','APR','MAG','GIU','LUG','AGO','SET','OTT','NOV','DIC'];
+const GIORNI=['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
+const MESI_L=['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
+const ICO_ST={ok:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',warn:'<path d="M12 6v8M12 18h.01"/>',ko:'<path d="M7 7l10 10M17 7L7 17"/>'};
+const SIL={piccolo:'<path d="M26 34h12M24 34v-4M40 34v-4M12 29h16M36 29h16"/><rect x="27" y="33" width="10" height="7" rx="2"/>',
+  medio:'<path d="M24 34h16M22 34v-5M42 34v-5M8 28h20M36 28h20"/><rect x="25" y="33" width="14" height="9" rx="2"/><path d="M28 42l-3 6M36 42l3 6"/>',
+  agri:'<path d="M20 30h24M18 30v-5M46 30v-5M4 24h20M40 24h20"/><rect x="22" y="29" width="20" height="12" rx="2"/><path d="M26 41v6h12v-6"/><path d="M16 50h32"/>'};
+const ESC=s=>String(s==null?'':s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+function ioPilota(){return PILOTI.find(p=>p.nome===IO.n);}
+// stato del drone anche per chi non vede le schede della flotta
+function livDrone(d){
+  if(SCHEDE[d.id]&&SCHEDE[d.id].man&&SCHEDE[d.id].doc) return statoDrone(d);
+  if(d.cat==='specific'&&!AUT_ENAC.agricola) return 'ko';
+  return d.manut!=='ok'||d.batt!=='ok'||!d.qr?'warn':'ok';
+}
+function motivoDrone(d){
+  const s=SCHEDE[d.id], b=BATT.filter(x=>x.drone===d.id), l=livDrone(d);
+  if(l==='ko') return d.cat==='specific'&&!AUT_ENAC.agricola?'Fermo: manca l’autorizzazione ENAC':'Fermo';
+  if(l==='warn'){
+    if(s&&s.man&&s.man.liv!=='ok') return 'Si può volare · manutenzione tra '+String(s.man.mancano).replace(/ \d+ min$/,'');
+    if(d.manut!=='ok') return 'Si può volare · manutenzione vicina';
+    if(b.some(x=>x.stato!=='ok')||d.batt!=='ok') return 'Si può volare · batteria da controllare';
+    if(!d.qr) return 'Manca il QR D-Flight';
+    return 'Si può volare · documenti da completare';
+  }
+  return 'Pronto al volo';
+}
+function breveDrone(d){const l=livDrone(d);return l==='ko'?(d.cat==='specific'&&!AUT_ENAC.agricola?'Fermo: manca ENAC':'Fermo'):l==='warn'?motivoDrone(d).replace('Si può volare · ','').replace(/^./,c=>c.toUpperCase()):'Pronto';}
+function silDrone(d){return d.cat==='specific'?SIL.agri:/C0|mini/i.test(d.classe+' '+d.nome)?SIL.piccolo:SIL.medio;}
+function voliMese(f){const o=new Date();return VOLI.filter(v=>{const d=dt(v.data);return d&&d.getMonth()===o.getMonth()&&d.getFullYear()===o.getFullYear()&&f(v);});}
+function droniMiei(){if(ADM) return DRONI; const p=ioPilota(); return p?DRONI.filter(d=>puoPilotare(p,d)[0]==='ok'):DRONI;}
+function oreBrevi(s){const m=/^(\d+)\s*h/.exec(s||'');return m?m[1]+' h':'';}
+function minOre(m){const h=Math.floor(m/60),mi=m%60;return h?(h+' h'+(mi?' '+mi:'')):mi+' min';}
+
+// drone, pilota e tasto del controllo: stessi id in tutti e tre gli aspetti
+function selDrone(cls){return `<select id="h-drone" class="${cls||''}" aria-label="Drone"></select>`;}
+function selPilota(){return `<select id="h-pilota" aria-label="Pilota"></select>`;}
+function riempiSelect(vd,vp){
+  const hd=document.getElementById('h-drone'), hp=document.getElementById('h-pilota');
+  if(hd){ hd.innerHTML='<option value="">Drone…</option>'+droniMiei().map(d=>`<option value="${d.id}">${ESC(d.nome)}</option>`).join(''); if(vd) hd.value=vd; }
+  if(hp){ const pp=ADM?PILOTI:PILOTI.filter(p=>p.nome===IO.n);
+    hp.innerHTML=(pp.length===1?'':'<option value="">Pilota…</option>')+pp.map(p=>`<option value="${p.id}">${ESC(p.nome)}</option>`).join(''); if(vp) hp.value=vp; }
+}
+function menuHome(stile){
+  const grp=[['flotta','Flotta'],['attivita','Persone e attività'],['regole','Regole e agricoltura']];
+  if(stile==='lista'){
+    const righe=[];
+    for(const [g] of grp) for(const t of TILES[g].filter(t=>puoVedere(t.n)))
+      righe.push(`<li class="go" onclick="apriPagina('${t.n}','${g}')"><span class="q" style="background:var(${t.f})">${svg(t.k)}</span><p>${t.n}<small>${t.c}</small></p>${t.d?`<span class="n ${t.d}">!</span>`:''}<svg class="ch" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></li>`);
+    return righe.length?`<div class="hcap">Gestione</div><ul class="lista">${righe.join('')}</ul>`:'';
+  }
+  return grp.map(([g,tit])=>{const vis=TILES[g].filter(t=>puoVedere(t.n)); if(!vis.length) return '';
+    return `<div class="sect"><h3>${tit}</h3><div class="tiles">${vis.map(t=>`<button class="tile" onclick="apriPagina('${t.n}','${g}')">
+      <div class="ico" style="background:var(${t.f})">${svg(t.k)}</div><div><div class="n">${t.n}</div><div class="c">${t.c}</div></div>${t.d?`<span class="dot ${t.d}"></span>`:''}</button>`).join('')}</div></div>`;}).join('');
+}
+function docHome(){
+  const n=DOCS.length;
+  return `<div class="docbar hdoc"><div class="ico" style="background:var(--accent)"><svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z"/><path d="M12 17v-6M9 13l3-3 3 3"/></svg></div>
+    <div class="main"><div class="a">Documenti</div><div class="b">${n?pl(n,'caricato','caricati')+' · ':''}si leggono da soli e vanno nella scheda giusta</div></div>
+    <button class="btn" onclick="apriDocumenti()">Carica documento</button></div>`;
+}
+// data della scadenza per il calendarietto
+function calTodo(x){
+  const m=/(\d{2})\/(\d{2})\/(\d{4})/.exec(x.w||'');
+  if(m) return `<span class="cal ${x.liv}"><small>${MESI[+m[2]-1]}</small><b>${+m[1]}</b></span>`;
+  return `<span class="cal ${x.liv}"><small>${x.liv==='ko'?'SUBITO':x.liv==='ok'?'OK':'PRESTO'}</small><b>${x.liv==='ok'?'&#10003;':'!'}</b></span>`;
+}
+
+function homeA(todo){
+  const o=new Date(), dr=droniMiei(), av=todo.map((x,i)=>[x,i]).filter(([x])=>x.liv!=='ok'||todo.length===1);
+  return `<div class="cab-riga"><span>${ADM?ESC(OP.nome||'')+(OP.codice?' · <b>'+ESC(OP.codice)+'</b>':''):'Pilota di '+ESC((OP.nome||'').replace(/ \(dati di esempio\)/,''))}</span>
+      <span>${GIORNI[o.getDay()].slice(0,3).toLowerCase()} ${String(o.getDate()).padStart(2,'0')}/${String(o.getMonth()+1).padStart(2,'0')} · <b>${ora()}</b></span></div>
+    <div class="cab-pf"><div class="h">PRIMA DEL VOLO</div>
+      <div class="hsel ${ADM?'':'uno'}">${selDrone()}${ADM?selPilota():`<span style="display:none">${selPilota()}</span>`}</div>
+      <button class="go" id="h-btn" onclick="avviaControllo(this)"><span class="spin"></span>Fai il controllo</button></div>
+    ${dr.length?`<div class="cab-h">FLOTTA</div><div class="cab-str">${dr.map(d=>{const l=livDrone(d),s=SCHEDE[d.id],nb=BATT.filter(b=>b.drone===d.id).length;
+      return `<button class="${l==='ok'?'':l}" onclick="${puoVedere('Droni')?`apriDrone(${d.id},'droni')`:`controllaDrone(${d.id},null)`}"><b>${ESC(d.nome.replace(/^DJI /,''))}</b>
+        <span>${[s&&oreBrevi(s.ore),nb?pl(nb,'batteria','batterie'):'',d.cat==='specific'?'agricolo':d.classe].filter(Boolean).join(' · ')}</span><em>${breveDrone(d)}</em></button>`;}).join('')}</div>`:''}
+    <div class="cab-h">${ADM?'AVVISI':'I TUOI AVVISI'}</div>
+    <ul class="cab-av">${av.map(([x,i])=>`<li class="${x.go?'go':''}" ${x.go?`onclick="TODOGO[${i}]()"`:''}><i class="${x.liv}"></i><p>${x.t}<small>${x.w}</small></p></li>`).join('')}</ul>
+    ${menuHome('tiles')}${docHome()}`;
+}
+
+function homeB(todo){
+  const o=new Date(), p=ioPilota();
+  let quadro;
+  if(ADM){
+    const pronti=DRONI.filter(d=>livDrone(d)!=='ko').length, inreg=PILOTI.filter(x=>statoPilota(x)==='ok').length, urg=todo.filter(x=>x.liv==='ko').length;
+    quadro=`<div><b>${pronti}<small> / ${DRONI.length}</small></b><span>droni pronti</span></div>
+      <div><b>${inreg}<small> / ${PILOTI.length}</small></b><span>piloti in regola</span></div>
+      <div class="${urg?'ko':'ok'}"><b>${urg}</b><span>${urg===1?'cosa urgente':'cose urgenti'}</span></div>`;
+  } else {
+    const vm=voliMese(v=>v.pilota===IO.n), min=vm.reduce((a,v)=>a+(+v.min||0),0);
+    const s=p&&SCHEDEP[p.id], sc=s?Object.values(s.att||{}).filter(a=>a.scad).map(a=>giorni(a.scad)).sort((a,b)=>a-b)[0]:undefined;
+    quadro=`<div><b>${vm.length}</b><span>voli questo mese</span></div><div><b>${minOre(min).replace(/ (h|min)/g,'<small> $1</small>')}</b><span>volate questo mese</span></div>
+      ${sc==null?`<div class="warn"><b>–</b><span>attestato da caricare</span></div>`:`<div class="${sc<0?'ko':sc<90?'warn':'ok'}"><b>${sc<0?'Scad.':sc}</b><span>${sc<0?'attestato scaduto':'giorni all’attestato'}</span></div>`}`;
+  }
+  const sc=todo.map((x,i)=>[x,i]);
+  return `<div class="pl-data">${GIORNI[o.getDay()]} ${o.getDate()} ${MESI_L[o.getMonth()]}<b>${ADM?ESC((OP.nome||'Quota 120').replace(/ \(dati di esempio\)/,'')):'Ciao '+ESC((IO.n||'').split(' ')[0])}</b></div>
+    <div class="pl-quadro">${quadro}</div>
+    <div class="card pl-ctrl"><h2>Controllo prima del volo</h2>
+      <div class="hsel ${ADM?'':'uno'}">${selDrone()}${ADM?selPilota():`<span style="display:none">${selPilota()}</span>`}</div>
+      <button class="btn" id="h-btn" onclick="avviaControllo(this)"><span class="spin"></span><svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg>Inizia il controllo</button></div>
+    <div class="pl-due"><div><div class="hcap">Prossime scadenze</div>
+      <ul class="lista">${sc.map(([x,i])=>`<li class="${x.go?'go':''}" ${x.go?`onclick="TODOGO[${i}]()"`:''}>${calTodo(x)}<p>${x.t}<small>${x.w}</small></p></li>`).join('')}</ul></div>
+    <div>${menuHome('lista')}</div></div>
+    ${docHome()}`;
+}
+
+function homeC(todo){
+  const dr=droniMiei(), p=ioPilota(), av=todo.map((x,i)=>[x,i]).filter(([x])=>x.liv!=='ok');
+  const card=d=>{const l=livDrone(d), s=SCHEDE[d.id], nb=BATT.filter(b=>b.drone===d.id).length, vm=voliMese(v=>v.drone===d.nome&&(ADM||v.pilota===IO.n)).length;
+    const num=[s&&s.ore?`<div><b>${oreBrevi(s.ore)}</b>volate</div>`:'',nb?`<div><b>${nb}</b>${nb===1?'batteria':'batterie'}</div>`:'',`<div><b>${vm}</b>voli mese</div>`].join('');
+    const vedi=l==='ko'?(d.cat==='specific'&&!AUT_ENAC.agricola&&puoVedere('Autorizzazioni ENAC')?'apriEnac()':puoVedere('Droni')?`apriDrone(${d.id},'droni')`:''):'';
+    return `<div class="fl-dr ${l}"><div class="st ${l}"><svg viewBox="0 0 24 24">${ICO_ST[l]}</svg>${motivoDrone(d)}</div>
+      <div class="bd"><div class="fl-sil"><svg viewBox="0 0 64 64">${silDrone(d)}</svg></div>
+        <div style="min-width:0"><h5>${ESC(d.nome)}</h5><div class="m">${ESC(d.cat==='specific'?'agricolo · categoria specifica':'classe '+d.classe)}${d.qr?' · QR applicato':''}</div><div class="fl-num">${num}</div></div></div>
+      ${l==='ko'?(vedi?`<button class="az" onclick="${vedi}">Vedi cosa manca</button>`:''):`<button class="az" onclick="controllaDrone(${d.id},this)"><span class="spin"></span>Controlla e vola</button>`}</div>`;};
+  let persone='';
+  if(ADM){
+    persone=PILOTI.length?`<div class="hcap">Piloti <small>${pl(PILOTI.length,'pilota','piloti')}</small></div><div class="fl-pil">${PILOTI.map(x=>{const st=statoPilota(x);
+      return `<button onclick="apriPilota(${x.id})"><span class="av ${st}">${iniziali(x.nome)}</span><b>${ESC(x.nome)}</b><span>${st==='ok'?'in regola':x.scad&&giorni(x.scad)<90?'attestato '+x.scad.slice(0,5):'da controllare'}</span></button>`;}).join('')}</div>`:'';
+  } else if(p){
+    const s=SCHEDEP[p.id]||{att:{}}, st=statoPilota(p), sc=Object.values(s.att||{}).filter(a=>a.scad).map(a=>giorni(a.scad)).sort((a,b)=>a-b)[0];
+    const vm=voliMese(v=>v.pilota===IO.n), min=vm.reduce((a,v)=>a+(+v.min||0),0);
+    const msg=st==='ok'?'I tuoi attestati sono in regola':sc==null?'Carica il tuo attestato':sc<0?'Il tuo attestato è scaduto':'Il tuo attestato scade tra '+pl(sc,'giorno','giorni');
+    persone=`<div class="hcap">Tu</div><div class="fl-dr ${st}"><div class="st ${st}"><svg viewBox="0 0 24 24">${ICO_ST[st]}</svg>${msg}</div>
+      <div class="bd"><div class="fl-sil ini">${iniziali(p.nome)}</div><div style="min-width:0"><h5>${ESC(p.nome)}</h5><div class="m">${(p.att||[]).join(', ')||'nessun attestato'}${p.matr?' · matricola '+ESC(p.matr):''}</div>
+        <div class="fl-num"><div><b>${vm.length}</b>voli mese</div><div><b>${minOre(min)}</b>volate</div></div></div></div>
+      <button class="az" onclick="${st==='ok'?`apriPilota(${p.id})`:'apriDocumenti()'}">${st==='ok'?'Vedi la tua scheda':'Carica il nuovo attestato'}</button></div>`;
+  }
+  return `${ADM?`<div class="fl-chi"><b>Chi vola</b>${selPilota()}</div>`:`<span style="display:none">${selPilota()}</span>`}<span style="display:none">${selDrone()}</span>
+    <div class="hcap" style="margin-top:4px;font-size:24px;color:var(--ink)">${ADM?'I tuoi droni':'Droni che puoi usare'} <small>${pl(dr.length,'drone','droni')}</small></div>
+    <div class="fl-grid">${dr.map(card).join('')||'<div class="card">Nessun drone ancora.</div>'}</div>
+    ${persone}
+    ${av.length?`<div class="hcap">Da sistemare</div><ul class="lista">${av.map(([x,i])=>`<li class="${x.go?'go':''}" ${x.go?`onclick="TODOGO[${i}]()"`:''}>${calTodo(x)}<p>${x.t}<small>${x.w}</small></p></li>`).join('')}</ul>`:''}
+    ${menuHome('tiles')}${docHome()}`;
+}
+function controllaDrone(id,b){
+  const hd=document.getElementById('h-drone'); if(hd) hd.value=id;
+  const hp=document.getElementById('h-pilota');
+  if(ADM&&hp&&!hp.value){toast('Scegli prima chi vola');hp.focus();return;}
+  avviaControllo(b||document.createElement('button'));
+}
+function scuro(){document.body.classList.toggle('scuro',ASP==='A'&&VISTA==='home'&&!!IO.r);}
+
+/* foglio «Aspetto» */
+const MINI={A:'<svg class="m" viewBox="0 0 60 80"><rect width="60" height="80" fill="#0D1820"/><rect x="5" y="6" width="22" height="4" rx="1" fill="#E6EEF2"/><rect x="5" y="16" width="50" height="20" rx="2" fill="#122330" stroke="#27404F"/><rect x="5" y="29" width="50" height="7" fill="#2FA36B"/><rect x="5" y="41" width="15" height="14" rx="2" fill="#122330"/><rect x="5" y="41" width="15" height="2" fill="#E09A2D"/><rect x="22" y="41" width="15" height="14" rx="2" fill="#122330"/><rect x="22" y="41" width="15" height="2" fill="#E5534B"/><rect x="40" y="41" width="15" height="14" rx="2" fill="#122330"/><rect x="40" y="41" width="15" height="2" fill="#2FA36B"/><rect x="5" y="60" width="50" height="13" rx="2" fill="#122330"/></svg>',
+  B:'<svg class="m" viewBox="0 0 60 80"><rect width="60" height="80" fill="#F3F5F6"/><rect width="60" height="11" fill="#fff"/><rect x="5" y="4" width="20" height="4" rx="1" fill="#132A3A"/><rect x="5" y="15" width="28" height="4" rx="1" fill="#0F1C26"/><rect x="5" y="23" width="50" height="12" rx="2" fill="#fff" stroke="#D3DBE0"/><rect x="8" y="26" width="6" height="5" fill="#0F1C26"/><rect x="25" y="26" width="6" height="5" fill="#0F1C26"/><rect x="42" y="26" width="4" height="5" fill="#AE2F28"/><rect x="5" y="38" width="50" height="7" rx="1.5" fill="#1D5C7C"/><rect x="5" y="49" width="50" height="25" rx="2" fill="#fff" stroke="#D3DBE0"/><rect x="8" y="52" width="7" height="7" rx="1" fill="#fff" stroke="#AE2F28"/><rect x="18" y="54" width="30" height="3" fill="#9FAEB8"/><rect x="8" y="63" width="7" height="7" rx="1" fill="#fff" stroke="#A5660A"/><rect x="18" y="65" width="26" height="3" fill="#9FAEB8"/></svg>',
+  C:'<svg class="m" viewBox="0 0 60 80"><rect width="60" height="80" fill="#E9EEF1"/><rect width="60" height="11" fill="#132A3A"/><rect x="5" y="15" width="50" height="28" rx="3" fill="#fff" stroke="#D3DBE0"/><rect x="5" y="15" width="50" height="5" fill="#A5660A"/><rect x="9" y="23" width="11" height="11" rx="2" fill="#EEF2F4"/><rect x="23" y="24" width="26" height="3" fill="#0F1C26"/><rect x="23" y="30" width="18" height="2" fill="#9FAEB8"/><rect x="5" y="47" width="50" height="28" rx="3" fill="#fff" stroke="#D3DBE0"/><rect x="5" y="47" width="50" height="5" fill="#17793F"/><rect x="9" y="55" width="11" height="11" rx="2" fill="#EEF2F4"/><rect x="23" y="56" width="26" height="3" fill="#0F1C26"/></svg>'};
+const ASPDESC={A:'scuro, come le app di volo',B:'chiaro, il quadro della giornata',C:'si parte dal drone'};
+function apriAspetto(){
+  const v=document.createElement('div'); v.className='foglio'; v.id='foglio';
+  v.onclick=e=>{if(e.target===v)v.remove();};
+  v.innerHTML=`<div class="in" role="dialog" aria-label="Aspetto"><h3>Aspetto</h3>
+    <p>Scegli come vuoi la pagina iniziale. Vale solo per te, anche se cambi telefono: gli altri tengono il loro.</p>
+    <div class="op3">${['A','B','C'].map(k=>`<button class="${ASP===k?'sel':''}" data-k="${k}" onclick="scegliAspetto('${k}',this)"><span class="spin"></span><span class="ck"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>${MINI[k]}${ASPNOMI[k]}<small>${ASPDESC[k]}</small></button>`).join('')}</div>
+    <div class="nota">Le pagine interne, i dati e i permessi restano gli stessi in tutti e tre. La modalità sole (il tasto col sole) si accende a parte.</div>
+    <button class="btn sec" onclick="document.getElementById('foglio').remove()">Chiudi</button></div>`;
+  document.body.appendChild(v);
+}
+function scegliAspetto(k,b){
+  if(k===ASP){toast('È già il tuo aspetto: '+ASPNOMI[k]);return;}
+  b.classList.add('busy'); document.querySelectorAll('.op3 button').forEach(x=>x.disabled=true);
+  api('POST','/api/aspetto',{a:k}).then(j=>{
+    document.querySelectorAll('.op3 button').forEach(x=>{x.disabled=false;x.classList.remove('busy');});
+    if(!j.ok){toast(j.errore||'Non riuscito: riprova');return;}
+    ASP=k; document.querySelectorAll('.op3 button').forEach(x=>x.classList.toggle('sel',x.dataset.k===k));
+    if(VISTA==='home'){disegnaHome();scuro();}
+    toast('Aspetto cambiato: '+ASPNOMI[k]);
+  }).catch(()=>{document.querySelectorAll('.op3 button').forEach(x=>{x.disabled=false;x.classList.remove('busy');});toast('Niente rete: riprova');});
+}
+/* modalità sole: contrasto massimo, resta su questo telefono */
+function sole(b){const on=!document.body.classList.contains('sole');document.body.classList.toggle('sole',on);b.setAttribute('aria-pressed',on);
+  try{localStorage.setItem('quota120Sole',on?'1':'');}catch(e){} toast(on?'Modalità sole accesa: contrasto massimo':'Modalità sole spenta');}
+try{if(localStorage.getItem('quota120Sole')){document.body.classList.add('sole');document.addEventListener('DOMContentLoaded',()=>{});}}catch(e){}
+function vaiControllo(){vai('home');setTimeout(()=>{const e=document.getElementById(ASP==='C'?'h-pilota':'h-drone');if(e){e.scrollIntoView({block:'center'});if(ASP!=='C'||ADM)e.focus();}},60);}
 
 avvio();
 

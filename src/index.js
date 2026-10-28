@@ -2,7 +2,7 @@
 // Cloudflare Worker: serve i file di «public» e le API /api/*; i dati stanno in un Durable Object (SQLite), niente database da creare.
 //
 // Accessi (stessa logica del gestionale dei cantieri):
-//  - un solo indirizzo per tutti; ogni telefono o computer sceglie «Admin» o «Operatore» (con il suo nome);
+//  - un solo indirizzo per tutti; ogni telefono o computer sceglie «Admin» oppure «Pilota»: il pilota scrive nome e cognome + matricola aziendale;
 //  - l'Admin entra con il suo codice di 4 cifre (prova: 1234); il primo ingresso prepara i dati di esempio;
 //  - un Operatore resta «In attesa dell'Admin» con un codice di 4 cifre: l'Admin lo approva;
 //  - ogni dispositivo approvato ha una chiave segreta (id:chiave nell'intestazione X-Disp) e rientra da solo.
@@ -26,6 +26,10 @@ const MODELLO = "claude-sonnet-5-5";         // Sonnet per leggere i documenti (
 // ---- permessi ----
 const permDi = (d, n) => { const p = (d.PILOTI || []).find(x => x.nome === n); return p ? ((d.PERM || {})[p.id] || {}) : {}; };
 const pilotaDi = (d, n) => (d.PILOTI || []).find(x => x.nome === n);
+// nome e matricola si confrontano senza badare a maiuscole, spazi in più e accenti
+const norm = s => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
+const ASPETTI = ["A", "B", "C"];                // Cabina, Plancia, Flotta
+const ASP_BASE = "B";                           // di base: Plancia
 
 // cosa riceve l'operatore n: solo quello che l'Admin gli ha concesso
 function vista(d, n) {
@@ -35,7 +39,8 @@ function vista(d, n) {
   v.DRONI = d.DRONI;
   v.ASSIC = { scad: (d.ASSIC || {}).scad, ok: (d.ASSIC || {}).ok };
   v.AUT_ENAC = { agricola: !!(d.AUT_ENAC || {}).agricola };
-  v.PILOTI = P.documenti ? d.PILOTI : (me ? [me] : []);
+  // la matricola serve per entrare: ognuno vede solo la sua
+  v.PILOTI = (P.documenti ? (d.PILOTI || []) : (me ? [me] : [])).map(p => p === me ? p : Object.assign({}, p, { matr: undefined }));
   v.SCHEDEP = {}; for (const p of v.PILOTI) if ((d.SCHEDEP || {})[p.id]) v.SCHEDEP[p.id] = d.SCHEDEP[p.id];
   v.PATENTINO = {}; for (const p of v.PILOTI) if ((d.PATENTINO || {})[p.id]) v.PATENTINO[p.id] = d.PATENTINO[p.id];
   v.VOLI = P.voliTutti ? d.VOLI : (d.VOLI || []).filter(x => x.pilota === n);
@@ -134,14 +139,17 @@ export class Stato extends DurableObject {
     const disp = (await st.get("disp")) || {};
     const pin = (await st.get("pin")) || "1234";
     const now = Date.now();
-    const pub = () => Object.keys(disp).map(id => { const x = disp[id]; return { id, ruolo: x.ruolo, n: x.n, codice: x.codice, stato: x.stato, at: x.at, visto: x.visto }; });
+    const blocchi = (await st.get("blocchi")) || {};          // id pilota -> true
+    const aspetti = (await st.get("aspetti")) || {};          // nome -> A | B | C
+    const pub = () => Object.keys(disp).map(id => { const x = disp[id]; return { id, ruolo: x.ruolo, n: x.n, codice: x.codice, stato: x.stato, at: x.at, visto: x.visto, nuovo: !!x.nuovo, pid: x.pid }; });
     const leggiMain = async () => { const row = await st.get("main"); return row ? { row, d: JSON.parse(row.json) } : null; };
     const scriviMain = async (d, ver) => { await st.put("main", { json: JSON.stringify(d), ver }); };
 
-    // ---- entrata: Admin con codice, Operatore con il suo nome ----
+    // ---- entrata: Admin con codice, Pilota con nome e cognome + matricola ----
     if (p === "/api/disp/richiesta" && request.method === "POST") {
       let b; try { b = await request.json(); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
-      const ruolo = b.ruolo === "adm" ? "adm" : "op", n = String(b.n || "").slice(0, 80);
+      const ruolo = b.ruolo === "adm" ? "adm" : "op";
+      let n = "", pid = null, nuovo = false;
       if (ruolo === "adm") {
         const ip = request.headers.get("cf-connecting-ip") || "x", kk = "pinerr:" + ip, err = (await st.get(kk)) || { n: 0, t: now };
         if (now - err.t > 900000) { err.n = 0; err.t = now; }
@@ -151,19 +159,25 @@ export class Stato extends DurableObject {
         if (!(await st.get("main"))) await scriviMain(b.data || {}, 1);
       } else {
         const m = await leggiMain();
-        if (!m) return J({ errore: "L'Admin deve entrare per primo" }, 409);
-        const pi = pilotaDi(m.d, n);
-        if (!pi) return J({ errore: "Scegli il tuo nome" }, 400);
-        if (((m.d.PERM || {})[pi.id] || {}).admin) return J({ errore: "Questo nome è dell'Admin: entra come Admin" }, 400);
+        if (!m) return J({ errore: "L'Admin deve ancora preparare il programma: riprova più tardi" }, 409);
+        const ip = request.headers.get("cf-connecting-ip") || "x", kk = "operr:" + ip, err = (await st.get(kk)) || { n: 0, t: now };
+        if (now - err.t > 900000) { err.n = 0; err.t = now; }
+        if (err.n >= 5) return J({ errore: "Troppi tentativi: riprova tra 15 minuti" }, 429);
+        const nn = norm(b.n), mm = norm(b.matr);
+        const pi = nn && mm ? (m.d.PILOTI || []).find(x => norm(x.nome) === nn && x.matr && norm(x.matr) === mm && !((m.d.PERM || {})[x.id] || {}).admin) : null;
+        if (!pi) { err.n++; await st.put(kk, err); return J({ errore: "Nome o matricola non corretti" }, 403); }
+        await st.delete(kk);
+        if (blocchi[pi.id]) return J({ errore: "bloccato" }, 403);
+        n = pi.nome; pid = pi.id;
+        nuovo = Object.values(disp).some(x => x.ruolo === "op" && (x.pid === pid || x.n === n) && x.app);
       }
       const id = rnd(8), k = rnd(18);
-      disp[id] = { k, ruolo, n: ruolo === "adm" ? "Admin" : n, codice: cod4(), stato: ruolo === "adm" ? "ok" : "attesa", at: now, visto: now };
+      // le richieste rimaste in attesa dello stesso pilota si sostituiscono con la nuova
+      if (ruolo === "op") for (const x of Object.values(disp)) if (x.ruolo === "op" && x.pid === pid && x.stato === "attesa") x.stato = "uscito";
+      for (const [i, x] of Object.entries(disp)) if (["uscito", "rifiutato", "tolto"].includes(x.stato) && now - (x.visto || 0) > 30 * 86400000) delete disp[i];
+      disp[id] = { k, ruolo, n: ruolo === "adm" ? "Admin" : n, pid, nuovo, codice: cod4(), stato: ruolo === "adm" ? "ok" : "attesa", at: now, visto: now, app: ruolo === "adm" };
       await st.put("disp", disp);
-      return J({ id, k, stato: disp[id].stato, codice: disp[id].codice });
-    }
-    if (p === "/api/nomi") {
-      const m = await leggiMain(); if (!m) return J({ nomi: [] });
-      return J({ nomi: (m.d.PILOTI || []).filter(x => !((m.d.PERM || {})[x.id] || {}).admin).map(x => x.nome) });
+      return J({ id, k, n: disp[id].n, stato: disp[id].stato, codice: disp[id].codice, asp: aspetti[disp[id].n] || ASP_BASE });
     }
 
     // ---- da qui serve un dispositivo riconosciuto ----
@@ -172,28 +186,52 @@ export class Stato extends DurableObject {
     const me = disp[id];
     if (!me || me.k !== k) return J({ errore: "dispositivo" }, 401);
     if (now - (me.visto || 0) > 60000) { me.visto = now; await st.put("disp", disp); }
-    if (p === "/api/disp/stato") return J({ stato: me.stato, codice: me.codice, ruolo: me.ruolo, n: me.n });
+    if (me.ruolo === "op" && me.pid == null) { const m0 = await leggiMain(), p0 = m0 && pilotaDi(m0.d, me.n); if (p0) { me.pid = p0.id; await st.put("disp", disp); } }
+    if (me.ruolo === "op" && me.pid != null && blocchi[me.pid] && me.stato === "ok") { me.stato = "bloccato"; await st.put("disp", disp); }
+    if (p === "/api/disp/stato") return J({ stato: me.stato, codice: me.codice, ruolo: me.ruolo, n: me.n, asp: aspetti[me.n] || ASP_BASE });
     // chi esce toglie il suo telefono dall'elenco (anche se era ancora in attesa)
     if (p === "/api/disp/esci" && request.method === "POST") { me.stato = "uscito"; await st.put("disp", disp); return J({ ok: true }); }
     if (me.stato !== "ok") return J({ errore: "non approvato", stato: me.stato }, 403);
     const adm = me.ruolo === "adm";
 
+    // ---- aspetto della pagina iniziale: ognuno il suo, resta sulla persona ----
+    if (p === "/api/aspetto" && request.method === "POST") {
+      let b; try { b = await request.json(); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
+      if (!ASPETTI.includes(b.a)) return J({ errore: "Aspetto non valido" }, 400);
+      aspetti[me.n] = b.a; await st.put("aspetti", aspetti);
+      return J({ ok: true, asp: b.a });
+    }
+
     if (p === "/api/disp/azione" && request.method === "POST") {
       if (!adm) return J({ errore: "Solo l'Admin" }, 403);
       let b; try { b = await request.json(); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
       if (b.op === "pin") { if (!/^\d{4}$/.test(b.pin || "")) return J({ errore: "Servono 4 cifre" }, 400); await st.put("pin", b.pin); return J({ ok: true }); }
+      if (b.op === "approvaTutti") {
+        for (const x of Object.values(disp)) if (x.stato === "attesa") { x.stato = "ok"; x.app = true; }
+        await st.put("disp", disp); return J({ ok: true, disp: pub(), blocchi });
+      }
+      // blocca: il pilota esce subito da tutti i suoi telefoni e non può chiederne altri; sblocca: al prossimo accesso chiede di nuovo l'approvazione
+      if (b.op === "blocca" || b.op === "sblocca") {
+        const pidB = +b.pid; if (!Number.isFinite(pidB)) return J({ errore: "Pilota non valido" }, 400);
+        const mB = await leggiMain(), pB = mB && (mB.d.PILOTI || []).find(q => q.id === pidB), suo = x => x.ruolo === "op" && (x.pid === pidB || (pB && x.n === pB.nome));
+        if (b.op === "blocca") { blocchi[pidB] = true; for (const x of Object.values(disp)) if (suo(x)) { if (x.stato === "ok") x.stato = "bloccato"; else if (x.stato === "attesa") x.stato = "rifiutato"; } }
+        else { delete blocchi[pidB]; for (const x of Object.values(disp)) if (suo(x) && x.stato === "bloccato") x.stato = "tolto"; }
+        await st.put("blocchi", blocchi); await st.put("disp", disp);
+        return J({ ok: true, disp: pub(), blocchi });
+      }
       const x = disp[b.id]; if (!x) return J({ errore: "Dispositivo non trovato" }, 404);
       if (b.id === id && b.op === "togli") return J({ errore: "Non puoi togliere te stesso" }, 400);
       x.stato = b.op === "approva" ? "ok" : b.op === "rifiuta" ? "rifiutato" : b.op === "togli" ? "tolto" : x.stato;
+      if (b.op === "approva") x.app = true;
       await st.put("disp", disp);
-      return J({ ok: true, disp: pub() });
+      return J({ ok: true, disp: pub(), blocchi });
     }
 
     // ---- dati ----
     if (p === "/api/stato") {
       const m = await leggiMain();
       if (!m) return J({ vuoto: true });
-      const { row } = m, io = { r: me.ruolo, n: me.n, id }, extra = adm ? { disp: pub() } : {};
+      const { row } = m, io = { r: me.ruolo, n: me.n, id, asp: aspetti[me.n] || ASP_BASE }, extra = adm ? { disp: pub(), blocchi } : {};
       if (request.method === "GET") {
         if (+url.searchParams.get("since") === row.ver && !url.searchParams.get("all")) return J(Object.assign({ same: true, ver: row.ver }, extra));
         return J(Object.assign({ ver: row.ver, data: adm ? m.d : vista(m.d, me.n), io }, extra));
