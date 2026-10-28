@@ -143,6 +143,7 @@ function vista(d, n) {
   v.PERM = me ? { [me.id]: (d.PERM || {})[me.id] || {} } : {};
   // a scelta dell'Admin
   if (P.flotta) { v.SCHEDE = d.SCHEDE; v.BATT = d.BATT; v.INV = d.INV; }
+  if (P.clienti && P.prezzi) v.CLIDATI = d.CLIDATI;
   if (P.clienti) { v.CLIENTI = d.CLIENTI; v.LAVORI = (d.LAVORI || []).map(l => P.prezzi ? l : Object.assign({}, l, { importo: null })); }
   if (P.prezzi) v.PREV = d.PREV;
   if (P.enac) { v.AUT_ENAC = d.AUT_ENAC; v.DOMANDA = d.DOMANDA; v.ASSIC = d.ASSIC; }
@@ -260,6 +261,7 @@ function scadenze(d) {
   }
   if ((d.ASSIC || {}).scad) L.push(["assic", "Assicurazione RC dell'operatore", "scade il " + d.ASSIC.scad, d.ASSIC.scad, null]);
   if ((d.OP || {}).dfAbb) L.push(["dflight", "Abbonamento D-Flight", "scade il " + d.OP.dfAbb, d.OP.dfAbb, null]);
+  for (const l of d.LAVORI || []) if (l.fatt && !l.pagato && dtS(l.scad)) L.push(["pag|" + l.id + "|" + l.scad, "Pagamento da incassare: " + l.cliente, "fattura n. " + l.fatt.n + " del " + l.fatt.data + " · " + l.titolo + " · scadenza " + l.scad, l.scad, null]);
   const Z = d.ZONEINFO; if (Z && dtS(Z.scade) && dtS(Z.scade) - oggiRoma().t <= 7 * 864e5) L.push(["zone|" + Z.data, "Zone di volo D-Flight da aggiornare", "caricate il " + Z.data + " · scarica il file nuovo da D-Flight e caricalo in Pannello Admin › Zone di volo", Z.scade, null]);
   return L;
 }
