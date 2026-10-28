@@ -1006,6 +1006,7 @@
   <!-- ================= ADMIN ================= -->
   <div id="v-admin" class="hidden">
     <div class="card pannello" style="margin-bottom:0;padding:10px 14px"><div class="tit"><svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg> Pannello Admin</div><div class="sub" style="margin-bottom:0">Comandi riservati: solo l'Admin vede questa pagina.</div></div>
+    <div class="tiles" id="ad-tiles" style="margin-top:12px"></div>
     <div class="card" id="ad-tel" style="margin-top:12px">
       <h2>Telefoni e computer collegati</h2>
       <div style="font-size:14px;color:var(--muted)">Il pilota entra scrivendo nome e matricola. Ogni telefono si approva <b>una volta sola</b>: da lì il pilota resta dentro. Per fermare un pilota usa <b>Blocca</b> in Utenti e permessi.</div>
@@ -2976,7 +2977,7 @@ function disegnaPannello(){
     {i:svg('dflight'),n:'Dati dell’operatore',c:OP.resp?(OP.nome||'').replace(/ \(dati di esempio\)/,''):'da completare',d:OP.resp?'':'warn',go:"apriAdmin('ad-op')"},
     {i:'<svg viewBox="0 0 24 24"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg>',n:'Zone di volo',c:ZONEINFO?'aggiornate al '+ZONEINFO.data:'da caricare',d:!ZONEINFO||livZone()!=='ok'?'warn':'',go:'apriZone()'},
     {i:SHIELD,n:'Codice dell’Admin',c:'cambia il codice',go:'cambiaCodice()'}];
-  document.getElementById('t-admin').innerHTML=T.map(t=>`<button class="tile" onclick="${t.go}">
+  document.getElementById('t-admin').innerHTML=document.getElementById('ad-tiles').innerHTML=T.map(t=>`<button class="tile" onclick="${t.go}">
     <div class="ico" style="background:var(--accent)">${t.i}</div>
     <div><div class="n">${t.n}</div><div class="c">${t.c}</div></div>${t.d?`<span class="dot ${t.d}"></span>`:''}</button>`).join('');
 }
