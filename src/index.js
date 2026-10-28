@@ -278,7 +278,7 @@ export class Stato extends DurableObject {
     if (p === "/interno/posta" && this.env.POSTA_FINTA === "1") return J(globalThis.__POSTA || []);
 
     // ---- controllo pubblico: dice solo SE le impostazioni ci sono (mai i valori) ----
-    if (p === "/api/salute") { const c = n => !!(this.env[n] && String(this.env[n]).trim()); return J({ versione: "c9", posta: c("RESEND_API_KEY") || c("BREVO_API_KEY"), RESEND_API_KEY: c("RESEND_API_KEY"), BREVO_API_KEY: c("BREVO_API_KEY"), MITTENTE: c("MITTENTE"), RISPOSTE: c("RISPOSTE"), ANTHROPIC_API_KEY: c("ANTHROPIC_API_KEY"), DJI_API_KEY: c("DJI_API_KEY") }); }
+    if (p === "/api/salute") { const c = n => !!(this.env[n] && String(this.env[n]).trim()); return J({ versione: "c10", posta: c("RESEND_API_KEY") || c("BREVO_API_KEY"), RESEND_API_KEY: c("RESEND_API_KEY"), BREVO_API_KEY: c("BREVO_API_KEY"), MITTENTE: c("MITTENTE"), RISPOSTE: c("RISPOSTE"), ANTHROPIC_API_KEY: c("ANTHROPIC_API_KEY"), DJI_API_KEY: c("DJI_API_KEY") }); }
 
     // ---- da qui serve un dispositivo riconosciuto ----
     let id = url.searchParams.get("id") || "", k = url.searchParams.get("k") || "";
@@ -530,6 +530,7 @@ export default {
   },
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.pathname === "/api/salute") { const c = n => !!(env[n] && String(env[n]).trim()); const r = await env.STATO.get(env.STATO.idFromName("main")).fetch(request).then(x => x.json()).catch(() => ({})); return Response.json({ ...r, worker: { RESEND_API_KEY: c("RESEND_API_KEY"), ANTHROPIC_API_KEY: c("ANTHROPIC_API_KEY"), DJI_API_KEY: c("DJI_API_KEY"), nomi: Object.keys(env).filter(k => /KEY/.test(k)) } }); }
     if (url.pathname.startsWith("/api/")) return env.STATO.get(env.STATO.idFromName("main")).fetch(request);
     if (url.pathname.startsWith("/interno/") && env.POSTA_FINTA === "1") return env.STATO.get(env.STATO.idFromName("main")).fetch(request);
     return env.ASSETS.fetch(request);
