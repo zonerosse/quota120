@@ -443,6 +443,13 @@ export class Stato extends DurableObject {
       await scriviMain(m.d, m.row.ver + 1);
       return J({ ok: true, info: m.d.ZONEINFO, ver: m.row.ver + 1 });
     }
+    if (p === "/api/zone/area") {   // le zone intorno a un punto (circa 50 km), da tenere sul telefono per lavorare senza rete
+      const lat = +url.searchParams.get("lat"), lon = +url.searchParams.get("lon");
+      if (!isFinite(lat) || !isFinite(lon)) return J({ errore: "Posizione non valida" }, 400);
+      if (!this.ZC) { const n = +(await st.get("zone:n")) || 0; if (!n) return J({ zone: [] }); let t = ""; for (let i = 0; i < n; i++) t += (await st.get("zone:" + i)) || ""; try { this.ZC = JSON.parse(t); } catch (e) { return J({ zone: [] }); } }
+      const dl = 0.45, dn = dl / Math.cos(lat * Math.PI / 180);
+      return J({ zone: this.ZC.filter(z => { const b = z.b; return !b || !(b[2] < lat - dl || b[0] > lat + dl || b[3] < lon - dn || b[1] > lon + dn); }).slice(0, 4000) });
+    }
     if (p === "/api/zone") {
       const lat = +url.searchParams.get("lat"), lon = +url.searchParams.get("lon");
       if (!isFinite(lat) || !isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) return J({ errore: "Posizione non valida" }, 400);
@@ -518,10 +525,11 @@ export class Stato extends DurableObject {
         const txt = await request.text();
         if (txt.length > 1800000) return J({ errore: "Troppi dati" }, 413);
         let b; try { b = JSON.parse(txt); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
-        if (b.ver !== row.ver) return J({ ver: row.ver, data: adm ? m.d : vista(m.d, me.n) }, 409);
+        // l'Admin riscrive tutto, quindi deve avere l'ultima versione; il pilota manda solo le sue cose (unisci), anche se ha lavorato senza rete
+        if (b.ver !== row.ver && adm) return J({ ver: row.ver, data: m.d }, 409);
         const nd = adm ? Object.assign({}, b.data || {}, { DOCS: m.d.DOCS || [], ZONEINFO: m.d.ZONEINFO || null }) : unisci(m.d, b.data || {}, me.n);
         await scriviMain(nd, row.ver + 1);
-        return J({ ver: row.ver + 1 });
+        return J({ ver: row.ver + 1, salto: b.ver !== row.ver });
       }
     }
 
