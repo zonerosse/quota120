@@ -3455,10 +3455,20 @@ function meteoLuogo(b){
     MPOS={lat:x.latitude,lon:x.longitude,nome:x.name+(x.admin2?' ('+x.admin2+')':'')}; return caricaMeteo();
   }).catch(()=>toast('Meteo non disponibile: controlla la rete')).finally(()=>{b&&(b.disabled=false,b.classList.remove('busy'));});
 }
+// con «Dove sono ora» il luogo si scrive da solo (via e paese, da OpenStreetMap)
+function luogoDaGps(pos){
+  const e=document.getElementById('h-luogo'); if(!e||e.value.trim()) return;
+  e.placeholder='Cerco l’indirizzo…';
+  fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=17&accept-language=it&lat='+pos.lat+'&lon='+pos.lon).then(r=>r.json()).then(j=>{
+    const a=j.address||{}, paese=a.village||a.town||a.city||a.hamlet||a.municipality||'', pr=(a['ISO3166-2-lvl6']||'').replace(/^IT-/,'');
+    const t=[a.road,paese+(pr?' ('+pr+')':'')].filter(Boolean).join(', ');
+    if(t&&!e.value.trim()&&MPOS===pos) e.value=t;
+  }).catch(()=>{}).finally(()=>{e.placeholder='Via, paese (es. via Marcavallo, Ostellato)';});
+}
 function meteoGps(b){
   if(!navigator.geolocation){toast('Questo telefono non dà la posizione');return;}
   b.disabled=true;b.classList.add('busy');
-  navigator.geolocation.getCurrentPosition(p=>{MPOS={lat:p.coords.latitude,lon:p.coords.longitude,nome:'La tua posizione'};caricaMeteo().finally(()=>{b.disabled=false;b.classList.remove('busy');});},
+  navigator.geolocation.getCurrentPosition(p=>{MPOS={lat:p.coords.latitude,lon:p.coords.longitude,nome:'La tua posizione'};luogoDaGps(MPOS);caricaMeteo().finally(()=>{b.disabled=false;b.classList.remove('busy');});},
     ()=>{b.disabled=false;b.classList.remove('busy');toast('Posizione non concessa: usa «Meteo del luogo»');},{timeout:10000});
 }
 function caricaMeteo(){
