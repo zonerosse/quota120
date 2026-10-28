@@ -362,7 +362,8 @@ export class Stato extends DurableObject {
     if (p === "/api/doc/file") {
       const did = url.searchParams.get("d") || "", info = await st.get("docinfo:" + did);
       if (!info) return J({ errore: "Documento non trovato" }, 404);
-      if (!adm) { const m = await leggiMain(), doc = m && (m.d.DOCS || []).find(x => x.id === did); if (!(info.da === me.n || (doc && docVisibile(m.d, doc, me.n)))) return J({ errore: "Non puoi vederlo" }, 403); }
+      if (!adm) { const m = await leggiMain(), doc = m && (m.d.DOCS || []).find(x => x.id === did); const suoVolo = m && (m.d.VOLI || []).some(v => v.docLog === did && (v.pilota === me.n || permDi(m.d, me.n).voliTutti));
+        if (!(info.da === me.n || suoVolo || (doc && docVisibile(m.d, doc, me.n)))) return J({ errore: "Non puoi vederlo" }, 403); }
       const parti = []; for (let i = 0; i < info.pezzi; i++) parti.push(await st.get("doc:" + did + ":" + i));
       return new Response(new Blob(parti, { type: info.mime }), { headers: { "content-type": info.mime, "cache-control": "private, no-store",
         "content-disposition": "inline; filename=\"" + info.nome.replace(/[^\w.\- ]/g, "_") + "\"" } });
