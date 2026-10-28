@@ -149,6 +149,7 @@ function vista(d, n) {
   if (P.agri) { v.CAMPI = d.CAMPI; v.TRATT = d.TRATT; if (!v.CLIENTI) v.CLIENTI = d.CLIENTI; }
   v.DOCS = (d.DOCS || []).filter(x => docVisibile(d, x, n));
   v.ZONEINFO = d.ZONEINFO || null;
+  if (d.CHECK) v.CHECK = d.CHECK;
   // segnalazioni: le sue per intero; degli altri solo i droni fermi
   v.SEGN = (d.SEGN || []).map(x => x.pilota === n ? x : (x.fermo ? { id: x.id, drone: x.drone, data: x.data, tipo: x.tipo, fermo: true } : null)).filter(Boolean);
   return v;
@@ -172,7 +173,7 @@ function unisci(full, m, n) {
     const pulito = { id: +id, data: DATA(v.data) || oggi(), ora: esc(v.ora, 5), drone: esc(v.drone, 80), pilota: n, luogo: esc(v.luogo, 120),
       min: Math.max(0, Math.min(600, +v.min || 0)), stato: ["completo", "dacompl", "attesa"].includes(v.stato) ? v.stato : "dacompl",
       ctrl: !!v.ctrl, ctrlOra: esc(v.ctrlOra, 5), cliente: esc(v.cliente, 200), note: esc(v.note, 2000), importato: !!v.importato, amano: !!v.amano,
-      cat: esc(v.cat, 60), inc: esc(v.inc, 60), codLav: esc(v.codLav, 20), meteo: esc(v.meteo, 160), zona: esc(v.zona, 200), docLog: (o && o.docLog) || esc(v.docLog, 40), logNome: esc(v.logNome, 120) };
+      cat: esc(v.cat, 60), inc: esc(v.inc, 60), codLav: esc(v.codLav, 20), meteo: esc(v.meteo, 160), zona: esc(v.zona, 200), ck: esc(v.ck, 400), docLog: (o && o.docLog) || esc(v.docLog, 40), logNome: esc(v.logNome, 120) };
     // i dati letti dal registro li scrive solo il server (/api/volo/importa): il telefono non li può cambiare
     if (o && o.letto) Object.assign(pulito, pulisciLetto(o), { drone: o.drone, data: o.data, ora: o.ora, min: o.min, pilota: o.pilota });
     if (o) Object.assign(o, pulito); else { d.VOLI = d.VOLI || []; d.VOLI.unshift(pulito); }
@@ -526,7 +527,7 @@ export class Stato extends DurableObject {
       const daFoto = !v.daFoto && d.VOLI.find(x => x.daFoto && x.pilota === v.pilota && x.drone === v.drone && x.data === v.data && Math.abs(minuti(x.ora) - minuti(v.ora)) <= 15);
       if (daFoto) att = daFoto;
       if (att) {
-        Object.assign(v, { id: att.id, ctrl: att.ctrl, ctrlOra: att.ctrlOra, cliente: v.cliente || att.cliente || "", codLav: att.codLav || "", meteo: att.meteo || "", zona: att.zona || "",
+        Object.assign(v, { id: att.id, ctrl: att.ctrl, ctrlOra: att.ctrlOra, cliente: v.cliente || att.cliente || "", codLav: att.codLav || "", meteo: att.meteo || "", zona: att.zona || "", ck: att.ck || "",
           luogo: v.luogo || att.luogo, note: [att.note, v.note].filter(Boolean).join(" · "), cat: att.cat || v.cat });
         if (daFoto) Object.assign(v, { cliente: att.cliente || v.cliente, luogo: att.luogo || v.luogo, batt: att.batt || v.batt, fotoDoc: att.docLog || "" });
         d.VOLI[d.VOLI.indexOf(att)] = v;
