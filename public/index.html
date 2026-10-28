@@ -621,6 +621,21 @@
   .mappa{height:340px;border-radius:8px;border:1px solid var(--bordo);z-index:0;margin-top:6px}
   .leg i{display:inline-block;width:18px;height:4px;vertical-align:middle;margin-right:6px}
   .fld .v .btn.mini{min-height:32px;padding:0 10px;font-size:14px;margin-left:6px}
+
+  /* foto del volo */
+  .passo{display:flex;gap:14px;padding:14px 0;border-top:1px solid #E3E8EB}
+  .passo:first-of-type{border-top:0}
+  .passo .num{width:34px;height:34px;border-radius:50%;background:var(--notte);color:#fff;font:700 18px "Barlow",Arial,sans-serif;display:flex;align-items:center;justify-content:center;flex:none}
+  .passo>div>b{display:block;font-size:18px;margin-bottom:2px}
+  .passo p{margin:0;font-size:16px;color:var(--ink2)}
+  .passo small{display:block;font-size:14px;color:var(--ink3);margin-top:4px}
+  .tasti{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+  .tasti span{border:1.5px solid var(--bordo2);border-radius:6px;padding:1px 8px;font-size:14px;font-weight:600;background:var(--sup2)}
+  .tasti em{font-style:normal;color:var(--ink3);align-self:center}
+  .fv-grid .fld input{width:100%;border:0;background:transparent;font:600 17px "Barlow",Arial,sans-serif;color:var(--ink);padding:2px 0;outline:none;min-height:0}
+  .fld.ko{border-color:#E8B4AF;background:#FBECEA}.fld.ko input{color:var(--ko)}
+  .avviso{border:1px solid var(--bordo);border-left:4px solid var(--warn);border-radius:8px;padding:10px 12px;font-size:15px;margin-top:12px;background:#fff}
+  .fill input[type=text]{min-height:48px}
 </style>
 </head>
 <body>
@@ -720,6 +735,7 @@
         I file si chiamano come DJIFlightRecord_2026-10-28_[10-12-04].txt: uno per ogni volo.</div></details>
       <div class="row">
         <button class="btn" onclick="sceglFile('log')"><span class="spin"></span>Carica registri DJI</button>
+        <button class="btn" onclick="apriFotoVolo()">Carica la foto del volo</button>
         <button class="btn sec" onclick="manuale()">Inserisci a mano</button>
       </div>
       <div class="prog" id="prog"><span class="spin"></span><span id="prog-t"></span></div>
@@ -738,6 +754,49 @@
     <div class="card" style="margin-top:12px">
       <h2>Ultimi voli</h2>
       <ul class="vlist" id="vlist"></ul>
+    </div>
+  </div>
+
+  <!-- ================= FOTO DEL RIEPILOGO DEL VOLO ================= -->
+  <div id="v-fotovolo" class="hidden">
+    <div id="fv-istr" class="card">
+      <h2>Carica la foto del volo</h2>
+      <div style="font-size:15px;color:var(--muted);margin-bottom:6px">Va bene con qualsiasi telefono e qualsiasi radiocomando. Ci vuole un minuto, dopo che sei atterrato.</div>
+      <div class="passo"><div class="num">1</div><div><b>Apri il riepilogo del volo</b>
+        <p>Nell'app DJI con cui hai volato apri i <b>registri di volo</b> e tocca il volo appena fatto.</p>
+        <div class="tasti"><span>Profilo</span><em>›</em><span>Registri di volo</span><em>›</em><span>il volo di oggi</span></div>
+        <small>In DJI Fly è così; nelle altre app DJI il nome può cambiare un po' (Archivio voli, Flight Records). Nella pagina devono vedersi <b>data e ora</b>, <b>durata</b>, <b>distanza</b> e <b>altezza massima</b>.</small></div></div>
+      <div class="passo"><div class="num">2</div><div><b>Fai la schermata</b>
+        <p>Sul telefono premi insieme:</p>
+        <div class="tasti"><span>tasto laterale</span><em>+</em><span>volume su</span><em>su iPhone</em></div>
+        <div class="tasti"><span>accensione</span><em>+</em><span>volume giù</span><em>su Android</em></div>
+        <small>Se il riepilogo è sullo schermo del radiocomando, fotografalo col telefono, dritto e senza riflessi.</small></div></div>
+      <div class="passo"><div class="num">3</div><div><b>Caricala qui</b>
+        <p>Tocca il tasto qui sotto e scegli la schermata dalle foto. Il programma la legge e compila il volo: tu controlli e confermi.</p></div></div>
+      <button class="btn" style="width:100%;margin-top:6px" onclick="scegliFotoVolo()">Scegli la foto del volo</button>
+      <div class="nota">Hai più voli oggi? Puoi scegliere più schermate insieme: li compila uno dopo l'altro.</div>
+      <ul class="passi hidden" id="fv-passi"></ul>
+    </div>
+    <div id="fv-letto" class="hidden">
+      <div class="sem" id="fv-sem"></div>
+      <div class="card" style="margin-top:14px">
+        <h2>Il volo</h2>
+        <div style="font-size:15px;color:var(--ink3);margin:-4px 0 12px">Con la spunta verde: letto dalla foto. Se un dato è sbagliato, toccalo e correggilo.</div>
+        <div class="fgrid fv-grid" id="fv-campi"></div>
+        <div class="fill" style="margin-top:12px">
+          <div><label for="fv-drone">Drone</label><select id="fv-drone"></select><div class="nota" id="fv-drone-n"></div></div>
+          <div><label for="fv-batt">Batteria usata</label><select id="fv-batt"></select></div>
+          <div><label for="fv-pil">Chi ha volato</label><select id="fv-pil"></select></div>
+        </div>
+        <div class="avviso">Dalla foto non si leggono il percorso sulla mappa e lo stato delle celle della batteria. Quando ti capita, carica anche il file del registro: il volo si completa da solo.</div>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <h2>Il lavoro</h2>
+        <div class="fill"><div><label for="fv-cod">Codice lavoro</label><input type="text" id="fv-cod" placeholder="es. L-2611"></div><div><label for="fv-luogo">Luogo</label><input type="text" id="fv-luogo" placeholder="Via, paese"></div></div>
+        <div class="nota" id="fv-lav-n"></div>
+        <div style="margin-top:10px"><label for="fv-note">Note</label><textarea id="fv-note" placeholder="Meteo, vento, osservazioni…"></textarea></div>
+        <div class="row"><button class="btn" style="width:100%" onclick="confermaFoto(this)"><span class="spin"></span>Conferma e salva il volo</button></div>
+      </div>
     </div>
   </div>
 
@@ -1501,7 +1560,9 @@ function apriVolo(id){
   const ok='<div class="mark ok">'+svg('check')+'</div>';
   let all='';
   if(v.letto&&(v.oltre120>0||v.quotaMax>120)) all+=`<div class="allegato" style="background:#fff;border-left:4px solid var(--ko)"><div class="mark ko">${svg('x')}</div><div class="f"><b>Superati i 120 metri</b><br>Quota massima ${v.quotaMax} m${v.oltre120?', per '+v.oltre120+' secondi':''}: da spiegare nelle note</div></div>`;
-  if(v.docLog) all+=`<div class="allegato">${ok}<div class="f"><b>Registro del drone allegato</b><br>${v.logNome||'File del registro'}${v.letto?' · dati letti dal file':''}</div><button class="btn sec mini vedi" onclick="apriFile('${v.docLog}')">Vedi</button></div>`;
+  if(v.daFoto) all+=`<div class="allegato" style="background:#fff;border-left:4px solid var(--warn)"><div class="mark warn">${svg('esc')}</div><div class="f"><b>Volo dalla foto del riepilogo</b><br>Manca il file del registro: con quello arrivano anche mappa e batteria</div><button class="btn sec mini" onclick="sceglFile('log')">Aggiungi il file</button></div>`;
+  if(v.daFoto&&v.docLog) all+=`<div class="allegato">${ok}<div class="f"><b>Foto del riepilogo allegata</b></div><button class="btn sec mini vedi" onclick="apriFile('${v.docLog}')">Vedi</button></div>`;
+  else if(v.docLog) all+=`<div class="allegato">${ok}<div class="f"><b>Registro del drone allegato</b><br>${v.logNome||'File del registro'}${v.letto?' · dati letti dal file':''}</div><button class="btn sec mini vedi" onclick="apriFile('${v.docLog}')">Vedi</button></div>`;
   else if(v.importato||v.stato==='completo') all+=`<div class="allegato">${ok}<div class="f"><b>Registro DJI allegato</b><br>Volo di esempio della prova</div></div>`;
   else if(v.stato==='attesa') all+=`<div class="row"><button class="btn" onclick="apriVoli()">Torna al registro e importa il file</button></div>`;
   if(v.ctrl) all+=`<div class="allegato">${ok}<div class="f"><b>Controllo prima del volo</b><br>Fatto alle ${v.ctrlOra||'09:58'}: tutto in regola</div></div>`;
@@ -1516,7 +1577,7 @@ function apriVolo(id){
     ['Quota massima',v.quotaMax+' m'+(v.oltre120?' · '+v.oltre120+' s sopra i 120 m':'')],['Distanza percorsa',String(v.km).replace('.',',')+' km'],
     ['Velocità massima',v.velMax+' km/h'],['Foto e video',v.foto+' foto'+(v.videoS?' · '+Math.max(1,Math.round(v.videoS/60))+' min di video':'')],
     ['Drone',v.drone],['Numero di serie',v.sn||'—'],['Batteria',(BATT.find(b=>b.id===v.batt)||{}).nome||'—'],['Carica',v.cIni?'da '+v.cIni+'% a '+v.cFin+'%':'—'],
-    ['Temperatura batteria','fino a '+v.tMax+' °C'],['Distanza massima dal decollo',v.distMax?v.distMax+' m':'—'],['Meteo al controllo',v.meteo||'—'],['Celle',v.celle&&v.celle.length?v.celle.length+' · scostamento '+String(v.dev).replace('.',',')+' V':'—']
+    ['Temperatura batteria',v.tMax?'fino a '+v.tMax+' °C':'—'],['Distanza massima dal decollo',v.distMax?v.distMax+' m':'—'],['Meteo al controllo',v.meteo||'—'],['Celle',v.celle&&v.celle.length?v.celle.length+' · scostamento '+String(v.dev).replace('.',',')+' V':'—']
   ] : (!v.amano && (v.importato||v.stato==='completo')) ? [
     ['Data',v.data],['Decollo',v.ora],['Atterraggio',fine(v.ora,v.min)],
     ['Durata',v.min+' min'],['Luogo',v.luogo],['Coordinate','44.746 N · 11.940 E'],
@@ -1524,7 +1585,7 @@ function apriVolo(id){
     ['Carica','da 100% a 31%'],['Altezza massima','87 m'],['Distanza massima','412 m'],
     ['Percorso totale','3,2 km'],['Velocità massima','12 m/s'],['Foto e video','124 foto · 2 video']
   ] : null;
-  document.getElementById('vo-dati-t').textContent = v.amano?'Dati del volo':'Dati letti dal registro';
+  document.getElementById('vo-dati-t').textContent = v.amano?'Dati del volo':v.daFoto?'Dati letti dalla foto del volo':'Dati letti dal registro';
   document.getElementById('vo-dati').innerHTML = dati
     ? dati.map(d=>`<div class="fld"><div class="k">${chk}${d[0]}</div><div class="v">${d[1]}</div></div>`).join('')
     : (v.amano ? campiAMano(v) : `<div style="grid-column:1/-1;font-size:13px;color:var(--muted)">Nessun registro ancora: importa il file del drone dal registro voli.</div>`);
@@ -3300,6 +3361,96 @@ function cambiaVento(id){
   const d=DRONI.find(x=>x.id===id);
   modulo('Vento massimo per '+d.nome,[{k:'v',l:'Vento massimo in km/h (dal manuale del drone)',t:'num',v:VENTO_BASE(d),req:1}],
     {check:v=>v.v>5&&v.v<150?'':'Scrivi un numero tra 5 e 150',salva:v=>{d.ventoMax=Math.round(v.v);apriDrone(id,'droni');toast('Limite di vento salvato');}});
+}
+
+/* ---------- foto (schermata) del riepilogo del volo: Claude la legge ---------- */
+let FCODA=[], FLETTO=null, FIMP={fatti:0,saltati:0,errori:0};
+function apriFotoVolo(){
+  document.getElementById('fv-istr').classList.remove('hidden'); document.getElementById('fv-letto').classList.add('hidden');
+  document.getElementById('fv-passi').classList.add('hidden');
+  vai('fotovolo','Persone e attività &rsaquo; Registro voli &rsaquo; Foto del volo'); document.getElementById('back').onclick=()=>apriVoli();
+}
+function scegliFotoVolo(){
+  const i=document.createElement('input'); i.type='file'; i.accept='image/*'; i.multiple=true;
+  i.onchange=()=>{FCODA=[...i.files]; FIMP={fatti:0,saltati:0,errori:0}; prossimaFoto();}; i.click();
+}
+function prossimaFoto(){
+  const f=FCODA.shift();
+  if(!f){ const t=[FIMP.fatti?pl(FIMP.fatti,'volo salvato','voli salvati'):'',FIMP.saltati?pl(FIMP.saltati,'già presente','già presenti'):'',FIMP.errori?pl(FIMP.errori,'non letto','non letti'):''].filter(Boolean).join(' · ');
+    apriVoli(); if(t) toast(t); return; }
+  apriFotoVolo(); document.getElementById('back').onclick=()=>{FCODA=[];apriVoli();};
+  const P=document.getElementById('fv-passi'); P.classList.remove('hidden');
+  const T=['Foto ricevuta','Claude legge la schermata (qualche secondo)','Drone e lavoro collegati'];
+  const passo=i=>{P.innerHTML=T.map((t,j)=>`<li class="${j<i?'fatto':j===i?'ora':''}"><span class="m">${j<i?svg('check'):''}</span>${t}</li>`).join('')+(FCODA.length?`<li>Dopo questa: ${pl(FCODA.length,'altra foto','altre foto')}</li>`:'');};
+  passo(0);
+  let docId='';
+  rimpicciolisci(f).then(x=>fetch('/api/doc',{method:'POST',headers:{'content-type':x.mime,'x-disp':ME.id+':'+ME.k,'x-nome':encodeURIComponent(f.name||'foto-volo.jpg')},body:x.blob}).then(r=>r.json()))
+  .then(j=>{ if(j.errore) throw new Error(j.errore); docId=j.id; passo(1); return api('POST','/api/volo/leggifoto',{id:docId}); })
+  .then(j=>{
+    if(j.errore) throw new Error(j.errore==='chiave'?'La lettura automatica non è attiva su questo server':j.errore);
+    const L=j.letto||{};
+    if(L.ok===false) throw new Error(L.motivo||'Nella foto non trovo il riepilogo di un volo');
+    passo(2); FLETTO=Object.assign({docId},L); setTimeout(mostraFotoLetta,250);
+  }).catch(e=>{
+    FIMP.errori++;
+    P.innerHTML=`<li class="err" style="display:block"><b>Non riesco a leggere questa foto.</b><br>${ESC(e.message||'Errore')}. Rifai la schermata in modo che si vedano data, durata e altezza massima, oppure inserisci il volo a mano.</li>`+
+      `<li style="display:flex;gap:8px;flex-wrap:wrap;padding-top:10px"><button class="btn sec" onclick="FCODA=[];manuale()">Inserisci a mano</button><button class="btn" onclick="prossimaFoto()">${FCODA.length?'Passa alla foto dopo':'Torna al registro voli'}</button></li>`;
+  });
+}
+function mostraFotoLetta(){
+  const x=FLETTO, ck=svg('check'), q=v=>String(v==null?'':v).replace(/"/g,'&quot;');
+  const dur=x.durataSec?Math.floor(x.durataSec/60)+' min '+String(Math.round(x.durataSec%60)).padStart(2,'0')+' s':'';
+  const campo=(id,k,v,ok)=>`<div class="fld ${id==='fv-q'&&+x.quotaMaxM>120?'ko':''}" id="${id}-w"><div class="k">${v!==''&&v!=null?ck:''}${k}</div><input id="${id}" value="${q(v)}" ${id==='fv-q'?'oninput="quotaFoto()"':''}></div>`;
+  document.getElementById('fv-campi').innerHTML=[campo('fv-data','Data',x.data||oggi()),campo('fv-ora','Decollo',x.ora||''),campo('fv-dur','Durata',dur),
+    campo('fv-km','Distanza (km)',x.distanzaKm!=null?String(x.distanzaKm).replace('.',','):''),campo('fv-q','Altezza massima (m)',x.quotaMaxM!=null?Math.round(x.quotaMaxM):''),
+    campo('fv-dm','Distanza massima (m)',x.distMaxM!=null?Math.round(x.distMaxM):'')].join('');
+  // drone: quello riconosciuto, tra quelli del pilota
+  const miei=ADM?DRONI:droniMiei(), n=s=>String(s||'').toLowerCase().replace(/^dji\s*/,'').replace(/\s/g,'');
+  const d=miei.find(z=>z.nome===x.droneOperatore)||miei.find(z=>x.droneFoto&&(n(z.nome).includes(n(x.droneFoto))||n(x.droneFoto).includes(n(z.nome))));
+  const sd=document.getElementById('fv-drone');
+  sd.innerHTML=(d?'':'<option value="">Scegli il drone…</option>')+miei.map(z=>`<option value="${z.id}" ${d&&d.id===z.id?'selected':''}>${ESC(z.nome)}</option>`).join('');
+  document.getElementById('fv-drone-n').textContent=d?(x.droneFoto?'Nella foto c’è scritto «'+x.droneFoto+'»: l’ho riconosciuto.':''):(x.droneFoto?'Nella foto c’è «'+x.droneFoto+'»: scegli tu quale dei tuoi droni è.':'Il drone non si legge dalla foto: sceglilo tu.');
+  sd.onchange=battFoto; battFoto();
+  const sp=document.getElementById('fv-pil'); sp.parentNode.style.display=ADM?'':'none';
+  sp.innerHTML='<option value="">Scegli chi ha volato…</option>'+PILOTI.map(p=>`<option ${!ADM&&p.nome===IO.n?'selected':''}>${ESC(p.nome)}</option>`).join('');
+  // lavoro: dal controllo prima del volo di quel giorno, se c'è
+  const att=VOLI.find(v=>v.stato==='attesa'&&!v.letto&&(ADM||v.pilota===IO.n)&&v.data===(x.data||oggi())&&(!d||v.drone===d.nome));
+  document.getElementById('fv-luogo').value=att&&att.luogo&&att.luogo!=='—'?att.luogo:(x.luogo||'');
+  document.getElementById('fv-cod').value=att?att.codLav||'':'';
+  document.getElementById('fv-lav-n').textContent=att?'Presi dal controllo prima del volo delle '+att.ora+'.':'Non trovo un controllo prima del volo per questo volo: scrivi tu il luogo.';
+  quotaFoto();
+  document.getElementById('fv-istr').classList.add('hidden'); document.getElementById('fv-letto').classList.remove('hidden');
+  document.getElementById('crumb').innerHTML='Home &rsaquo; Registro voli &rsaquo; <b>Volo letto dalla foto</b>'; scrollTo(0,0);
+}
+function battFoto(){
+  const id=+document.getElementById('fv-drone').value, mie=BATT.filter(b=>b.drone===id).sort((a,b)=>(dt(a.ultimo)||0)-(dt(b.ultimo)||0));
+  document.getElementById('fv-batt').innerHTML=mie.length?mie.map((b,i)=>`<option value="${b.id}" ${i===0?'selected':''}>${ESC(b.nome)} · ${b.cicli} cicli</option>`).join(''):'<option value="">Nessuna batteria inserita</option>';
+}
+function quotaFoto(){
+  const v=parseInt(document.getElementById('fv-q').value)||0, s=document.getElementById('fv-sem');
+  document.getElementById('fv-q-w').classList.toggle('ko',v>120);
+  s.className='sem'; s.innerHTML=`<div class="light ${v>120?'ko':'ok'}"></div><div><div class="t">${v>120?'Superati i 120 metri':'Volo letto dalla foto'}</div><div class="s">${v>120?'Altezza massima '+v+' m: spiegalo nelle note del volo':'Controlla i dati: se uno è sbagliato, toccalo e correggilo'}</div></div>`;
+}
+function confermaFoto(b){
+  const g=id=>document.getElementById(id).value.trim(), d=DRONI.find(z=>z.id===+g('fv-drone')), pil=ADM?g('fv-pil'):IO.n;
+  const data=g('fv-data'), ora=g('fv-ora'), m=/(\d+)\s*min(?:\D+(\d+))?/.exec(g('fv-dur'))||/^(\d+)$/.exec(g('fv-dur'));
+  if(!d){toast('Scegli il drone');return;}
+  if(!pil){toast('Scegli chi ha volato');return;}
+  if(!dt(data)){toast('Scrivi la data come gg/mm/aaaa');return;}
+  if(!/^\d{2}:\d{2}$/.test(ora)){toast('Scrivi l’ora di decollo come hh:mm');return;}
+  if(!m){toast('Scrivi la durata, per esempio 24 min');return;}
+  const sec=(+m[1])*60+(+(m[2]||0)), num=id=>{const v=parseFloat(g(id).replace(',','.'));return isNaN(v)?0:v;};
+  const volo={data,ora,sec,min:Math.max(1,Math.round(sec/60)),drone:d.nome,pilota:pil,luogo:g('fv-luogo'),codLav:g('fv-cod'),note:g('fv-note'),
+    cat:d.cat==='specific'?'Specific con autorizzazione':d.classe==='C2'?'Open A2':'Open A1',logNome:'Foto del riepilogo',
+    km:num('fv-km'),quotaMax:Math.round(num('fv-q')),distMax:Math.round(num('fv-dm')),oltre120:0,batt:g('fv-batt'),daFoto:true};
+  b.disabled=true;b.classList.add('busy');
+  const via=()=>api('POST','/api/volo/importa',{volo,docLog:FLETTO.docId}).then(j=>{
+    b.disabled=false;b.classList.remove('busy');
+    if(j.errore==='doppio'){FIMP.saltati++;toast('Questo volo era già stato caricato');prossimaFoto();return;}
+    if(j.errore){toast(j.errore);return;}
+    FIMP.fatti++; return ricarica().then(()=>{toast('Volo salvato: ore e cicli aggiornati');prossimaFoto();});
+  }).catch(()=>{b.disabled=false;b.classList.remove('busy');toast('Niente rete: riprova');});
+  if(JSON.stringify(stato())!==LASTJ){controllaModifiche();setTimeout(via,1200);} else via();
 }
 
 avvio();

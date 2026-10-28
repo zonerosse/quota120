@@ -56,7 +56,7 @@ function pulisciLetto(v) {
     sn: esc(v.sn, 60), logKey: esc(v.logKey, 120), fine: esc(v.fine, 5), sec: NUM(v.sec, 0, 86400),
     prof: Array.isArray(v.prof) ? v.prof.slice(0, 160).map(x => Math.round(NUM(x, -999, 9999))) : [],
     trk: Array.isArray(v.trk) ? v.trk.slice(0, 420).filter(p => Array.isArray(p) && p.length >= 2).map(p => [NUM(p[0], -90, 90), NUM(p[1], -180, 180), Math.round(NUM(p[2], -999, 9999))]) : [],
-    distMax: NUM(v.distMax, 0, 999999), haTrk: !!v.haTrk };
+    distMax: NUM(v.distMax, 0, 999999), haTrk: !!v.haTrk, daFoto: !!v.daFoto, fotoDoc: esc(v.fotoDoc, 40) };
 }
 
 // ---- permessi ----
@@ -165,6 +165,22 @@ async function leggiConClaude(env, b64, mime, d) {
   const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST",
     headers: { "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
     body: JSON.stringify({ model: MODELLO, max_tokens: 4000, system: sistema, messages: [{ role: "user", content: [blocco, { type: "text", text: "Leggi questo documento." }] }] }) });
+  if (!r.ok) throw new Error("Lettura non riuscita (" + r.status + ")");
+  const j = await r.json(), txt = (j.content || []).map(c => c.text || "").join("");
+  return JSON.parse(txt.slice(txt.indexOf("{"), txt.lastIndexOf("}") + 1));
+}
+// ---- lettura della schermata del riepilogo di un volo (app DJI) ----
+async function leggiFotoVolo(env, b64s, mime, droni) {
+  const sistema = "Ti arriva la schermata (o la foto) del riepilogo di UN volo da un'app DJI (DJI Fly, DJI Pilot 2, app Agras) o da un radiocomando DJI. " +
+    "Leggi solo quello che c'è scritto, senza inventare. Converti le unità: piedi in metri, miglia in km, mph in km/h. " +
+    "Droni dell'operatore: " + (droni || "nessuno") + ". Se il nome del drone nella foto corrisponde a uno di questi, mettilo in droneOperatore con il nome esatto della lista. " +
+    "Rispondi SOLO con un oggetto JSON: {\"ok\":true|false,\"motivo\":\"se ok è false: cosa manca o perché non è un riepilogo di volo\"," +
+    "\"data\":\"GG/MM/AAAA\",\"ora\":\"HH:MM (decollo)\",\"durataSec\":numero,\"distanzaKm\":numero,\"quotaMaxM\":numero,\"distMaxM\":numero," +
+    "\"velMaxKmh\":numero,\"droneFoto\":\"nome del drone come scritto\",\"droneOperatore\":\"nome dalla lista o vuoto\",\"luogo\":\"se scritto\"} " +
+    "Metti null per i valori che non si leggono.";
+  const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST",
+    headers: { "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+    body: JSON.stringify({ model: MODELLO, max_tokens: 1200, system: sistema, messages: [{ role: "user", content: [{ type: "image", source: { type: "base64", media_type: mime, data: b64s } }, { type: "text", text: "Leggi il riepilogo di questo volo." }] }] }) });
   if (!r.ok) throw new Error("Lettura non riuscita (" + r.status + ")");
   const j = await r.json(), txt = (j.content || []).map(c => c.text || "").join("");
   return JSON.parse(txt.slice(txt.indexOf("{"), txt.lastIndexOf("}") + 1));
@@ -288,6 +304,18 @@ export class Stato extends DurableObject {
         return J({ data: j.data });
       } catch (e) { return J({ errore: "DJI non risponde: riprova tra poco" }, 502); }
     }
+    if (p === "/api/volo/leggifoto" && request.method === "POST") {
+      let b; try { b = await request.json(); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
+      const info = await st.get("docinfo:" + b.id); if (!info) return J({ errore: "Foto non trovata" }, 404);
+      if (!adm && info.da !== me.n) return J({ errore: "Non è tua" }, 403);
+      if (!this.env.ANTHROPIC_API_KEY) return J({ errore: "chiave" }, 503);
+      if (!/^image\/(jpeg|png|webp)$/.test(info.mime)) return J({ errore: "Serve una foto JPEG o PNG" }, 415);
+      const parti = []; for (let i = 0; i < info.pezzi; i++) parti.push(new Uint8Array(await st.get("doc:" + b.id + ":" + i)));
+      const tutto = new Uint8Array(info.size); let o = 0; for (const x of parti) { tutto.set(x, o); o += x.length; }
+      const m = await leggiMain(), droni = ((m && m.d.DRONI) || []).map(x => x.nome).join("; ");
+      try { return J({ letto: await leggiFotoVolo(this.env, b64(tutto.buffer), info.mime, droni) }); }
+      catch (e) { return J({ errore: String(e.message || e) }, 502); }
+    }
     if (p === "/api/volo/importa" && request.method === "POST") {
       let b; try { b = await request.json(); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
       const m = await leggiMain(); if (!m) return J({ errore: "Nessun dato" }, 409);
@@ -297,24 +325,31 @@ export class Stato extends DurableObject {
       if (!(d.DRONI || []).some(x => x.nome === v0.drone)) return J({ errore: "Scegli il drone" }, 400);
       const L = pulisciLetto(Object.assign({}, v0, { letto: true }));
       if (L.batt && !(d.BATT || []).some(x => x.id === L.batt)) L.batt = "";
+      if (v0.codLav && !v0.cliente) { const lw = (d.LAVORI || []).find(x => norm(x.codice).replace(/\s/g, "") === norm(v0.codLav).replace(/\s/g, "")); if (lw) { v0.cliente = lw.cliente + ": " + String(lw.titolo || "").toLowerCase(); if (!v0.luogo) v0.luogo = lw.luogo; } }
+      if (L.daFoto) L.logKey = "foto|" + esc(v0.drone, 80) + "|" + (DATA(v0.data) || "") + "|" + esc(v0.ora, 5);
       if (L.logKey && (d.VOLI || []).some(x => x.logKey === L.logKey)) return J({ errore: "doppio" }, 409);
       if (b.docLog) { const info = await st.get("docinfo:" + b.docLog); if (!info || (!adm && info.da !== me.n)) b.docLog = ""; }
       const v = Object.assign({ id: Date.now() * 10 + Math.floor(Math.random() * 10), data: DATA(v0.data) || oggi(), ora: /^\d{2}:\d{2}$/.test(v0.ora || "") ? v0.ora : "00:00",
         drone: v0.drone, pilota, luogo: esc(v0.luogo, 120), min: NUM(v0.min, 0, 600), stato: "completo", ctrl: !!v0.ctrl, ctrlOra: esc(v0.ctrlOra, 5),
-        cliente: esc(v0.cliente, 200), note: esc(v0.note, 2000), importato: true, amano: false, cat: esc(v0.cat, 60), inc: "Nessuno",
+        cliente: esc(v0.cliente, 200), codLav: esc(v0.codLav, 20), note: esc(v0.note, 2000), importato: true, amano: false, cat: esc(v0.cat, 60), inc: "Nessuno",
         docLog: esc(b.docLog, 40), logNome: esc(v0.logNome, 120) }, L);
       // il percorso GPS sta a parte (pesa troppo per stare nei dati di tutti)
       const trk = v.trk; delete v.trk; v.haTrk = trk.length > 1;
       d.VOLI = d.VOLI || [];
       // se c'è il volo aperto dal controllo prima del volo (stesso pilota, drone e giorno), il registro lo completa
-      const att = d.VOLI.find(x => x.stato === "attesa" && !x.letto && x.pilota === v.pilota && x.drone === v.drone && x.data === v.data);
+      const minuti = h => { const t = /^(\d{2}):(\d{2})$/.exec(h || ""); return t ? +t[1] * 60 + +t[2] : -999; };
+      let att = d.VOLI.find(x => x.stato === "attesa" && !x.letto && x.pilota === v.pilota && x.drone === v.drone && x.data === v.data);
+      // il file DJI di un volo già caricato con la foto: lo completa, senza contare due volte ore e cicli
+      const daFoto = !v.daFoto && d.VOLI.find(x => x.daFoto && x.pilota === v.pilota && x.drone === v.drone && x.data === v.data && Math.abs(minuti(x.ora) - minuti(v.ora)) <= 15);
+      if (daFoto) att = daFoto;
       if (att) {
         Object.assign(v, { id: att.id, ctrl: att.ctrl, ctrlOra: att.ctrlOra, cliente: v.cliente || att.cliente || "", codLav: att.codLav || "", meteo: att.meteo || "",
           luogo: v.luogo || att.luogo, note: [att.note, v.note].filter(Boolean).join(" · "), cat: att.cat || v.cat });
+        if (daFoto) Object.assign(v, { cliente: att.cliente || v.cliente, luogo: att.luogo || v.luogo, batt: att.batt || v.batt, fotoDoc: att.docLog || "" });
         d.VOLI[d.VOLI.indexOf(att)] = v;
       } else d.VOLI.unshift(v);
       if (v.haTrk) await st.put("trk:" + v.id, trk);
-      applicaVolo(d, v);
+      if (!daFoto) applicaVolo(d, v);
       await scriviMain(d, m.row.ver + 1);
       return J({ ok: true, id: v.id, ver: m.row.ver + 1 });
     }
