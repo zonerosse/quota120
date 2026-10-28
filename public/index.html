@@ -588,6 +588,18 @@
   .agg p{margin:0;flex:1;min-width:0} .agg p small{display:block;color:var(--ink3);font-size:14px}
   .agg .da{font:600 17px "Barlow Semi Condensed",Arial,sans-serif;white-space:nowrap}
   .agg .da s{color:var(--ink3);font-weight:500;margin-right:6px}
+
+  /* lavoro di oggi: data, codice lavoro o luogo */
+  .hlav{margin-top:12px}
+  .hlav label{display:block;margin-bottom:5px}
+  .hlav input,.fl-oggi input{width:100%;min-height:50px;font:500 17px "Barlow",Arial,sans-serif;border:1.5px solid var(--bordo2);border-radius:8px;padding:10px 12px;background:#fff;color:var(--ink)}
+  .trovato{margin-top:10px;border:1px solid #B9DCC8;background:var(--ok-bg);border-radius:8px;padding:10px 12px;font-size:16px;display:flex;gap:10px;align-items:flex-start}
+  .trovato.no{border:1px solid var(--bordo);background:#fff;border-left:4px solid var(--warn);display:block}
+  .trovato .mark{margin:0}
+  .cab-pf .hlav label{color:#8FA6B4}
+  .cab-pf input{background:#0D1820!important;color:#E6EEF2!important;border-color:#3A5568!important;color-scheme:dark}
+  .cab-pf .trovato{color:var(--ink)}
+  .fl-oggi{margin-bottom:14px}
 </style>
 </head>
 <body>
@@ -1279,8 +1291,11 @@ function disegnaHome(){
   { const n=TRATT.filter(t=>t.stato!=='ok').length; TILES.regole[3].c=n?pl(n,'da completare','da completare'):'quaderno in regola'; TILES.regole[3].d=n?'warn':''; }
   TILES.attivita[3].c=PREV.filter(p=>p.stato==='bozza').length+' da inviare';
   const todo=calcolaTodo();
+  const tieni=['h-data','h-cod','h-luogo'].map(i=>(document.getElementById(i)||{}).value), trov=LAVTROVATO;
   document.getElementById('h-asp').innerHTML=ASP==='A'?homeA(todo):ASP==='C'?homeC(todo):homeB(todo);
   riempiSelect(vd,vp);
+  ['h-data','h-cod','h-luogo'].forEach((i,k)=>{const e=document.getElementById(i); if(e&&tieni[k]) e.value=tieni[k];});
+  if(tieni[1]) cercaCodice(); LAVTROVATO=trov;
 }
 
 /* ---------- navigazione ---------- */
@@ -1314,11 +1329,38 @@ function apriPagina(nome, gruppo){
 /* ---------- controllo prima del volo ---------- */
 let zoneOk=false, checklistOk=false, dSel, pSel;
 
+let CTRLINFO={data:'',luogo:'',cliente:'',codice:''};
 function avviaControllo(b){
   const d=DRONI.find(x=>x.id==document.getElementById('h-drone').value);
   const p=PILOTI.find(x=>x.id==document.getElementById('h-pilota').value);
   if(!d||!p){ toast(!d?'Scegli prima il drone':'Scegli prima il pilota'); return; }
-  lavora(b,()=>{ dSel=d; pSel=p; zoneOk=false; checklistOk=false; disegnaControllo(); vai('controllo','Controllo prima del volo'); });
+  const g=id=>(document.getElementById(id)||{}).value||'';
+  const iso=g('h-data'), data=iso?iso.split('-').reverse().join('/'):oggi(), lv=LAVTROVATO, luogo=g('h-luogo').trim();
+  if(!lv&&!luogo){ toast('Scrivi il luogo, oppure il codice lavoro'); const e=document.getElementById(g('h-cod').trim()?'h-cod':'h-luogo'); if(e) e.focus(); return; }
+  lavora(b,()=>{ dSel=d; pSel=p; zoneOk=false; checklistOk=false;
+    CTRLINFO={data, luogo:lv?lv.luogo:luogo, cliente:lv?lv.cliente+': '+String(lv.titolo||'').toLowerCase():'', codice:lv?lv.codice:''};
+    disegnaControllo(); vai('controllo','Controllo prima del volo'); });
+}
+/* codice lavoro: il pilota lo scrive, il server dice di che lavoro si tratta */
+let LAVTROVATO=null, T_COD=0;
+function campiLavoro(){
+  const o=new Date(), iso=o.getFullYear()+'-'+String(o.getMonth()+1).padStart(2,'0')+'-'+String(o.getDate()).padStart(2,'0');
+  return `<div class="hsel hlav"><div><label for="h-data">Data</label><input type="date" id="h-data" value="${iso}"></div>
+      <div><label for="h-cod">Codice lavoro (se te l’ha dato l’azienda)</label><input type="text" id="h-cod" placeholder="es. L-2611" autocapitalize="characters" autocomplete="off" oninput="cercaCodice()"></div></div>
+    <div id="h-trov" class="trovato hidden"></div>
+    <div id="h-luogo-w" class="hlav"><label for="h-luogo">Luogo</label><input type="text" id="h-luogo" placeholder="Via, paese (es. via Marcavallo, Ostellato)"></div>`;
+}
+function cercaCodice(){
+  const c=document.getElementById('h-cod').value.trim(), t=document.getElementById('h-trov'), w=document.getElementById('h-luogo-w');
+  LAVTROVATO=null; clearTimeout(T_COD);
+  if(!c){t.classList.add('hidden');w.classList.remove('hidden');return;}
+  t.className='trovato no'; t.innerHTML='<span class="spin" style="display:inline-block;border-color:rgba(29,92,124,.25);border-top-color:var(--accent)"></span> Cerco il lavoro…';
+  T_COD=setTimeout(()=>api('GET','/api/lavoro?c='+encodeURIComponent(c)).then(j=>{
+    if(document.getElementById('h-cod').value.trim()!==c) return;
+    if(j.lavoro){ LAVTROVATO=j.lavoro; t.className='trovato'; w.classList.add('hidden');
+      t.innerHTML=`<div class="mark ok">${svg('check')}</div><div><b>${ESC(j.lavoro.cliente)}</b> · ${ESC(j.lavoro.titolo)}<br><span style="color:var(--ink3);font-size:15px">${ESC(j.lavoro.luogo||'')}</span></div>`; }
+    else { t.className='trovato no'; w.classList.remove('hidden'); t.textContent='Codice non trovato: controlla, oppure lascialo vuoto e scrivi il luogo.'; }
+  }).catch(()=>{t.className='trovato no';t.textContent='Niente rete: riprova';}),450);
 }
 
 function lavora(b,fn){ b.disabled=true; b.classList.add('busy'); setTimeout(()=>{b.disabled=false;b.classList.remove('busy');fn();},700); }
@@ -1369,8 +1411,8 @@ function disegnaControllo(){
 function salvaVolo(b){
   lavora(b,()=>{
     controlloSalvato={ora:ora(), drone:dSel.nome, pilota:pSel.nome, pid:pSel.id};
-    VOLI.unshift({id:nuovoId(), data:oggi(), ora:controlloSalvato.ora, drone:dSel.nome, pilota:pSel.nome,
-      luogo:'—', min:0, stato:'attesa', ctrl:true, ctrlOra:controlloSalvato.ora});
+    VOLI.unshift({id:nuovoId(), data:CTRLINFO.data||oggi(), ora:controlloSalvato.ora, drone:dSel.nome, pilota:pSel.nome,
+      luogo:CTRLINFO.luogo||'—', cliente:CTRLINFO.cliente||'', codLav:CTRLINFO.codice||'', min:0, stato:'attesa', ctrl:true, ctrlOra:controlloSalvato.ora});
     apriVoli();
   });
 }
@@ -1553,7 +1595,8 @@ function apriDrone(id, da, apriBatt){
 
   const chk='<svg viewBox="0 0 24 24">'+IC.check+'</svg>';
   const dati=[['Marca e modello',d.nome],['Classe',s.classe],['Categoria di volo',s.cat],['Matricola',MATR[d.nome]],
-    ['Peso',s.peso],['Codice D-Flight','ITA-xxxx · QR applicato'],['Remote ID',s.rid],['Acquistato il',s.acq],['Ore di volo',s.ore+' · '+s.voli+' voli']];
+    ['Peso',s.peso],['Codice D-Flight','ITA-xxxx · QR applicato'],['Remote ID',s.rid],['Acquistato il',s.acq],['Ore di volo',s.ore+' · '+s.voli+' voli'],
+    ['Affidato a',(PILOTI.filter(p=>inDotazione(p).includes(d)).map(p=>p.nome).join(', '))||'nessun pilota']];
   document.getElementById('dr-dati').innerHTML=dati.map(x=>`<div class="fld"><div class="k">${chk}${x[0]}</div><div class="v">${x[1]}</div></div>`).join('');
 
   // documenti: se c'è già, si vede con la spunta verde e il tasto Vedi
@@ -1778,7 +1821,7 @@ function apriLavori(){
   document.getElementById('lv-cl').textContent=CLIENTI.length;
   const riga=l=>{const s=LST[l.stato], prob=problemiLavoro(l).length;
     return `<li onclick="apriLavoro(${l.id})"><div class="ico" style="background:var(--f-attivita)">${svg('clienti')}</div>
-    <div class="main"><div class="a">${l.cliente}</div><div class="b">${l.titolo} · ${l.data}${prob?' · <b style="color:var(--ko)">'+pl(prob,'problema','problemi')+'</b>':''}</div></div>
+    <div class="main"><div class="a">${l.cliente}${l.codice?' <span class="privtag">'+l.codice+'</span>':''}</div><div class="b">${l.titolo} · ${l.data}${prob?' · <b style="color:var(--ko)">'+pl(prob,'problema','problemi')+'</b>':''}</div></div>
     <span class="tag ${prob&&l.stato!=='concluso'?'ko':s[0]}">${s[1]}</span></li>`;};
   const grp=(t,arr)=>arr.length?`<li class="gruppo" style="cursor:default;border-top:0">${t}</li>`+arr.map(riga).join(''):'';
   document.getElementById('lv-list').innerHTML=grp('In corso',LAVORI.filter(l=>l.stato==='incorso'))+grp('Da fare',LAVORI.filter(l=>l.stato==='dafare'))+grp('Conclusi',LAVORI.filter(l=>l.stato==='concluso'));
@@ -1798,7 +1841,7 @@ function problemiLavoro(l){
 function apriLavoro(id){
   const l=LAVORI.find(x=>x.id===id), prob=problemiLavoro(l), s=LST[l.stato];
   document.getElementById('lw-light').className='light '+(prob.length?'ko':s[0]);
-  document.getElementById('lw-t').textContent=l.cliente+': '+l.titolo.toLowerCase();
+  document.getElementById('lw-t').textContent=l.cliente+': '+l.titolo.toLowerCase()+(l.codice?' · codice '+l.codice:'');
   document.getElementById('lw-s').textContent= prob.length ? 'Così non si può volare: '+prob.join(' · ') : s[1]+' · '+l.data+(l.stato==='concluso'?'':' · drone e pilota in regola');
   document.getElementById('lw-azioni').innerHTML = l.stato==='concluso' ? '' :
     `<button class="btn" onclick="controlloDaLavoro(${l.id},this)"><span class="spin"></span>Fai il controllo prima del volo</button>`+
@@ -2127,6 +2170,9 @@ let MIGRATO=false;
 function ricalcola(){
   for(const id of Object.keys(PERM)){ if(PERM[id]&&PERM[id].admin){ MIGRATO=true; PERM[id]={voliTutti:true,flotta:true,documenti:false,clienti:true,prezzi:false,enac:true,agri:false};
     if(SCHEDEP[id]&&/admin/i.test(SCHEDEP[id].ruolo||'')) SCHEDEP[id].ruolo='Pilota'; } }
+  // ogni lavoro ha un codice da dare al pilota (L-2611, L-2612, ...)
+  if(ADM){ let n=Math.max(2610,...LAVORI.map(l=>+((/^L-(\d+)$/.exec(l.codice||'')||[])[1]||0)));
+    for(const l of LAVORI) if(!l.codice){ l.codice='L-'+(++n); MIGRATO=true; } }
   // dati di esempio salvati prima delle matricole: si danno quelle di prova
   const MATR_PROVA={'Mario Rossi':'0412','Luca Bianchi':'0587','Giulia Verdi':'0633'};
   if(/dati di esempio/.test(OP.nome||'')) for(const p of PILOTI) if(!p.matr&&MATR_PROVA[p.nome]){p.matr=MATR_PROVA[p.nome];MIGRATO=true;}
@@ -2353,7 +2399,7 @@ function modulo(tit,campi,fn,testoBtn){
 }
 function nuovoPilota(){
   const f=v=>{const id=nuovoId();
-    PILOTI.push({id,nome:v.nome,matr:v.matr,att:[],scad:'',ok:true,sts:false});
+    PILOTI.push({id,nome:v.nome,matr:v.matr,droni:[],att:[],scad:'',ok:true,sts:false});
     SCHEDEP[id]={ruolo:v.ruolo,tel:'',ore:'0 h',voli:0,ore90:'0 h',inc:0,att:{}};
     PERM[id]={admin:false,voliTutti:false,flotta:true,documenti:false,clienti:false,prezzi:false,enac:false,agri:false};
     ricalcola(); apriPilota(id); toast('Ora carica i suoi attestati da Documenti');};
@@ -2683,7 +2729,14 @@ function disegnaPermAdm(apri){
         :'<b>'+(nTel?pl(nTel,'telefono collegato','telefoni collegati'):'Nessun telefono collegato')+'</b><br>Resta dentro finché non lo blocchi: non deve rientrare ogni giorno.'}</div>
         ${bl?`<button class="btn mini" onclick="dispAz('sblocca','',this,${p.id})"><span class="spin"></span>Sblocca</button>`
             :`<button class="btn sec mini" onclick="dispAz('blocca','',this,${p.id})"><span class="spin"></span>Blocca</button>`}</div>
-      ${bl?'':`<div style="font-size:14px;color:var(--muted);margin-top:10px">Fa sempre il controllo prima del volo e importa i suoi registri. Il resto lo decidi tu:</div>
+      ${bl?'':`<div class="hcap" style="margin:14px 0 4px">Droni in dotazione</div>
+      <div style="font-size:14px;color:var(--muted);margin-bottom:8px">${iniziali(p.nome)===''?'':p.nome.split(' ')[0]} usa solo i droni che gli affidi qui. Li sceglie lui ogni volta, in base al lavoro della giornata.</div>
+      <ul class="puo">${DRONI.map(d=>{const si=inDotazione(p).includes(d), ab=puoPilotare(p,d), altri=PILOTI.filter(q=>q.id!==p.id&&inDotazione(q).includes(d)).map(q=>q.nome);
+        return `<li><div class="mark ${si?'ok':''}" style="${si?'':'background:#c3cad2'}">${svg('check')}</div>
+        <div class="main"><div class="a">${ESC(d.nome)}</div><div class="b">${ESC(d.cat==='specific'?'agricolo':'classe '+d.classe)}${altri.length?' · affidato anche a '+ESC(altri.join(', ')):''}</div>
+        ${si&&ab[0]==='ko'?`<div class="b" style="color:var(--ko);font-weight:600">${ESC(ab[1])}: il controllo lo ferma</div>`:''}</div>
+        <button class="btn ${si?'sec':''} mini" onclick="dotazione(${p.id},${d.id},this)"><span class="spin"></span>${si?'Togli':'Affida'}</button></li>`;}).join('')}</ul>
+      <div style="font-size:14px;color:var(--muted);margin-top:14px">Fa sempre il controllo prima del volo e importa i suoi registri. Il resto lo decidi tu:</div>
       <ul class="puo">${PERMESSI.map(([k,t])=>`<li><div class="mark ${P[k]?'ok':''}" style="${P[k]?'':'background:#c3cad2'}">${svg(P[k]?'check':'x')}</div>
         <div class="main"><div class="a" style="font-weight:500">${t}</div></div>
         <button class="btn ${P[k]?'sec':''} mini" onclick="lavora(this,()=>{PERM[${p.id}]=PERM[${p.id}]||{};PERM[${p.id}].${k}=!PERM[${p.id}].${k};disegnaPermAdm(${p.id});})"><span class="spin"></span>${P[k]?'Togli':'Concedi'}</button></li>`).join('')}</ul>`}
@@ -2691,6 +2744,12 @@ function disegnaPermAdm(apri){
 }
 const normM=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toLowerCase();
 function matrDoppia(m,id){return PILOTI.find(p=>p.id!==id&&p.matr&&normM(p.matr)===normM(m));}
+function dotazione(pid,did,b){
+  const p=PILOTI.find(x=>x.id===pid); if(!p) return;
+  lavora(b,()=>{ if(!Array.isArray(p.droni)) p.droni=DRONI.map(d=>d.id);
+    const si=p.droni.includes(did); p.droni=si?p.droni.filter(x=>x!==did):p.droni.concat(did);
+    disegnaPermAdm(pid); toast(si?'Tolto a '+p.nome:'Affidato a '+p.nome+': lo vede subito sul telefono'); });
+}
 function salvaMatr(id,b){
   const p=PILOTI.find(x=>x.id===id), m=document.getElementById('mt-'+id).value.trim();
   if(!m){toast('Scrivi la matricola');return;}
@@ -2743,7 +2802,8 @@ function motivoDrone(d){
 function breveDrone(d){const l=livDrone(d);return l==='ko'?(d.cat==='specific'&&!AUT_ENAC.agricola?'Fermo: manca ENAC':'Fermo'):l==='warn'?motivoDrone(d).replace('Si può volare · ','').replace(/^./,c=>c.toUpperCase()):'Pronto';}
 function silDrone(d){return d.cat==='specific'?SIL.agri:/C0|mini/i.test(d.classe+' '+d.nome)?SIL.piccolo:SIL.medio;}
 function voliMese(f){const o=new Date();return VOLI.filter(v=>{const d=dt(v.data);return d&&d.getMonth()===o.getMonth()&&d.getFullYear()===o.getFullYear()&&f(v);});}
-function droniMiei(){if(ADM) return DRONI; const p=ioPilota(); return p?DRONI.filter(d=>puoPilotare(p,d)[0]==='ok'):DRONI;}
+function inDotazione(p){return Array.isArray(p.droni)?DRONI.filter(d=>p.droni.includes(d.id)):DRONI;}
+function droniMiei(){if(ADM) return DRONI; const p=ioPilota(); return p?inDotazione(p):[];}
 function oreBrevi(s){const m=/^(\d+)\s*h/.exec(s||'');return m?m[1]+' h':'';}
 function minOre(m){const h=Math.floor(m/60),mi=m%60;return h?(h+' h'+(mi?' '+mi:'')):mi+' min';}
 
@@ -2787,6 +2847,7 @@ function homeA(todo){
       <span>${GIORNI[o.getDay()].slice(0,3).toLowerCase()} ${String(o.getDate()).padStart(2,'0')}/${String(o.getMonth()+1).padStart(2,'0')} · <b>${ora()}</b></span></div>
     <div class="cab-pf"><div class="h">PRIMA DEL VOLO</div>
       <div class="hsel ${ADM?'':'uno'}">${selDrone()}${ADM?selPilota():`<span style="display:none">${selPilota()}</span>`}</div>
+      <div style="padding:0 14px 14px">${campiLavoro()}</div>
       <button class="go" id="h-btn" onclick="avviaControllo(this)"><span class="spin"></span>Fai il controllo</button></div>
     ${dr.length?`<div class="cab-h">FLOTTA</div><div class="cab-str">${dr.map(d=>{const l=livDrone(d),s=SCHEDE[d.id],nb=BATT.filter(b=>b.drone===d.id).length;
       return `<button class="${l==='ok'?'':l}" onclick="${puoVedere('Droni')?`apriDrone(${d.id},'droni')`:`controllaDrone(${d.id},null)`}"><b>${ESC(d.nome.replace(/^DJI /,''))}</b>
@@ -2815,6 +2876,7 @@ function homeB(todo){
     <div class="pl-quadro">${quadro}</div>
     <div class="card pl-ctrl"><h2>Controllo prima del volo</h2>
       <div class="hsel ${ADM?'':'uno'}">${selDrone()}${ADM?selPilota():`<span style="display:none">${selPilota()}</span>`}</div>
+      ${campiLavoro()}
       <button class="btn" id="h-btn" onclick="avviaControllo(this)"><span class="spin"></span><svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg>Inizia il controllo</button></div>
     <div class="pl-due"><div><div class="hcap">Prossime scadenze</div>
       <ul class="lista">${sc.map(([x,i])=>`<li class="${x.go?'go':''}" ${x.go?`onclick="TODOGO[${i}]()"`:''}>${calTodo(x)}<p>${x.t}<small>${x.w}</small></p></li>`).join('')}</ul></div>
@@ -2824,10 +2886,10 @@ function homeB(todo){
 
 function homeC(todo){
   const dr=droniMiei(), p=ioPilota(), av=todo.map((x,i)=>[x,i]).filter(([x])=>x.liv!=='ok');
-  const card=d=>{const l=livDrone(d), s=SCHEDE[d.id], nb=BATT.filter(b=>b.drone===d.id).length, vm=voliMese(v=>v.drone===d.nome&&(ADM||v.pilota===IO.n)).length;
+  const card=d=>{const pp=!ADM&&p?puoPilotare(p,d):null, l=pp&&pp[0]==='ko'?'ko':livDrone(d), s=SCHEDE[d.id], nb=BATT.filter(b=>b.drone===d.id).length, vm=voliMese(v=>v.drone===d.nome&&(ADM||v.pilota===IO.n)).length;
     const num=[s&&s.ore?`<div><b>${oreBrevi(s.ore)}</b>volate</div>`:'',nb?`<div><b>${nb}</b>${nb===1?'batteria':'batterie'}</div>`:'',`<div><b>${vm}</b>voli mese</div>`].join('');
     const vedi=l==='ko'?(d.cat==='specific'&&!AUT_ENAC.agricola&&puoVedere('Autorizzazioni ENAC')?'apriEnac()':puoVedere('Droni')?`apriDrone(${d.id},'droni')`:''):'';
-    return `<div class="fl-dr ${l}"><div class="st ${l}"><svg viewBox="0 0 24 24">${ICO_ST[l]}</svg>${motivoDrone(d)}</div>
+    return `<div class="fl-dr ${l}"><div class="st ${l}"><svg viewBox="0 0 24 24">${ICO_ST[l]}</svg>${pp&&pp[0]==='ko'?ESC(pp[1]):motivoDrone(d)}</div>
       <div class="bd"><div class="fl-sil"><svg viewBox="0 0 64 64">${silDrone(d)}</svg></div>
         <div style="min-width:0"><h5>${ESC(d.nome)}</h5><div class="m">${ESC(d.cat==='specific'?'agricolo · categoria specifica':'classe '+d.classe)}${d.qr?' · QR applicato':''}</div><div class="fl-num">${num}</div></div></div>
       ${l==='ko'?(vedi?`<button class="az" onclick="${vedi}">Vedi cosa manca</button>`:''):`<button class="az" onclick="controllaDrone(${d.id},this)"><span class="spin"></span>Controlla e vola</button>`}</div>`;};
@@ -2844,9 +2906,10 @@ function homeC(todo){
         <div class="fl-num"><div><b>${vm.length}</b>voli mese</div><div><b>${minOre(min)}</b>volate</div></div></div></div>
       <button class="az" onclick="${st==='ok'?`apriPilota(${p.id})`:'apriDocumenti()'}">${st==='ok'?'Vedi la tua scheda':'Carica il nuovo attestato'}</button></div>`;
   }
-  return `${ADM?`<div class="fl-chi"><b>Chi vola</b>${selPilota()}</div>`:`<span style="display:none">${selPilota()}</span>`}<span style="display:none">${selDrone()}</span>
+  return `<div class="card fl-oggi"><h2>Il lavoro di oggi</h2>${ADM?`<div style="margin-bottom:10px"><label for="h-pilota">Chi vola</label>${selPilota()}</div>`:`<span style="display:none">${selPilota()}</span>`}${campiLavoro()}
+    <div class="nota">Poi tocca «Controlla e vola» sul drone che usi.</div></div><span style="display:none">${selDrone()}</span>
     <div class="hcap" style="margin-top:4px;font-size:24px;color:var(--ink)">${ADM?'I tuoi droni':'Droni che puoi usare'} <small>${pl(dr.length,'drone','droni')}</small></div>
-    <div class="fl-grid">${dr.map(card).join('')||'<div class="card">Nessun drone ancora.</div>'}</div>
+    <div class="fl-grid">${dr.map(card).join('')||`<div class="card">${ADM?'Nessun drone ancora.':'Nessun drone affidato: chiedi all’Admin.'}</div>`}</div>
     ${persone}
     ${av.length?`<div class="hcap">Da sistemare</div><ul class="lista">${av.map(([x,i])=>`<li class="${x.go?'go':''}" ${x.go?`onclick="TODOGO[${i}]()"`:''}>${calTodo(x)}<p>${x.t}<small>${x.w}</small></p></li>`).join('')}</ul>`:''}
     ${menuHome('tiles')}${docHome()}`;
@@ -3009,7 +3072,8 @@ function mostraLettoVolo(){
     <text x="28" y="${H-2}" font-size="12" fill="#5E6D77" font-family="Barlow,Arial">${x.ora}</text><text x="${W-28}" y="${H-2}" text-anchor="end" font-size="12" fill="#5E6D77" font-family="Barlow,Arial">${x.fine}</text>`;
   // drone e batteria
   const sDr=document.getElementById('im-drone');
-  sDr.innerHTML=(d?'':'<option value="">Scegli il drone…</option>')+DRONI.map(z=>`<option value="${z.id}" ${d&&d.id===z.id?'selected':''}>${ESC(z.nome)}</option>`).join('');
+  const elenco=ADM?DRONI:DRONI.filter(z=>droniMiei().includes(z)||(d&&z.id===d.id));
+  sDr.innerHTML=(d?'':'<option value="">Scegli il drone…</option>')+elenco.map(z=>`<option value="${z.id}" ${d&&d.id===z.id?'selected':''}>${ESC(z.nome)}</option>`).join('');
   document.getElementById('im-drone-n').innerHTML=d?`Riconosciuto ${x.sn&&MATR[d.nome]&&MATR[d.nome].replace(/\s/g,'').toUpperCase()===x.sn.toUpperCase()?'dal numero di serie '+ESC(x.sn):'dal modello'}.`:`Non trovo il drone ${ESC(x.nomeDrone||'')} ${x.sn?'(numero di serie '+ESC(x.sn)+')':''}: sceglilo tu. ${ADM?'Mettendo il numero di serie come matricola del drone, la prossima volta lo riconosce da solo.':''}`;
   sDr.onchange=disegnaBattImp; disegnaBattImp();
   document.getElementById('im-dati-b').innerHTML=[fld('Carica al decollo',x.cIni+'%'),fld('Carica all’arrivo',x.cFin+'%'),fld('Temperatura massima',x.tMax+' °C'),
