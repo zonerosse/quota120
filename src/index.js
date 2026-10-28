@@ -114,6 +114,10 @@ function controllaZone(Z, lat, lon) {
   return { liv, max, motivi, dentro: dentro.slice(0, 12), vicino: vicino.slice(0, 8) };
 }
 
+// ---- segnalazioni di incidenti e guasti (regole del foglio ENAC SPL 21: ENAC su ECCAIRS 2 entro 72 ore; incidenti gravi anche ANSV, subito) ----
+const SG_TIPI = { perso: "Il drone è volato via o è andato perso", segnale: "Perdita del segnale (il drone è tornato)", urto: "Urto o caduta", aereo: "Aereo o elicottero vicino (quasi collisione)", guasto: "Guasto del drone o della batteria", fuori: "Uscito dalla zona autorizzata o sopra i 120 m", altro: "Altro" };
+function livSegn(x) { const grave = !!x.feriti || x.tipo === "perso" || x.tipo === "aereo"; return grave ? "grave" : ["segnale", "urto", "guasto", "fuori"].includes(x.tipo) ? "enac" : "facolt"; }
+
 // ---- permessi ----
 const permDi = (d, n) => { const p = (d.PILOTI || []).find(x => x.nome === n); return p ? ((d.PERM || {})[p.id] || {}) : {}; };
 const pilotaDi = (d, n) => (d.PILOTI || []).find(x => x.nome === n);
@@ -145,6 +149,8 @@ function vista(d, n) {
   if (P.agri) { v.CAMPI = d.CAMPI; v.TRATT = d.TRATT; if (!v.CLIENTI) v.CLIENTI = d.CLIENTI; }
   v.DOCS = (d.DOCS || []).filter(x => docVisibile(d, x, n));
   v.ZONEINFO = d.ZONEINFO || null;
+  // segnalazioni: le sue per intero; degli altri solo i droni fermi
+  v.SEGN = (d.SEGN || []).map(x => x.pilota === n ? x : (x.fermo ? { id: x.id, drone: x.drone, data: x.data, tipo: x.tipo, fermo: true } : null)).filter(Boolean);
   return v;
 }
 function docVisibile(d, doc, n) {
@@ -427,6 +433,31 @@ export class Stato extends DurableObject {
       const m = await leggiMain(), droni = ((m && m.d.DRONI) || []).map(x => x.nome).join("; ");
       try { return J({ letto: await leggiFotoVolo(this.env, b64(tutto.buffer), info.mime, droni) }); }
       catch (e) { return J({ errore: String(e.message || e) }, 502); }
+    }
+    if (p === "/api/segnala" && request.method === "POST") {
+      let b; try { b = await request.json(); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
+      if (!SG_TIPI[b.tipo]) return J({ errore: "Scegli cosa è successo" }, 400);
+      const m = await leggiMain(); if (!m) return J({ errore: "Nessun dato" }, 409);
+      const d = m.d, dr = (d.DRONI || []).find(x => x.nome === b.drone);
+      if (!dr) return J({ errore: "Scegli il drone" }, 400);
+      const foto = [];
+      for (const f of (Array.isArray(b.foto) ? b.foto : []).slice(0, 8)) { const info = await st.get("docinfo:" + f); if (info && (adm || info.da === me.n)) foto.push(esc(f, 40)); }
+      const x = { id: now * 10 + Math.floor(Math.random() * 10), at: now, data: DATA(b.data) || oggi(), ora: /^\d{2}:\d{2}$/.test(b.ora || "") ? b.ora : "", pilota: adm && b.pilota ? esc(b.pilota, 80) : me.n,
+        drone: dr.nome, tipo: b.tipo, feriti: !!b.feriti, danni: !!b.danni, testo: esc(b.testo, 2000), luogo: esc(b.luogo, 160), foto, volo: esc(b.volo, 20), fermo: true, stato: "aperta", eccairs: "" };
+      x.liv = livSegn(x);
+      d.SEGN = d.SEGN || []; d.SEGN.unshift(x); d.SEGN = d.SEGN.slice(0, 500);
+      await scriviMain(d, m.row.ver + 1);
+      // mail subito all'Admin
+      const A = (d.AVVISI || {}).adm || {};
+      if (A.email && A.on !== false) {
+        const txt = x.liv === "grave" ? "Incidente grave: avvisare subito ANSV e segnalare a ENAC su ECCAIRS 2 entro 72 ore." : x.liv === "enac" ? "Da segnalare a ENAC su ECCAIRS 2 entro 72 ore." : "Segnalazione facoltativa a ENAC, consigliata se riguarda la sicurezza.";
+        const html = `<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;color:#0F1C26;font-size:15px;line-height:1.45"><div style="border-bottom:2px solid #132A3A;padding-bottom:10px;margin-bottom:14px;font-size:20px;font-weight:bold;color:#132A3A">Quota 120</div>
+          <div style="background:${x.liv === "grave" ? "#AE2F28" : "#A5660A"};color:#fff;border-radius:8px;padding:10px 14px;font-weight:bold">${esc(txt)}</div>
+          <p><b>${esc(SG_TIPI[x.tipo])}</b> · ${esc(x.drone)}<br>${esc(x.pilota)} · ${x.data} ${x.ora}${x.luogo ? " · " + esc(x.luogo) : ""}<br>Feriti: ${x.feriti ? "sì" : "no"} · Danni: ${x.danni ? "sì" : "no"}</p><p>${esc(x.testo)}</p>
+          <p>Il drone resta fermo finché non lo sblocchi in Pannello Admin › Segnalazioni.</p><a href="${(await st.get("origine")) || url.origin}" style="display:inline-block;background:#1D5C7C;color:#fff;border-radius:8px;padding:12px 18px;font-weight:bold;text-decoration:none">Apri Quota 120</a></div>`;
+        try { await mandaMail(this.env, A.email.trim(), (x.liv === "grave" ? "URGENTE · " : "") + "Segnalazione: " + SG_TIPI[x.tipo] + " · " + x.drone, html); } catch (e) {}
+      }
+      return J({ ok: true, segn: x, ver: m.row.ver + 1 });
     }
     if (p === "/api/zone/carica" && request.method === "POST") {
       if (!adm) return J({ errore: "Solo l'Admin può caricare le zone" }, 403);
