@@ -643,6 +643,7 @@
   .gd-hole{position:fixed;border-radius:10px;box-shadow:0 0 0 9999px rgba(15,25,33,.55);border:3px solid #E8C15A;pointer-events:none;z-index:100000;transition:left .2s,top .2s,width .2s,height .2s}
   .gd-tip{position:fixed;z-index:100001;background:#fff;color:var(--ink);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.3);padding:14px 16px;width:310px;max-width:calc(100vw - 24px);font-family:"Barlow",Arial,sans-serif}
   .gd-tip b{display:block;font-size:16px;margin-bottom:4px}.gd-tip p{margin:0 0 8px;color:#3E4C56;font-size:14.5px;line-height:1.35}
+  .gd-tip.dock{width:min(720px,calc(100vw - 24px));padding:10px 16px}.gd-tip.dock p{margin-bottom:6px}.gd-tip.dock .gd-why{margin-bottom:8px}
   .gd-why{background:#EEF3F6;border-left:3px solid var(--accent);border-radius:6px;padding:7px 9px;font-size:13.5px;margin:0 0 10px}.gd-why b{display:inline!important;font-size:13.5px!important}
   .gd-bar{display:flex;justify-content:space-between;align-items:center;gap:8px}.gd-bb{display:flex;gap:10px;align-items:center}
   .gd-dots{display:flex;gap:4px}.gd-dots span{width:8px;height:8px;border-radius:50%;background:#D5DDE2}.gd-dots span.on{background:#132A3A}
@@ -3834,7 +3835,7 @@ function gdStart(k){
   document.getElementById('gdDim').classList.add('on'); I.classList.add('on');
 }
 function gdGo(){ document.getElementById('gdDim').classList.remove('on'); document.getElementById('gdIntro').classList.remove('on'); GD.i=-2; clearInterval(GD.t); GD.t=setInterval(gdTick,300); gdTick(); }
-function gdStop(){ clearInterval(GD.t); GD.g=null; ['gdHole','gdTip','gdDim','gdIntro'].forEach(id=>{const e=document.getElementById(id); e&&e.remove();}); }
+function gdStop(){ clearInterval(GD.t); GD.g=null; document.body.style.paddingBottom=''; ['gdHole','gdTip','gdDim','gdIntro'].forEach(id=>{const e=document.getElementById(id); e&&e.remove();}); }
 function gdAvanti(key){ GD.nx.add(key); gdTick(); }
 function gdTick(){
   const G=GUIDES[GD.g]; if(!G) return gdStop();
@@ -3849,13 +3850,16 @@ function gdTick(){
     const dots=Array.from({length:N},(_,j)=>`<span class="${j<=i?'on':''}"></span>`).join('');
     t.innerHTML=fin?`<div class="gd-n">Fatto</div><b>${ESC(G.n)}</b><p class="gd-end">${G.end}</p><div class="gd-bar"><span></span><button class="btn mini" onclick="gdStop()">Chiudi</button></div>`
       :`<div class="gd-n">Passo ${i+1} di ${N} · ${ESC(G.n)}</div><b>${s.t}</b><p>${s.p}</p>${s.w?`<div class="gd-why"><b>Perché:</b> ${s.w}</div>`:''}<div class="gd-bar"><span class="gd-dots">${dots}</span><span class="gd-bb"><button class="gd-x" onclick="gdStop()">Esci</button>${s.nx?`<button class="btn mini" onclick="gdAvanti('${GD.g}:${i}')">Avanti</button>`:''}</span></div>`;
-    if(el) try{el.scrollIntoView({block:el.offsetHeight>innerHeight*0.45?'start':'center',behavior:'smooth'});}catch(e){} }
+    if(el) try{const lg=el.offsetWidth>innerWidth-350||el.offsetHeight>innerHeight*0.45; el.style.scrollMarginTop='12px'; el.scrollIntoView({block:lg?'start':'center',behavior:'smooth'});}catch(e){} }
   if(fin||!el){ h.style.display='none'; t.style.left=Math.max(12,(innerWidth-t.offsetWidth)/2)+'px'; t.style.top=Math.max(12,innerHeight-t.offsetHeight-90)+'px'; return; }
   let r=el.getBoundingClientRect();
-  if(r.bottom<0||r.top>innerHeight){ try{el.scrollIntoView({block:'center'});}catch(e){} r=el.getBoundingClientRect(); }
+  if(r.bottom<40||r.top>innerHeight-60){ try{el.scrollIntoView({block:'center'});}catch(e){} r=el.getBoundingClientRect(); }
   h.style.display='block'; h.style.left=r.left-6+'px'; h.style.top=r.top-6+'px'; h.style.width=r.width+12+'px'; h.style.height=r.height+12+'px';
   const tw=t.offsetWidth, th=t.offsetHeight; let L=r.right+16, T=r.top;
-  if(r.height>innerHeight*0.45||r.width>innerWidth-tw-40&&r.height>innerHeight-th-60){ t.style.left=Math.max(8,(innerWidth-tw)/2)+'px'; t.style.top=(innerHeight-th-12)+'px'; return; }
+  // parte larga (es. una sezione delle lezioni): il fumetto si ferma in fondo allo schermo e la pagina si allunga, così non copre il testo
+  const largo=r.width>innerWidth-tw-40||r.height>innerHeight*0.45;
+  t.classList.toggle('dock',largo); document.body.style.paddingBottom=largo?(t.offsetHeight+30)+'px':'';
+  if(largo){ t.style.left=Math.max(8,(innerWidth-t.offsetWidth)/2)+'px'; t.style.top=(innerHeight-t.offsetHeight-12)+'px'; return; }
   if(L+tw>innerWidth-8) L=r.left-tw-16;
   if(L<8){ L=Math.max(8,Math.min(innerWidth-tw-8,r.left)); T=r.bottom+16; if(T+th>innerHeight-8) T=r.top-th-16; }
   t.style.left=L+'px'; t.style.top=Math.max(8,Math.min(innerHeight-th-8,T))+'px';
