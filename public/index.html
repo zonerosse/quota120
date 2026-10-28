@@ -667,6 +667,8 @@
   .stu-l ol.passi li::before{content:counter(p);width:24px;height:24px;border-radius:50%;background:#E8C15A;color:var(--notte);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none}
   .stu-l .dove{display:inline-block;background:#E3E8EB;border-radius:5px;padding:0 6px;font-weight:600}.stu-l .perche{display:block;color:var(--ink3);font-size:14px;margin-top:2px}
   .stu-l .schema{overflow-x:auto;margin:6px 0}
+  .gd-lez-w{margin:6px 0 2px}.gd-btn.gd-lez{background:#E8C15A;color:#132A3A;border:0;border-radius:8px;padding:9px 14px;font:700 15px "Barlow",Arial,sans-serif;display:inline-flex;gap:7px;align-items:center;cursor:pointer}
+  .stu-l .sez{scroll-margin-top:12px}
   .stu-l .fondo{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:18px;padding-top:14px;border-top:1px solid #E3E8EB}
   .stu-l label.spunta{display:flex;gap:8px;align-items:center;font-weight:600;font-size:15px;margin-left:auto}.stu-l label.spunta input{width:20px;height:20px}
   @media(max-width:560px){.stu-l .dentro{padding:4px 12px 14px}.stu-l table{font-size:13.5px}}
@@ -3847,19 +3849,20 @@ function gdTick(){
     const dots=Array.from({length:N},(_,j)=>`<span class="${j<=i?'on':''}"></span>`).join('');
     t.innerHTML=fin?`<div class="gd-n">Fatto</div><b>${ESC(G.n)}</b><p class="gd-end">${G.end}</p><div class="gd-bar"><span></span><button class="btn mini" onclick="gdStop()">Chiudi</button></div>`
       :`<div class="gd-n">Passo ${i+1} di ${N} · ${ESC(G.n)}</div><b>${s.t}</b><p>${s.p}</p>${s.w?`<div class="gd-why"><b>Perché:</b> ${s.w}</div>`:''}<div class="gd-bar"><span class="gd-dots">${dots}</span><span class="gd-bb"><button class="gd-x" onclick="gdStop()">Esci</button>${s.nx?`<button class="btn mini" onclick="gdAvanti('${GD.g}:${i}')">Avanti</button>`:''}</span></div>`;
-    if(el) try{el.scrollIntoView({block:'center',behavior:'smooth'});}catch(e){} }
+    if(el) try{el.scrollIntoView({block:el.offsetHeight>innerHeight*0.45?'start':'center',behavior:'smooth'});}catch(e){} }
   if(fin||!el){ h.style.display='none'; t.style.left=Math.max(12,(innerWidth-t.offsetWidth)/2)+'px'; t.style.top=Math.max(12,innerHeight-t.offsetHeight-90)+'px'; return; }
   let r=el.getBoundingClientRect();
   if(r.bottom<0||r.top>innerHeight){ try{el.scrollIntoView({block:'center'});}catch(e){} r=el.getBoundingClientRect(); }
   h.style.display='block'; h.style.left=r.left-6+'px'; h.style.top=r.top-6+'px'; h.style.width=r.width+12+'px'; h.style.height=r.height+12+'px';
   const tw=t.offsetWidth, th=t.offsetHeight; let L=r.right+16, T=r.top;
+  if(r.height>innerHeight*0.45||r.width>innerWidth-tw-40&&r.height>innerHeight-th-60){ t.style.left=Math.max(8,(innerWidth-tw)/2)+'px'; t.style.top=(innerHeight-th-12)+'px'; return; }
   if(L+tw>innerWidth-8) L=r.left-tw-16;
   if(L<8){ L=Math.max(8,Math.min(innerWidth-tw-8,r.left)); T=r.bottom+16; if(T+th>innerHeight-8) T=r.top-th-16; }
   t.style.left=L+'px'; t.style.top=Math.max(8,Math.min(innerHeight-th-8,T))+'px';
 }
 function gdToggle(){
   const on=!gdOn(); try{ if(on) localStorage.removeItem('q120GdOff'); else localStorage.setItem('q120GdOff','1'); }catch(e){}
-  if(!on) gdStop(); gdDecora(); toast(on?'Guida accesa: in ogni pagina c’è il tasto Guidami.':'Guida spenta: i tasti Guidami non ci sono più.');
+  if(!on) gdStop(); gdDecora(); document.querySelectorAll('.gd-lez-w').forEach(e=>e.style.display=on?'':'none'); toast(on?'Guida accesa: in ogni pagina c’è il tasto Guidami.':'Guida spenta: i tasti Guidami non ci sono più.');
 }
 // interruttore in alto e tasto «Guidami» accanto al percorso
 function gdDecora(){
@@ -3877,8 +3880,40 @@ function disegnaStudio(apri){
   const F=stuFatte(), n=F.length;
   document.getElementById('stu-prog').innerHTML=`<div class="stu-bar"><i style="width:${Math.round(n/LEZIONI.length*100)}%"></i></div>${pl(n,'lezione studiata','lezioni studiate')} su ${LEZIONI.length}`;
   document.getElementById('stu-list').innerHTML=LEZIONI.map((l,i)=>`<details class="stu-l" id="stu-${i}" ${apri===i?'open':''}><summary><div class="num">${i+1}</div><div class="tt">${l.t}<small>${l.s}</small></div>${F.includes(i)?'<span class="st">studiata</span>':''}<span class="fr">›</span></summary>
-    <div class="dentro">${l.h}<div class="fondo">${l.g.filter(k=>GUIDES[k]).map(k=>`<button class="btn" onclick="gdStart('${k}')">Prova tu: ${ESC(GUIDES[k].n.charAt(0).toLowerCase()+GUIDES[k].n.slice(1))}</button>`).join('')}
+    <div class="dentro"><div class="gd-lez-w"><button class="gd-btn gd-lez" onclick="stuGuida(${i})"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14M12 17.5h.01"/></svg>Guidami in questa lezione</button></div>${l.h}<div class="fondo">${l.g.filter(k=>GUIDES[k]).map(k=>`<button class="btn" onclick="gdStart('${k}')">Prova tu: ${ESC(GUIDES[k].n.charAt(0).toLowerCase()+GUIDES[k].n.slice(1))}</button>`).join('')}
     ${i<LEZIONI.length-1?`<button class="btn sec" onclick="stuApri(${i+1})">Lezione ${i+2} &rarr;</button>`:''}<label class="spunta"><input type="checkbox" ${F.includes(i)?'checked':''} onchange="stuSegna(${i},this.checked)">Studiata</label></div></div></details>`).join('');
+  document.querySelectorAll('.stu-l').forEach(stuSezioni);
+  document.querySelectorAll('.gd-lez-w').forEach(e=>e.style.display=gdOn()?'':'none');
+}
+
+// guida dentro le lezioni: una parte alla volta, con il perché (una riga per ogni titoletto della lezione)
+const STU_SEZ=[
+ [['Chi decide e chi vola: tu vedi tutto, il pilota solo quello che gli concedi.','Ogni schermata cambia a seconda di chi entra.'],['I dati stanno online, non sul telefono.','Per questo tu e un pilota a 600 km vedete le stesse cose nello stesso momento.'],['I quattro passi per far entrare un pilota.','Niente password: nome, matricola e il tuo via libera.'],['La legenda della lezione.','Tienila sott’occhio quando qualcosa non ti è chiaro.']],
+ [['Il file è la «scatola nera» del volo: uno per ogni volo.','Dal nome del file capisci subito giorno e ora del volo.'],['Il file lo scrive l’app DJI sul telefono o sul radiocomando, non il drone.','Per questo va preso dal telefono del pilota e caricato: Quota 120 non lo prende da solo.'],['DJI chiude i file a chiave e Quota 120 chiede le chiavi a DJI.','È il motivo per cui è servita la chiave DJI su Cloudflare.'],['Dove si trova il file, per ogni telefono o radiocomando.','È la domanda che ti faranno i piloti: la risposta è in questa tabella.'],['I cinque passi per caricarlo in Quota 120.','Fallo una volta con «Prova tu», in fondo, e non lo dimentichi più.'],['Ogni dato del file e dove va a finire.','Così sai da dove arrivano ore, cicli, mappa e semafori.']],
+ [['Le tre strade messe a confronto.','Il file DJI dà più dati; la foto e la mano servono quando il file non c’è.'],['Come funziona la foto del riepilogo.','È la strada più comoda per chi ha solo il telefono.'],['I segni che vedi nel registro voli.','Ti dicono a colpo d’occhio cosa manca a ogni volo.']],
+ [['Open e Specific: le due categorie di volo.','Dalla categoria dipendono attestati e autorizzazioni.'],['La classe scritta sul drone e cosa serve al pilota.','Quota 120 usa classe e attestati per dire se quel pilota può usare quel drone.'],['Le cose che servono sempre e dove le trovi nel programma.','Se una manca, il controllo prima del volo diventa rosso.']],
+ [['A cosa serve il controllo prima del volo.','Il pilota pensa solo alle verifiche sul posto: il resto lo fa Quota 120.'],['Cosa controlla e da dove prende ogni dato.','Se un dato è sbagliato nel programma, il controllo sbaglia: tienili aggiornati.'],['Cosa vogliono dire i colori.','Rosso senza tasto vuol dire che oggi non si vola.']],
+ [['Cosa sono le zone di volo.','Volare in una zona vietata è un’infrazione grave.'],['Il file mensile di D-Flight.','Va ricaricato una volta al mese: ti arriva la mail.'],['Come lo usa Quota 120.','«Dove sono ora» controlla il punto esatto in cui si trova il pilota.'],['La legenda dei colori e delle sigle.','Arancione con un numero vuol dire: si vola, ma non più in alto di così.']],
+ [['Cosa si aggiorna da solo a ogni volo.','Niente conti a mano: ore e cicli li tiene Quota 120.'],['Quando un volo conta.','Un volo caricato due volte (foto e file) conta una volta sola.'],['Cosa fare se un volo è sbagliato.','Eliminandolo, ore e cicli tornano come prima.']],
+ [['Il codice lavoro.','Con il codice il volo finisce da solo nel lavoro giusto.'],['Il rapporto per il cliente.','È il file da mandare all’azienda che ti ha dato il lavoro.'],['Da dove arriva ogni parte del rapporto.','Se una parte è vuota, sai cosa manca.']],
+ [['Come funzionano gli avvisi e chi li riceve.','Non devi ricordarti le scadenze: te le ricorda Quota 120.'],['Le soglie degli avvisi.','Puoi cambiarle: di base 60, 30, 7 giorni prima e il giorno stesso.']],
+ [['Tutte le sigle in una tabella.','Quando nei documenti trovi una sigla che non conosci, guarda qui.']]];
+function stuSezioni(det){
+  const D=det.querySelector('.dentro'); if(!D||D.dataset.sez) return; D.dataset.sez='1';
+  const figli=[...D.children]; let cur=null;
+  for(const c of figli){ if(c.classList.contains('fondo')||c.classList.contains('gd-lez-w')) {cur=null; continue;}
+    if(c.tagName==='H4'||(!cur&&!D.querySelector('h4'))){ cur=document.createElement('div'); cur.className='sez'; D.insertBefore(cur,c); }
+    if(cur) cur.appendChild(c); }
+}
+function stuGuida(i){
+  const l=LEZIONI[i], det=document.getElementById('stu-'+i); if(!l||!det) return;
+  stuApri(i); stuSezioni(det);
+  const sez=STU_SEZ[i]||[], tit=[...det.querySelectorAll('.sez')].map(x=>{const h=x.querySelector('h4');return h?h.textContent.replace(/^\d+/,'').trim():l.t;});
+  GUIDES['lez'+i]={n:'Lezione '+(i+1)+' · '+l.t,r:'adm',base:()=>0,done:()=>false,
+    why:{h:l.t,p:'Ti accompagno dentro la lezione, una parte alla volta: leggi la parte illuminata, poi tocca «Avanti».',uses:tit,tm:'Ci vogliono circa 5 minuti.'},
+    end:(l.g.length?'Fine della lezione. Ora prova a farlo nel programma vero con «Prova tu», in fondo alla lezione; poi spunta «Studiata».':'Fine della lezione. Spunta «Studiata» in fondo.'),
+    S:tit.map((t,j)=>({t,p:(sez[j]||[])[0]||'Leggi questa parte.',w:(sez[j]||[])[1]||'',el:()=>{const e=document.querySelectorAll('#stu-'+i+' .sez')[j]; if(e&&!det.open) det.open=true; return e;},nx:1}))};
+  gdStart('lez'+i);
 }
 function stuApri(i){ document.querySelectorAll('.stu-l').forEach((d,j)=>d.open=j===i); const e=document.getElementById('stu-'+i); if(e) e.scrollIntoView({behavior:'smooth',block:'start'}); }
 
