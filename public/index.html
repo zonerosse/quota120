@@ -3660,7 +3660,7 @@ function provaAvvisi(b){
   AVVISI=r.A; b.disabled=true;b.classList.add('busy');
   // prima si salvano le impostazioni, poi parte la mail di prova
   const via=()=>api('POST','/api/avvisi/prova').then(j=>{b.disabled=false;b.classList.remove('busy');
-    if(j.errore==='posta'){toast('La posta non è ancora collegata al programma: serve il passo con Brevo');return;}
+    if(j.errore==='posta'){toast('La posta non è ancora collegata al programma'+(j.dettaglio?': '+j.dettaglio:''));return;}
     if(j.errore){toast(j.errore);return;}
     toast('Mail di prova mandata a '+(j.mandate||[]).join(', ')+': controlla anche nello spam');
   }).catch(()=>{b.disabled=false;b.classList.remove('busy');toast('Niente rete: riprova');});
