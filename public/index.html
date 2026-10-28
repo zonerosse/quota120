@@ -562,6 +562,32 @@
   body.sole .cab-str span,body.sole .cab-av p small,body.sole .cab-riga{color:#C9D6DE}
   body.sole .lista,body.sole .pl-quadro,body.sole .fl-dr,body.sole .fl-pil button{border-width:2px;box-shadow:none}
   body.sole .pl-quadro span,body.sole .lista p small,body.sole .fl-num div,body.sole .fl-dr .m{color:#141E25}
+
+  /* registro DJI letto da solo */
+  .drop b{display:block;color:var(--ink);font-size:17px;margin-bottom:2px;overflow-wrap:anywhere}
+  .passi{list-style:none;margin:12px 0 0;padding:0}
+  .passi li{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:16px;color:var(--ink3)}
+  .passi li.fatto{color:var(--ink)}
+  .passi li .m{width:22px;height:22px;border-radius:50%;border:2px solid var(--bordo2);flex:none;display:flex;align-items:center;justify-content:center}
+  .passi li.fatto .m{background:var(--ok);border-color:var(--ok)}
+  .passi li.ora .m{border-color:var(--accent);border-top-color:transparent;animation:r .8s linear infinite}
+  .passi li .m svg{width:13px;height:13px;stroke:#fff;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+  .passi li.err{color:var(--ink);background:#fff;border:1px solid var(--bordo);border-left:4px solid var(--ko);border-radius:8px;padding:10px 12px}
+  .fld.warn{border-color:#E3C48E;background:var(--warn-bg)} .fld.warn .v{color:var(--warn)} .fld.ok .v{color:var(--ok)}
+  .prof{width:100%;height:auto;display:block;border:1px solid var(--bordo);border-radius:8px;background:#F7F9FA}
+  .leg{display:flex;gap:16px;flex-wrap:wrap;font-size:14px;color:var(--ink3);margin-top:6px}
+  .leg i{display:inline-block;width:18px;height:3px;vertical-align:middle;margin-right:6px}
+  .nota{font-size:14px;color:var(--ink3);margin-top:6px}
+  details.dove{border:1px solid var(--bordo);border-radius:8px;background:var(--sup2)}
+  details.dove summary{cursor:pointer;padding:11px 14px;font-weight:600;font-size:16px;list-style:none}
+  details.dove summary::-webkit-details-marker{display:none}
+  details.dove>div{padding:0 14px 12px;font-size:15px;color:var(--ink2);line-height:1.5}
+  .agg{list-style:none;margin:0;padding:0}
+  .agg li{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid #E3E8EB;font-size:16px}
+  .agg li:first-child{border-top:0}
+  .agg p{margin:0;flex:1;min-width:0} .agg p small{display:block;color:var(--ink3);font-size:14px}
+  .agg .da{font:600 17px "Barlow Semi Condensed",Arial,sans-serif;white-space:nowrap}
+  .agg .da s{color:var(--ink3);font-weight:500;margin-right:6px}
 </style>
 </head>
 <body>
@@ -654,9 +680,13 @@
     </div>
     <div class="card">
       <h2>Aggiungi un volo</h2>
-      <div style="font-size:13px;color:var(--muted)">Scegli il file del registro dal telefono o dal radiocomando: data, ore, luogo, drone e batteria si compilano da soli.</div>
+      <div style="font-size:15px;color:var(--muted)">Scegli i file del registro DJI (anche più di uno insieme): data, ore, luogo, quota, drone e batteria si compilano da soli. I voli già caricati vengono saltati.</div>
+      <details class="dove" style="margin-top:10px"><summary>Dove trovo i file?</summary><div>
+        <b>iPhone con DJI Fly:</b> collega l'iPhone al computer col cavo, apri Dispositivi Apple, poi Condivisione file, poi DJI Fly: copia la cartella FlightRecords.<br>
+        <b>Android o radiocomando con schermo:</b> collegalo al computer col cavo, scegli «Trasferimento file» e apri Android › data › dji.go.v5 › files › FlightRecord.<br>
+        I file si chiamano come DJIFlightRecord_2026-10-28_[10-12-04].txt.</div></details>
       <div class="row">
-        <button class="btn" onclick="sceglFile('log')"><span class="spin"></span>Importa registro DJI</button>
+        <button class="btn" onclick="sceglFile('log')"><span class="spin"></span>Carica registri DJI</button>
         <button class="btn sec" onclick="manuale()">Inserisci a mano</button>
       </div>
       <div class="prog" id="prog"><span class="spin"></span><span id="prog-t"></span></div>
@@ -664,6 +694,51 @@
     <div class="card" style="margin-top:12px">
       <h2>Ultimi voli</h2>
       <ul class="vlist" id="vlist"></ul>
+    </div>
+  </div>
+
+  <!-- ================= REGISTRO DJI LETTO DA SOLO ================= -->
+  <div id="v-importa" class="hidden">
+    <div id="im-leggi" class="card">
+      <h2>Carica il registro di volo</h2>
+      <div class="drop" style="margin-top:6px"><b id="im-file"></b><span id="im-resto"></span></div>
+      <ul class="passi" id="im-passi"></ul>
+      <div class="row" id="im-dopo"></div>
+    </div>
+    <div id="im-letto" class="hidden">
+      <div class="sem" id="im-sem"></div>
+      <div class="card" style="margin-top:14px">
+        <h2>Il volo</h2>
+        <div style="font-size:15px;color:var(--ink3);margin:-4px 0 12px">Tutto quello che ha la spunta verde l'ha letto il programma dal file.</div>
+        <div class="fgrid" id="im-volo"></div>
+        <div class="hcap">Quota durante il volo</div>
+        <svg class="prof" viewBox="0 0 600 170" id="im-prof"></svg>
+        <div class="leg"><span><i style="background:var(--accent)"></i>quota dal punto di decollo</span><span><i style="background:var(--ko);height:2px"></i>limite di 120 m</span></div>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <h2>Drone e batteria</h2>
+        <div class="fill" style="grid-template-columns:minmax(0,1fr)">
+          <div><label for="im-drone">Drone</label><select id="im-drone"></select><div class="nota" id="im-drone-n"></div></div>
+        </div>
+        <div class="fgrid" id="im-dati-b" style="margin-top:12px"></div>
+        <div class="cells" id="im-celle"></div>
+        <div class="fill" style="grid-template-columns:minmax(0,1fr);margin-top:14px">
+          <div><label for="im-batt">Quale batteria hai usato?</label><select id="im-batt"></select><div class="nota" id="im-batt-n"></div></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <h2>Da completare</h2>
+        <div class="fill">
+          <div><label for="im-pil">Chi ha volato</label><select id="im-pil" onchange="aggiornaAnteprimaAgg()"></select></div>
+          <div><label for="im-cli">Lavoro o cliente (se c'è)</label><select id="im-cli"></select></div>
+        </div>
+        <div style="margin-top:10px"><label for="im-note">Note</label><textarea id="im-note" placeholder="Meteo, vento, osservazioni…"></textarea></div>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <h2>Quando confermi, si aggiorna da solo</h2>
+        <ul class="agg" id="im-agg"></ul>
+        <div class="row"><button class="btn" style="width:100%" onclick="confermaVolo(this)"><span class="spin"></span>Conferma e salva il volo</button></div>
+      </div>
     </div>
   </div>
 
@@ -1339,7 +1414,8 @@ function apriVolo(id){
   // allegati già presenti: si vedono con la spunta verde
   const ok='<div class="mark ok">'+svg('check')+'</div>';
   let all='';
-  if(v.docLog) all+=`<div class="allegato">${ok}<div class="f"><b>Registro del drone allegato</b><br>${v.logNome||'File del registro'} · la lettura automatica dei dati arriva con la chiave DJI</div><button class="btn sec mini vedi" onclick="apriFile('${v.docLog}')">Vedi</button></div>`;
+  if(v.letto&&(v.oltre120>0||v.quotaMax>120)) all+=`<div class="allegato" style="background:#fff;border-left:4px solid var(--ko)"><div class="mark ko">${svg('x')}</div><div class="f"><b>Superati i 120 metri</b><br>Quota massima ${v.quotaMax} m${v.oltre120?', per '+v.oltre120+' secondi':''}: da spiegare nelle note</div></div>`;
+  if(v.docLog) all+=`<div class="allegato">${ok}<div class="f"><b>Registro del drone allegato</b><br>${v.logNome||'File del registro'}${v.letto?' · dati letti dal file':''}</div><button class="btn sec mini vedi" onclick="apriFile('${v.docLog}')">Vedi</button></div>`;
   else if(v.importato||v.stato==='completo') all+=`<div class="allegato">${ok}<div class="f"><b>Registro DJI allegato</b><br>Volo di esempio della prova</div></div>`;
   else if(v.stato==='attesa') all+=`<div class="row"><button class="btn" onclick="apriVoli()">Torna al registro e importa il file</button></div>`;
   if(v.ctrl) all+=`<div class="allegato">${ok}<div class="f"><b>Controllo prima del volo</b><br>Fatto alle ${v.ctrlOra||'09:58'}: tutto in regola</div></div>`;
@@ -1348,7 +1424,14 @@ function apriVolo(id){
 
   // dati letti dal registro
   const chk='<svg viewBox="0 0 24 24">'+IC.check+'</svg>';
-  const dati = (!v.amano && (v.importato||v.stato==='completo')) ? [
+  const hm=s=>Math.floor(s/60)+' min '+String(s%60).padStart(2,'0')+' s';
+  const dati = v.letto ? [
+    ['Data',v.data],['Decollo e atterraggio',v.ora+(v.fine?' – '+v.fine:'')],['Durata',v.sec?hm(v.sec):v.min+' min'],['Luogo',v.luogo||'—'],
+    ['Quota massima',v.quotaMax+' m'+(v.oltre120?' · '+v.oltre120+' s sopra i 120 m':'')],['Distanza percorsa',String(v.km).replace('.',',')+' km'],
+    ['Velocità massima',v.velMax+' km/h'],['Foto e video',v.foto+' foto'+(v.videoS?' · '+Math.max(1,Math.round(v.videoS/60))+' min di video':'')],
+    ['Drone',v.drone],['Numero di serie',v.sn||'—'],['Batteria',(BATT.find(b=>b.id===v.batt)||{}).nome||'—'],['Carica',v.cIni?'da '+v.cIni+'% a '+v.cFin+'%':'—'],
+    ['Temperatura batteria','fino a '+v.tMax+' °C'],['Celle',v.celle&&v.celle.length?v.celle.length+' · scostamento '+String(v.dev).replace('.',',')+' V':'—']
+  ] : (!v.amano && (v.importato||v.stato==='completo')) ? [
     ['Data',v.data],['Decollo',v.ora],['Atterraggio',fine(v.ora,v.min)],
     ['Durata',v.min+' min'],['Luogo',v.luogo],['Coordinate','44.746 N · 11.940 E'],
     ['Drone',v.drone],['Matricola',MATR[v.drone]||'—'],['Batteria','n. 1 · 87 cicli'],
@@ -1361,9 +1444,15 @@ function apriVolo(id){
     : (v.amano ? campiAMano(v) : `<div style="grid-column:1/-1;font-size:13px;color:var(--muted)">Nessun registro ancora: importa il file del drone dal registro voli.</div>`);
 
   // tracciato di prova
+  if(v.letto&&v.prof&&v.prof.length>1){ const W=300,H=150,top=Math.max(140,v.quotaMax+15),y=q=>H-10-(Math.max(0,q)/top)*(H-20);
+    const pts=v.prof.map((q,i)=>(8+i*(W-16)/(v.prof.length-1)).toFixed(1)+','+y(q).toFixed(1)).join(' ');
+    document.getElementById('vo-track').innerHTML=`<line x1="8" y1="${y(120)}" x2="${W-8}" y2="${y(120)}" stroke="#AE2F28" stroke-width="1.5" stroke-dasharray="6 4" vector-effect="non-scaling-stroke"/><polyline points="${pts}" fill="none" stroke="#1D5C7C" stroke-width="2.5" vector-effect="non-scaling-stroke"/>`;
+    document.getElementById('vo-track').previousElementSibling.textContent='Quota durante il volo';
+    document.getElementById('vo-track-n').textContent='Linea rossa: limite di 120 m. Quota massima '+v.quotaMax+' m.';
+  } else { document.getElementById('vo-track').previousElementSibling.textContent='Tracciato';
   document.getElementById('vo-track').innerHTML = dati
     ? '<polyline points="40,120 70,95 110,90 150,60 190,55 230,40 250,70 215,95 170,110 120,118 60,125 40,120" fill="none" stroke="#3d5f80" stroke-width="2.5" stroke-linejoin="round" vector-effect="non-scaling-stroke"/><circle cx="40" cy="120" r="5" fill="#3f7d5a"/><text x="50" y="140" font-size="11" fill="#5f6b78">Decollo e atterraggio</text>'
-    : '<text x="150" y="80" text-anchor="middle" font-size="12" fill="#5f6b78">Nessun tracciato</text>';
+    : '<text x="150" y="80" text-anchor="middle" font-size="12" fill="#5f6b78">Nessun tracciato</text>'; }
 
   // campi da completare
   document.getElementById('vo-pil').innerHTML=(ADM?PILOTI:PILOTI.filter(p=>p.nome===IO.n)).map(p=>`<option ${p.nome===v.pilota?'selected':''}>${p.nome}</option>`).join('');
@@ -2404,6 +2493,7 @@ function sceglFile(tipo){
   const i=document.createElement('input'); i.type='file';
   i.accept = tipo==='foto'?'image/*':tipo==='log'?'.txt,.TXT,text/plain':'application/pdf,image/*';
   if(tipo==='foto') i.setAttribute('capture','environment');
+  if(tipo==='log'){ i.multiple=true; i.onchange=()=>importaRegistri(i.files); i.click(); return; }
   i.onchange=()=>caricaFile(i.files[0],tipo==='foto'?'file':tipo);
   i.click();
 }
@@ -2800,6 +2890,179 @@ function sole(b){const on=!document.body.classList.contains('sole');document.bod
   try{localStorage.setItem('quota120Sole',on?'1':'');}catch(e){} toast(on?'Modalità sole accesa: contrasto massimo':'Modalità sole spenta');}
 try{if(localStorage.getItem('quota120Sole')){document.body.classList.add('sole');document.addEventListener('DOMContentLoaded',()=>{});}}catch(e){}
 function vaiControllo(){vai('home');setTimeout(()=>{const e=document.getElementById(ASP==='C'?'h-pilota':'h-drone');if(e){e.scrollIntoView({block:'center'});if(ASP!=='C'||ADM)e.focus();}},60);}
+
+/* ---------- registri di volo DJI: letti nel telefono, le chiavi DJI passano dal server ---------- */
+let DJIMOD=null, CODA=[], LETTO=null, IMP={fatti:0,saltati:0,errori:0};
+function caricaParser(){ if(!DJIMOD) DJIMOD=import('/dji/dji_log_parser_js.mjs'); return DJIMOD; }
+function importaRegistri(files){
+  files=[...files].filter(f=>f&&f.size);
+  if(!files.length) return;
+  CODA=files; IMP={fatti:0,saltati:0,errori:0}; prossimoRegistro();
+}
+function fmtData(d){return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();}
+function fmtOra(d){return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
+function passiImp(T,i){
+  const ck='<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  document.getElementById('im-passi').innerHTML=T.map((t,j)=>`<li class="${j<i?'fatto':j===i?'ora':''}"><span class="m">${j<i?ck:''}</span>${t}</li>`).join('');
+}
+function prossimoRegistro(){
+  const f=CODA.shift();
+  if(!f){
+    const t=[IMP.fatti?pl(IMP.fatti,'volo salvato','voli salvati'):'',IMP.saltati?pl(IMP.saltati,'già presente','già presenti'):'',IMP.errori?pl(IMP.errori,'non letto','non letti'):''].filter(Boolean).join(' · ');
+    apriVoli(); if(t) toast(t); return;
+  }
+  const resto=CODA.length;
+  document.getElementById('im-leggi').classList.remove('hidden'); document.getElementById('im-letto').classList.add('hidden');
+  document.getElementById('im-file').textContent=f.name; document.getElementById('im-resto').textContent=resto?'Dopo questo: '+pl(resto,'altro file','altri file'):'';
+  vai('importa','Persone e attività &rsaquo; Registro voli &rsaquo; Carica registro'); document.getElementById('back').onclick=()=>{CODA=[];apriVoli();};
+  if(VOLI.some(v=>v.logNome===f.name)){IMP.saltati++;toast('Già caricato: '+f.name);setTimeout(prossimoRegistro,700);return;}
+  if(f.size>10*1024*1024){IMP.errori++;erroreImp(f,'Il file supera i 10 MB');return;}
+  const T=['File ricevuto','Lettura del registro','Chiave chiesta a DJI (resta sul server, non sul telefono)','Lettura del volo, punto per punto'];
+  let L=null, keys, docId='';
+  passiImp(T,0);
+  f.arrayBuffer().then(buf=>{
+    passiImp(T,1);
+    return caricaParser().then(M=>{
+      try{ L=new M.DJILog(new Uint8Array(buf)); }catch(e){ throw new Error('Non è un registro di volo DJI'); }
+      const det=L.details||{}, key=(det.aircraftSn||'')+'|'+(det.startTime||'');
+      if(det.startTime&&VOLI.some(v=>v.logKey===key)){ throw {doppio:true}; }
+      if(L.version>=13){
+        passiImp(T,2);
+        return api('POST','/api/dji/keychains',L.keychainsRequest()).then(j=>{
+          if(j.errore==='chiave_dji') throw new Error('Manca la chiave DJI sul server: chiedi all’Admin');
+          if(j.errore) throw new Error(j.errore);
+          keys=j.data;
+        });
+      }
+    }).then(()=>{
+      passiImp(T,3);
+      // il file originale resta allegato al volo
+      return fetch('/api/doc',{method:'POST',headers:{'content-type':'text/plain','x-disp':ME.id+':'+ME.k,'x-nome':encodeURIComponent(f.name)},body:f})
+        .then(r=>r.json()).then(j=>{docId=j.id||'';});
+    }).then(()=>{
+      const frames=keys?L.frames(keys):L.frames();
+      LETTO=analizza(L,frames,f.name,docId); try{L.free();}catch(e){}
+      passiImp(T,4); setTimeout(mostraLettoVolo,250);
+    });
+  }).catch(e=>{
+    try{L&&L.free();}catch(x){}
+    if(e&&e.doppio){IMP.saltati++;toast('Già caricato: '+f.name);setTimeout(prossimoRegistro,700);return;}
+    IMP.errori++; erroreImp(f,(e&&e.message)||'Lettura non riuscita');
+  });
+}
+function erroreImp(f,msg){
+  document.getElementById('im-passi').innerHTML=`<li class="err" style="display:block"><b>Non riesco a leggere ${ESC(f.name)}.</b><br>${ESC(msg)}</li>`;
+  document.getElementById('im-dopo').innerHTML=`<button class="btn sec" onclick="voloAManoDaFile()">Inserisci questo volo a mano</button>`+(CODA.length?`<button class="btn" onclick="prossimoRegistro()">Passa al file dopo</button>`:`<button class="btn" onclick="prossimoRegistro()">Torna al registro voli</button>`);
+  IMP.ultimoFile=f;
+}
+function voloAManoDaFile(){const f=IMP.ultimoFile; CODA=[]; sceglFileDiretto(f);}
+function sceglFileDiretto(f){caricaFile(f,'log');apriVoli();}
+
+// dai punti del volo ai numeri che servono
+function analizza(L,frames,nome,docId){
+  const det=L.details||{}, fr=frames||[];
+  const vol=fr.filter(x=>x.osd&&(x.osd.isMotorOn||x.osd.height>0.5));
+  const usa=vol.length?vol:fr;
+  const t0=det.startTime?new Date(det.startTime):(usa[0]&&usa[0].custom?new Date(usa[0].custom.dateTime):new Date());
+  let sec=+det.totalTime||0; if(!sec&&usa.length){const a=new Date(usa[0].custom.dateTime),b=new Date(usa[usa.length-1].custom.dateTime);sec=Math.max(0,(b-a)/1000);}
+  const t1=new Date(t0.getTime()+sec*1000);
+  const h=usa.map(x=>+x.osd.height||0), qMax=Math.max(+det.maxHeight||0,...h,0);
+  // secondi sopra i 120 m: dalla differenza di tempo tra un punto e il successivo
+  let oltre=0; for(let i=1;i<usa.length;i++){ if((+usa[i].osd.height||0)>120){ const dt=(new Date(usa[i].custom.dateTime)-new Date(usa[i-1].custom.dateTime))/1000; if(dt>0&&dt<30) oltre+=dt; } }
+  const bt=usa.map(x=>x.battery||{}).filter(b=>b.chargeLevel>0);
+  const ultima=bt[bt.length-1]||{}, cIni=bt.length?bt[0].chargeLevel:0, cFin=ultima.chargeLevel||0;
+  const tMax=bt.reduce((a,b)=>Math.max(a,+b.maxTemperature||+b.temperature||0),0);
+  const dev=bt.reduce((a,b)=>Math.max(a,+b.maxCellVoltageDeviation||+b.cellVoltageDeviation||0),0);
+  const passo=Math.max(1,Math.ceil(h.length/120)), prof=[]; for(let i=0;i<h.length;i+=passo) prof.push(Math.round(h[i]));
+  const sn=det.aircraftSn||(fr[0]&&fr[0].recover&&fr[0].recover.aircraftSn)||'';
+  const bsn=det.batterySn||(fr[0]&&fr[0].recover&&fr[0].recover.batterySn)||'';
+  const luogo=[det.city,det.street||det.area].filter(Boolean).join(', ');
+  return {nome,docId,sn,bsn,nomeDrone:det.aircraftName||'',data:fmtData(t0),ora:fmtOra(t0),fine:fmtOra(t1),sec:Math.round(sec),min:Math.max(1,Math.round(sec/60)),
+    luogo,km:Math.round((+det.totalDistance||0)/100)/10,quotaMax:Math.round(qMax),oltre120:Math.round(oltre),velMax:Math.round((+det.maxHorizontalSpeed||0)*3.6),
+    foto:+det.captureNum||0,videoS:Math.round(+det.videoTime||0),cIni,cFin,tMax:Math.round(tMax),dev:Math.round(dev*100)/100,
+    celle:(ultima.cellVoltages||[]).map(x=>Math.round(x*100)/100),prof,logKey:sn+'|'+(det.startTime||'')};
+}
+// drone: prima dal numero di serie (Matricola), poi dal nome
+function droneDaLog(x){
+  const n=s=>String(s||'').replace(/\s/g,'').toUpperCase();
+  return DRONI.find(d=>n(MATR[d.nome])&&n(MATR[d.nome])===n(x.sn))
+    || DRONI.find(d=>x.nomeDrone&&n(d.nome).includes(n(x.nomeDrone).replace(/^DJI/,'')));
+}
+function battDaLog(x,droneId){
+  const mie=BATT.filter(b=>b.drone===droneId);
+  return (x.bsn&&mie.find(b=>b.sn&&b.sn===x.bsn)) || mie.slice().sort((a,b)=>(dt(a.ultimo)||0)-(dt(b.ultimo)||0))[0];
+}
+function mostraLettoVolo(){
+  const x=LETTO, d=droneDaLog(x), ck='<svg viewBox="0 0 24 24">'+IC.check+'</svg>';
+  const fld=(k,v,c)=>`<div class="fld ${c||''}"><div class="k">${ck}${k}</div><div class="v">${v}</div></div>`;
+  const supera=x.oltre120>0||x.quotaMax>120, sem=document.getElementById('im-sem');
+  sem.className='sem'; sem.innerHTML=`<div class="light ${supera?'ko':'ok'}"></div><div><div class="t">${supera?'Superati i 120 metri':'Volo letto: tutto in regola'}</div>
+    <div class="s">${supera?'Quota massima '+x.quotaMax+' m'+(x.oltre120?', per '+(x.oltre120<90?x.oltre120+' secondi':Math.round(x.oltre120/60)+' minuti'):'')+' · spiegalo nelle note del volo':'Mai sopra i 120 metri'+(d?' · drone riconosciuto':'')}</div></div>`;
+  document.getElementById('im-volo').innerHTML=[fld('Data',x.data),fld('Decollo e atterraggio',x.ora+' – '+x.fine),fld('Durata',Math.floor(x.sec/60)+' min '+String(x.sec%60).padStart(2,'0')+' s'),
+    fld('Luogo',ESC(x.luogo)||'—'),fld('Distanza percorsa',String(x.km).replace('.',',')+' km'),fld('Quota massima',x.quotaMax+' m',supera?'warn':'ok'),
+    fld('Velocità massima',x.velMax+' km/h'),fld('Foto e video',pl(x.foto,'foto','foto')+(x.videoS?' · '+Math.max(1,Math.round(x.videoS/60))+' min di video':''))].join('');
+  // profilo della quota con la linea dei 120 m
+  const W=600,H=170,top=Math.max(140,x.quotaMax+15),y=q=>H-14-(q/top)*(H-28),P=x.prof.length>1?x.prof:[0,0];
+  const pts=P.map((q,i)=>(24+i*(W-48)/(P.length-1)).toFixed(1)+','+y(Math.max(0,q)).toFixed(1)).join(' ');
+  document.getElementById('im-prof').innerHTML=`<line x1="24" y1="${y(120)}" x2="${W-24}" y2="${y(120)}" stroke="#AE2F28" stroke-width="2" stroke-dasharray="7 5"/><text x="${W-26}" y="${y(120)-6}" text-anchor="end" font-size="13" fill="#AE2F28" font-family="Barlow,Arial">120 m</text>
+    <polygon points="24,${y(0)} ${pts} ${W-24},${y(0)}" fill="rgba(29,92,124,.12)"/><polyline points="${pts}" fill="none" stroke="#1D5C7C" stroke-width="3" stroke-linejoin="round"/>
+    <text x="28" y="${H-2}" font-size="12" fill="#5E6D77" font-family="Barlow,Arial">${x.ora}</text><text x="${W-28}" y="${H-2}" text-anchor="end" font-size="12" fill="#5E6D77" font-family="Barlow,Arial">${x.fine}</text>`;
+  // drone e batteria
+  const sDr=document.getElementById('im-drone');
+  sDr.innerHTML=(d?'':'<option value="">Scegli il drone…</option>')+DRONI.map(z=>`<option value="${z.id}" ${d&&d.id===z.id?'selected':''}>${ESC(z.nome)}</option>`).join('');
+  document.getElementById('im-drone-n').innerHTML=d?`Riconosciuto ${x.sn&&MATR[d.nome]&&MATR[d.nome].replace(/\s/g,'').toUpperCase()===x.sn.toUpperCase()?'dal numero di serie '+ESC(x.sn):'dal modello'}.`:`Non trovo il drone ${ESC(x.nomeDrone||'')} ${x.sn?'(numero di serie '+ESC(x.sn)+')':''}: sceglilo tu. ${ADM?'Mettendo il numero di serie come matricola del drone, la prossima volta lo riconosce da solo.':''}`;
+  sDr.onchange=disegnaBattImp; disegnaBattImp();
+  document.getElementById('im-dati-b').innerHTML=[fld('Carica al decollo',x.cIni+'%'),fld('Carica all’arrivo',x.cFin+'%'),fld('Temperatura massima',x.tMax+' °C'),
+    fld('Celle',(x.celle.length||'—')+(x.dev?' · scostamento '+String(x.dev).replace('.',',')+' V':''),x.dev>0.1?'warn':'ok')].join('');
+  document.getElementById('im-celle').innerHTML=x.celle.map(v=>`<div class="cell"><i class="${x.dev>0.1?'warn':''}" style="height:${Math.max(6,Math.min(100,(v-3.3)/0.9*100))}%"></i><span>${String(v.toFixed(2)).replace('.',',')} V</span></div>`).join('');
+  // pilota e cliente
+  const sp=document.getElementById('im-pil'); sp.parentNode.style.display=ADM?'':'none';
+  sp.innerHTML='<option value="">Scegli chi ha volato…</option>'+PILOTI.map(p=>`<option ${!ADM&&p.nome===IO.n?'selected':''}>${ESC(p.nome)}</option>`).join('');
+  document.getElementById('im-cli').innerHTML='<option value="">Nessuno</option>'+LAVORI.filter(l=>l.stato!=='concluso').map(l=>`<option>${ESC(l.cliente)}: ${ESC(l.titolo.toLowerCase())}</option>`).join('');
+  document.getElementById('im-note').value='';
+  document.getElementById('im-leggi').classList.add('hidden'); document.getElementById('im-letto').classList.remove('hidden');
+  document.getElementById('crumb').innerHTML='Home &rsaquo; Registro voli &rsaquo; <b>Volo letto</b>';
+  aggiornaAnteprimaAgg(); scrollTo(0,0);
+}
+function disegnaBattImp(){
+  const id=+document.getElementById('im-drone').value, sb=document.getElementById('im-batt'), mie=BATT.filter(b=>b.drone===id), pr=battDaLog(LETTO,id);
+  sb.innerHTML=mie.length?mie.map(b=>`<option value="${b.id}" ${pr&&pr.id===b.id?'selected':''}>${ESC(b.nome)} · ${b.cicli} cicli</option>`).join(''):'<option value="">Nessuna batteria inserita per questo drone</option>';
+  document.getElementById('im-batt-n').textContent=pr&&LETTO.bsn&&pr.sn===LETTO.bsn?'Riconosciuta dal numero di serie.':'Il programma propone quella che non usi da più tempo. Scelta una volta, la prossima la riconosce da solo'+(LETTO.bsn?'.':' (se il drone scrive il numero di serie nel registro).');
+  sb.onchange=aggiornaAnteprimaAgg; aggiornaAnteprimaAgg();
+}
+function aggiornaAnteprimaAgg(){
+  const x=LETTO, d=DRONI.find(z=>z.id===+document.getElementById('im-drone').value), b=BATT.find(z=>z.id===document.getElementById('im-batt').value);
+  const s=d&&SCHEDE[d.id], R=[];
+  const hm=m=>Math.floor(m/60)+' h '+String(m%60).padStart(2,'0');
+  const mm=t=>{const h=/(\d+)\s*(?:h|ore|ora)\b/.exec(t||''),m=/(\d+)\s*min/.exec(t||'');return (h?+h[1]*60:0)+(m?+m[1]:0);};
+  if(s){R.push(['--f-flotta','drone','Ore del drone',ESC(d.nome),hm(mm(s.ore)),hm(mm(s.ore)+x.min)]);
+    if(s.man){const r=mm(s.man.mancano)-x.min; R.push(['--f-flotta','manut','Prossima manutenzione',ESC(s.man.prox),hm(mm(s.man.mancano)),r>0?hm(r):'da fare subito',r<=300?'warn':'']);}}
+  if(b) R.push(['--f-flotta','batt','Cicli della batteria',ESC(b.nome),b.cicli,(+b.cicli||0)+1]);
+  const pn=ADM?document.getElementById('im-pil').value:IO.n, p=PILOTI.find(z=>z.nome===pn), sp=p&&SCHEDEP[p.id];
+  if(sp) R.push(['--f-persone','pilota','Ore del pilota',ESC(p.nome),hm(mm(sp.ore)),hm(mm(sp.ore)+x.min)]);
+  R.push(['--f-attivita','voli','Registro voli','il volo risulta completo, con il file allegato','','Completo','ok']);
+  document.getElementById('im-agg').innerHTML=R.map(r=>`<li><span class="ico" style="background:var(${r[0]})">${svg(r[1])}</span><p><b>${r[2]}</b><small>${r[3]}</small></p>
+    <span class="da" style="${r[6]==='warn'?'color:var(--warn)':r[6]==='ok'?'color:var(--ok)':''}">${r[4]!==''?`<s>${r[4]}</s>`:''}${r[5]}</span></li>`).join('');
+}
+function confermaVolo(b){
+  const x=LETTO, d=DRONI.find(z=>z.id===+document.getElementById('im-drone').value);
+  const pil=ADM?document.getElementById('im-pil').value:IO.n;
+  if(!d){toast('Scegli il drone');return;}
+  if(!pil){toast('Scegli chi ha volato');document.getElementById('im-pil').focus();return;}
+  const volo={data:x.data,ora:x.ora,fine:x.fine,sec:x.sec,min:x.min,drone:d.nome,pilota:pil,luogo:x.luogo,cliente:document.getElementById('im-cli').value,note:document.getElementById('im-note').value,
+    cat:d.cat==='specific'?'Specific con autorizzazione':d.classe==='C2'?'Open A2':'Open A1',logNome:x.nome,quotaMax:x.quotaMax,oltre120:x.oltre120,km:x.km,velMax:x.velMax,foto:x.foto,videoS:x.videoS,
+    cIni:x.cIni,cFin:x.cFin,tMax:x.tMax,dev:x.dev,celle:x.celle,batt:document.getElementById('im-batt').value,bsn:x.bsn,sn:x.sn,logKey:x.logKey,prof:x.prof};
+  b.disabled=true;b.classList.add('busy');
+  // prima si salva quello che c'è in sospeso, poi il volo
+  const via=()=>api('POST','/api/volo/importa',{volo,docLog:x.docId}).then(j=>{
+    b.disabled=false;b.classList.remove('busy');
+    if(j.errore==='doppio'){IMP.saltati++;toast('Questo volo era già stato caricato');prossimoRegistro();return;}
+    if(j.errore){toast(j.errore);return;}
+    IMP.fatti++;
+    return ricarica().then(()=>{toast('Volo salvato: ore e cicli aggiornati');prossimoRegistro();});
+  }).catch(()=>{b.disabled=false;b.classList.remove('busy');toast('Niente rete: riprova');});
+  if(JSON.stringify(stato())!==LASTJ){ controllaModifiche(); setTimeout(via,1200); } else via();
+}
 
 avvio();
 

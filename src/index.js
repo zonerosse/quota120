@@ -22,6 +22,40 @@ const PEZZO = 1000000;                       // byte per pezzo di documento
 const MAXDOC = 10 * 1024 * 1024;             // 10 MB per documento
 const TIPI_FILE = { "application/pdf": "pdf", "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/heic": "heic", "text/plain": "txt" };
 const MODELLO = "claude-sonnet-5-5";         // Sonnet per leggere i documenti (non Haiku)
+const DJI_KEYCHAINS = "https://dev.dji.com/openapi/v1/flight-records/keychains";   // chiavi per aprire i registri DJI dalla versione 13
+
+// ---- ore e minuti scritti come «117 h 05 min» o «2 ore 55 min» ----
+const minDi = s => { const t = String(s || ""), h = /(\d+)\s*(?:h|ore|ora)\b/.exec(t), m = /(\d+)\s*min/.exec(t); return (h ? +h[1] * 60 : 0) + (m ? +m[1] : 0); };
+const hDi = m => { m = Math.max(0, Math.round(m)); return Math.floor(m / 60) + " h " + String(m % 60).padStart(2, "0") + " min"; };
+const oreDi = m => { m = Math.max(0, Math.round(m)); const h = Math.floor(m / 60), mi = m % 60; return (h ? h + (h === 1 ? " ora" : " ore") : "") + (h && mi ? " " : "") + (mi || !h ? mi + " min" : ""); };
+const NUM = (v, min, max) => { const n = +v; return Number.isFinite(n) ? Math.max(min, Math.min(max, n)) : 0; };
+
+// un volo letto dal registro DJI aggiorna da solo drone, manutenzione, batteria e pilota
+function applicaVolo(d, v) {
+  const min = v.min || 0, dr = (d.DRONI || []).find(x => x.nome === v.drone);
+  if (dr && d.SCHEDE && d.SCHEDE[dr.id]) {
+    const sc = d.SCHEDE[dr.id];
+    sc.ore = hDi(minDi(sc.ore) + min); sc.voli = (+sc.voli || 0) + 1;
+    if (sc.man) { const r = minDi(sc.man.mancano) - min; sc.man.mancano = r > 0 ? oreDi(r) : "da fare subito"; sc.man.liv = r <= 0 ? "ko" : r <= 300 ? "warn" : sc.man.liv === "ko" ? "warn" : sc.man.liv;
+      if (r <= 300 && sc.man.liv === "ok") sc.man.liv = "warn"; }
+  }
+  const b = (d.BATT || []).find(x => x.id === v.batt);
+  if (b) { b.cicli = (+b.cicli || 0) + 1; b.ultimo = v.data; if (v.bsn && !b.sn) b.sn = v.bsn;
+    if (Array.isArray(v.celle) && v.celle.length) b.celle = v.celle.slice(0, 14);
+    if (v.dev > 0.1) b.stato = "warn"; }
+  const p = (d.PILOTI || []).find(x => x.nome === v.pilota);
+  if (p) { const sp = (d.SCHEDEP = d.SCHEDEP || {})[p.id] = (d.SCHEDEP || {})[p.id] || { ruolo: "Pilota", ore: "0 h", voli: 0, ore90: "0 h", inc: 0, att: {} };
+    sp.ore = hDi(minDi(sp.ore) + min); sp.voli = (+sp.voli || 0) + 1; sp.ore90 = hDi(minDi(sp.ore90) + min); }
+  return d;
+}
+// i campi di un volo letto dal registro, ripuliti
+function pulisciLetto(v) {
+  return { letto: !!v.letto, quotaMax: NUM(v.quotaMax, 0, 9999), oltre120: NUM(v.oltre120, 0, 99999), km: NUM(v.km, 0, 9999), velMax: NUM(v.velMax, 0, 999),
+    foto: NUM(v.foto, 0, 99999), videoS: NUM(v.videoS, 0, 999999), cIni: NUM(v.cIni, 0, 100), cFin: NUM(v.cFin, 0, 100), tMax: NUM(v.tMax, -50, 150),
+    dev: NUM(v.dev, 0, 5), celle: Array.isArray(v.celle) ? v.celle.slice(0, 14).map(x => NUM(x, 0, 10)) : [], batt: esc(v.batt, 40), bsn: esc(v.bsn, 60),
+    sn: esc(v.sn, 60), logKey: esc(v.logKey, 120), fine: esc(v.fine, 5), sec: NUM(v.sec, 0, 86400),
+    prof: Array.isArray(v.prof) ? v.prof.slice(0, 160).map(x => Math.round(NUM(x, -999, 9999))) : [] };
+}
 
 // ---- permessi ----
 const permDi = (d, n) => { const p = (d.PILOTI || []).find(x => x.nome === n); return p ? ((d.PERM || {})[p.id] || {}) : {}; };
@@ -75,6 +109,8 @@ function unisci(full, m, n) {
       min: Math.max(0, Math.min(600, +v.min || 0)), stato: ["completo", "dacompl", "attesa"].includes(v.stato) ? v.stato : "dacompl",
       ctrl: !!v.ctrl, ctrlOra: esc(v.ctrlOra, 5), cliente: esc(v.cliente, 200), note: esc(v.note, 2000), importato: !!v.importato, amano: !!v.amano,
       cat: esc(v.cat, 60), inc: esc(v.inc, 60), docLog: (o && o.docLog) || esc(v.docLog, 40), logNome: esc(v.logNome, 120) };
+    // i dati letti dal registro li scrive solo il server (/api/volo/importa): il telefono non li può cambiare
+    if (o && o.letto) Object.assign(pulito, pulisciLetto(o), { drone: o.drone, data: o.data, ora: o.ora, min: o.min, pilota: o.pilota });
     if (o) Object.assign(o, pulito); else { d.VOLI = d.VOLI || []; d.VOLI.unshift(pulito); }
   }
   const zk = z => z.data + "|" + z.ora + "|" + z.drone + "|" + z.pilota, zs = new Set((d.ZONE || []).map(zk));
@@ -225,6 +261,38 @@ export class Stato extends DurableObject {
       if (b.op === "approva") x.app = true;
       await st.put("disp", disp);
       return J({ ok: true, disp: pub(), blocchi });
+    }
+
+    // ---- registri di volo DJI: la chiave resta qui, il telefono chiede solo le chiavi del suo file ----
+    if (p === "/api/dji/keychains" && request.method === "POST") {
+      if (!this.env.DJI_API_KEY) return J({ errore: "chiave_dji" }, 503);
+      const txt = await request.text(); if (txt.length > 300000) return J({ errore: "Richiesta troppo grande" }, 413);
+      try {
+        const r = await fetch(DJI_KEYCHAINS, { method: "POST", headers: { "content-type": "application/json", "api-key": this.env.DJI_API_KEY }, body: txt });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok || !j.data) return J({ errore: "DJI non ha dato le chiavi" + (j.result && j.result.msg ? ": " + esc(j.result.msg, 200) : " (" + r.status + ")") }, 502);
+        return J({ data: j.data });
+      } catch (e) { return J({ errore: "DJI non risponde: riprova tra poco" }, 502); }
+    }
+    if (p === "/api/volo/importa" && request.method === "POST") {
+      let b; try { b = await request.json(); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
+      const m = await leggiMain(); if (!m) return J({ errore: "Nessun dato" }, 409);
+      const d = m.d, v0 = b.volo || {};
+      const pilota = adm ? String(v0.pilota || "") : me.n;
+      if (!(d.PILOTI || []).some(x => x.nome === pilota)) return J({ errore: "Scegli il pilota" }, 400);
+      if (!(d.DRONI || []).some(x => x.nome === v0.drone)) return J({ errore: "Scegli il drone" }, 400);
+      const L = pulisciLetto(Object.assign({}, v0, { letto: true }));
+      if (L.batt && !(d.BATT || []).some(x => x.id === L.batt)) L.batt = "";
+      if (L.logKey && (d.VOLI || []).some(x => x.logKey === L.logKey)) return J({ errore: "doppio" }, 409);
+      if (b.docLog) { const info = await st.get("docinfo:" + b.docLog); if (!info || (!adm && info.da !== me.n)) b.docLog = ""; }
+      const v = Object.assign({ id: Date.now() * 10 + Math.floor(Math.random() * 10), data: DATA(v0.data) || oggi(), ora: /^\d{2}:\d{2}$/.test(v0.ora || "") ? v0.ora : "00:00",
+        drone: v0.drone, pilota, luogo: esc(v0.luogo, 120), min: NUM(v0.min, 0, 600), stato: "completo", ctrl: !!v0.ctrl, ctrlOra: esc(v0.ctrlOra, 5),
+        cliente: esc(v0.cliente, 200), note: esc(v0.note, 2000), importato: true, amano: false, cat: esc(v0.cat, 60), inc: "Nessuno",
+        docLog: esc(b.docLog, 40), logNome: esc(v0.logNome, 120) }, L);
+      d.VOLI = d.VOLI || []; d.VOLI.unshift(v);
+      applicaVolo(d, v);
+      await scriviMain(d, m.row.ver + 1);
+      return J({ ok: true, id: v.id, ver: m.row.ver + 1 });
     }
 
     // ---- dati ----
