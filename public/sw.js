@@ -1,6 +1,6 @@
 // Quota 120 senza rete: il programma (pagina, mappe, PDF, lettore DJI) resta sul telefono.
 // I dati non passano di qui: /api/ va sempre in rete; i dati per lavorare senza rete li tiene la pagina.
-const C = 'q120-v1';
+const C = 'q120-v2';
 const BASE = ['/', '/manifest.webmanifest', '/icon.svg', '/icon-180.png', '/icon-192.png',
   '/leaflet/leaflet.js', '/leaflet/leaflet.css', '/lib/jspdf.umd.min.js', '/lib/html2canvas.min.js', '/dji/dji_log_parser_js.mjs'];
 self.addEventListener('install', e => {
@@ -31,4 +31,20 @@ self.addEventListener('fetch', e => {
   if (/fonts\.(googleapis|gstatic)\.com$/.test(u.hostname)) {
     e.respondWith(caches.open(C).then(c => c.match(r).then(m => m || fetch(r).then(x => { c.put(r, x.clone()); return x; }))));
   }
+});
+
+// Android: «Condividi › Quota 120» dall'app File. I file vanno nella coda del telefono, la pagina li manda a «Voli arrivati».
+function idbSW() { return new Promise((ok, no) => { const r = indexedDB.open('q120', 1); r.onupgradeneeded = () => { const d = r.result; if (!d.objectStoreNames.contains('coda')) d.createObjectStore('coda', { keyPath: 'id' }); if (!d.objectStoreNames.contains('zone')) d.createObjectStore('zone', { keyPath: 'k' }); }; r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); }); }
+self.addEventListener('fetch', e => {
+  const r = e.request, u = new URL(r.url);
+  if (r.method !== 'POST' || u.origin !== location.origin || u.pathname !== '/condividi') return;
+  e.respondWith((async () => {
+    try {
+      const fd = await r.formData(), files = fd.getAll('file').filter(f => f && f.size), d = await idbSW();
+      await new Promise((ok, no) => { const t = d.transaction('coda', 'readwrite'), o = t.objectStore('coda');
+        files.forEach((f, i) => o.put({ id: 'c' + Date.now() + '-' + i, disp: null, tipo: 'log', nome: f.name || 'volo.txt', mime: f.type || 'text/plain', blob: f, quando: new Date().toLocaleString('it-IT') }));
+        t.oncomplete = ok; t.onerror = () => no(t.error); });
+    } catch (x) {}
+    return Response.redirect('/?condivisi=1', 303);
+  })());
 });

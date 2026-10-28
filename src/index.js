@@ -351,6 +351,28 @@ export class Stato extends DurableObject {
       }
       return J({ prova, versione: "c12", posta: c("RESEND_API_KEY") || c("BREVO_API_KEY"), RESEND_API_KEY: c("RESEND_API_KEY"), BREVO_API_KEY: c("BREVO_API_KEY"), MITTENTE: c("MITTENTE"), RISPOSTE: c("RISPOSTE"), ANTHROPIC_API_KEY: c("ANTHROPIC_API_KEY"), DJI_API_KEY: c("DJI_API_KEY") }); }
 
+    // ---- invio automatico dei voli dal telefono del pilota (Comandi Rapidi su iPhone): basta il codice di invio, niente password ----
+    if (p === "/api/invio" && request.method === "POST") {
+      const tk = url.searchParams.get("t") || "", chi = tk.length >= 16 ? await st.get("invio:" + tk) : null;
+      if (!chi) return new Response("codice di invio non valido", { status: 403 });
+      const nome = esc(decodeURIComponent(url.searchParams.get("nome") || request.headers.get("x-nome") || "volo.txt"), 120);
+      const buf = await request.arrayBuffer();
+      if (!buf.byteLength) return new Response("file vuoto", { status: 400 });
+      if (buf.byteLength > 30 * 1024 * 1024) return new Response("file troppo grande", { status: 413 });
+      const u8 = new Uint8Array(buf.slice(0, 4));
+      if (/\.(jpe?g|png|heic|mp4|mov)$/i.test(nome)) return new Response("ok (saltato)", { status: 200 });
+      const k1 = "arrivo:" + chi.n + ":" + nome + ":" + buf.byteLength;
+      const ult = { at: now, nuovi: 0 }, prima = (await st.get("invio:ultimo:" + chi.n)) || {};
+      if (await st.get(k1)) { await st.put("invio:ultimo:" + chi.n, { at: now, nuovi: prima.at && now - prima.at < 600000 ? prima.nuovi || 0 : 0, via: chi.via || "iPhone" }); return new Response("ok (già arrivato)"); }
+      const did = "d" + now.toString(36) + rnd(3), pezzi = Math.ceil(buf.byteLength / PEZZO);
+      for (let i = 0; i < pezzi; i++) await st.put("doc:" + did + ":" + i, buf.slice(i * PEZZO, (i + 1) * PEZZO));
+      await st.put("docinfo:" + did, { mime: "text/plain", pezzi, size: buf.byteLength, nome, da: chi.n, at: now, confermato: false });
+      await st.put(k1, did);
+      const L = (await st.get("arrivi")) || []; L.push({ id: did, nome, size: buf.byteLength, da: chi.n, at: now, via: "iPhone" }); await st.put("arrivi", L.slice(-300));
+      await st.put("invio:ultimo:" + chi.n, { at: now, nuovi: (prima.at && now - prima.at < 600000 ? prima.nuovi || 0 : 0) + 1, via: "iPhone" });
+      return new Response("ok");
+    }
+
     // ---- da qui serve un dispositivo riconosciuto ----
     let id = url.searchParams.get("id") || "", k = url.searchParams.get("k") || "";
     const h = request.headers.get("x-disp") || ""; if (h.includes(":")) [id, k] = h.split(":");
@@ -461,6 +483,34 @@ export class Stato extends DurableObject {
         try { await mandaMail(this.env, A.email.trim(), (x.liv === "grave" ? "URGENTE · " : "") + "Segnalazione: " + SG_TIPI[x.tipo] + " · " + x.drone, html); } catch (e) {}
       }
       return J({ ok: true, segn: x, ver: m.row.ver + 1 });
+    }
+    // codice di invio personale (per il comando rapido) e voli arrivati dal telefono
+    if (p === "/api/invio/codice") {
+      let tk = await st.get("invio:di:" + me.n);
+      if (!tk || url.searchParams.get("nuovo") === "1") { if (tk) await st.delete("invio:" + tk); tk = crypto.randomUUID().replace(/-/g, ""); await st.put("invio:" + tk, { n: me.n }); await st.put("invio:di:" + me.n, tk); }
+      return J({ codice: tk, ultimo: (await st.get("invio:ultimo:" + me.n)) || null });
+    }
+    if (p === "/api/arrivi" && request.method === "GET") {
+      const L = (await st.get("arrivi")) || [];
+      return J({ arrivi: L.filter(x => adm || x.da === me.n) });
+    }
+    if (p === "/api/arrivi" && request.method === "POST") {   // file arrivati da Android (Condividi › Quota 120) o dal telefono
+      const nome = esc(decodeURIComponent(request.headers.get("x-nome") || "volo.txt"), 120), buf = await request.arrayBuffer();
+      if (!buf.byteLength || buf.byteLength > 30 * 1024 * 1024) return J({ errore: "File non valido" }, 400);
+      const k1 = "arrivo:" + me.n + ":" + nome + ":" + buf.byteLength;
+      if (await st.get(k1)) return J({ ok: true, gia: true });
+      const did = "d" + now.toString(36) + rnd(3), pezzi = Math.ceil(buf.byteLength / PEZZO);
+      for (let i = 0; i < pezzi; i++) await st.put("doc:" + did + ":" + i, buf.slice(i * PEZZO, (i + 1) * PEZZO));
+      await st.put("docinfo:" + did, { mime: "text/plain", pezzi, size: buf.byteLength, nome, da: me.n, at: now, confermato: false });
+      await st.put(k1, did);
+      const L = (await st.get("arrivi")) || []; L.push({ id: did, nome, size: buf.byteLength, da: me.n, at: now, via: esc(request.headers.get("x-via") || "Android", 20) }); await st.put("arrivi", L.slice(-300));
+      return J({ ok: true, id: did });
+    }
+    if (p === "/api/arrivi/letti" && request.method === "POST") {
+      let b; try { b = await request.json(); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
+      const ids = new Set(Array.isArray(b.ids) ? b.ids : []), L = (await st.get("arrivi")) || [];
+      await st.put("arrivi", L.filter(x => !(ids.has(x.id) && (adm || x.da === me.n))));
+      return J({ ok: true });
     }
     if (p === "/api/zone/carica" && request.method === "POST") {
       if (!adm) return J({ errore: "Solo l'Admin può caricare le zone" }, 403);
