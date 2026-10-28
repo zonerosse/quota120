@@ -211,6 +211,17 @@
   .dest select{max-width:100%}
   header .op .lungo{display:inline}
   @media(max-width:560px){header .op .lungo{display:none}}
+  .admbtn{display:inline-flex;align-items:center;gap:7px;background:#fff;color:var(--head);border:0;border-radius:8px;padding:7px 12px;font-size:14px;font-weight:700;cursor:pointer;position:relative;margin-left:12px;flex:none}
+  .admbtn i.admdot{position:absolute;top:-3px;right:-3px;width:11px;height:11px;border-radius:50%;background:var(--ko);border:2px solid var(--head);display:none}
+  body.op .admbtn{display:none}
+  @media(max-width:560px){.admbtn .lungo{display:none} .admbtn{padding:7px 10px}}
+  .pannello{border:1px solid var(--accent);border-left:6px solid var(--accent);background:#f4f7fa;margin-bottom:12px}
+  .pannello .tit{display:flex;align-items:center;gap:8px;color:var(--accent);font-weight:700;font-size:15px;text-transform:uppercase;letter-spacing:.04em}
+  .pannello .sub{font-size:12px;color:var(--muted);margin:2px 0 10px}
+  .richiesta{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-left:4px solid var(--ko);border-radius:9px;padding:9px 10px;margin-bottom:10px;flex-wrap:wrap}
+  .richiesta .main{flex:1;min-width:160px;font-size:14px}
+  .privtag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:var(--accent);background:#e3ebf3;border-radius:5px;padding:2px 6px;margin-left:6px;vertical-align:middle}
+  .adm-in{border:1px solid var(--accent);border-radius:6px;padding:4px 6px;font-size:14px;font-weight:600;width:100%;margin-top:2px}
   header .op button{background:none;border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:6px;font-size:12px;padding:3px 8px;margin-top:3px;cursor:pointer}
   body.op .solo-adm{display:none!important}
   body.op .ro .btn:not(.vedi){display:none!important}
@@ -225,6 +236,7 @@
   <div class="logo"><svg viewBox="0 0 24 24" width="18" height="18" stroke="#fff" fill="none" stroke-width="1.8" stroke-linecap="round"><circle cx="5" cy="5" r="2.5"/><circle cx="19" cy="5" r="2.5"/><circle cx="5" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/><rect x="9" y="9" width="6" height="6" rx="1"/><path d="M7 7l2 2M17 7l-2 2M7 17l2-2M17 17l-2-2"/></svg></div>
   <h1>Quota 120</h1>
   <div class="op" id="op-head"></div>
+  <button class="admbtn" id="admbtn" style="display:none" onclick="apriAdmin()"><svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg><span class="lungo">Pannello </span>Admin<i class="admdot" id="admdot"></i></button>
 </header>
 
 <div class="wrap">
@@ -259,6 +271,12 @@
 
   <!-- ================= HOME ================= -->
   <div id="v-home">
+    <div class="card pannello solo-adm">
+      <div class="tit"><svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg> Pannello Admin</div>
+      <div class="sub">Lo vedi solo tu: qui ci sono i comandi riservati all'Admin.</div>
+      <div id="pa-rich"></div>
+      <div class="tiles" id="t-admin"></div>
+    </div>
     <div class="grid2">
       <div class="card">
         <h2>Controllo prima del volo</h2>
@@ -381,7 +399,7 @@
     <div class="card">
       <h2>I tuoi droni</h2>
       <ul class="dlist" id="dlist"></ul>
-      <div class="row"><button class="btn sec solo-adm" onclick="nuovoDrone()">Aggiungi drone</button></div>
+      <div class="row"><button class="btn sec solo-adm" onclick="nuovoDrone()">Aggiungi drone <span class="privtag"><svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg>Admin</span></button></div>
     </div>
   </div>
 
@@ -431,13 +449,33 @@
     <div class="card">
       <h2>I tuoi piloti</h2>
       <ul class="dlist" id="plist"></ul>
-      <div class="row"><button class="btn sec solo-adm" onclick="nuovoPilota()">Aggiungi pilota</button></div>
+      <div class="row"><button class="btn sec solo-adm" onclick="nuovoPilota()">Aggiungi pilota <span class="privtag"><svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg>Admin</span></button></div>
     </div>
-    <div class="card solo-adm" style="margin-top:12px">
+  </div>
+
+  <!-- ================= ADMIN ================= -->
+  <div id="v-admin" class="hidden">
+    <div class="card pannello" style="margin-bottom:0;padding:10px 14px"><div class="tit"><svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg> Pannello Admin</div><div class="sub" style="margin-bottom:0">Comandi riservati: solo l'Admin vede questa pagina.</div></div>
+    <div class="card" id="ad-tel" style="margin-top:12px">
       <h2>Telefoni e computer collegati</h2>
-      <div style="font-size:13px;color:var(--muted)">Un operatore entra con il suo nome; il suo telefono resta in attesa finché non lo approvi qui.</div>
+      <div style="font-size:13px;color:var(--muted)">Un pilota entra con il suo nome: il suo telefono resta in attesa finché non lo approvi qui.</div>
       <ul class="dlist" id="pl-disp" style="margin-top:6px"></ul>
-      <div class="row"><button class="btn sec mini" onclick="cambiaCodice()">Cambia il codice dell'Admin</button></div>
+    </div>
+    <div class="card" id="ad-ute" style="margin-top:12px">
+      <h2>Utenti e permessi</h2>
+      <div style="font-size:13px;color:var(--muted)">Ogni pilota inserito in Piloti può entrare con il suo nome. Qui decidi cosa può vedere, uno per uno: tocca un nome per aprirlo.</div>
+      <div id="ad-perm"></div>
+      <div class="row"><button class="btn sec" onclick="nuovoPilota()">Aggiungi pilota</button></div>
+    </div>
+    <div class="card" id="ad-op" style="margin-top:12px">
+      <h2>Dati dell'operatore</h2>
+      <div class="fgrid" id="ad-dati"></div>
+      <div class="row" id="ad-dati-az"></div>
+    </div>
+    <div class="card" id="ad-acc" style="margin-top:12px">
+      <h2>Accesso dell'Admin</h2>
+      <div class="allegato"><div class="mark ok"><svg viewBox="0 0 24 24"><path d="M5 12l4 4 10-10"/></svg></div><div class="f"><b>Codice dell'Admin</b><br>4 cifre · serve per entrare come Admin da un telefono o computer nuovo</div><button class="btn sec mini" onclick="cambiaCodice()">Cambia</button></div>
+      <div class="row"><button class="btn sec mini" onclick="esci()">Esci da questo computer</button></div>
     </div>
   </div>
 
@@ -470,7 +508,7 @@
         <ul class="dlist" id="pi-voli"></ul>
       </div>
       <div class="card">
-        <h2>Accesso e permessi</h2>
+        <h2>Cosa può vedere</h2>
         <div id="pi-acc"></div>
       </div>
     </div>
@@ -853,7 +891,7 @@ function disegnaHome(){
     const lab={ko:'Urgente',warn:'Presto',ok:'In regola'}[x.liv];
     return `<li class="${x.go?'go':''}" ${x.go?`onclick="TODOGO[${i}]()"`:''}><span class="tag ${x.liv}">${lab}</span><span>${x.t}</span><span class="when">${x.w}</span></li>`;
   }).join('');
-  contaRiquadri();
+  contaRiquadri(); disegnaPannello();
   { const a=LAVORI.filter(l=>l.stato!=='concluso').length; TILES.attivita[2].c=pl(a,'lavoro aperto','lavori aperti'); }
   { const n=Object.values(SCHEDE).filter(s=>s.man.liv!=='ok').length; TILES.flotta[2].c=n?pl(n,'in scadenza','in scadenza'):'in regola'; TILES.flotta[2].d=n?'warn':''; }
   { const n=TRATT.filter(t=>t.stato!=='ok').length; TILES.regole[3].c=n?pl(n,'da completare','da completare'):'quaderno in regola'; TILES.regole[3].d=n?'warn':''; }
@@ -1182,7 +1220,7 @@ function apriDrone(id, da, apriBatt){
 const ATTNOMI={'A1-A3':'Attestato A1-A3','A2':'Attestato A2','STS-01':'Attestato STS-01'};
 const ATTCOSA={'A1-A3':'Droni C0 e C1, e voli lontano dalle persone','A2':'Droni C2 vicino alle persone','STS-01':'Scenario standard e voli in categoria Specific'};
 let SCHEDEP={
-  1:{ruolo:'Admin e pilota',tel:'',ore:'96 h 30 min',voli:142,ore90:'21 h 10 min',inc:0,
+  1:{ruolo:'Pilota',tel:'',ore:'96 h 30 min',voli:142,ore90:'21 h 10 min',inc:0,
      att:{'A1-A3':{num:'ITA-RP-1a2b3c',ril:'12/03/2023',scad:'12/03/2028',liv:'ok',file:true},
           'A2':{num:'ITA-RP-4d5e6f',ril:'20/06/2023',scad:'20/06/2028',liv:'ok',file:true}}},
   2:{ruolo:'Pilota',tel:'',ore:'14 h 05 min',voli:27,ore90:'2 h 40 min',inc:1,
@@ -1211,7 +1249,7 @@ function apriPiloti(){
     const s=SCHEDEP[p.id]||{ruolo:'',ore:'0 h'}, st=statoPilota(p);
     return `<li onclick="apriPilota(${p.id})">
       <div class="ini">${iniziali(p.nome)}</div>
-      <div class="main"><div class="a">${p.nome}</div><div class="b">${(PERM[p.id]||{}).admin?'Admin':s.ruolo} · ${(p.att||[]).join(', ')||'nessun attestato'} · ${s.ore}</div></div>
+      <div class="main"><div class="a">${p.nome}</div><div class="b">${s.ruolo} · ${(p.att||[]).join(', ')||'nessun attestato'} · ${s.ore}</div></div>
       <span class="tag ${st}">${LIVTXT[st]}</span></li>`;
   }).join('');
   vai('piloti','Persone e attività &rsaquo; Piloti');
@@ -1271,7 +1309,7 @@ function apriEnac(){
   const chk='<svg viewBox="0 0 24 24">'+IC.check+'</svg>';
   document.getElementById('en-op').innerHTML=[
     ['Codice operatore','ITA-xxxx',true],['Registrazione D-Flight','Attiva',true],['Abbonamento D-Flight','Scade il 14/02/2027',true],
-    ['Assicurazione RC','Scade il '+ASSIC.scad,true],['Categorie','Open'+(ok?' e Specific (agricola)':''),true],['Responsabile',((PILOTI.find(p=>(PERM[p.id]||{}).admin)||{}).nome||'—')+' (Admin)',true]
+    ['Assicurazione RC','Scade il '+ASSIC.scad,true],['Categorie','Open'+(ok?' e Specific (agricola)':''),true],['Responsabile',(OP.resp||'—')+' (Admin)',true]
   ].map(x=>`<div class="fld"><div class="k">${chk}${x[0]}</div><div class="v">${x[1]}</div></div>`).join('');
 
   let aut;
@@ -1663,29 +1701,22 @@ const PERMESSI=[
   ['agri','Campi e trattamenti']
 ];
 let PERM={
-  1:{admin:true},
+  1:{voliTutti:true,flotta:true,documenti:false,clienti:true,prezzi:false,enac:true,agri:false},
   2:{admin:false,voliTutti:false,flotta:true,documenti:false,clienti:false,prezzi:false,enac:false,agri:false},
   3:{admin:false,voliTutti:false,flotta:true,documenti:false,clienti:true,prezzi:false,enac:false,agri:true}
 };
 function disegnaPermessi(id){
   const P=PERM[id]||{}, box=document.getElementById('pi-acc');
-  if(P.admin){
-    box.innerHTML=`<div class="allegato"><div class="mark ok">${svg('check')}</div><div class="f"><b>Admin</b><br>Vede e modifica tutto, e decide i permessi degli altri</div></div>
-      <div style="font-size:12px;color:var(--muted);margin-top:8px">Il responsabile dell'operatore è sempre Admin. Solo l'Admin può cambiare i permessi.</div>`;
-    return;
-  }
-  box.innerHTML=`<div class="allegato"><div class="mark ok">${svg('check')}</div><div class="f"><b>Operatore con account suo</b><br>Fa sempre il controllo prima del volo e importa i suoi registri. Il resto lo decide l'Admin.</div></div>
-    <div class="cat">Cosa può vedere</div>
+  box.innerHTML=`<div style="font-size:12px;color:var(--muted)">Fa sempre il controllo prima del volo e importa i suoi registri. Il resto lo decide l\u2019Admin:</div>
     <ul class="puo">${PERMESSI.map(([k,t])=>`<li><div class="mark ${P[k]?'ok':''}" style="${P[k]?'':'background:#c3cad2'}">${svg(P[k]?'check':'x')}</div>
-      <div class="main"><div class="a" style="font-weight:500">${t}</div></div>
-      ${ADM?`<button class="btn ${P[k]?'sec':''} mini" onclick="lavora(this,()=>{PERM[${id}].${k}=!PERM[${id}].${k};disegnaPermessi(${id});})"><span class="spin"></span>${P[k]?'Togli':'Concedi'}</button>`:''}</li>`).join('')}</ul>
-    <div style="font-size:12px;color:var(--muted);margin-top:6px">${ADM?'Solo tu, come Admin, vedi questi tasti.':'Questi permessi li decide l\u2019Admin.'}</div>`;
+      <div class="main"><div class="a" style="font-weight:500">${t}</div></div></li>`).join('')}</ul>
+    ${ADM?`<div class="row"><button class="btn sec mini" onclick="apriAdmin('ad-ute',${id})">Cambia i permessi <span class="privtag"><svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg>Admin</span></button></div>`:''}`;
 }
 
 /* =====================================================================
    IL PROGRAMMA VERO: entrata, dati sul server, salvataggi, documenti
    ===================================================================== */
-let OP={nome:'Riprese Delta (dati di esempio)',codice:'ITA-xxxx',dfReg:'02/04/2023',dfAbb:'14/02/2027'};
+let OP={nome:'Riprese Delta (dati di esempio)',codice:'ITA-xxxx',resp:'',dfReg:'02/04/2023',dfAbb:'14/02/2027',email:'',tel:''};
 let DOCS=[];
 const INTERV_BASE=['Controllo generale','Sostituzione eliche','Aggiornamento firmware','Riparazione'];
 const VUOTI={OP:{},DRONI:[],PILOTI:[],ASSIC:{},AUT_ENAC:{agricola:false},VOLI:[],MATR:{},SCHEDE:{},BATT:[],SCHEDEP:{},
@@ -1704,7 +1735,10 @@ function giorni(s){const d=dt(s);if(!d)return 9999;const o=new Date();o.setHours
 function livData(s){const g=giorni(s);return g<0?'ko':g<90?'warn':'ok';}
 function nuovoId(){return Date.now()*10+Math.floor(Math.random()*10);}
 /* stati calcolati dai dati (scadenze, abilitazioni, manutenzioni) */
+let MIGRATO=false;
 function ricalcola(){
+  for(const id of Object.keys(PERM)){ if(PERM[id]&&PERM[id].admin){ MIGRATO=true; PERM[id]={voliTutti:true,flotta:true,documenti:false,clienti:true,prezzi:false,enac:true,agri:false};
+    if(SCHEDEP[id]&&/admin/i.test(SCHEDEP[id].ruolo||'')) SCHEDEP[id].ruolo='Pilota'; } }
   for(const p of PILOTI){
     const s=SCHEDEP[p.id]; if(!s) continue; s.att=s.att||{};
     for(const a of Object.values(s.att)) a.liv=a.scad?livData(a.scad):'warn';
@@ -1724,7 +1758,6 @@ function ricalcola(){
 let TODOGO=[];
 function calcolaTodo(){
   const L=[], add=(liv,t,w,go)=>L.push({liv,t,w,go});
-  if(ADM) DISP.filter(x=>x.stato==='attesa').forEach(x=>add('ko','Telefono da approvare: '+x.n,'codice '+x.codice,()=>apriPiloti()));
   const spec=DRONI.filter(d=>d.cat==='specific');
   if(spec.length&&!AUT_ENAC.agricola) add('ko','Autorizzazione ENAC agricola mancante ('+spec.map(d=>d.nome.replace('DJI ','')).join(', ')+')',
     DOMANDA&&DOMANDA.stato==='inviata'?'domanda inviata':'da richiedere',puoVedere('Autorizzazioni ENAC')?()=>apriEnac():null);
@@ -1783,7 +1816,7 @@ function vai(v, crumb){
 }
 function schermata(v){
   document.querySelectorAll('.wrap > [id^="v-"]').forEach(e=>e.classList.toggle('hidden',e.id!=='v-'+v));
-  document.querySelector('.nav').style.display='none'; document.getElementById('op-head').innerHTML=''; VISTA=v;
+  document.querySelector('.nav').style.display='none'; document.getElementById('op-head').innerHTML=''; document.getElementById('admbtn').style.display='none'; VISTA=v;
 }
 function avvio(){
   BASE=JSON.stringify(stato());
@@ -1836,16 +1869,18 @@ function entra(){
     if(j._s===403&&j.stato==='attesa'){ME.stato='attesa';meSave();attesa();return;}
     if(j._s===401||j._s===403||j.vuoto){esci();return;}
     IO=j.io; ADM=IO.r==='adm'; document.body.classList.toggle('op',!ADM);
-    DISP=j.disp||[]; VER=j.ver; apply(j.data); LASTJ=JSON.stringify(stato());
+    DISP=j.disp||[]; VER=j.ver; apply(j.data); LASTJ=MIGRATO?'':JSON.stringify(stato());MIGRATO=false;
     testata(); vai('home');
     clearInterval(T_SAL); T_SAL=setInterval(controllaModifiche,1500);
     clearInterval(T_POLL); T_POLL=setInterval(aggiorna,15000);
   }).catch(()=>{schermata('login');toast('Niente rete: riprova tra poco');});
 }
 function testata(){
+  document.getElementById('admbtn').style.display=ADM?'inline-flex':'none';
   document.getElementById('op-head').innerHTML=`<span class="lungo">${OP.codice||''} · ${OP.nome||''}<br></span>${ADM?'Admin':IO.n} <button onclick="esci()">Esci</button>`;
 }
 function esci(){
+  if(ME) fetch('/api/disp/esci',{method:'POST',headers:{'x-disp':ME.id+':'+ME.k}}).catch(()=>{});
   ME=null;meSave();clearInterval(T_ATT);clearInterval(T_SAL);clearInterval(T_POLL);
   IO={r:'',n:''};ADM=false;document.body.classList.remove('op');
   document.getElementById('lg-form').innerHTML='';schermata('login');
@@ -1857,7 +1892,7 @@ function controllaModifiche(){
   SAVING=true;
   api('PUT','/api/stato',{ver:VER,data:JSON.parse(s)}).then(j=>{
     SAVING=false;
-    if(j._s===409){VER=j.ver;apply(j.data);LASTJ=JSON.stringify(stato());toast('Qualcun altro ha appena cambiato qualcosa: ho aggiornato. Controlla l’ultima cosa che hai fatto.');ridisegna();return;}
+    if(j._s===409){VER=j.ver;apply(j.data);LASTJ=MIGRATO?'':JSON.stringify(stato());MIGRATO=false;toast('Qualcun altro ha appena cambiato qualcosa: ho aggiornato. Controlla l’ultima cosa che hai fatto.');ridisegna();return;}
     if(j._s===401||j._s===403){esci();return;}
     if(j.ver){VER=j.ver;LASTJ=s;} else toast(j.errore||'Salvataggio non riuscito');
   }).catch(()=>{SAVING=false;});
@@ -1868,17 +1903,19 @@ function aggiorna(){
     if(j._s===401||j._s===403){esci();return;}
     let ch=false;
     if(j.disp&&JSON.stringify(j.disp)!==JSON.stringify(DISP)){DISP=j.disp;ch=true;}
-    if(j.data){ if(JSON.stringify(stato())!==LASTJ) return; VER=j.ver; apply(j.data); LASTJ=JSON.stringify(stato()); ch=true; }
+    if(j.data){ if(JSON.stringify(stato())!==LASTJ) return; VER=j.ver; apply(j.data); LASTJ=MIGRATO?'':JSON.stringify(stato());MIGRATO=false; ch=true; }
     if(ch) ridisegna();
   }).catch(()=>{});
 }
-function ricarica(){return api('GET','/api/stato?all=1').then(j=>{if(j.data){VER=j.ver;apply(j.data);LASTJ=JSON.stringify(stato());DISP=j.disp||DISP;}});}
+function ricarica(){return api('GET','/api/stato?all=1').then(j=>{if(j.data){VER=j.ver;apply(j.data);LASTJ=MIGRATO?'':JSON.stringify(stato());MIGRATO=false;DISP=j.disp||DISP;}});}
 function ridisegna(){
   testata();
   const a=document.activeElement; if(a&&/INPUT|SELECT|TEXTAREA/.test(a.tagName)) return;
   if(document.querySelector('.velo')) return;
   if(VISTA==='home'){const y=scrollY;disegnaHome();scrollTo(0,y);}
   else if(VISTA==='piloti'){const y=scrollY;apriPiloti();scrollTo(0,y);}
+  else if(VISTA==='admin'){disegnaDisp();}
+  if(ADM) disegnaPannello();
 }
 function toast(t){
   const old=document.querySelector('.toast'); if(old) old.remove();
@@ -1983,13 +2020,13 @@ function disegnaDisp(){
 function dispAz(op,id,b){
   b.disabled=true;b.classList.add('busy');
   api('POST','/api/disp/azione',{op,id}).then(j=>{b.disabled=false;b.classList.remove('busy');
-    if(j.disp)DISP=j.disp; toast(op==='approva'?'Approvato: sul suo telefono si apre da solo':op==='rifiuta'?'Rifiutato':'Tolto'); disegnaDisp();})
+    if(j.disp)DISP=j.disp; toast(op==='approva'?'Approvato: sul suo telefono si apre da solo':op==='rifiuta'?'Rifiutato':'Tolto'); disegnaDisp(); disegnaPannello(); if(VISTA==='admin') disegnaPermAdm();})
   .catch(()=>{b.disabled=false;b.classList.remove('busy');toast('Niente rete');});
 }
 
 /* ---------- registro voli: file del drone e dati a mano ---------- */
 function manuale(){
-  const mio=ADM?((PILOTI.find(p=>(PERM[p.id]||{}).admin)||PILOTI[0]||{}).nome||''):IO.n;
+  const mio=ADM?((PILOTI[0]||{}).nome||''):IO.n;
   const v={id:nuovoId(),data:oggi(),ora:ora(),drone:(DRONI[0]||{}).nome||'',pilota:mio,luogo:'',min:0,stato:'dacompl',ctrl:false,amano:true};
   VOLI.unshift(v); apriVolo(v.id);
 }
@@ -1999,7 +2036,7 @@ function nuovoVoloDaLog(j,nome){
   const data=m?m[3]+'/'+m[2]+'/'+m[1]:oggi(), orario=m?m[4]+':'+m[5]:ora();
   let v=VOLI.find(x=>x.stato==='attesa'&&(ADM||x.pilota===IO.n)&&!x.docLog);
   if(v) Object.assign(v,{docLog:j.id,logNome:nome,amano:true,stato:'dacompl',data:m?data:v.data,ora:m?orario:v.ora});
-  else { const mio=ADM?((PILOTI.find(p=>(PERM[p.id]||{}).admin)||PILOTI[0]||{}).nome||''):IO.n;
+  else { const mio=ADM?((PILOTI[0]||{}).nome||''):IO.n;
     v={id:nuovoId(),data,ora:orario,drone:(DRONI[0]||{}).nome||'',pilota:mio,luogo:'',min:0,stato:'dacompl',ctrl:false,amano:true,docLog:j.id,logNome:nome}; VOLI.unshift(v); }
   apriVolo(v.id); toast('Registro allegato: completa i dati del volo');
 }
@@ -2187,6 +2224,63 @@ function stampaTrattamento(id){
     <tr><th>Prodotto</th><td>${t.prod}</td></tr><tr><th>Dose per ettaro</th><td>${t.dose}</td></tr><tr><th>Avversità</th><td>${t.avv}</td></tr>
     <tr><th>Miscela distribuita</th><td>${t.litri} L</td></tr><tr><th>Pilota</th><td>${p.nome||''}</td></tr><tr><th>Mezzo</th><td>Drone · ${t.durata}</td></tr></table>
     <p class="m">Da riportare nel quaderno di campagna dell'azienda.</p>`);
+}
+
+/* ---------- PANNELLO ADMIN ---------- */
+const SHIELD='<svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg>';
+function disegnaPannello(){
+  if(!ADM) return;
+  const att=DISP.filter(x=>x.stato==='attesa');
+  document.getElementById('admdot').style.display=att.length?'block':'none';
+  document.getElementById('pa-rich').innerHTML=att.map(x=>`<div class="richiesta">
+    <div class="ini" style="background:var(--f-persone)">${iniziali(x.n)}</div>
+    <div class="main"><b>${x.n}</b> chiede di entrare · codice <b>${x.codice}</b><br><span style="font-size:12px;color:var(--muted)">Approva solo se il codice è quello che vedi sul suo telefono</span></div>
+    <button class="btn mini" onclick="dispAz('approva','${x.id}',this)"><span class="spin"></span>Approva</button>
+    <button class="btn sec mini" onclick="dispAz('rifiuta','${x.id}',this)"><span class="spin"></span>Rifiuta</button></div>`).join('');
+  const T=[{i:SHIELD,n:'Telefoni collegati',c:att.length?pl(att.length,'da approvare','da approvare'):'tutti approvati',d:att.length?'ko':'',go:"apriAdmin('ad-tel')"},
+    {i:svg('pilota'),n:'Utenti e permessi',c:'chi vede cosa',go:"apriAdmin('ad-ute')"},
+    {i:svg('pilota'),n:'Aggiungi pilota',c:'nuovo utente',go:'nuovoPilota()'},
+    {i:svg('drone'),n:'Aggiungi drone',c:'nuovo drone',go:'nuovoDrone()'},
+    {i:svg('dflight'),n:'Dati dell’operatore',c:OP.codice||'da completare',d:OP.resp?'':'warn',go:"apriAdmin('ad-op')"},
+    {i:SHIELD,n:'Codice dell’Admin',c:'cambia il codice',go:'cambiaCodice()'}];
+  document.getElementById('t-admin').innerHTML=T.map(t=>`<button class="tile" onclick="${t.go}">
+    <div class="ico" style="background:var(--accent)">${t.i}</div>
+    <div><div class="n">${t.n}</div><div class="c">${t.c}</div></div>${t.d?`<span class="dot ${t.d}"></span>`:''}</button>`).join('');
+}
+function apriAdmin(sez,apri){
+  if(!ADM) return;
+  disegnaDisp(); disegnaPermAdm(apri); disegnaDatiOp(false);
+  vai('admin','Pannello Admin');
+  if(sez) setTimeout(()=>{const e=document.getElementById(sez); if(e) e.scrollIntoView({behavior:'smooth'});},60);
+}
+function disegnaPermAdm(apri){
+  const el=document.getElementById('ad-perm');
+  if(!PILOTI.length){el.innerHTML='<div style="font-size:13px;color:var(--muted);margin-top:8px">Nessun pilota ancora: aggiungine uno.</div>';return;}
+  el.innerHTML=PILOTI.map(p=>{
+    const P=PERM[p.id]||{}, si=PERMESSI.filter(([k])=>P[k]).map(([k,t])=>(s=>s.charAt(0).toLowerCase()+s.slice(1))(t.split(' (')[0]));
+    const conn=DISP.some(d=>d.n===p.nome&&d.stato==='ok'), att=DISP.some(d=>d.n===p.nome&&d.stato==='attesa');
+    return `<details class="batt" ${apri===p.id?'open':''}><summary>
+      <div class="ini">${iniziali(p.nome)}</div>
+      <div class="main"><div class="a">${p.nome}</div><div class="b">Vede: i suoi voli${si.length?', '+si.join(', '):''}</div></div>
+      <span class="tag ${att?'ko':conn?'ok':'warn'}">${att?'Da approvare':conn?'Collegato':'Mai entrato'}</span>${chev}</summary>
+      <div class="in"><div style="font-size:12px;color:var(--muted)">Fa sempre il controllo prima del volo e importa i suoi registri. Il resto lo decidi tu:</div>
+      <ul class="puo">${PERMESSI.map(([k,t])=>`<li><div class="mark ${P[k]?'ok':''}" style="${P[k]?'':'background:#c3cad2'}">${svg(P[k]?'check':'x')}</div>
+        <div class="main"><div class="a" style="font-weight:500">${t}</div></div>
+        <button class="btn ${P[k]?'sec':''} mini" onclick="lavora(this,()=>{PERM[${p.id}]=PERM[${p.id}]||{};PERM[${p.id}].${k}=!PERM[${p.id}].${k};disegnaPermAdm(${p.id});})"><span class="spin"></span>${P[k]?'Togli':'Concedi'}</button></li>`).join('')}</ul>
+      </div></details>`;}).join('');
+}
+const CAMPI_OP=[['nome','Nome dell’operatore'],['codice','Codice operatore ENAC'],['resp','Responsabile (Admin)'],['dfReg','Registrato su D-Flight il'],['dfAbb','Abbonamento D-Flight fino al'],['email','Email'],['tel','Telefono']];
+function disegnaDatiOp(mod){
+  const chk='<svg viewBox="0 0 24 24">'+IC.check+'</svg>', q=v=>String(v==null?'':v).replace(/"/g,'&quot;');
+  document.getElementById('ad-dati').innerHTML=CAMPI_OP.map(([k,l])=>`<div class="fld"><div class="k">${mod||!OP[k]?'':chk}${l}</div>${mod?`<input class="adm-in" id="op-${k}" value="${q(OP[k])}" ${/df/.test(k)?'placeholder="gg/mm/aaaa"':''}>`:`<div class="v">${OP[k]||'<span style="color:var(--warn)">da completare</span>'}</div>`}</div>`).join('');
+  document.getElementById('ad-dati-az').innerHTML= mod
+    ? `<button class="btn" onclick="salvaDatiOp(this)"><span class="spin"></span>Salva</button><button class="btn sec" onclick="disegnaDatiOp(false)">Annulla</button>`
+    : `<button class="btn sec" onclick="disegnaDatiOp(true)">Modifica</button>`;
+}
+function salvaDatiOp(b){
+  const v={}; CAMPI_OP.forEach(([k])=>v[k]=document.getElementById('op-'+k).value.trim());
+  for(const k of ['dfReg','dfAbb']) if(v[k]&&!dt(v[k])){toast('Le date vanno scritte come gg/mm/aaaa');return;}
+  lavora(b,()=>{Object.assign(OP,v);disegnaDatiOp(false);testata();toast('Dati salvati');});
 }
 
 avvio();

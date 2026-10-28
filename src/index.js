@@ -173,6 +173,8 @@ export class Stato extends DurableObject {
     if (!me || me.k !== k) return J({ errore: "dispositivo" }, 401);
     if (now - (me.visto || 0) > 60000) { me.visto = now; await st.put("disp", disp); }
     if (p === "/api/disp/stato") return J({ stato: me.stato, codice: me.codice, ruolo: me.ruolo, n: me.n });
+    // chi esce toglie il suo telefono dall'elenco (anche se era ancora in attesa)
+    if (p === "/api/disp/esci" && request.method === "POST") { me.stato = "uscito"; await st.put("disp", disp); return J({ ok: true }); }
     if (me.stato !== "ok") return J({ errore: "non approvato", stato: me.stato }, 403);
     const adm = me.ruolo === "adm";
 
