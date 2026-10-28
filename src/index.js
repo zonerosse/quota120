@@ -70,6 +70,50 @@ function pulisciLetto(v) {
     distMax: NUM(v.distMax, 0, 999999), haTrk: !!v.haTrk, daFoto: !!v.daFoto, fotoDoc: esc(v.fotoDoc, 40) };
 }
 
+// ---- zone di volo D-Flight: il file ufficiale (formato europeo) caricato dall'Admin, il controllo del punto ----
+const ZR = { P: "vietata", A: "serve un'autorizzazione", C: "con condizioni", N: "solo informazione" };
+function metriXY(lat0) { const k = Math.PI / 180, R = 6371000; return (la, lo, la1, lo1) => [(lo - lo1) * k * R * Math.cos(lat0 * k), (la - la1) * k * R]; }
+// distanza (m) dal punto alla zona: 0 se ci sei dentro
+function distZona(z, lat, lon) {
+  const xy = metriXY(lat); let best = Infinity;
+  for (const g of z.g || []) {
+    if (g.t === "c") { const [x, y] = xy(g.c[0], g.c[1], lat, lon); best = Math.min(best, Math.max(0, Math.hypot(x, y) - g.r)); continue; }
+    const P = (g.c || []).map(q => xy(q[0], q[1], lat, lon)); if (P.length < 3) continue;
+    let dentro = false, dmin = Infinity;
+    for (let i = 0, j = P.length - 1; i < P.length; j = i++) {
+      const [xi, yi] = P[i], [xj, yj] = P[j];
+      if ((yi > 0) !== (yj > 0) && 0 < (xj - xi) * (0 - yi) / (yj - yi) + xi) dentro = !dentro;
+      const dx = xj - xi, dy = yj - yi, l2 = dx * dx + dy * dy, t = l2 ? Math.max(0, Math.min(1, -(xi * dx + yi * dy) / l2)) : 0;
+      dmin = Math.min(dmin, Math.hypot(xi + t * dx, yi + t * dy));
+    }
+    best = Math.min(best, dentro ? 0 : dmin);
+  }
+  return best;
+}
+function versoZona(z, lat, lon) {
+  const b = z.b || [lat, lon, lat, lon], cl = (b[0] + b[2]) / 2, co = (b[1] + b[3]) / 2, a = Math.atan2((co - lon) * Math.cos(lat * Math.PI / 180), cl - lat) * 180 / Math.PI;
+  return ["nord", "nord-est", "est", "sud-est", "sud", "sud-ovest", "ovest", "nord-ovest"][Math.round(((a + 360) % 360) / 45) % 8];
+}
+function attivaOra(z) { const t = Date.now(); return !((z.da && Date.parse(z.da) > t) || (z.a && Date.parse(z.a) < t)); }
+function controllaZone(Z, lat, lon) {
+  const dentro = [], vicino = [], DEG = 0.02;
+  for (const z of Z) {
+    const b = z.b; if (b && (lat < b[0] - DEG || lat > b[2] + DEG || lon < b[1] - DEG * 1.5 || lon > b[3] + DEG * 1.5)) continue;
+    if (!attivaOra(z)) continue;
+    const d = distZona(z, lat, lon); if (d > 1000) continue;
+    (d === 0 ? dentro : vicino).push(Object.assign({}, z, { dist: Math.round(d), verso: d ? versoZona(z, lat, lon) : "" }));
+  }
+  let liv = "ok", max = 120; const motivi = [];
+  for (const z of dentro) {
+    const lo = +z.lo || 0;
+    if (z.r === "N" || lo >= 120) continue;
+    if (lo > 0) { max = Math.min(max, lo); if (liv === "ok") liv = "warn"; continue; }
+    if (z.r === "P" || z.r === "A") { liv = "ko"; motivi.push(z.r); } else if (liv === "ok") liv = "warn";
+  }
+  vicino.sort((a, b) => a.dist - b.dist);
+  return { liv, max, motivi, dentro: dentro.slice(0, 12), vicino: vicino.slice(0, 8) };
+}
+
 // ---- permessi ----
 const permDi = (d, n) => { const p = (d.PILOTI || []).find(x => x.nome === n); return p ? ((d.PERM || {})[p.id] || {}) : {}; };
 const pilotaDi = (d, n) => (d.PILOTI || []).find(x => x.nome === n);
@@ -100,6 +144,7 @@ function vista(d, n) {
   if (P.enac) { v.AUT_ENAC = d.AUT_ENAC; v.DOMANDA = d.DOMANDA; v.ASSIC = d.ASSIC; }
   if (P.agri) { v.CAMPI = d.CAMPI; v.TRATT = d.TRATT; if (!v.CLIENTI) v.CLIENTI = d.CLIENTI; }
   v.DOCS = (d.DOCS || []).filter(x => docVisibile(d, x, n));
+  v.ZONEINFO = d.ZONEINFO || null;
   return v;
 }
 function docVisibile(d, doc, n) {
@@ -121,7 +166,7 @@ function unisci(full, m, n) {
     const pulito = { id: +id, data: DATA(v.data) || oggi(), ora: esc(v.ora, 5), drone: esc(v.drone, 80), pilota: n, luogo: esc(v.luogo, 120),
       min: Math.max(0, Math.min(600, +v.min || 0)), stato: ["completo", "dacompl", "attesa"].includes(v.stato) ? v.stato : "dacompl",
       ctrl: !!v.ctrl, ctrlOra: esc(v.ctrlOra, 5), cliente: esc(v.cliente, 200), note: esc(v.note, 2000), importato: !!v.importato, amano: !!v.amano,
-      cat: esc(v.cat, 60), inc: esc(v.inc, 60), codLav: esc(v.codLav, 20), meteo: esc(v.meteo, 160), docLog: (o && o.docLog) || esc(v.docLog, 40), logNome: esc(v.logNome, 120) };
+      cat: esc(v.cat, 60), inc: esc(v.inc, 60), codLav: esc(v.codLav, 20), meteo: esc(v.meteo, 160), zona: esc(v.zona, 200), docLog: (o && o.docLog) || esc(v.docLog, 40), logNome: esc(v.logNome, 120) };
     // i dati letti dal registro li scrive solo il server (/api/volo/importa): il telefono non li può cambiare
     if (o && o.letto) Object.assign(pulito, pulisciLetto(o), { drone: o.drone, data: o.data, ora: o.ora, min: o.min, pilota: o.pilota });
     if (o) Object.assign(o, pulito); else { d.VOLI = d.VOLI || []; d.VOLI.unshift(pulito); }
@@ -129,7 +174,7 @@ function unisci(full, m, n) {
   const zk = z => z.data + "|" + z.ora + "|" + z.drone + "|" + z.pilota, zs = new Set((d.ZONE || []).map(zk));
   for (const z of (m.ZONE || []).slice(0, 50)) {
     if (!z || z.pilota !== n) continue;
-    const pz = { data: DATA(z.data) || oggi(), ora: esc(z.ora, 5), drone: esc(z.drone, 80), pilota: n };
+    const pz = { data: DATA(z.data) || oggi(), ora: esc(z.ora, 5), drone: esc(z.drone, 80), pilota: n, esito: esc(z.esito, 200) };
     if (!zs.has(zk(pz))) { d.ZONE = d.ZONE || []; d.ZONE.unshift(pz); zs.add(zk(pz)); }
   }
   d.ZONE = (d.ZONE || []).slice(0, 2000);
@@ -208,6 +253,7 @@ function scadenze(d) {
   }
   if ((d.ASSIC || {}).scad) L.push(["assic", "Assicurazione RC dell'operatore", "scade il " + d.ASSIC.scad, d.ASSIC.scad, null]);
   if ((d.OP || {}).dfAbb) L.push(["dflight", "Abbonamento D-Flight", "scade il " + d.OP.dfAbb, d.OP.dfAbb, null]);
+  const Z = d.ZONEINFO; if (Z && dtS(Z.scade) && dtS(Z.scade) - oggiRoma().t <= 7 * 864e5) L.push(["zone|" + Z.data, "Zone di volo D-Flight da aggiornare", "caricate il " + Z.data + " · scarica il file nuovo da D-Flight e caricalo in Pannello Admin › Zone di volo", Z.scade, null]);
   return L;
 }
 function manutenzioni(d) { return (d.DRONI || []).map(x => [x, (d.SCHEDE || {})[x.id]]).filter(([x, s]) => s && s.man && s.man.liv !== "ok").map(([x, s]) => ["man|" + x.id + "|" + s.man.prox, "Manutenzione " + x.nome, s.man.prox + " · " + (s.man.mancano === "da fare subito" ? "da fare subito" : "mancano " + s.man.mancano + " di volo")]); }
@@ -382,6 +428,27 @@ export class Stato extends DurableObject {
       try { return J({ letto: await leggiFotoVolo(this.env, b64(tutto.buffer), info.mime, droni) }); }
       catch (e) { return J({ errore: String(e.message || e) }, 502); }
     }
+    if (p === "/api/zone/carica" && request.method === "POST") {
+      if (!adm) return J({ errore: "Solo l'Admin può caricare le zone" }, 403);
+      const txt = await request.text(); if (txt.length > 40e6) return J({ errore: "File troppo grande" }, 413);
+      let b; try { b = JSON.parse(txt); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
+      const Z = Array.isArray(b.zone) ? b.zone : []; if (!Z.length) return J({ errore: "Nel file non ho trovato zone" }, 400);
+      const tutto = JSON.stringify(Z), PEZ = 1500000, n = Math.ceil(tutto.length / PEZ), vecchi = +(await st.get("zone:n")) || 0;
+      for (let i = 0; i < n; i++) await st.put("zone:" + i, tutto.slice(i * PEZ, (i + 1) * PEZ));
+      for (let i = n; i < vecchi; i++) await st.delete("zone:" + i);
+      await st.put("zone:n", n); this.ZC = Z;
+      const m = await leggiMain(); if (!m) return J({ errore: "Nessun dato" }, 409);
+      const scade = new Date(Date.now() + 28 * 864e5), ds = String(scade.getUTCDate()).padStart(2, "0") + "/" + String(scade.getUTCMonth() + 1).padStart(2, "0") + "/" + scade.getUTCFullYear();
+      m.d.ZONEINFO = { data: oggiRoma().data, n: Z.length, file: esc(b.file, 120), scade: ds };
+      await scriviMain(m.d, m.row.ver + 1);
+      return J({ ok: true, info: m.d.ZONEINFO, ver: m.row.ver + 1 });
+    }
+    if (p === "/api/zone") {
+      const lat = +url.searchParams.get("lat"), lon = +url.searchParams.get("lon");
+      if (!isFinite(lat) || !isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) return J({ errore: "Posizione non valida" }, 400);
+      if (!this.ZC) { const n = +(await st.get("zone:n")) || 0; if (!n) return J({ nessuna: true }); let t = ""; for (let i = 0; i < n; i++) t += (await st.get("zone:" + i)) || ""; try { this.ZC = JSON.parse(t); } catch (e) { return J({ nessuna: true }); } }
+      return J(controllaZone(this.ZC, lat, lon));
+    }
     if (p === "/api/volo/elimina" && request.method === "POST") {
       if (!adm) return J({ errore: "Solo l'Admin può eliminare un volo" }, 403);
       let b; try { b = await request.json(); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
@@ -421,7 +488,7 @@ export class Stato extends DurableObject {
       const daFoto = !v.daFoto && d.VOLI.find(x => x.daFoto && x.pilota === v.pilota && x.drone === v.drone && x.data === v.data && Math.abs(minuti(x.ora) - minuti(v.ora)) <= 15);
       if (daFoto) att = daFoto;
       if (att) {
-        Object.assign(v, { id: att.id, ctrl: att.ctrl, ctrlOra: att.ctrlOra, cliente: v.cliente || att.cliente || "", codLav: att.codLav || "", meteo: att.meteo || "",
+        Object.assign(v, { id: att.id, ctrl: att.ctrl, ctrlOra: att.ctrlOra, cliente: v.cliente || att.cliente || "", codLav: att.codLav || "", meteo: att.meteo || "", zona: att.zona || "",
           luogo: v.luogo || att.luogo, note: [att.note, v.note].filter(Boolean).join(" · "), cat: att.cat || v.cat });
         if (daFoto) Object.assign(v, { cliente: att.cliente || v.cliente, luogo: att.luogo || v.luogo, batt: att.batt || v.batt, fotoDoc: att.docLog || "" });
         d.VOLI[d.VOLI.indexOf(att)] = v;
@@ -452,7 +519,7 @@ export class Stato extends DurableObject {
         if (txt.length > 1800000) return J({ errore: "Troppi dati" }, 413);
         let b; try { b = JSON.parse(txt); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
         if (b.ver !== row.ver) return J({ ver: row.ver, data: adm ? m.d : vista(m.d, me.n) }, 409);
-        const nd = adm ? Object.assign({}, b.data || {}, { DOCS: m.d.DOCS || [] }) : unisci(m.d, b.data || {}, me.n);
+        const nd = adm ? Object.assign({}, b.data || {}, { DOCS: m.d.DOCS || [], ZONEINFO: m.d.ZONEINFO || null }) : unisci(m.d, b.data || {}, me.n);
         await scriviMain(nd, row.ver + 1);
         return J({ ver: row.ver + 1 });
       }

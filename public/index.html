@@ -632,6 +632,10 @@
   .ore b{display:block;font:600 16px "Barlow Semi Condensed",Arial,sans-serif;color:var(--ink)}
   .ore i{display:block;height:5px;border-radius:2px;margin:4px 4px 0}
   .meteo .fonte{font-size:13px;color:var(--ink3);padding:6px 14px;border-top:1px solid #E3E8EB}
+  .riga-i{display:flex;justify-content:space-between;gap:10px;border-top:1px solid #E3E8EB;padding:9px 0;font-size:15px}.riga-i:first-child{border-top:0}.riga-i span{color:var(--ink3)}
+  .zn-passi{margin:0 0 0 20px;padding:0;font-size:15px;line-height:1.6}
+  .zl{border-top:1px solid #E3E8EB;padding:4px 14px}.zh{font-size:13px;color:var(--ink3);padding-top:6px}
+  .zr{display:flex;gap:10px;padding:7px 0;font-size:14.5px}.zr i{width:12px;height:12px;border-radius:3px;flex:none;margin-top:4px}.zr span{color:var(--ink3)}
   .mappa{height:340px;border-radius:8px;border:1px solid var(--bordo);z-index:0;margin-top:6px}
   .leg i{display:inline-block;width:18px;height:4px;vertical-align:middle;margin-right:6px}
   .fld .v .btn.mini{min-height:32px;padding:0 10px;font-size:14px;margin-left:6px}
@@ -763,7 +767,7 @@
     <div class="card" style="margin-top:12px">
       <h2>Verifiche</h2>
       <ul class="checks" id="checks"></ul>
-      <div class="note">Le zone di volo non sono copiate nel programma: si guardano sul sito D-Flight e qui si registra che la verifica è stata fatta, con data, ora e schermata allegata.</div>
+      <div class="note">Se l’Admin ha caricato le zone ufficiali di D-Flight, il punto si controlla da solo. Il controllo ufficiale resta D-Flight: in caso di dubbio aprila.</div>
     </div>
     <div class="row">
       <button class="btn" id="c-btn" onclick="salvaVolo(this)"><span class="spin"></span>Salva e apri il registro volo</button>
@@ -1160,6 +1164,20 @@
       <select id="av-ora" style="max-width:260px"></select>
       <div class="row"><button class="btn" onclick="salvaAvvisi(this)"><span class="spin"></span>Salva</button><button class="btn sec" onclick="provaAvvisi(this)"><span class="spin"></span>Manda una mail di prova</button></div>
       <div class="nota">Le mail le ricevi tu (tutte le scadenze: piloti, assicurazione, D-Flight, manutenzioni) e ogni pilota che accendi qui (solo attestati e patentino suoi).</div>
+    </div>
+  </div>
+
+  <!-- ================= ZONE DI VOLO (solo Admin) ================= -->
+  <div id="v-zone" class="hidden">
+    <div class="card">
+      <h2>Zone di volo D-Flight</h2>
+      <div style="font-size:15px;color:var(--muted)">Con il file ufficiale delle zone, nel controllo prima del volo Quota 120 dice da solo se in quel punto si può volare, fino a che altezza e perché.</div>
+      <div id="zn-info" style="margin-top:12px"></div>
+      <div class="hcap" style="margin:18px 0 8px">Come si aggiorna (una volta al mese)</div>
+      <ol class="zn-passi"><li>Entra su <b>d-flight.it</b> con il tuo profilo</li><li>Premi <b>Download UAS Zone Geo</b> e salva il file</li><li>Qui sotto premi <b>Carica il file delle zone</b> e sceglilo così com’è, anche compresso</li></ol>
+      <div class="row"><button class="btn" id="zn-btn" onclick="scegliZone()"><span class="spin"></span>Carica il file delle zone</button><button class="btn sec" onclick="window.open(DFLIGHT_MAPPA,'_blank')">Apri la mappa D-Flight</button></div>
+      <div class="prog" id="zn-prog" style="display:none"><span class="spin"></span><span id="zn-prog-t"></span></div>
+      <div class="nota">Il file vale circa un mese (le zone cambiano con il ciclo aeronautico). Una settimana prima della scadenza arriva anche la mail di avviso.</div>
     </div>
   </div>
 
@@ -1578,7 +1596,10 @@ function verifiche(){
   { const G=giudizioMeteo(d);
     L.push(G?{l:'Meteo',s:G.tot,d:'Vento '+METEO.v+' km/h, raffiche '+METEO.g+' km/h (limite del drone '+G.max+')'+(METEO.p>0?', pioggia '+String(METEO.p).replace('.',',')+' mm':'')+' · '+METEO.luogo+' alle '+METEO.quando}
       :{l:'Meteo',s:'warn',d:'Non controllato: nella pagina iniziale tocca «Meteo del luogo» o «Dove sono ora»'}); }
-  L.push({l:'Zone verificate su D-Flight',s:zoneOk?'ok':'ko',d:zoneOk?'Verificate oggi alle '+ora():'Apri D-Flight, guarda la zona, poi segna fatto',act:'zone'});
+  if(ZVERD){ const E=esitoZona(), z=ZVERD;
+    L.push(z.liv==='ko'?{l:'Zona di volo',s:zoneOk?'ok':'ko',d:zoneOk?'Autorizzazione: '+ZAUT:E.t+': '+E.s,act:zoneOk?null:'zona'}
+      :{l:'Zona di volo',s:z.liv,d:E.t+' · controllata alle '+z.quando+(z.pos.nome==='La tua posizione'?' dove sei':' (centro di '+z.pos.nome+')')}); }
+  else L.push({l:'Zone verificate su D-Flight',s:zoneOk?'ok':'ko',d:zoneOk?'Verificate oggi alle '+ora():'Apri D-Flight, guarda la zona, poi segna fatto',act:'zone'});
   L.push({l:'Check list prima del decollo',s:checklistOk?'ok':'ko',d:checklistOk?'Completata':'Da spuntare sul posto',act:'check'});
   return L;
 }
@@ -1596,7 +1617,8 @@ function disegnaControllo(){
   document.getElementById('checks').innerHTML=L.map(x=>{
     const m=x.s==='ok'?svg('check'):x.s==='ko'?svg('x'):svg('esc');
     let act='';
-    if(x.act==='zone' && !zoneOk) act=`<button class="btn sec mini" onclick="window.open('https://www.d-flight.it','_blank')">Apri D-Flight</button><button class="btn mini" onclick="lavora(this,()=>{zoneOk=true;ZONE.unshift({data:oggi(),ora:ora(),drone:dSel.nome,pilota:pSel.nome});disegnaControllo();})"><span class="spin"></span>Fatto</button>`;
+    if(x.act==='zone' && !zoneOk) act=`<button class="btn sec mini" onclick="window.open(DFLIGHT_MAPPA,'_blank')">Apri D-Flight</button><button class="btn mini" onclick="lavora(this,()=>{zoneOk=true;ZONE.unshift({data:oggi(),ora:ora(),drone:dSel.nome,pilota:pSel.nome});disegnaControllo();})"><span class="spin"></span>Fatto</button>`;
+    if(x.act==='zona') act=`<button class="btn sec mini" onclick="window.open(DFLIGHT_MAPPA,'_blank')">Apri D-Flight</button><button class="btn mini" onclick="autorizzazioneZona()">Ho l’autorizzazione</button>`;
     if(x.act==='check' && !checklistOk) act=`<button class="btn mini" onclick="lavora(this,()=>{checklistOk=true;disegnaControllo();})"><span class="spin"></span>Spunta check list</button>`;
     return `<li><div class="mark ${x.s}">${m}</div><div><div class="lbl">${x.l}</div><div class="det">${x.d}</div></div><div class="act">${act}</div></li>`;
   }).join('');
@@ -1607,8 +1629,10 @@ function disegnaControllo(){
 function salvaVolo(b){
   lavora(b,()=>{
     controlloSalvato={ora:ora(), drone:dSel.nome, pilota:pSel.nome, pid:pSel.id};
+    const ZE=ZVERD?esitoZona():null, zona=ZE?ZE.t+(ZAUT?' · autorizzazione: '+ZAUT:''):zoneOk?'verificata su D-Flight':'';
+    if(ZE&&!ZAUT) ZONE.unshift({data:oggi(),ora:ora(),drone:dSel.nome,pilota:pSel.nome,esito:ZE.t});
     VOLI.unshift({id:nuovoId(), data:CTRLINFO.data||oggi(), ora:controlloSalvato.ora, drone:dSel.nome, pilota:pSel.nome,
-      luogo:CTRLINFO.luogo||'—', cliente:CTRLINFO.cliente||'', codLav:CTRLINFO.codice||'', meteo:METEO?'vento '+METEO.v+' km/h, raffiche '+METEO.g+' km/h, '+(METEO.p>0?'pioggia':'niente pioggia')+', '+METEO.t+' °C':'', min:0, stato:'attesa', ctrl:true, ctrlOra:controlloSalvato.ora});
+      luogo:CTRLINFO.luogo||'—', cliente:CTRLINFO.cliente||'', codLav:CTRLINFO.codice||'', meteo:METEO?'vento '+METEO.v+' km/h, raffiche '+METEO.g+' km/h, '+(METEO.p>0?'pioggia':'niente pioggia')+', '+METEO.t+' °C':'', min:0, stato:'attesa', ctrl:true, ctrlOra:controlloSalvato.ora, zona});
     apriVoli();
   });
 }
@@ -1673,7 +1697,7 @@ function apriVolo(id){
     ['Quota massima',v.quotaMax+' m'+(v.oltre120?' · '+v.oltre120+' s sopra i 120 m':'')],['Distanza percorsa',String(v.km).replace('.',',')+' km'],
     ['Velocità massima',v.velMax?String(v.velMax).replace('.',',')+' km/h':'—'],['Foto e video',v.foto||v.video||v.videoS?pl(v.foto||0,'foto','foto')+(v.video?' · '+pl(v.video,'video','video'):'')+(v.videoS?' · '+Math.max(1,Math.round(v.videoS/60))+' min di video':''):'—'],
     ['Drone',v.drone],['Numero di serie',v.sn||'—'],['Batteria',(BATT.find(b=>b.id===v.batt)||{}).nome||'—'],['Carica',v.cIni?'da '+v.cIni+'% a '+v.cFin+'%':'—'],
-    ['Temperatura batteria',v.tMax?'fino a '+v.tMax+' °C':'—'],['Distanza massima dal decollo',v.distMax?v.distMax+' m':'—'],['Meteo al controllo',v.meteo||'—'],['Celle',v.celle&&v.celle.length?v.celle.length+' · scostamento '+String(v.dev).replace('.',',')+' V':'—']
+    ['Temperatura batteria',v.tMax?'fino a '+v.tMax+' °C':'—'],['Distanza massima dal decollo',v.distMax?v.distMax+' m':'—'],['Meteo al controllo',v.meteo||'—'],['Zona di volo',v.zona||'—'],['Celle',v.celle&&v.celle.length?v.celle.length+' · scostamento '+String(v.dev).replace('.',',')+' V':'—']
   ] : (!v.amano && (v.importato||v.stato==='completo')) ? [
     ['Data',v.data],['Decollo',v.ora],['Atterraggio',fine(v.ora,v.min)],
     ['Durata',v.min+' min'],['Luogo',v.luogo],['Coordinate','44.746 N · 11.940 E'],
@@ -2363,7 +2387,7 @@ function apply(d){
   const v=k=>d[k]!==undefined&&d[k]!==null?d[k]:JSON.parse(JSON.stringify(VUOTI[k]));
   OP=v('OP');DRONI=v('DRONI');PILOTI=v('PILOTI');ASSIC=v('ASSIC');AUT_ENAC=v('AUT_ENAC');VOLI=v('VOLI');MATR=v('MATR');
   SCHEDE=v('SCHEDE');BATT=v('BATT');SCHEDEP=v('SCHEDEP');DOMANDA=v('DOMANDA');CLIENTI=v('CLIENTI');LAVORI=v('LAVORI');
-  PREV=v('PREV');INV=v('INV');ZONE=v('ZONE');CAMPI=v('CAMPI');TRATT=v('TRATT');PATENTINO=v('PATENTINO');PERM=v('PERM');DOCS=v('DOCS');AVVISI=v('AVVISI');
+  PREV=v('PREV');INV=v('INV');ZONE=v('ZONE');CAMPI=v('CAMPI');TRATT=v('TRATT');PATENTINO=v('PATENTINO');PERM=v('PERM');DOCS=v('DOCS');AVVISI=v('AVVISI');ZONEINFO=d.ZONEINFO||null;
   ricalcola();
 }
 /* date */
@@ -2950,6 +2974,7 @@ function disegnaPannello(){
     {i:svg('drone'),n:'Aggiungi drone',c:'nuovo drone',go:'nuovoDrone()'},
     {i:'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>',n:'Avvisi via email',c:AVVISI.adm&&AVVISI.adm.email?(AVVISI.adm.on===false?'spenti':'attivi'):'da impostare',d:AVVISI.adm&&AVVISI.adm.email?'':'warn',go:'apriAvvisi()'},
     {i:svg('dflight'),n:'Dati dell’operatore',c:OP.resp?(OP.nome||'').replace(/ \(dati di esempio\)/,''):'da completare',d:OP.resp?'':'warn',go:"apriAdmin('ad-op')"},
+    {i:'<svg viewBox="0 0 24 24"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg>',n:'Zone di volo',c:ZONEINFO?'aggiornate al '+ZONEINFO.data:'da caricare',d:!ZONEINFO||livZone()!=='ok'?'warn':'',go:'apriZone()'},
     {i:SHIELD,n:'Codice dell’Admin',c:'cambia il codice',go:'cambiaCodice()'}];
   document.getElementById('t-admin').innerHTML=T.map(t=>`<button class="tile" onclick="${t.go}">
     <div class="ico" style="background:var(--accent)">${t.i}</div>
@@ -3393,7 +3418,7 @@ function confermaVolo(b){
 let METEO=null, MPOS=null;
 const VENTO_BASE=d=>d.ventoMax|| (d.cat==='specific'?22: /mini|C0/i.test(d.nome+' '+d.classe)?38: 43);
 function livV(v,max){return v>max?'ko':v>max*0.8?'warn':'ok';}
-function boxMeteo(){return `<div class="hlav"><div class="riga2"><button class="btn sec mini" type="button" onclick="meteoLuogo(this)"><span class="spin"></span>Meteo del luogo</button><button class="btn sec mini" type="button" onclick="meteoGps(this)"><span class="spin"></span>Dove sono ora</button></div><div id="h-meteo"></div></div>`;}
+function boxMeteo(){return `<div class="hlav"><div class="riga2"><button class="btn sec mini" type="button" onclick="meteoLuogo(this)"><span class="spin"></span>Meteo del luogo</button><button class="btn sec mini" type="button" onclick="meteoGps(this)"><span class="spin"></span>Dove sono ora</button></div><div id="h-meteo"></div><div id="h-zona"></div></div>`;}
 function droneScelto(){return DRONI.find(x=>x.id==(document.getElementById('h-drone')||{}).value);}
 function meteoLuogo(b){
   const lv=LAVTROVATO, t=lv?lv.luogo:((document.getElementById('h-luogo')||{}).value||'');
@@ -3417,7 +3442,7 @@ function caricaMeteo(){
   return fetch(u).then(r=>r.json()).then(j=>{
     const c=j.current; METEO={luogo:MPOS.nome,v:Math.round(c.wind_speed_10m),g:Math.round(c.wind_gusts_10m),p:+c.precipitation||0,t:Math.round(c.temperature_2m),
       dir:['N','NE','E','SE','S','SO','O','NO'][Math.round((+c.wind_direction_10m||0)/45)%8],ore:j.hourly.time.map((x,i)=>[x.slice(11,16),Math.round(j.hourly.wind_gusts_10m[i])]),quando:ora()};
-    disegnaMeteo();
+    disegnaMeteo(); caricaZona();
   }).catch(()=>{const e=document.getElementById('h-meteo'); if(e) e.innerHTML='<div class="nota">Meteo non disponibile: controlla la rete.</div>';});
 }
 function giudizioMeteo(d){
@@ -3434,6 +3459,152 @@ function disegnaMeteo(){
     <div><small>Pioggia</small><b class="${G.lv[2]}">${METEO.p>0?String(METEO.p).replace('.',',')+' mm':'no'}</b></div><div><small>Temperatura</small><b>${METEO.t} °C</b></div></div>
     <div class="ore">${METEO.ore.map(x=>`<div>${x[0]}<b>${x[1]}</b>raffiche<i style="background:var(--${G.max?livV(x[1],G.max*1.1):'bordo2'})"></i></div>`).join('')}</div>
     <div class="fonte">${ESC(METEO.luogo)}${G.max?' · limite del drone '+G.max+' km/h':''} · Open-Meteo, ore ${METEO.quando}</div></div>`;
+}
+
+
+/* ---------- zone di volo D-Flight: file ufficiale (formato europeo ED-269 / ED-318) e controllo del punto ---------- */
+let ZONEINFO=null, ZVERD=null, ZAUT='';
+const DFLIGHT_MAPPA='https://www.d-flight.it/web-app/';
+// apre lo zip (o gzip) e restituisce il testo del file JSON più grande
+async function testoZone(f){
+  const u8=new Uint8Array(await f.arrayBuffer()), dec=b=>new TextDecoder().decode(b);
+  const sgonfia=(dati,tipo)=>new Response(new Blob([dati]).stream().pipeThrough(new DecompressionStream(tipo))).arrayBuffer().then(b=>new Uint8Array(b));
+  if(u8[0]===0x1f&&u8[1]===0x8b) return dec(await sgonfia(u8,'gzip'));
+  if(!(u8[0]===0x50&&u8[1]===0x4b)) return dec(u8);
+  const dv=new DataView(u8.buffer); let e=u8.length-22; while(e>=0&&dv.getUint32(e,true)!==0x06054b50) e--;
+  if(e<0) throw new Error('Il file compresso è rovinato');
+  let o=dv.getUint32(e+16,true); const n=dv.getUint16(e+10,true), voci=[];
+  for(let i=0;i<n;i++){ if(dv.getUint32(o,true)!==0x02014b50) break;
+    const met=dv.getUint16(o+10,true), cs=dv.getUint32(o+20,true), us=dv.getUint32(o+24,true), nl=dv.getUint16(o+28,true), xl=dv.getUint16(o+30,true), cl=dv.getUint16(o+32,true), lo=dv.getUint32(o+42,true);
+    voci.push({nome:dec(u8.subarray(o+46,o+46+nl)),met,cs,us,lo}); o+=46+nl+xl+cl; }
+  const v=voci.filter(x=>/\.(geo)?json$/i.test(x.nome)).sort((a,b)=>b.us-a.us)[0]||voci.sort((a,b)=>b.us-a.us)[0];
+  if(!v) throw new Error('Nel file compresso non c’è niente');
+  const ini=v.lo+30+dv.getUint16(v.lo+26,true)+dv.getUint16(v.lo+28,true), dati=u8.subarray(ini,ini+v.cs);
+  return dec(v.met===0?dati:await sgonfia(dati,'deflate-raw'));
+}
+// semplifica un contorno (Douglas-Peucker, circa 3 m) e arrotonda
+function semplifica(P,tol){
+  if(P.length<=4) return P;
+  const tieni=new Uint8Array(P.length); tieni[0]=tieni[P.length-1]=1; const pila=[[0,P.length-1]];
+  while(pila.length){ const [a,b]=pila.pop(); let dm=0,im=-1; const [ax,ay]=P[a],[bx,by]=P[b],dx=bx-ax,dy=by-ay,l=Math.hypot(dx,dy)||1e-12;
+    for(let i=a+1;i<b;i++){ const d=Math.abs(dy*P[i][0]-dx*P[i][1]+bx*ay-by*ax)/l; if(d>dm){dm=d;im=i;} }
+    if(dm>tol&&im>0){tieni[im]=1;pila.push([a,im],[im,b]);} }
+  return P.filter((_,i)=>tieni[i]);
+}
+// contorno chiuso: si toglie il punto finale ripetuto e si semplifica in due metà
+function semplificaAnello(P){
+  if(P.length>1&&P[0][0]===P[P.length-1][0]&&P[0][1]===P[P.length-1][1]) P=P.slice(0,-1);
+  if(P.length<=8) return P;
+  const m=Math.floor(P.length/2); return semplifica(P.slice(0,m+1),0.00003).concat(semplifica(P.slice(m).concat([P[0]]),0.00003).slice(1,-1));
+}
+function zoneDaJson(j){
+  const lista=Array.isArray(j)?j:(j.features||j.UASZoneList||j.uasZoneList||j.UASZones||j.zones||[]), out=[];
+  const num=v=>v==null||v===''?null:+v, r5=x=>Math.round(x*1e5)/1e5;
+  const RS=x=>{x=String(x||'').toUpperCase(); return /PROHIB/.test(x)?'P':/AUTH/.test(x)?'A':/NO_RESTR|NONE/.test(x)?'N':'C';};
+  for(const f of lista){
+    const P=f&&f.type==='Feature'?Object.assign({},f.properties||{}):(f||{});
+    const G=f&&f.type==='Feature'?[{proj:f.geometry||{},lim:Object.assign({},P,f.geometry||{},(f.geometry||{}).layer||{})}]
+      :(Array.isArray(P.geometry)?P.geometry:[P.geometry||{}]).map(g=>({proj:(g||{}).horizontalProjection||g||{},lim:g||{}}));
+    const aut=Array.isArray(P.zoneAuthority)?(P.zoneAuthority[0]||{}).name:(P.zoneAuthority||{}).name;
+    const ap=[].concat(P.applicability||P.limitedApplicability||[])[0]||{}, perm=!ap.startDateTime&&!ap.endDateTime||String(ap.permanent||'').toUpperCase()==='YES';
+    const msg=typeof P.message==='string'?P.message:typeof P.otherReasonInfo==='string'?P.otherReasonInfo:'';
+    for(const {proj,lim} of G){
+      const ft=/FT/i.test(lim.uomDimensions||lim.uom||P.uomDimensions||''), m=v=>v==null?null:Math.round(ft?v*0.3048:v);
+      const lo=m(num(lim.lowerLimit??lim.lower)), hi=m(num(lim.upperLimit??lim.upper));
+      const ref=String(lim.lowerVerticalReference||lim.lowerReference||'AGL').toUpperCase();
+      const g=[]; const t=String(proj.type||'');
+      const anello=r=>{ const c=semplificaAnello(r.map(q=>[+q[1],+q[0]]).filter(q=>isFinite(q[0])&&isFinite(q[1]))).map(q=>[r5(q[0]),r5(q[1])]); if(c.length>=3) g.push({t:'p',c}); };
+      if(t==='Polygon') anello((proj.coordinates||[])[0]||[]);
+      else if(t==='MultiPolygon') (proj.coordinates||[]).forEach(pp=>anello(pp[0]||[]));
+      else if(/Circle/i.test(t)||(t==='Point'&&(proj.radius||(proj.extent||{}).radius))){ const c=proj.center||proj.coordinates||[], r=+(proj.radius||(proj.extent||{}).radius); if(c.length>=2&&r>0) g.push({t:'c',c:[r5(+c[1]),r5(+c[0])],r:Math.round(r)}); }
+      if(!g.length) continue;
+      let b=[90,180,-90,-180]; const ad=(la,lo2,rr)=>{const dl=(rr||0)/111000, dn=dl/Math.cos(la*Math.PI/180); b=[Math.min(b[0],la-dl),Math.min(b[1],lo2-dn),Math.max(b[2],la+dl),Math.max(b[3],lo2+dn)];};
+      g.forEach(x=>x.t==='c'?ad(x.c[0],x.c[1],x.r):x.c.forEach(q=>ad(q[0],q[1])));
+      out.push({n:String(P.name||P.identifier||'Zona').slice(0,120),r:RS(P.restriction),lo:lo==null?0:lo,hi,amsl:ref==='AMSL'||undefined,msg:msg.slice(0,300),aut:aut?String(aut).slice(0,80):'',
+        da:perm?'':(ap.startDateTime||''),a:perm?'':(ap.endDateTime||''),g,b:b.map(r5)});
+    }
+  }
+  return out;
+}
+function livZone(){ if(!ZONEINFO) return 'ko'; const g=giorni(ZONEINFO.scade); return g<0?'ko':g<=7?'warn':'ok'; }
+function apriZone(){
+  if(!ADM) return;
+  const Z=ZONEINFO, lv=livZone();
+  document.getElementById('zn-info').innerHTML=Z?`<div class="riga-i"><span>Zone caricate</span><b>${Z.data} · ${Z.n.toLocaleString('it-IT')} zone</b></div>
+    <div class="riga-i"><span>Da aggiornare entro</span><b style="color:var(--${lv==='ok'?'ok':lv})">${Z.scade}</b></div>${Z.file?`<div class="riga-i"><span>File</span><b>${ESC(Z.file)}</b></div>`:''}`
+    :`<div class="riga-i"><span>Zone caricate</span><b style="color:var(--warn)">nessuna</b></div><div class="nota" style="margin-top:6px">Finché non carichi il file, nel controllo prima del volo il pilota apre la mappa D-Flight e segna «fatto» a mano.</div>`;
+  document.getElementById('zn-prog').style.display='none';
+  vai('zone','Pannello Admin &rsaquo; Zone di volo'); document.getElementById('back').onclick=()=>apriAdmin();
+}
+function scegliZone(){
+  const i=document.createElement('input'); i.type='file'; i.accept='.zip,.json,.geojson,.gz,application/zip,application/json';
+  i.onchange=()=>{ if(i.files[0]) caricaZone(i.files[0]); }; i.click();
+}
+function caricaZone(f){
+  const pr=document.getElementById('zn-prog'), t=document.getElementById('zn-prog-t'), b=document.getElementById('zn-btn');
+  pr.style.display='flex'; b.disabled=true; b.classList.add('busy');
+  const fine=()=>{b.disabled=false;b.classList.remove('busy');};
+  t.textContent='Apro il file…';
+  testoZone(f).then(tx=>{ t.textContent='Leggo le zone…'; return new Promise(ok=>setTimeout(()=>ok(zoneDaJson(JSON.parse(tx))),30)); })
+  .then(Z=>{ if(!Z.length) throw new Error('Nel file non trovo zone di volo: è quello scaricato da D-Flight?');
+    t.textContent='Carico '+Z.length.toLocaleString('it-IT')+' zone…';
+    return api('POST','/api/zone/carica',{zone:Z,file:f.name}); })
+  .then(j=>{ fine(); if(j.errore) throw new Error(j.errore); ZONEINFO=j.info; ZVERD=null;
+    return ricarica().then(()=>{ apriZone(); disegnaPannello(); toast('Zone caricate: '+j.info.n.toLocaleString('it-IT')+' zone'); }); })
+  .catch(e=>{ fine(); pr.style.display='none'; toast(e instanceof SyntaxError?'Il file non è leggibile: usa quello scaricato da D-Flight':(e.message||'Caricamento non riuscito')); });
+}
+// nel controllo prima del volo: il punto si controlla da solo, se l'Admin ha caricato le zone
+function caricaZona(){
+  const e=document.getElementById('h-zona'); if(!e||!MPOS) return Promise.resolve();
+  if(!ZONEINFO){ ZVERD=null; e.innerHTML=`<div class="meteo"><div class="st neutro"><svg viewBox="0 0 24 24">${ICO_ST.warn}</svg>Zone di volo: guardale su D-Flight</div>
+    <div class="fonte" style="font-size:14px;padding:10px 14px">L’Admin non ha ancora caricato il file delle zone, quindi il controllo automatico è spento.</div><div style="padding:10px 14px;border-top:1px solid #E3E8EB"><button class="btn sec mini" type="button" onclick="window.open(DFLIGHT_MAPPA,\'_blank\')">Apri la mappa D-Flight</button></div></div>`; return Promise.resolve(); }
+  e.innerHTML='<div class="nota"><span class="spin" style="display:inline-block;border-color:rgba(29,92,124,.25);border-top-color:var(--accent)"></span> Controllo le zone di volo…</div>';
+  const pos=Object.assign({},MPOS);
+  return api('GET','/api/zone?lat='+pos.lat+'&lon='+pos.lon).then(j=>{
+    if(j.nessuna){ZONEINFO=null;return caricaZona();}
+    if(j.errore) throw 0;
+    ZVERD=Object.assign(j,{pos,quando:ora()}); ZAUT=''; disegnaZona();
+  }).catch(()=>{e.innerHTML='<div class="nota">Zone non controllate: niente rete. Guardale su D-Flight.</div>';});
+}
+function testoZ(z){
+  const lo=+z.lo||0, cosa=z.r==='N'?'solo informazione':lo>0&&lo<120?'massimo '+lo+' m'+(z.amsl?' sul livello del mare':' dal suolo'):lo>=120?'riguarda solo chi vola sopra i 120 m':z.r==='P'?'zona vietata':z.r==='A'?'serve un’autorizzazione':'si vola con condizioni';
+  return cosa+(z.msg?' · '+z.msg.slice(0,140):'')+(z.aut?' · '+z.aut:'');
+}
+function colZ(z){const lo=+z.lo||0; return z.r==='N'||lo>=120?'#7A8791':lo>0?'#A5660A':z.r==='P'||z.r==='A'?'#AE2F28':'#A5660A';}
+function esitoZona(){
+  const z=ZVERD; if(!z) return null;
+  const vietate=z.dentro.filter(x=>!(+x.lo>0)&&(x.r==='P'||x.r==='A')&&x.r!=='N');
+  const t=z.liv==='ok'?'Qui si può volare':z.liv==='warn'?(z.max<120?'Si può volare, ma massimo '+z.max+' m':'Si può volare, con condizioni'):(z.motivi.includes('P')?'Zona vietata':'Qui serve un’autorizzazione');
+  const vic=z.vicino.filter(x=>(x.r==='P'||x.r==='A')&&!(+x.lo>0));
+  const s=z.liv==='ok'?(z.dentro.length?'Nessun limite per i droni sotto i 120 m.':'Nessuna zona D-Flight in questo punto. Limite normale: 120 m.')
+    :z.liv==='warn'?'Sei dentro '+pl(z.dentro.length,'zona','zone')+' con limiti: leggi sotto.':z.motivi.includes('P')?'Qui volare è vietato'+(vietate[0]?' («'+vietate[0].n+'»)':'')+': si può solo con un’autorizzazione speciale.':'Prima di decollare serve l’autorizzazione'+(vietate[0]?' per «'+vietate[0].n+'»':'')+'.';
+  return {t,s:s+(vic.length?' Vicino ('+vic[0].dist+' m verso '+vic[0].verso+') c’è una zona '+(vic[0].r==='P'?'vietata':'con autorizzazione')+': non entrarci.':''),vic};
+}
+function disegnaZona(){
+  const e=document.getElementById('h-zona'), z=ZVERD; if(!e||!z) return;
+  const E=esitoZona(), riga=(x,vic)=>`<div class="zr"><i style="background:${colZ(x)}"></i><div><b>${ESC(x.n)}</b>${vic?' <span>· a '+x.dist+' m verso '+x.verso+'</span>':''}<br><span>${ESC(testoZ(x))}</span></div></div>`;
+  const preciso=z.pos.nome==='La tua posizione';
+  e.innerHTML=`<div class="meteo"><div class="st ${z.liv}"><svg viewBox="0 0 24 24">${ICO_ST[z.liv]}</svg>${E.t}</div>
+    <div style="padding:10px 14px;font-size:15px">${E.s}</div>
+    ${z.dentro.length?'<div class="zl">'+z.dentro.map(x=>riga(x)).join('')+'</div>':''}
+    ${z.vicino.length?'<div class="zl"><div class="zh">Vicino, entro 1 km</div>'+z.vicino.slice(0,4).map(x=>riga(x,1)).join('')+'</div>':''}
+    <div id="h-zmap" class="mappa" style="height:220px;margin:0;border-radius:0;border:0;border-top:1px solid #E3E8EB"></div>
+    <div class="fonte">${preciso?'Punto controllato: dove sei ora':'Punto controllato: centro di '+ESC(z.pos.nome)+'. Per il punto esatto tocca «Dove sono ora»'} · zone D-Flight del ${ZONEINFO.data}</div><div style="padding:10px 14px;border-top:1px solid #E3E8EB"><button class="btn sec mini" type="button" onclick="window.open(DFLIGHT_MAPPA,\'_blank\')">Apri la mappa D-Flight</button></div></div>`;
+  caricaLeaflet().then(()=>{
+    if(MAPPE['h-zmap']){MAPPE['h-zmap'].remove();delete MAPPE['h-zmap'];}
+    const el=document.getElementById('h-zmap'); if(!el) return;
+    const m=L.map(el,{scrollWheelZoom:false}); MAPPE['h-zmap']=m;
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(m);
+    [...z.vicino,...z.dentro].forEach(x=>{const c=colZ(x),st={color:c,weight:2,fillColor:c,fillOpacity:.18};
+      (x.g||[]).forEach(g=>{ (g.t==='c'?L.circle(g.c,Object.assign({radius:g.r},st)):L.polygon(g.c,st)).addTo(m).bindTooltip(x.n); });});
+    const cerchio=L.circle([z.pos.lat,z.pos.lon],{radius:500,color:'#1D5C7C',weight:1.5,dashArray:'5 5',fill:false}).addTo(m);
+    L.circleMarker([z.pos.lat,z.pos.lon],{radius:7,color:'#fff',weight:3,fillColor:'#1D5C7C',fillOpacity:1}).addTo(m).bindTooltip('Punto del volo');
+    m.fitBounds(cerchio.getBounds().pad(0.6)); setTimeout(()=>m.invalidateSize(),60);
+  }).catch(()=>{});
+}
+function autorizzazioneZona(){
+  modulo('Autorizzazione per questa zona',[{l:'Numero o descrizione dell’autorizzazione',k:'aut',req:true,p:'es. autorizzazione ENAV n. 123 del 20/10/2026'}],v=>{
+    zoneOk=true; ZAUT=v.aut; ZONE.unshift({data:oggi(),ora:ora(),drone:dSel.nome,pilota:pSel.nome,esito:'autorizzazione: '+v.aut}); disegnaControllo(); },'Conferma');
 }
 
 /* ---------- mappa del volo (Leaflet, OpenStreetMap) ---------- */
