@@ -982,6 +982,13 @@ button.pl-rg{cursor:pointer}
 .pl-det{background:var(--sup,#fff);border:1px solid var(--line);border-radius:12px;margin-top:12px}
 .pl-det summary{padding:12px 14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .pl-det summary small{font-weight:500;color:var(--muted);font-size:13px}
+.ck-auto{cursor:default}.ck-auto.on .ck-box{background:var(--ok);border-color:var(--ok)}
+.ck-q{font-style:normal;font-size:11px;font-weight:700;color:var(--ok);background:var(--ok-bg);border-radius:4px;padding:1px 6px;margin-left:6px;white-space:nowrap}
+.ck-s,.ck-sp small.ck-s{display:block;font-size:12.5px;color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0}
+.ck-tu{background:var(--sup2,#f3f6f8);border:1px solid var(--line);border-radius:10px;padding:2px 10px}
+.ck-manca{background:#fff;border:1.5px solid var(--warn);border-radius:10px;padding:9px 10px;font-size:14px;margin-top:10px}
+.ck-rif{font-size:12px;color:var(--muted);margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
+.ck-prom{padding-left:20px;margin:6px 0 0;font-size:15px}.ck-prom li{margin-bottom:6px}
 </style>
 </head>
 <body>
@@ -1114,6 +1121,7 @@ button.pl-rg{cursor:pointer}
       <ul class="checks" id="checks"></ul>
       <div class="note">Se l’Admin ha caricato le zone ufficiali di D-Flight, il punto si controlla da solo. Il controllo ufficiale resta D-Flight: in caso di dubbio aprila.</div>
     </div>
+    <div class="card ck-durante" id="c-durante" style="margin-top:12px"></div>
     <div class="row">
       <button class="btn" id="c-btn" onclick="salvaVolo(this)"><span class="spin"></span>Salva e apri il registro volo</button>
     </div>
@@ -1285,6 +1293,7 @@ button.pl-rg{cursor:pointer}
           <div><label>Incidenti o anomalie</label><select id="vo-inc"><option>Nessuno</option><option>Sì: descrivo nelle note</option></select></div>
         </div>
         <div style="margin-top:8px"><label style="font-size:12px;color:var(--muted)">Note</label><textarea id="vo-note" placeholder="Meteo, vento, osservazioni…"></textarea></div>
+        <div id="vo-dopo"></div>
         <div class="row"><button class="btn" onclick="salvaScheda(this)"><span class="spin"></span>Salva il volo</button></div>
         <div style="margin-top:14px"><button class="btn sec" id="vo-segn" onclick="apriSegnala(voloAperto&&voloAperto.id)">Segnala un problema su questo volo</button></div>
         <div id="vo-elim-w" style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)"><button class="btn sec" id="vo-elim" onclick="eliminaVolo(this)"><span class="spin"></span>Elimina il volo</button>
@@ -2112,7 +2121,7 @@ function verifiche(){
     if(r){ const mis=[].concat(...(r.per||[]).map(h=>h.mis.filter(m=>m.on).map(m=>m.t.toLowerCase()))).slice(0,2);
       L.push({l:'Valutazione del rischio del luogo',s:r.esito==='ko'?'ko':'ok',d:r.esito==='ko'?'La valutazione dice: non si vola qui ('+r.il+')':'Presente ('+r.il+')'+(mis.length?' · ricorda: '+mis.join(', '):''),act:r.esito==='ko'?'rischioV':null,rid:r.id,lav:r.lav}); }
     else L.push({l:'Valutazione del rischio del luogo',s:d.cat==='specific'?'ko':'warn',d:'Manca: falla prima di volare (2 minuti)',act:'rischio'}); }
-  { const n=ckPer(d).map(c=>c.nome).join(' · '); L.push({l:'Check list prima del decollo',s:checklistOk?'ok':'ko',d:checklistOk?(CKRES||'Completata'):'Da spuntare sul posto'+(n?': '+n:''),act:'check'}); }
+  { const n=ckPer(d).map(c=>c.nome).join(' · '); L.push({l:'Check list prima del volo',s:checklistOk?'ok':'ko',d:checklistOk?(CKRES||'Completata'):'Da spuntare sul posto'+(n?': '+n:''),act:'check'}); }
   return L;
 }
 const SPIEGA_NT=`<p>Un <b>NOTAM</b> (dall’inglese <i>Notice to Air Missions</i>, avviso a chi vola) è un <b>avviso temporaneo</b> pubblicato da ENAV per chi vola: cose che non sono sulle mappe fisse perché durano ore, giorni o settimane (al massimo 90 giorni).</p>
@@ -2165,8 +2174,10 @@ function notamC(){
 }
 function ora(){const n=new Date();return String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');}
 
+const CK_DURANTE=['Tieni il drone <b>sempre a vista</b> e guarda il cielo intorno (aerei, elicotteri).','<b>Interrompi il volo</b> se diventa pericoloso per persone, cose o altri aerei.','Resta nei <b>limiti della zona</b>: quota massima 120 m dal suolo, salvo limiti più bassi.','Segui le istruzioni del costruttore e le procedure dell’operatore.','Di notte: <b>luce verde lampeggiante accesa</b>.','Non volare vicino a un’emergenza senza il permesso dei soccorsi.'];
 function disegnaControllo(){
   const L=verifiche();
+  { const e=document.getElementById('c-durante'); if(e) e.innerHTML=`<h2>Durante il volo</h2><div class="nota" style="margin-bottom:4px">Da leggere prima di decollare: non c’è niente da spuntare.</div><ul class="ck-prom">${CK_DURANTE.map(t=>'<li>'+t+'</li>').join('')}</ul>`; }
   const bloccanti=L.filter(x=>x.s==='ko' && !x.act).length;
   const daFare=L.filter(x=>x.s==='ko' && x.act).length;
   const avvisi=L.filter(x=>x.s==='warn').length;
@@ -2244,8 +2255,14 @@ function apriVoli(){
 
 let voloAperto=null;
 let VOLO_NUOVO=null;
+const CK_DOPO=[['drone','Drone controllato: nessun danno a eliche, bracci, fotocamera'],['batt','Batterie tolte e controllate (niente gonfiori o calore strano)'],['succ','È successo qualcosa? (urto, perdita del segnale, guasto)']];
+function disegnaDopo(){ const v=voloAperto, e=document.getElementById('vo-dopo'); if(!e||!v) return; const D=v.dopo||{};
+  const box=on=>`<span class="ck-box">${on?'<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>':''}</span>`, reg=!!(v.docLog||+v.min>0);
+  e.innerHTML=`<div class="ck-sez" style="margin-top:12px">Dopo il volo</div>`+CK_DOPO.map(([k,t])=>`<button type="button" class="ck-sp ${D[k]?'on':''}" onclick="voloAperto.dopo=Object.assign(voloAperto.dopo||{},{${k}:!(voloAperto.dopo||{}).${k}});disegnaDopo()">${box(D[k])}<span>${t}${k==='succ'?'<small class="ck-s">se sì, tocca «Segnala un problema su questo volo» qui sotto</small>':''}</span></button>`).join('')
+    +`<div class="ck-sp ck-auto ${reg?'on':''}">${box(reg)}<span>Registro del volo${reg?'<i class="ck-q">Quota 120</i>':''}<small class="ck-s">${reg?'minuti'+(v.docLog?' e percorso dal file del drone':' scritti a mano'):'carica il file del drone o scrivi i minuti'}</small></span></div>`
+    +(D.succ?`<div class="row" style="margin-top:6px"><button class="btn mini" type="button" onclick="apriSegnala(voloAperto&&voloAperto.id)">Segnala un problema</button></div>`:''); }
 function apriVolo(id){
-  const v=VOLI.find(x=>x.id===id)||(VOLO_NUOVO&&VOLO_NUOVO.id===id?VOLO_NUOVO:null); if(!v) return; voloAperto=v;
+  const v=VOLI.find(x=>x.id===id)||(VOLO_NUOVO&&VOLO_NUOVO.id===id?VOLO_NUOVO:null); if(!v) return; voloAperto=v; setTimeout(disegnaDopo,0);
   { const e=document.getElementById('vo-elim'); document.getElementById('vo-elim-w').style.display=ADM?'':'none'; delete e.dataset.sicuro; e.lastChild.textContent='Elimina il volo'; e.style.color='';
     document.getElementById('vo-elim-n').textContent='Le ore del drone e del pilota e i cicli della batteria tornano come prima.'; }
   const s=STATO[v.stato];
@@ -3149,6 +3166,7 @@ function calcolaTodo(){
   const spec=DRONI.filter(d=>d.cat==='specific');
   if(spec.length&&!AUT_ENAC.agricola) add('ko','Autorizzazione ENAC agricola mancante ('+spec.map(d=>d.nome.replace('DJI ','')).join(', ')+')',
     DOMANDA&&DOMANDA.stato==='inviata'?'domanda inviata':'da richiedere',puoVedere('Autorizzazioni ENAC')?()=>apriEnac():null);
+  { const sm=DRONI.filter(ckManca); if(ADM&&sm.length) add('warn','Check list del manuale da caricare ('+sm.map(d=>d.nome.replace('DJI ','')).join(', ')+')','categoria specifica: vale quella del vostro manuale delle operazioni',()=>apriCheck()); }
   for(const p of PILOTI){
     const s=SCHEDEP[p.id]; if(!s) continue;
     if(!Object.keys(s.att||{}).length) add('warn','Nessun attestato inserito per '+p.nome,'da caricare',()=>apriPilota(p.id));
@@ -5715,25 +5733,49 @@ function datiEccairs(id){
 
 /* ---------- checklist su misura: l'Admin le scrive, il pilota le spunta nel controllo prima del volo ---------- */
 const ckVale=(c,d)=>c.vale==='tutti'||(c.vale==='specific'&&d.cat==='specific')||(Array.isArray(c.vale)&&c.vale.includes(d.nome));
-const ckPer=d=>{ if(!d) return []; const L=CHECK.filter(c=>ckVale(c,d)&&c.voci.length); return L.length?L:[Object.assign({},CK_BASE[0],{id:'base',nome:'Check list di base'})]; };
+// Categoria aperta: voci dal Regolamento (UE) 2019/947, UAS.OPEN.060 (cosa deve fare il pilota)
+const CK_OPEN=[
+  {id:'o-auto',nome:'Già controllato da Quota 120',auto:1,voci:[{t:'Attestato giusto per questo drone, valido',k:'att'},{t:'Zone con limitazioni guardate',k:'zone'}]},
+  {id:'o-dr',nome:'Il drone',voci:[{t:'Eliche integre e ben montate',ob:1},{t:'Batterie cariche e agganciate (drone e radiocomando)',ob:1},{t:'GPS e bussola a posto, punto di ritorno registrato',ob:1},{t:'Identificazione remota (Remote ID) attiva',ob:1},{t:'Carico in più (luci, sensori, staffe) entro il peso massimo',s:'se non c’è carico, spuntala lo stesso',ob:1},{t:'Scheda di memoria inserita'}]},
+  {id:'o-zona',nome:'La zona',voci:[{t:'Area guardata: niente ostacoli né persone estranee',ob:1},{t:'Nessuna emergenza in corso qui vicino (incendi, incidenti, soccorsi)',ob:1}]}];
+const CK_TU={id:'o-tu',nome:'Tu',tu:1,voci:[{t:'Sono in condizione di volare',s:'non sono stanco né malato, non ho preso farmaci che danno sonnolenza, né alcol o altre sostanze',ob:1}]};
+const ckBaseOp=c=>c.id===1&&c.nome==='Base';   // la vecchia «Base» dei dati di esempio: per la categoria aperta la sostituiscono le voci del regolamento
+const ckOperatore=d=>CHECK.filter(c=>ckVale(c,d)&&c.voci.length&&!ckBaseOp(c));
+const ckManca=d=>d&&d.cat==='specific'&&!CHECK.some(c=>c.voci.length&&(c.vale==='specific'||(Array.isArray(c.vale)&&c.vale.includes(d.nome))));
+const ckPer=d=>{ if(!d) return [];
+  if(d.cat==='specific'){ const L=CHECK.filter(c=>ckVale(c,d)&&c.voci.length); return (L.length?L:CK_OPEN.slice(1)).concat([CK_TU]); }
+  return CK_OPEN.concat(ckOperatore(d),[CK_TU]); };
+function ckAuto(k){
+  if(k==='att'){ const p=pSel, d=dSel; if(!p||!d) return {ok:false,s:''}; const [lv]=puoPilotare(p,d), att=Object.entries((SCHEDEP[p.id]||{}).att||{}).filter(([x,a])=>a&&a.scad&&giorni(a.scad)>=0);
+    return lv==='ok'&&att.length?{ok:true,s:att.map(([x,a])=>x+' valido fino al '+a.scad).join(' · ')+' · è nel telefono, mostralo se te lo chiedono'}:{ok:false,s:'non in regola: lo vedi nel controllo'}; }
+  if(k==='zone') return zoneOk||ZVERD?{ok:true,s:'zone D-Flight'+(ZVERD&&ZVERD.quando?' guardate alle '+ZVERD.quando:' guardate sulla mappa')}:{ok:false,s:'non ancora: guardale nel controllo'};
+  return {ok:false,s:''};
+}
+const ckConta=L=>L.filter(c=>!c.auto);
 const ckDroni=c=>c.vale==='tutti'?'tutti i droni':DRONI.filter(d=>ckVale(c,d)).map(d=>d.nome).join(', ')||'nessun drone';
 // pilota
 let CKSPUN={}, CKRES='';
 function apriChecklist(){
   const L=ckPer(dSel); if(!L.length){ lavora(document.createElement('button'),()=>{checklistOk=true;CKRES='';disegnaControllo();}); return; }
-  CKSPUN={}; disegnaChecklist(); vai('checklist','Controllo prima del volo &rsaquo; Check list'); document.getElementById('back').onclick=()=>{vai('controllo','Controllo prima del volo');};
+  CKSPUN={}; disegnaChecklist(); vai('checklist','Controllo prima del volo &rsaquo; Prima del volo'); document.getElementById('back').onclick=()=>{vai('controllo','Controllo prima del volo');};
 }
 function disegnaChecklist(){
-  const L=ckPer(dSel), tot=L.reduce((a,c)=>a+c.voci.length,0), fatte=Object.values(CKSPUN).filter(Boolean).length;
-  const mancanoOb=L.reduce((a,c)=>a+c.voci.filter((v,i)=>v.ob&&!CKSPUN[c.id+':'+i]).length,0);
-  document.getElementById('ckp').innerHTML=`<h2>Check list prima del decollo</h2><div style="font-size:15px;color:var(--muted)">${ESC(dSel.nome)} · ${fatte} su ${tot} spuntate</div><div class="ck-bar"><i style="width:${tot?Math.round(fatte/tot*100):0}%"></i></div>`+
-    L.map(c=>`<div class="ck-sez">${ESC(c.nome)}</div>`+c.voci.map((v,i)=>{const k=c.id+':'+i, on=!!CKSPUN[k];
-      return `<button type="button" class="ck-sp ${on?'on':''}" onclick="CKSPUN['${k}']=!CKSPUN['${k}'];disegnaChecklist()"><span class="ck-box">${on?'<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>':''}</span><span>${ESC(v.t)}${v.ob&&!on?'<small>obbligatoria</small>':''}</span></button>`;}).join('')).join('')+
-    `<div class="row"><button class="btn" id="ckp-ok" ${mancanoOb?'disabled':''} onclick="fineChecklist(this)"><span class="spin"></span>${mancanoOb?'Fatto (mancano '+pl(mancanoOb,'obbligatoria','obbligatorie')+')':'Fatto'}</button></div>`;
+  const L=ckPer(dSel), M=ckConta(L), tot=M.reduce((a,c)=>a+c.voci.length,0), fatte=M.reduce((a,c)=>a+c.voci.filter((v,i)=>CKSPUN[c.id+':'+i]).length,0);
+  const mancanoOb=M.reduce((a,c)=>a+c.voci.filter((v,i)=>v.ob&&!CKSPUN[c.id+':'+i]).length,0);
+  const box=on=>`<span class="ck-box">${on?'<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>':''}</span>`;
+  const cat=dSel.cat==='specific'?'categoria specifica':'categoria aperta';
+  document.getElementById('ckp').innerHTML=`<h2>Prima del volo</h2><div style="font-size:15px;color:var(--muted)">${ESC(dSel.nome)} · ${cat} · ${fatte} su ${tot}</div><div class="ck-bar"><i style="width:${tot?Math.round(fatte/tot*100):0}%"></i></div>`+
+    (ckManca(dSel)?`<div class="ck-manca"><b>Per questo drone vale la check list del vostro manuale delle operazioni.</b> L’Admin non l’ha ancora caricata: intanto usa queste voci di base.</div>`:'')+
+    L.map(c=>`<div class="ck-sez">${ESC(c.nome)}</div>`+(c.tu?'<div class="ck-tu">':'')+c.voci.map((v,i)=>{
+      if(c.auto){ const A=ckAuto(v.k); return `<div class="ck-sp ck-auto ${A.ok?'on':''}">${box(A.ok)}<span>${ESC(v.t)}${A.ok?'<i class="ck-q">Quota 120</i>':''}<small class="ck-s">${ESC(A.s)}</small></span></div>`; }
+      const k=c.id+':'+i, on=!!CKSPUN[k];
+      return `<button type="button" class="ck-sp ${on?'on':''}" onclick="CKSPUN['${k}']=!CKSPUN['${k}'];disegnaChecklist()">${box(on)}<span>${c.tu?'<b>'+ESC(v.t)+'</b>':ESC(v.t)}${v.s?'<small class="ck-s">'+ESC(v.s)+'</small>':''}${v.ob&&!on?'<small>obbligatoria</small>':''}</span></button>`;}).join('')+(c.tu?'</div>':'')).join('')+
+    `<div class="row"><button class="btn" id="ckp-ok" ${mancanoOb?'disabled':''} onclick="fineChecklist(this)"><span class="spin"></span>${mancanoOb?'Fatto (mancano '+pl(mancanoOb,'obbligatoria','obbligatorie')+')':'Fatto'}</button></div>`+
+    (dSel.cat==='specific'?'':'<div class="ck-rif">Dal Regolamento (UE) 2019/947, UAS.OPEN.060: cosa deve fare il pilota in categoria aperta.</div>');
 }
 function fineChecklist(b){
   const L=ckPer(dSel);
-  CKRES=L.map(c=>c.nome+' '+c.voci.filter((v,i)=>CKSPUN[c.id+':'+i]).length+'/'+c.voci.length).join(' · ')+' · spuntate alle '+ora()+' da '+pSel.nome;
+  CKRES=ckConta(L).map(c=>c.nome+' '+c.voci.filter((v,i)=>CKSPUN[c.id+':'+i]).length+'/'+c.voci.length).join(' · ')+' · spuntate alle '+ora()+' da '+pSel.nome+(L.some(c=>c.tu)&&CKSPUN['o-tu:0']?' · dichiara di essere in condizione di volare':'');
   lavora(b,()=>{ checklistOk=true; disegnaControllo(); vai('controllo','Controllo prima del volo'); });
 }
 // Admin
