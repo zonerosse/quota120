@@ -416,7 +416,9 @@
   .chip{display:none;align-items:center;gap:8px;font:600 15px "Barlow",Arial,sans-serif;color:#fff;flex:none}
   .chip i{font-style:normal;width:34px;height:34px;border-radius:50%;background:#5B7F6E;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
   @media(max-width:560px){header .marchio .motto{display:none} .hbtn.asp-btn span{display:none} .hbtn{padding:0 10px}}
-  @media(max-width:360px){.chip span{display:none}}
+  @media(max-width:560px){.chip span{display:none}}
+  header .marchio h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  @media(max-width:420px){body:not(.adm):not(.come) header .marchio h1{font-size:19px} body:not(.adm):not(.come) header .marchio{gap:8px;margin-right:4px}}
   .htabs{display:none;gap:8px;margin-left:auto}
   .hbtn.tab{position:relative}
   .hbtn.tab.on{background:#fff;color:var(--notte);border-color:#fff}
