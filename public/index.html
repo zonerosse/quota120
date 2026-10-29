@@ -4593,9 +4593,9 @@ function disegnaInvio(){
     ${INV_TAB==='iphone'?`
     <div class="inv-cod"><span>Il tuo codice di invio</span><b id="inv-codice">${INVIO?ESC(INVIO.codice):'…'}</b><button class="btn sec mini" onclick="copiaCodiceInvio()">Copia</button></div>
     <ol class="inv-passi" id="inv-passi">
-     <li><div>Tocca ${D('Prepara il comando rapido')} qui sotto e poi ${D('Aggiungi comando')}. Quando chiede il codice, incolla quello qui sopra.</div></li>
-     <li><div>La prima volta che parte ti chiede la cartella: ${D('Sul mio iPhone')} › ${D('DJI Fly')} › ${D('FlightRecords')}, poi ${D('Consenti sempre')}.</div></li>
-     <li><div>In Comandi Rapidi tocca ${D('Automazione')} › ${D('+')} › ${D('Ora del giorno')}: scegli 21:00, ${D('Esegui subito')}, e il comando «Quota 120 · voli».</div></li>
+     <li><div>Tocca ${D('Copia')} qui sopra, poi ${D('Prepara il comando rapido')} qui sotto e ${D('Aggiungi comando')}.</div></li>
+     <li><div>Alla prima domanda incolla il codice. Alla seconda scegli la cartella: ${D('Sul mio iPhone')} › tocca una volta ${D('DJI Fly')} › ${D('Apri')}.</div></li>
+     <li><div>In Comandi Rapidi tocca ${D('Automazioni')} › ${D('+')} › ${D('Ora del giorno')}: scegli 21:00, ${D('Esegui subito')}, e il comando «Quota 120 voli».</div></li>
      <li><div>Prova adesso: apri il comando una volta. Qui sotto compare «Ultimo invio».</div></li></ol>
     ${link?`<button class="btn" id="inv-scorc" style="width:100%" onclick="window.open(OP.scorciatoia,'_blank')">Prepara il comando rapido</button>`:`<div class="inv-box">Il comando rapido non è ancora pronto: lo prepara l’Admin una volta sola${ADM?' (qui sotto)':''}.</div>`}
     ${ult}`:`
@@ -4608,13 +4608,15 @@ function disegnaInvio(){
     ${ADM?`<details class="inv-adm" id="inv-adm"><summary>Admin · prepara il comando rapido (una volta sola, dal tuo iPhone)</summary>
      <div style="font-size:14.5px;margin:6px 0">Apple non permette di creare un comando rapido da fuori: va fatto una volta su un iPhone e poi condiviso con un link.</div>
      <ol class="inv-passi">
-      <li><div>Apri ${D('Comandi Rapidi')} › ${D('+')}. Nome: <b>Quota 120 · voli</b>.</div></li>
+      <li><div>Installa ${D('DJI Fly')} dall’App Store e aprila una volta: crea la sua cartella.</div></li>
+      <li><div>Apri ${D('Comandi Rapidi')} › ${D('+')}. Nome: <b>Quota 120 voli</b>.</div></li>
       <li><div>Aggiungi l’azione ${D('Testo')} e scrivi: <b>CODICE</b>.</div></li>
-      <li><div>Aggiungi ${D('Ottieni contenuti della cartella')} e scegli ${D('Sul mio iPhone')} › ${D('DJI Fly')} › ${D('FlightRecords')}.</div></li>
-      <li><div>Aggiungi ${D('Ripeti con ognuno')}.</div></li>
-      <li><div>Dentro il ripeti aggiungi ${D('Ottieni contenuti dell’URL')}. URL: <span class="inv-url">${location.origin}/api/invio?t=</span> poi la variabile ${D('Testo')}, poi <span class="inv-url">&amp;nome=</span> poi la variabile ${D('Elemento ripetuto')} › ${D('Nome')}. Metodo ${D('POST')}, corpo della richiesta ${D('File')}: ${D('Elemento ripetuto')}.</div></li>
-      <li><div>Tocca la ${D('i')} del comando › ${D('Domande di importazione')} › aggiungi la domanda sul ${D('Testo')}: «Incolla il tuo codice di invio di Quota 120».</div></li>
-      <li><div>${D('Condividi')} › ${D('Copia link iCloud')} e incollalo qui sotto.</div></li></ol>
+      <li><div>Aggiungi ${D('Ottieni contenuti della cartella')}: scegli ${D('Sul mio iPhone')} › ${D('DJI Fly')} › ${D('Apri')}, poi ${D('›')} e accendi ${D('Ricorsivo')}.</div></li>
+      <li><div>Aggiungi ${D('Filtra file')}: ${D('Nome')} ${D('inizia con')} <b>DJIFlightRecord</b>.</div></li>
+      <li><div>Aggiungi ${D('Ripeti con ognuno')} (in ${D('File')}).</div></li>
+      <li><div>Aggiungi ${D('Ottieni contenuti dell’URL')} e mettilo dentro il ripeti (tieni premuto › ${D('Copia')} › ${D('Rimuovi')}, poi su «Interrompi ripetizione» › ${D('Incolla sopra')}). URL: <span class="inv-url">${location.origin}/api/invio?t=</span> poi la variabile ${D('Testo')}, poi <span class="inv-url">&amp;nome=</span> poi ${D('Elemento ripetizione')} › ${D('Nome')}. Metodo ${D('POST')}, corpo della richiesta ${D('File')}: ${D('Elemento ripetizione')}.</div></li>
+      <li><div>Tocca ${D('ⓘ')} › ${D('Domande di importazione')}: una domanda sul ${D('Testo')} («Incolla il tuo codice di invio di Quota 120») e una sulla ${D('Cartella')} («Scegli la cartella DJI Fly»).</div></li>
+      <li><div>Tieni premuto il comando › ${D('Condividi')} › ${D('Copia link iCloud')} e incollalo qui sotto.</div></li></ol>
      <label for="inv-link" style="display:block;font-size:14px;color:var(--ink3);margin:8px 0 4px">Link del comando rapido</label><input type="text" id="inv-link" value="${ESC(link)}" placeholder="https://www.icloud.com/shortcuts/…" style="width:100%">
      <div class="row"><button class="btn" onclick="salvaScorciatoia(this)"><span class="spin"></span>Salva il link</button></div></details>`:''}`;
 }
