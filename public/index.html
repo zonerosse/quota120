@@ -1491,7 +1491,7 @@
     <div class="card ac-df" style="margin-top:12px" id="ac-df"><h2>Come si entra in D-Flight</h2>
       <div style="font-size:14.5px">La mappa D-Flight si vede solo dopo aver fatto l’accesso. Serve:</div>
       <ol class="ac-ol">
-        <li><b>Un account D-Flight con abbonamento</b> (BASIC o PRO). Di solito è quello dell’operatore: nome utente e password te li dà l’Admin. Se sei tu l’operatore, ti registri su d-flight.it › Accedi ai servizi › Registrati.</li>
+        <li><b>Un account D-Flight.</b> Per vedere la mappa basta la registrazione gratuita: su d-flight.it tocca Accedi ai servizi › Registrati e attiva l’account dall’email che ti arriva (entro un’ora).</li>
         <li><b>Il primo accesso da questo telefono</b> (o computer): apri la mappa, scrivi nome utente e password e, quando il browser chiede di salvare la password, tocca <b>Salva</b>. Le volte dopo entri con un tocco.</li>
         <li>Torna qui e tocca <b>Fatto</b>.</li></ol>
       <div class="nota" style="margin-top:6px">La password non passa da Quota 120: la tiene solo il tuo browser.</div>
@@ -4830,7 +4830,7 @@ function passiVolo(){
         att:['I tuoi attestati','Tocca «Carica» e fotografa l’attestato (A1-A3, A2, STS): Quota 120 legge numero e scadenza.','Senza un attestato valido per il drone il controllo prima del volo ti ferma.','#ac-v-att'],
         rc:['L’assicurazione','Nessuna polizza ti copre: se hai una tua polizza tocca «Carica» e fotografa la quietanza, altrimenti avvisa l’Admin.','Senza assicurazione RC valida non si vola.','#ac-v-rc'],
         inv:['L’invio automatico dei voli','Tocca «Imposta» e segui i passi sul telefono che usi con l’app DJI. Se ora non puoi (per esempio sei al computer), tocca «Avanti».','Poi i voli arrivano da soli quando chiudi l’app DJI.','#ac-v-inv'],
-        df:['L’accesso a D-Flight','Apri la mappa D-Flight, entra con nome utente e password (di solito te li dà l’Admin), salva la password nel telefono, poi tocca «Fatto: sono entrato».','Senza accesso non vedi la mappa né gli avvisi del giorno.','#ac-df'],
+        df:['L’accesso a D-Flight','Registrati gratis su D-Flight (se non hai già l’account), apri la mappa, entra, salva la password nel telefono, poi tocca «Fatto: sono entrato».','Senza accesso non vedi la mappa né gli avvisi del giorno.','#ac-df'],
         cont:['I tuoi contatti','Scrivi telefono ed email in «I miei dati» e tocca «Salva».','All’email arrivano gli avvisi delle tue scadenze.','#ac-dati']};
       M.forEach(v=>{ const x=T[v.k]; if(!x) return; S.push({t:'Account · '+x[0],p:x[1],w:x[2],el:()=>VISTA==='account'?gdVis(x[3]):null,vai:()=>apriAccount(),ok:okV(v.k),nx:v.k==='inv'?1:undefined}); });
     }
@@ -5917,8 +5917,8 @@ function stampaRischio(r){
 
 /* ---------- mappa del volo (Leaflet, OpenStreetMap) ---------- */
 let LEAF=null;
-const DF_ENTRA=()=>ADM?'D-Flight ti chiede di entrare: usa il <b>tuo account D-Flight di operatore</b> (quello con l’abbonamento). Al primo accesso da questo computer o telefono, quando il browser chiede di salvare la password, tocca <b>Salva</b>: le volte dopo entri con un tocco. Ai piloti dai nome utente e password, oppure ognuno usa un suo account con abbonamento.'
-  :'D-Flight ti chiede di entrare: serve un <b>account D-Flight con abbonamento</b>. Di solito è quello dell’operatore: nome utente e password te li dà l’Admin. Al primo accesso, quando il telefono chiede di salvare la password, tocca <b>Salva</b>: le volte dopo entri con un tocco.';
+const DF_ENTRA=()=>ADM?'D-Flight ti chiede di entrare: usa il <b>tuo account D-Flight</b>. Al primo accesso da questo computer o telefono, quando il browser chiede di salvare la password, tocca <b>Salva</b>: le volte dopo entri con un tocco. Ogni pilota può farsi il suo account: per vedere la mappa basta la registrazione gratuita.'
+  :'D-Flight ti chiede di entrare: serve un <b>account D-Flight</b>. Per vedere la mappa basta la registrazione gratuita su d-flight.it (Accedi ai servizi › Registrati). Al primo accesso, quando il telefono chiede di salvare la password, tocca <b>Salva</b>: le volte dopo entri con un tocco.';
 function accDf(on){ const p=ioPilota(); if(!p) return; const s=SCHEDEP[p.id]=SCHEDEP[p.id]||{ruolo:'Pilota',ore:'0 h',voli:0,ore90:'0 h',inc:0,att:{}};
   if(on) s.dfOk={il:oggi()}; else delete s.dfOk; controllaModifiche(); disegnaAccount(); disegnaChip(); toast(on?'Segnato: accesso a D-Flight fatto':'Tolto'); }
 /* ---------- Account del pilota: le cose che servono per volare, i suoi dati, il suo telefono ---------- */
