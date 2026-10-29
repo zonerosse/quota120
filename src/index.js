@@ -267,6 +267,32 @@ function scadenze(d) {
   const Z = d.ZONEINFO; if (Z && dtS(Z.scade) && dtS(Z.scade) - oggiRoma().t <= 7 * 864e5) L.push(["zone|" + Z.data, "Zone di volo D-Flight da aggiornare", "caricate il " + Z.data + " · scarica il file nuovo da D-Flight e caricalo in Pannello Admin › Zone di volo", Z.scade, null]);
   return L;
 }
+// andamento delle celle delle batterie (stessa regola del programma)
+function trendBatt(voli, bid) {
+  const k = v => { const m = /(\d{2})\/(\d{2})\/(\d{4})/.exec(v.data || ""); return (m ? m[3] + m[2] + m[1] : "") + (v.ora || ""); };
+  const V = (voli || []).filter(v => v.batt === bid && v.stato !== "attesa" && typeof v.dev === "number" && Array.isArray(v.celle) && v.celle.length).sort((a, b) => k(a) < k(b) ? -1 : 1).slice(-12);
+  const n = V.length, serie = V.map(v => +v.dev || 0), r = { n, serie, voli: V };
+  const cons = V.filter(v => (+v.min || 0) >= 3 && +v.cIni > +v.cFin).map(v => (v.cIni - v.cFin) / v.min);
+  if (cons.length >= 4) { const h = Math.floor(cons.length / 2), m = a => a.reduce((s, x) => s + x, 0) / a.length; r.consPrima = Math.round(m(cons.slice(0, h)) * 10) / 10; r.consOra = Math.round(m(cons.slice(-h)) * 10) / 10; }
+  r.tMax = Math.max(0, ...V.slice(-3).map(v => +v.tMax || 0));
+  if (n < 3) { r.liv = ""; return r; }
+  const mx = (n - 1) / 2, my = serie.reduce((s, x) => s + x, 0) / n; let a = 0, b = 0;
+  serie.forEach((y, i) => { a += (i - mx) * (y - my); b += (i - mx) * (i - mx); });
+  const slope = b ? a / b : 0, ult = serie[n - 1];
+  r.slope = slope; r.ult = ult; r.primo = serie[0];
+  if (ult >= 0.10) r.liv = "ko";
+  else if (slope >= 0.003 && ult >= 0.04) { r.liv = "warn"; r.mancano = Math.max(1, Math.ceil((0.10 - ult) / slope)); }
+  else r.liv = "ok";
+  if (r.liv === "ok" && r.consOra && r.consPrima && r.consOra >= r.consPrima * 1.15) r.consumo = true;
+  return r;
+}
+function battPeggio(d) {
+  const L = [];
+  for (const b of d.BATT || []) { const t = trendBatt(d.VOLI, b.id), dr = (d.DRONI || []).find(x => x.id === b.drone); if (t.liv !== "warn" && t.liv !== "ko") continue;
+    const v = (x) => String(x.toFixed(2)).replace(".", ",");
+    L.push(["batt|" + b.id + "|" + t.liv + "|" + v(t.ult), b.nome + (dr ? " (" + dr.nome + ")" : ""), t.liv === "ko" ? "differenza tra le celle " + v(t.ult) + " V: da controllare prima di usarla" : "celle in peggioramento: da " + v(t.primo) + " a " + v(t.ult) + " V in " + t.n + " voli, al limite tra circa " + t.mancano + " voli"]); }
+  return L;
+}
 function manutenzioni(d) { return (d.DRONI || []).map(x => [x, (d.SCHEDE || {})[x.id]]).filter(([x, s]) => s && s.man && s.man.liv !== "ok").map(([x, s]) => ["man|" + x.id + "|" + s.man.prox, "Manutenzione " + x.nome, s.man.prox + " · " + (s.man.mancano === "da fare subito" ? "da fare subito" : "mancano " + s.man.mancano + " di volo")]); }
 function mailHtml(nomeOp, righe, perAdmin, url) {
   const col = g => g <= 7 ? "#AE2F28" : "#A5660A", et = g => g < 0 ? "scaduto" : g === 0 ? "oggi" : g === 1 ? "domani" : "tra " + g + " giorni";
@@ -717,6 +743,7 @@ Stato.prototype.avvisi = async function (prova, origine) {
     if (prova && g > soglie[0]) continue;
     righe.push({ t, s, g, pid }); if (!prova) nuovi.push(chiave);
   }
+  for (const [k, t, s] of battPeggio(d)) { if (!prova && inviati[k]) continue; righe.push({ t, s, g: null, pid: null }); if (!prova) nuovi.push(k); }
   for (const [k, t, s] of manutenzioni(d)) { if (!prova && inviati[k]) continue; righe.push({ t, s, g: null, pid: null }); if (!prova) nuovi.push(k); }
   righe.sort((a, b) => (a.g == null ? 999 : a.g) - (b.g == null ? 999 : b.g));
   const nomeOp = String((d.OP || {}).nome || "").replace(/ \(dati di esempio\)/, ""), url = (await st.get("origine")) || origine || "", esiti = [];
