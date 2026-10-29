@@ -989,6 +989,17 @@ button.pl-rg{cursor:pointer}
 .ck-manca{background:#fff;border:1.5px solid var(--warn);border-radius:10px;padding:9px 10px;font-size:14px;margin-top:10px}
 .ck-rif{font-size:12px;color:var(--muted);margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
 .ck-prom{padding-left:20px;margin:6px 0 0;font-size:15px}.ck-prom li{margin-bottom:6px}
+.nav{position:sticky;top:env(safe-area-inset-top);z-index:45;background:var(--pagina,#E8EDF0);flex-wrap:nowrap!important;padding:8px 0;margin-top:0!important;border-bottom:1px solid var(--line);box-shadow:0 6px 8px -8px rgba(19,42,58,.25)}
+.nav .crumb{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nav .crumb a{color:var(--accent);text-decoration:none;border-bottom:1px dotted var(--accent)}
+.nav .back{flex:none}
+.nav .gd-btn{flex:none}
+@media(max-width:600px){.nav .gd-btn{font-size:0!important;gap:0!important;padding:6px!important;border-radius:50%!important;width:36px;height:36px;justify-content:center}.nav .gd-btn svg{width:22px;height:22px}}
+.cr-menu{position:absolute;left:0;right:0;top:100%;margin-top:4px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 24px rgba(19,42,58,.18);overflow:hidden;z-index:46}
+.cr-menu>*{display:flex;width:100%;padding:11px 12px;border:0;border-top:1px solid #edf0f2;background:#fff;font:600 15px inherit;font-family:inherit;color:var(--ink);text-align:left}
+.cr-menu>*:first-child{border-top:0}.cr-menu button{cursor:pointer;color:var(--accent)}
+.cr-menu .qui{background:#eef3f7;font-weight:700}.cr-menu small{margin-left:auto;color:var(--muted);font-weight:500;font-size:12.5px}
+body.scuro .nav{background:transparent;border-color:#1F3241}
 </style>
 </head>
 <body>
@@ -3231,12 +3242,36 @@ let NAVST=[], NAV_LOG=null, NAV_NO=false;
   Object.defineProperty(b,'onclick',{configurable:true,get(){return NAV_LOG;},set(f){NAV_LOG=f;}});
   b.addEventListener('click',e=>{ e.preventDefault(); navIndietro(); });
 })();
+
+/* ---------- barra in alto: Indietro, percorso toccabile (accorciato se lungo), Guidami ---------- */
+const CRUMB_VAI={'Home':()=>vai('home'),'Home Admin':()=>vai('home'),'Controllo prima del volo':()=>{ if(dSel&&pSel) vai('controllo','Controllo prima del volo'); else vai('home'); },
+  'Voli':()=>apriVoli(),'Registro voli':()=>apriVoli(),'Richieste di permesso':()=>apriRichieste(),'Valutazioni del rischio':()=>apriRischi(),'Checklist':()=>apriCheck(),'Segnalazioni':()=>apriSegnalazioni(),'Account':()=>apriAccount(),'Documenti':()=>apriDocumenti(),'Impostazioni':()=>{ if(ADM&&!COME) hadmApri('imp'); else vai('home'); }};
+const CRUMB_SEZ={'Lavoro':'lav','Flotta':'flotta','Persone':'persone','Regole e sicurezza':'regole'};
+['Clienti e lavori','Preventivi','Calendario','Droni','Batterie','Manutenzioni','Inventario','Piloti','D-Flight','Autorizzazioni ENAC','Campi','Trattamenti'].forEach(n=>CRUMB_VAI[n]=()=>apriPagina(n));
+function crumbAzione(t){ if(CRUMB_SEZ[t]) return ()=>{ if(ADM&&!COME) hadmApri(CRUMB_SEZ[t]); else vai('home'); }; return CRUMB_VAI[t]||null; }
+let CRUMB_P=[];
+function crumbLinks(){
+  const el=document.getElementById('crumb'); if(!el) return;
+  const tmp=document.createElement('div'); tmp.innerHTML=el.innerHTML;
+  const parti=tmp.textContent.split('›').map(x=>x.trim()).filter(Boolean); CRUMB_P=parti;
+  if(parti.length<2){ el.classList.remove('corto'); return; }
+  const nome=t=>t==='Home Admin'?'Home':t;
+  const pezzo=(t,i)=>i===parti.length-1?`<b>${ESC(t)}</b>`:crumbAzione(t)?`<a href="#" onclick="crumbVai(${i});return false">${ESC(nome(t))}</a>`:`<span>${ESC(t)}</span>`;
+  el.innerHTML=parti.map(pezzo).join(' › '); el.classList.remove('corto');
+  if(el.scrollWidth>el.clientWidth+2&&parti.length>2){ el.innerHTML=pezzo(parti[0],0)+' › <a href="#" class="cr-tre" onclick="crumbMenu(event);return false">…</a> › '+pezzo(parti[parti.length-1],parti.length-1); el.classList.add('corto'); }
+}
+function crumbVai(i){ const f=crumbAzione(CRUMB_P[i]); document.querySelectorAll('.cr-menu').forEach(x=>x.remove()); if(f) f(); }
+function crumbMenu(e){ document.querySelectorAll('.cr-menu').forEach(x=>x.remove());
+  const m=document.createElement('div'); m.className='cr-menu';
+  m.innerHTML=CRUMB_P.map((t,i)=>i===CRUMB_P.length-1?`<div class="qui">${ESC(t)}<small>sei qui</small></div>`:crumbAzione(t)?`<button type="button" onclick="crumbVai(${i})">${ESC(t)}</button>`:`<div>${ESC(t)}</div>`).join('');
+  document.querySelector('.nav').appendChild(m); setTimeout(()=>document.addEventListener('click',function chiudi(ev){ if(!m.contains(ev.target)){ m.remove(); document.removeEventListener('click',chiudi);} }),0); }
+window.addEventListener('resize',()=>{ clearTimeout(window._crT); window._crT=setTimeout(crumbLinks,150); });
 let BACK_PASSO=null;
 function navIndietro(){ if(BACK_PASSO&&BACK_PASSO()) return;
   const p=NAVST.pop();
   if(!p){ const f=NAV_LOG; if(f) f(); else vai('home'); return; }
   NAV_NO=true; try{ vai(p.v,p.t); }finally{ NAV_NO=false; }
-  document.getElementById('crumb').innerHTML=p.crumb; NAV_LOG=p.log;
+  document.getElementById('crumb').innerHTML=p.crumb; crumbLinks(); NAV_LOG=p.log;
   setTimeout(()=>window.scrollTo(0,p.y||0),30);
 }
 function vai(v, crumb){
@@ -3249,7 +3284,7 @@ function vai(v, crumb){
   { const H=ADM&&!COME?'Home Admin':'Home'; document.getElementById('crumb').innerHTML = v==='home' ? '<b>'+H+'</b>' : H+' &rsaquo; <b>'+crumb+'</b>'; }
   VISTA=v; window.scrollTo(0,0); scuro(); if(typeof disegnaChip==='function'&&IO&&IO.n) disegnaChip();
   [['nb-home','home'],['nb-voli','voli'],['nb-doc','documenti']].forEach(([i,p])=>document.getElementById(i).classList.toggle('on',v===p));
-  segnaTab(); gdDecora();
+  segnaTab(); gdDecora(); setTimeout(crumbLinks,0);
 }
 function segnaTab(){
   document.getElementById('tb-home').classList.toggle('on',!COME&&VISTA==='home');
