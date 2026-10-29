@@ -4023,13 +4023,18 @@ const GUIDES={
   S:[P_PAG('Trattamenti',['tratt','trattamento']),{t:'Leggi il quaderno',p:'I trattamenti fatti e quelli da completare.',w:'Quelli da completare hanno dati mancanti (prodotto, dose).',el:()=>gdVis('#tr-list'),nx:1},
    {t:'Tocca «Aggiungi trattamento»',p:'In cima alla pagina.',w:'Si parte dal registro dell’Agras o a mano.',el:()=>gdTesto('#v-tratt .btn','Aggiungi trattamento'),ok:()=>false}]},
  invio:{n:'Invio automatico dei voli',r:'tutti',base:()=>0,done:()=>false,
-  why:{h:'I voli arrivano da soli',p:'Il telefono del pilota manda a Quota 120 i file dei voli, senza caricarli a mano e senza dare la password DJI a nessuno. Su iPhone ogni sera da solo; su Android con «Condividi › Quota 120».',uses:['Registro voli sempre aggiornato','Ore e cicli delle batterie senza dimenticanze','Mappa dei voli nel rapporto per il cliente'],tm:'Si prepara una volta sola: 5 minuti.'},
-  end:'Pronto. Quando i voli arrivano, in alto compare «voli arrivati dal telefono»: tocca «Leggi ora».',
-  S:[P_VOLI,{t:'Tocca «Invio automatico dei voli»',p:'Nel riquadro «Aggiungi un volo».',w:'Qui c’è tutto quello che serve per preparare il telefono.',el:()=>gdVis('#vl-invio'),ok:()=>VISTA==='invio'},
-   {t:'Scegli il tuo telefono',p:'iPhone o Android: i passi sono diversi.',w:'Su iPhone l’invio è automatico; su Android si fa con due tocchi, perché Android tiene chiusa la cartella dei voli DJI.',el:()=>gdVis('.inv-tabs'),nx:1},
-   {t:'Il tuo codice di invio (iPhone)',p:'Copialo: lo chiede il comando rapido quando lo aggiungi.',w:'È personale: i voli arrivano con il tuo nome. Non darlo ad altri.',el:()=>gdVis('.inv-cod'),nx:1,opt:1},
-   {t:'Segui i passi',p:'Uno alla volta, con i nomi esatti dei tasti.',w:'Si fa una volta sola.',el:()=>gdVis('#inv-passi'),nx:1},
-   {t:'Controlla l’ultimo invio',p:'Dopo la prova compare «Ultimo invio» con l’ora.',w:'Se resta grigio, ricontrolla il codice o la cartella scelta.',el:()=>gdVis('.inv-stato'),nx:1,opt:1}]},
+  why:{h:'I voli arrivano da soli',p:'Il telefono del pilota manda a Quota 120 i file dei voli, senza caricarli a mano e senza dare la password DJI a nessuno. Su iPhone ogni sera alle 21 da solo; su Android con «Condividi › Quota 120».',uses:['Registro voli sempre aggiornato, senza dimenticanze','Ore e cicli di droni e batterie calcolati da soli','Mappa e dati del volo pronti per il rapporto al cliente'],tm:'Si prepara una volta sola: 5 minuti, con il telefono con cui voli.'},
+  end:'Fatto. Da stasera i voli partono da soli alle 21: in Quota 120 compare «voli arrivati dal telefono» e l’Admin tocca «Leggi ora». Tu non devi fare più niente.',
+  S:[P_VOLI,
+   {t:'Tocca «Invio automatico dei voli»',p:'Nel riquadro «Aggiungi un volo».',w:'Qui c’è tutto quello che serve per preparare il telefono, una volta sola.',el:()=>gdVis('#vl-invio'),ok:()=>VISTA==='invio'},
+   {t:'Tocca «iPhone»',p:'Se voli con un telefono Android, tocca «Android» e segui quei passi.',w:'Su iPhone l’invio è automatico. Su Android serve un tocco, perché Android tiene chiusa la cartella dei voli DJI alle altre app.',el:()=>gdVis('#inv-t-iphone'),ok:()=>INV_TAB==='iphone'},
+   {t:'Tocca «Copia»',p:'Copia il tuo codice di invio.',w:'Il codice è solo tuo: con questo i voli arrivano con il tuo nome. Non darlo ad altri piloti.',el:()=>gdVis('.inv-cod .btn'),ok:()=>!!window._invCop},
+   {t:'Tocca «Prepara il comando rapido»',p:'Si apre l’app Comandi Rapidi, già pronta.',w:'Il comando l’ha preparato l’Admin: tu devi solo aggiungerlo al tuo iPhone.',el:()=>gdVis('#inv-scorc'),ok:()=>!!window._invScorc,opt:1},
+   {t:'Nel comando: «Configura comando rapido»',p:'Poi rispondi alle due domande come qui, ai punti 3 e 4.',w:'Prima il codice (tieni premuto › Incolla), poi la cartella DJI Fly: così il comando sa chi sei e dove sono i tuoi voli.',el:()=>gdVis('#inv-p3'),nx:1},
+   {t:'La cartella giusta',p:'Sul mio iPhone › tocca una volta DJI Fly › Apri. Poi «Aggiungi comando rapido».',w:'DJI Fly salva lì un file per ogni volo. Il comando prende solo quelli e li manda.',el:()=>gdVis('#inv-p4'),nx:1},
+   {t:'Ogni sera alle 21',p:'In Comandi Rapidi: Automazioni › + › Ora del giorno › 21:00 › Esegui subito › Quota 120 voli.',w:'Così non devi ricordarti niente: dopo una giornata di volo, la sera i voli partono da soli. Quelli già mandati non vengono rimandati.',el:()=>gdVis('#inv-p5'),nx:1},
+   {t:'Prova una volta',p:'Tocca il comando «Quota 120 voli» e rispondi «Consenti sempre».',w:'La prima volta l’iPhone chiede il permesso di mandare i file a Quota 120: con «Consenti sempre» non lo chiede più.',el:()=>gdVis('#inv-p6'),nx:1},
+   {t:'Controlla «Ultimo invio»',p:'Torna qui: con il pallino verde vedi quando è arrivato l’ultimo invio.',w:'Se hai già dei voli nel telefono devono arrivare subito. Se resta grigio e hai volato, ricontrolla il codice o la cartella.',el:()=>gdVis('.inv-stato'),nx:1,opt:1}]},
  senzarete:{n:'Lavorare senza rete',r:'tutti',base:()=>0,done:()=>false,
   why:{h:'Senza rete',p:'In campagna o in valle il telefono spesso non prende. Quota 120 si apre lo stesso con gli ultimi dati, e quello che fai parte da solo quando torna la rete.',uses:['Controllo prima del volo sul campo','Voli, note e spunte','Foto del volo e file DJI (si leggono quando torna la rete)'],tm:'Ci vogliono 2 minuti per prepararsi la prima volta.'},
   end:'Pronto: ora puoi lavorare anche dove non prende. Quando torna la rete, la fascia verde ti dice che è partito tutto.',
@@ -4596,11 +4601,13 @@ function disegnaInvio(){
     ${INV_TAB==='iphone'?`
     <div class="inv-cod"><span>Il tuo codice di invio</span><b id="inv-codice">${INVIO?ESC(INVIO.codice):'…'}</b><button class="btn sec mini" onclick="copiaCodiceInvio()">Copia</button></div>
     <ol class="inv-passi" id="inv-passi">
-     <li><div>Tocca ${D('Copia')} qui sopra, poi ${D('Prepara il comando rapido')} qui sotto e ${D('Configura comando rapido')}.</div></li>
-     <li><div>Alla prima domanda incolla il codice. Alla seconda scegli la cartella: ${D('Sul mio iPhone')} › tocca una volta ${D('DJI Fly')} › ${D('Apri')}.</div></li>
-     <li><div>In Comandi Rapidi tocca ${D('Automazioni')} › ${D('+')} › ${D('Ora del giorno')}: scegli 21:00, ${D('Esegui subito')}, e il comando «Quota 120 voli».</div></li>
-     <li><div>Prova adesso: apri il comando una volta. Qui sotto compare «Ultimo invio».</div></li></ol>
-    ${link?`<button class="btn" id="inv-scorc" style="width:100%" onclick="window.open(OP.scorciatoia,'_blank')">Prepara il comando rapido</button>`:`<div class="inv-box">Il comando rapido non è ancora pronto: lo prepara l’Admin una volta sola${ADM?' (qui sotto)':''}.</div>`}
+     <li id="inv-p1"><div>Tocca ${D('Copia')} accanto al codice: compare «Codice copiato».</div></li>
+     <li id="inv-p2"><div>Tocca ${D('Prepara il comando rapido')} qui sotto: si apre Comandi Rapidi › ${D('Configura comando rapido')}.</div></li>
+     <li id="inv-p3"><div>Prima domanda, il codice: tieni premuto nel campo › ${D('Incolla')}.</div></li>
+     <li id="inv-p4"><div>Seconda domanda, la cartella: ${D('Scegli')} › ${D('Sul mio iPhone')} › tocca una volta ${D('DJI Fly')} › ${D('Apri')}. Poi ${D('Aggiungi comando rapido')}.</div></li>
+     <li id="inv-p5"><div>Ogni sera da solo: in Comandi Rapidi ${D('Automazioni')} › ${D('+')} › ${D('Ora del giorno')} › 21:00, ${D('Ogni giorno')}, ${D('Esegui subito')} › ${D('Avanti')} › ${D('Quota 120 voli')} › ${D('Fine')}.</div></li>
+     <li id="inv-p6"><div>Prova: tocca una volta il comando «Quota 120 voli». Al permesso rispondi ${D('Consenti sempre')}. Qui sotto compare «Ultimo invio» (se hai già dei voli nel telefono).</div></li></ol>
+    ${link?`<button class="btn" id="inv-scorc" style="width:100%" onclick="window._invScorc=1;window.open(OP.scorciatoia,'_blank')">Prepara il comando rapido</button>`:`<div class="inv-box">Il comando rapido non è ancora pronto: lo prepara l’Admin una volta sola${ADM?' (qui sotto)':''}.</div>`}
     ${ult}`:`
     <div class="inv-box">Su Android la cartella dei voli DJI è chiusa alle altre app (da Android 11): nessuna app la legge da sola senza trucchi. Qui si fa con due tocchi dalla app «File».</div>
     <ol class="inv-passi" id="inv-passi">
@@ -4623,7 +4630,7 @@ function disegnaInvio(){
      <label for="inv-link" style="display:block;font-size:14px;color:var(--ink3);margin:8px 0 4px">Link del comando rapido</label><input type="text" id="inv-link" value="${ESC(link)}" placeholder="https://www.icloud.com/shortcuts/…" style="width:100%">
      <div class="row"><button class="btn" onclick="salvaScorciatoia(this)"><span class="spin"></span>Salva il link</button></div></details>`:''}`;
 }
-function copiaCodiceInvio(){ if(!INVIO) return; (navigator.clipboard?navigator.clipboard.writeText(INVIO.codice):Promise.reject()).then(()=>toast('Codice copiato')).catch(()=>toast('Tieni premuto sul codice per copiarlo')); }
+function copiaCodiceInvio(){ if(!INVIO) return; window._invCop=1; (navigator.clipboard?navigator.clipboard.writeText(INVIO.codice):Promise.reject()).then(()=>toast('Codice copiato')).catch(()=>toast('Tieni premuto sul codice per copiarlo')); }
 function salvaScorciatoia(b){
   const v=document.getElementById('inv-link').value.trim();
   if(v&&!/^https:\/\/www\.icloud\.com\/shortcuts\//.test(v)){toast('Il link deve iniziare con https://www.icloud.com/shortcuts/');return;}
