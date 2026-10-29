@@ -828,7 +828,7 @@
   .fld.rq-f.manca{background:#fff;border:1.5px solid var(--ko)}.fld.rq-f.manca .k{color:var(--ko);font-weight:600}
   .rq-scad{display:flex;gap:12px;align-items:center;background:var(--warn-bg);border-radius:9px;padding:10px 12px}.rq-scad.ko{background:#f1f3f5;border:1.5px solid var(--ko)}
   .rq-scad b{font-size:17px;display:block}.rq-scad span{font-size:14px}.rq-scad svg{width:28px;height:28px;stroke:var(--warn);fill:none;stroke-width:2;flex:none}.rq-scad.ko svg{stroke:var(--ko)}
-  .rq-docbox{border:1px solid #c9d1d8;box-shadow:0 6px 18px rgba(19,42,58,.12);max-width:680px;margin:4px auto 0;overflow:auto;background:#fff}
+  .rq-docbox{border:1px solid #c9d1d8;box-shadow:0 6px 18px rgba(19,42,58,.12);max-width:780px;margin:4px auto 0;overflow:auto;background:#fff}
   .rq-lista{list-style:none;padding:0;margin:4px 0 0}.rq-lista li{display:flex;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}.rq-lista li:first-child{border-top:0}
   .rq-lista .mark{width:24px;height:24px;border-radius:6px;flex:none;display:flex;align-items:center;justify-content:center}.rq-lista .t{flex:1}.rq-lista small{display:block;color:var(--muted);font-size:13px}
   .ha-barra{position:relative;display:flex;gap:14px;align-items:center;background:linear-gradient(180deg,#132A3A,#1C3A4F);color:#fff;border-radius:12px;padding:16px 18px 14px;overflow:hidden;margin-bottom:12px}
@@ -6069,6 +6069,16 @@ function rkHtml(r){
     ${riquadroFirme([['Valutazione fatta da '+ESC(r.firma||IO.n||'')+' il '+ESC(r.il||oggi()),firmaDi(r.firma||IO.n||'')],['Il responsabile dell’operatore'+(OP.resp?' · '+ESC(OP.resp):''),firmaDi('resp')]])}
     <div class="piede">${LOGO_Q120.replace('width="46" height="46"','width="18" height="18"')}Valutazione creata con Quota 120 · gestione operatori droni</div></div>`;
 }
+// una pagina A4 per ogni pezzo di HTML (moduli ufficiali: il modulo e le note restano su pagine separate)
+function pdfPagine(pagine){
+  return caricaPdfLib().then(()=>{ const {jsPDF}=window.jspdf, pdf=new jsPDF({unit:'mm',format:'a4'}), W=210, H=297, m=10;
+    let p=Promise.resolve();
+    pagine.forEach((html,i)=>{ p=p.then(()=>{ const box=document.createElement('div'); box.className='rp-stampa'; box.innerHTML=`<div style="width:760px;background:#fff;padding:4px">${html}</div>`; document.body.appendChild(box);
+      return (document.fonts?document.fonts.ready:Promise.resolve()).then(()=>html2canvas(box.firstChild,{scale:2,backgroundColor:'#ffffff'})).then(cv=>{ box.remove();
+        let w=W-2*m, h=cv.height*w/cv.width; if(h>H-2*m){ h=H-2*m; w=cv.width*h/cv.height; }
+        if(i) pdf.addPage(); pdf.addImage(cv.toDataURL('image/jpeg',0.92),'JPEG',(W-w)/2,m,w,h); }).catch(e=>{box.remove(); throw e;}); }); });
+    return p.then(()=>pdf.output('blob')); });
+}
 function pdfDaHtml(html){
   return caricaPdfLib().then(()=>{
     const box=document.createElement('div'); box.className='rp-stampa'; box.innerHTML=html; document.body.appendChild(box);
@@ -6442,17 +6452,26 @@ function disegnaFirmaPil(p){
 }
 
 /* ---------- richieste di permesso: ATM-09 (aeroporti) e ATM-05 (zone P e R, nulla osta) compilate con i dati di Quota 120 ---------- */
-const RQ_ENAC_PEC='protocollo@pec.enac.gov.it';
-const RQ_DEST05={pref:['Prefettura (zone di sicurezza nelle città)','protocollo.pref<sigla provincia>@pec.interno.it',10],
+const RQ_ENAC_PEC='protocollo@pec.enac.gov.it', RQ_ENAC05='ENAC – Direzione Regolazione Aeroporti e Spazio Aereo (protocollo@pec.enac.gov.it – aeroporti.spazioaereo@enac.gov.it)';
+const RQ_DEST05={pref:['Prefettura (zone di sicurezza nelle città)','protocollo.pref<sigla provincia>@pec.interno.it',0],
   dap:['Amministrazione penitenziaria (carceri)','segreteriasicurezza.dap@giustiziacert.it',15],
-  am:['Aeronautica Militare (zone militari)','aerosquadra.coa@postacert.difesa.it',0],
+  am:['Zona militare (Aeronautica Militare)','l’indirizzo è in AIP-Italia ENR 5.1 o nella zona D-Flight',0],
   altro:['Altro ente (parchi e altre zone)','l’indirizzo è nella zona D-Flight o in AIP-Italia ENR 5',0]};
+
+// ATM-09A cap. 9: a chi va e con quanto anticipo, secondo l'aeroporto vicino
+const RQ_CASI={civ:['Aeroporto con torre ENAV (o altro fornitore civile)',35],mil:['Aeroporto militare (Aeronautica Militare)',60],nosna:['Aviosuperficie o aeroporto senza torre',15]};
+// ATM-09A Allegato B: Direzioni Aeroportuali (PEC unica protocollo@pec.enac.gov.it)
+const RQ_DA={NO:'Nord Ovest',LO:'Lombardia',MX:'Milano Malpensa',NE:'Nord Est',ER:'Emilia Romagna',TO:'Toscana',CE:'Regioni Centro',LA:'Lazio',CA:'Campania',PB:'Puglia Basilicata',CL:'Calabria',SA:'Sardegna',SO:'Sicilia Occidentale',SE:'Sicilia Orientale'};
+const RQ_PROV=Object.fromEntries('AG Agrigento SO|AL Alessandria NO|AN Ancona CE|AO Aosta NO|AP Ascoli_Piceno CE|AQ L’Aquila CE|AR Arezzo TO|AT Asti NO|AV Avellino CA|BA Bari PB|BG Bergamo LO|BI Biella NO|BL Belluno NE|BN Benevento CA|BO Bologna ER|BR Brindisi PB|BS Brescia LO|BT Barletta PB|BZ Bolzano NE|CA Cagliari SA|CB Campobasso CE|CE Caserta CA|CH Chieti CE|CL Caltanissetta SO|CN Cuneo NO|CO Como MX|CR Cremona LO|CS Cosenza CL|CT Catania SE|CZ Catanzaro CL|EN Enna SO|FC Forlì ER|FE Ferrara ER|FG Foggia PB|FI Firenze TO|FM Fermo CE|FR Frosinone LA|GE Genova NO|GO Gorizia NE|GR Grosseto TO|IM Imperia NO|IS Isernia CE|KR Crotone CL|LC Lecco LO|LE Lecce PB|LI Livorno TO|LO Lodi LO|LT Latina LA|LU Lucca TO|MB Monza LO|MC Macerata CE|ME Messina SE|MI Milano LO|MN Mantova LO|MO Modena ER|MS Massa TO|MT Matera PB|NA Napoli CA|NO Novara NO|NU Nuoro SA|OR Oristano SA|PA Palermo SO|PC Piacenza ER|PD Padova NE|PE Pescara CE|PG Perugia CE|PI Pisa TO|PN Pordenone NE|PO Prato TO|PR Parma ER|PT Pistoia TO|PU Pesaro CE|PV Pavia LO|PZ Potenza PB|RA Ravenna ER|RC Reggio_Calabria CL|RE Reggio_Emilia ER|RG Ragusa SE|RI Rieti LA|RM Roma LA|RN Rimini ER|RO Rovigo NE|SA Salerno CA|SI Siena TO|SO Sondrio LO|SP La_Spezia NO|SR Siracusa SE|SS Sassari SA|SU Carbonia SA|SV Savona NO|TA Taranto PB|TE Teramo CE|TN Trento NE|TO Torino NO|TP Trapani SO|TR Terni CE|TS Trieste NE|TV Treviso NE|UD Udine NE|VA Varese MX|VB Verbania NO|VC Vercelli NO|VE Venezia NE|VI Vicenza NE|VR Verona NE|VT Viterbo LA|VV Vibo_Valentia CL'.split('|').map(x=>{const [k,c,d]=x.split(' ');return [k,[c.replace(/_/g,' '),d]];}));
+const rqSigla=r=>{const m=/\(([A-Z]{2})\)/.exec(String(r.luogo||'').toUpperCase()); return m&&RQ_PROV[m[1]]?m[1]:'';};
+const rqCaso=r=>r.caso||(r.sna==='militare'?'mil':'civ');
+const rqDaDi=r=>r.da||(RQ_PROV[rqSigla(r)]||[])[1]||'';
 const RQ_STATI={bozza:['Da mandare','warn'],inviata:['In attesa di risposta','blu'],concessa:['Concessa','ok'],negata:['Negata','ko']};
 let RQ=null;
 const rqId=()=>'Q'+Math.random().toString(36).slice(2,10);
 const rqNM=km=>(km/1.852).toFixed(2).replace('.',',');
 const rqDMS=(v,pos,neg)=>{const a=Math.abs(v),g=Math.floor(a),m=Math.floor((a-g)*60),s=Math.round(((a-g)*60-m)*60);return g+'°'+String(m).padStart(2,'0')+'′'+String(s).padStart(2,'0')+'″ '+(v>=0?pos:neg);};
-function rqGiorni(r){ if(r.mod==='09') return r.sna==='militare'?60:35; return (RQ_DEST05[r.dest]||[])[2]||0; }
+function rqGiorni(r){ if(r.mod==='09') return RQ_CASI[rqCaso(r)][1]; return (RQ_DEST05[r.dest]||[])[2]||0; }
 function rqEntro(r){ const g=rqGiorni(r), d=dt(r.data); if(!g||!d) return null; const e=new Date(d); e.setDate(e.getDate()-g); return e; }
 function nuovaRichiesta(o){
   o=o||{}; const z=o.zona||null, l=o.lav?LAVORI.find(x=>x.id===o.lav):null;
@@ -6462,14 +6481,14 @@ function nuovaRichiesta(o){
   const r={id:rqId(),mod:z&&z.r==='P'?'05':'09',zona:z?{n:z.n,r:z.r,aut:z.aut||'',lo:+z.lo||0,hi:z.hi}:null,lav:l?l.id:null,
     pil:p?p.id:'',dr:d?d.id:'',lat:o.lat!=null?+(+o.lat).toFixed(5):'',lon:o.lon!=null?+(+o.lon).toFixed(5):'',luogo:o.luogo||(l&&l.luogo)||'',
     raggio:200,quota:z&&+z.lo>0?Math.min(+z.lo,120):60,dist,data:l?l.data:'',dalle:'09:00',alle:'12:00',
-    att:l?('Lavoro aereo · '+String(l.titolo||'').toLowerCase()):'',pec:OP.pec||'',sna:'civile',dest:'altro',note:'',stato:'bozza',creata:oggi()};
+    att:l?('Lavoro aereo · '+String(l.titolo||'').toLowerCase()):'',pec:OP.pec||'',caso:'civ',da:'',fattN:'',fattD:'',aerop:z&&z.r==='A'?z.n:'',ubic:'',dest:'altro',note:'',stato:'bozza',creata:oggi()};
   if(l){ const rk=RISCHI.find(x=>x.lav===l.id); if(rk) r.note=(rk.per||[]).flatMap(h=>(h.mis||[]).filter(m=>m.on).map(m=>m.t)).join(', ').slice(0,300); }
   RQ=r; disegnaRichiesta(); vai('rich','Pannello Admin &rsaquo; Richieste di permesso'); document.getElementById('back').onclick=()=>apriRichieste();
 }
 function apriRichiesta(id){ const r=RICH.find(x=>x.id===id); if(!r) return; RQ=JSON.parse(JSON.stringify(r)); disegnaRichiesta(); vai('rich','Pannello Admin &rsaquo; Richieste di permesso'); document.getElementById('back').onclick=()=>apriRichieste(); }
 function apriRichieste(){ if(!ADM) return; RQ=null; disegnaRichiesta(); vai('rich','Pannello Admin &rsaquo; Richieste di permesso'); document.getElementById('back').onclick=()=>apriAdmin(); }
 function rqCampo(k,v){ if(!RQ) return; RQ[k]=v; if(k==='lav'){ const l=LAVORI.find(x=>x.id===+v); if(l){ RQ.lav=l.id; RQ.data=l.data; RQ.luogo=RQ.luogo||l.luogo; RQ.pil=l.pilota; RQ.dr=l.drone; RQ.att=RQ.att||('Lavoro aereo · '+String(l.titolo||'').toLowerCase()); } else RQ.lav=null; }
-  if(['mod','sna','dest','lav','pil','dr','data'].includes(k)) disegnaRichiesta(); else rqAggiorna(); }
+  if(k==='luogo'||k==='lat'||k==='lon') RQ.ubicAuto=0; if(['mod','caso','da','dest','lav','pil','dr','data'].includes(k)) disegnaRichiesta(); else rqAggiorna(); }
 function rqSalva(stato){ if(!RQ) return; if(stato){ RQ.stato=stato; if(stato==='inviata') RQ.inviata=oggi(); if(stato==='concessa'||stato==='negata') RQ.risposta=oggi(); }
   const i=RICH.findIndex(x=>x.id===RQ.id); if(i>=0) RICH[i]=JSON.parse(JSON.stringify(RQ)); else RICH.unshift(JSON.parse(JSON.stringify(RQ)));
   controllaModifiche(); disegnaRichiesta(); }
@@ -6481,39 +6500,113 @@ function rqDati(r){
 function rqManca(r){ const D=rqDati(r), M=[];
   if(!OP.nome) M.push('nome dell’operatore'); if(!OP.codice||/x{3}/i.test(OP.codice)) M.push('codice operatore'); if(!OP.tel) M.push('telefono'); if(!OP.email&&!r.pec) M.push('email o PEC');
   if(!r.att) M.push('tipo di attività'); if(!D.d) M.push('drone'); if(!D.p) M.push('pilota'); if(!r.luogo) M.push('località'); if(D.lat==null||D.lon==null) M.push('coordinate');
-  if(!r.data||!dt(r.data)) M.push('data'); if(!r.dalle||!r.alle) M.push('orari'); return M; }
-function rqDoc(r){
-  const D=rqDati(r), T=(k,v)=>`<tr><td style="border:1px solid #c9d1d8;padding:6px 8px;width:36%;background:#f6f8fa;color:#3a4a55;vertical-align:top">${k}</td><td style="border:1px solid #c9d1d8;padding:6px 8px;vertical-align:top">${v||'—'}</td></tr>`;
-  const coord=D.lat!=null?rqDMS(D.lat,'N','S')+' '+rqDMS(D.lon,'E','O')+' ('+D.lat.toFixed(5)+', '+D.lon.toFixed(5)+')':'';
-  const rich=ESC([OP.nome,OP.resp].filter(Boolean).join(' · '))+(OP.codice?' · operatore UAS '+ESC(OP.codice):'');
-  const cont=ESC([OP.tel,OP.email,r.pec].filter(Boolean).join(' · '));
-  const drone=D.d?ESC(D.d.nome)+(D.sc.classe?' · classe '+ESC(D.sc.classe):'')+(D.sc.peso?' · '+ESC(D.sc.peso):'')+(D.matr?' · matr. '+ESC(D.matr):''):'';
-  const pil=D.p?ESC(D.p.nome)+(D.att?' · '+ESC(D.att):''):'';
-  const lat='Raggio '+rqNM((+r.raggio||0)/1000)+' NM ('+String(((+r.raggio||0)/1000).toFixed(2)).replace('.',',')+' km) dal punto '+(coord||'—');
-  const ver='Inferiore: suolo · Superiore: '+(+r.quota||0)+' m ('+Math.round((+r.quota||0)*3.281)+' ft) dal suolo';
-  const quando=ESC(r.data||'')+' dalle '+ESC(r.dalle||'')+' alle '+ESC(r.alle||'');
-  let t,sub,rows;
-  if(r.mod==='09'){ t='Riserva di spazio aereo: richiesta per operazioni con APR'; sub='Modello ATM-09 · Allegato C alla Circolare ENAC ATM-09A';
-    rows=T('Il richiedente',rich)+T('Tel. / E-mail / PEC',cont)+T('Tipo di attività',ESC(r.att))+T('Tipo di APR',drone)+T('Pilota',pil)
-      +T('Località di decollo e coordinate',ESC(r.luogo)+(coord?'<br>'+coord:''))+T('Località di atterraggio e coordinate','Come il decollo')+T('Località dove si svolge l’attività',ESC(r.luogo)+(r.zona?' · zona «'+ESC(r.zona.n)+'»':''))
-      +T('Limiti laterali',lat)+T('Limiti verticali',ver)+T('Distanza dall’aeroporto',r.dist?rqNM(+r.dist)+' NM ('+String(r.dist).replace('.',',')+' km)':'')
-      +T('Data e orario dell’attività',quando)+T('Altre notizie utili alla sicurezza',ESC(r.note))+T('Fornitore SNA',r.sna==='militare'?'Militare (Aeronautica Militare)':'Civile (ENAV)'); }
-  else { const de=RQ_DEST05[r.dest]||RQ_DEST05.altro; t='Richiesta di nulla osta per operazioni UAS in zona soggetta a restrizione'; sub='Circolare ENAC ATM-05B, art. 11 · Modello ATM-05 · in bollo';
-    rows=T('Destinatario',ESC(de[0])+'<br>'+ESC(r.destPec||de[1]))+T('Per conoscenza','ENAC · '+RQ_ENAC_PEC)+T('Il richiedente',rich)+T('Tel. / E-mail / PEC',cont)
-      +T('Zona',r.zona?ESC(r.zona.n)+(r.zona.aut?' · '+ESC(r.zona.aut):''):'')+T('Tipo di attività',ESC(r.att))+T('Drone',drone)+T('Pilota',pil)
-      +T('Località e coordinate',ESC(r.luogo)+(coord?'<br>'+coord:''))+T('Limiti laterali',lat)+T('Limiti verticali',ver)+T('Data e orario',quando)+T('Misure per la sicurezza',ESC(r.note))
-      +T('Allegati','Documento d’identità · attestato del pilota · polizza RC'); }
-  return `<div style="font-family:Arial,Helvetica,sans-serif;color:#1f2a36;padding:28px 30px;font-size:13.5px;background:#fff">
-    ${r.mod==='05'?'<div style="float:right;border:1px dashed #8a96a0;width:90px;height:70px;font-size:11px;color:#5f6b78;display:flex;align-items:center;justify-content:center;text-align:center">marca da<br>bollo 16 €</div>':''}
-    <div style="text-align:center;font-weight:700;font-size:15px;margin-bottom:2px">${t}</div><div style="text-align:center;font-size:12px;color:#5f6b78;margin-bottom:14px">${sub}</div>
-    <table style="width:100%;border-collapse:collapse;clear:both">${rows}</table>
-    <div style="margin-top:22px;font-size:13px">${ESC((r.luogo||'').replace(/\s*\(.*\)/,''))}, ${oggi()}</div>
-    ${riquadroFirme([['Il pilota'+(D.p?' · '+ESC(D.p.nome):''),D.p?firmaDi(D.p.id):''],['Il responsabile dell’operatore'+(OP.resp?' · '+ESC(OP.resp):''),firmaDi('resp')]])}</div>`;
+  if(!r.data||!dt(r.data)) M.push('data'); if(!r.dalle||!r.alle) M.push('orari');
+  if(r.mod==='09'&&!rqDaDi(r)) M.push('Direzione Aeroportuale'); if(r.mod==='09'&&rqCaso(r)!=='mil'&&!r.fattN) M.push('numero della fattura ENAC (diritti pagati su servizionline.enac.gov.it)'); return M; }
+/* Modello ATM-09A (All. C circ. ATM-09A) e Modello ATM-05 (All. A circ. ATM-05B): stessa griglia, campi e note degli originali ENAC */
+function atmModulo(F){
+  const B='1px solid #2d8fc4', E=s=>s==null||s===''?'':String(s);
+  const riga=(lab,val,nota,extra)=>`<tr><td colspan="2" style="border-bottom:${B};padding:3px 6px;${extra||''}"><span style="color:#1d3a5a">${lab}${nota?`<sup style="font-size:7px"> (${nota})</sup>`:''}:</span> <b style="font-weight:600;color:#000">${E(val)}</b></td></tr>`;
+  const L=(F.vertici||[]).slice(0,10); while(L.length<10) L.push('');
+  const vert=[0,2,4,6,8].map(i=>`<tr><td style="border-bottom:${B};border-right:${B};padding:3px 6px;height:17px;width:50%;font-weight:600">${E(L[i])}</td><td style="border-bottom:${B};padding:3px 6px;font-weight:600">${E(L[i+1])}</td></tr>`).join('');
+  // etichetta verticale come nell'originale (in SVG, così esce uguale anche nel PDF)
+  const lato=(t,h)=>`<td style="border-right:${B};border-bottom:${B};width:24px;padding:0;vertical-align:middle;text-align:center"><svg width="16" height="${h}" viewBox="0 0 16 ${h}" style="display:block;margin:auto"><text x="${-h/2}" y="11" transform="rotate(-90)" text-anchor="middle" font-size="8.5" font-family="Calibri,Carlito,Arial,sans-serif" fill="#1d3a5a">${t}</text></svg></td>`;
+  const nove=F.mod==='09';
+  const blocco1=[nove?null:null,
+    riga('Tipo di attività',F.att,nove?4:3),
+    riga(nove?'Tipo di UAS':'Tipo di aeromobile',F.uas,nove?5:4),
+    riga('Località di decollo e coordinate geografiche',F.decollo,nove?6:5),
+    riga('Località di atterraggio e coordinate geografiche',F.atterr,nove?6:5),
+    riga('Località dove si svolge l’attività',F.dove)].filter(Boolean);
+  const blocco2=(nove?[]:[riga('Zona R, P o D interessata',F.zona,6)]).concat([
+    `<tr><td colspan="2" style="border-bottom:${B};padding:3px 6px;color:#1d3a5a">Limiti laterali${nove?'<sup style="font-size:7px"> (6)</sup>':''}: Area racchiusa dalla congiungente i punti di coordinate geografiche</td></tr>`,
+    `<tr><td colspan="2" style="padding:0"><table style="width:100%;border-collapse:collapse;font-size:10px">${vert}</table></td></tr>`,
+    `<tr><td colspan="2" style="border-bottom:${B};padding:3px 6px"><span style="color:#1d3a5a">oppure<br>Raggio di</span> <b style="font-weight:600">${E(F.raggioNM)||'______'}</b> <span style="color:#1d3a5a">NM (</span><b style="font-weight:600">${E(F.raggioKm)||'____'}</b><span style="color:#1d3a5a">Km) con centro nel punto di coordinate geografiche:</span> <b style="font-weight:600">${E(F.centro)}</b></td></tr>`,
+    `<tr><td colspan="2" style="border-bottom:${B};padding:3px 6px"><span style="color:#1d3a5a">Limiti verticali<sup style="font-size:7px"> (7)</sup>: inferiore</span> <b style="font-weight:600">${E(F.inf)}</b> <span style="color:#1d3a5a">/superiore</span> <b style="font-weight:600">${E(F.sup)}</b></td></tr>`,
+    riga('Ubicazione rispetto al capoluogo di provincia o alla radioassistenza più vicina',F.ubic),
+    `<tr><td colspan="2" style="border-bottom:${B};padding:3px 6px"><span style="color:#1d3a5a">Distanza dall’ARP/coordinate aeroporto di</span> <b style="font-weight:600">${E(F.aerop)||'______________'}</b>, <b style="font-weight:600">${E(F.distNM)||'____'}</b><span style="color:#1d3a5a">NM (</span><b style="font-weight:600">${E(F.distKm)||'____'}</b><span style="color:#1d3a5a">Km)</span></td></tr>`,
+    riga('Data/e e orario/i inizio attività',F.quando,8),
+    `<tr><td colspan="2" style="border-bottom:${B};padding:3px 6px;height:64px;vertical-align:top"><span style="color:#1d3a5a">Altre notizie utili alla sicurezza delle operazioni<sup style="font-size:7px"> (9)</sup>:</span><br><b style="font-weight:600">${E(F.altre)}</b></td></tr>`]);
+  const tab=(righe)=>`<table style="width:100%;border-collapse:collapse">${righe.join('')}</table>`;
+  return `<div class="atm-pag" style="font-family:Calibri,Carlito,Arial,sans-serif;font-size:10.5px;color:#000;background:#fff;width:100%;max-width:720px;margin:0 auto">
+  ${F.bollo?'<div style="text-align:right;margin-bottom:6px"><span style="display:inline-block;border:1px dashed #6b7a86;width:86px;height:62px;font-size:9px;color:#5f6b78;text-align:center;padding-top:16px">marca da bollo<br>16 €</span></div>':''}
+  <table style="width:100%;border-collapse:collapse;border:${B}">
+    <tr><td style="border-right:${B};border-bottom:${B};width:24%;padding:6px;text-align:center;vertical-align:middle"><div style="font-size:20px;font-weight:700;color:#2d8fc4;letter-spacing:1px">ENAC</div><div style="font-size:7px;color:#2d8fc4">ENTE NAZIONALE PER L’AVIAZIONE CIVILE</div></td>
+      <td style="border-right:${B};border-bottom:${B};text-align:center;padding:6px;line-height:1.3"><b style="font-size:11.5px">MODELLO ${nove?'ATM-09A':'ATM-05'}</b>${nove?'<br><b>“RISERVA DI SPAZIO AEREO<br>PER OPERAZIONI CON UAS”</b>':''}<br>(${nove?'All. “C” Circ. ATM-09A':'All. “A” Circolare ATM-05'})<br>C.F.: 97158180584</td>
+      <td style="border-bottom:${B};width:30%;padding:0;vertical-align:top"><div style="font-size:7.5px;font-weight:700;padding:4px;text-align:center;border-bottom:${B}">Bollo assolto in modo virtuale (aut. Direz. Reg. entrate Lazio N. 135047/98 del 30/11/1998)</div>
+        <div style="text-align:center;border-bottom:${B};padding:2px">Dati fattura <sup style="font-size:7px">(1)</sup></div>
+        <table style="width:100%;border-collapse:collapse;text-align:center"><tr><td style="border-right:${B};padding:2px;width:30%">BD3</td><td style="border-right:${B};padding:2px">Numero<br><b>${E(F.fattN)}</b></td><td style="padding:2px">Data<br><b>${E(F.fattD)}</b></td></tr></table></td></tr>
+    <tr><td colspan="3" style="border-bottom:${B};padding:4px 6px;line-height:1.6">A <sup style="font-size:7px">(2)</sup>: <b style="font-weight:600">${E(F.a)}</b><br>Cc <sup style="font-size:7px">(2)</sup>: <b style="font-weight:600">${E(F.cc)}</b></td></tr>
+    <tr><td colspan="3" style="border-bottom:${B};padding:4px 6px">Il richiedente${nove?'<sup style="font-size:7px"> (3)</sup>':''}: <b style="font-weight:600">${E(F.rich)}</b></td></tr>
+    <tr><td colspan="2" style="border-bottom:${B};border-right:${B};padding:4px 6px">Tel/Mob.: <b style="font-weight:600">${E(F.tel)}</b></td><td style="border-bottom:${B};padding:4px 6px">E-mail/Pec: <b style="font-weight:600">${E(F.email)}</b></td></tr>
+    <tr><td colspan="3" style="padding:0"><table style="width:100%;border-collapse:collapse"><tr>${lato('Evento/attività',90)}<td style="padding:0;border-bottom:${B}">${tab(blocco1)}</td></tr>
+      <tr>${lato('Elementi identificativi dello spazio aereo interessato dall’attività',300)}<td style="padding:0;border-bottom:${B}">${tab(blocco2)}</td></tr>
+      <tr>${lato('Valutazione ATS (10)',120)}<td style="padding:0;border-bottom:${B}"><table style="width:100%;border-collapse:collapse"><tr><td style="border-right:${B};width:50%;height:150px;vertical-align:top;text-align:center;padding:3px">Fornitore SNA civile</td><td style="vertical-align:top;text-align:center;padding:3px">Fornitore SNA militare</td></tr></table></td></tr></table></td></tr>
+    <tr><td colspan="3" style="padding:8px 6px 10px"><table style="width:100%;border-collapse:collapse"><tr><td style="width:50%;vertical-align:bottom">Luogo e data <b style="font-weight:600;border-bottom:1px solid #000;padding:0 4px">${E(F.luogoData)}</b></td>
+      <td style="vertical-align:bottom">${nove?'Firma operatore APR':'Firma richiedente'} <span style="display:inline-block;border-bottom:1px solid #000;min-width:150px;height:44px;vertical-align:bottom;text-align:center">${F.firma?`<img src="${F.firma}" style="max-height:42px;max-width:170px">`:''}</span>${F.firmaNome?`<div style="font-size:9px;text-align:right">${E(F.firmaNome)}</div>`:''}</td></tr></table></td></tr>
+  </table></div>`;
 }
+function atmNote(mod){
+  const N=mod==='09'?[
+    'Inserire il codice alfa numerico della fattura (casella centrale) e anno versamento (casella di destra).',
+    'Vedere paragrafo 9;',
+    'Indicare nr. autorizzazione ENAC o dichiarazione, e specifiche abilitazioni dell’operare (scenari standard, ecc.).',
+    'Specificare il tipo di attività (riprese video, aerofotogrammetria, rilievi ecc.) e condizioni di volo (VLOS, BVLOS);',
+    'Specificare il modello e le caratteristiche (peso, equipaggiamenti, dotazioni ecc.);',
+    'Coordinate geografiche sessagesimali (gradi, minuti primi, minuti secondi) espresse in formato WGS 84 con risoluzione a 1 secondo, del centro della zona o dei vertici della spezzata che la delimita; località geografica.',
+    'Limiti verticali inferiori e superiori espressi in piedi al di sopra del mare/suolo (FT AMSL/AGL);',
+    'Data dell’attività: per indicare singoli giorni utilizzare la virgola (es. 1, 2, 5, 10); per indicare periodi di giorni consecutivi utilizzare il trattino (es. 1-3, 5-11) oppure utilizzare la dicitura “tutti i……” (es. “tutti i giovedì”). In nessun caso dovrà essere utilizzata la parola “prefestivo” per indicare, ad esempio, il sabato o il 14 agosto. Orario dell’attività: specificare se trattasi di ORA LOCALE o di orario UTC (ora di Greenwich). È possibile utilizzare in chiaro le dizioni “ALBA/TRAMONTO” o “H24”.',
+    'Specificare disponibilità collegamenti T/B/T e transponder SSR, sistemi di sicurezza (es. cavo di vincolo), ecc.;',
+    'Valutazione ATS Fornitore SNA responsabile di riferimento (ENAV o AM, a seconda dei casi).']
+  :['Inserire il codice alfa numerico della fattura (casella centrale) e anno versamento (casella di destra).',
+    'Vedere Capitolo 6 e Capitolo 11, a seconda dei casi;',
+    'Specificare il tipo di attività (lanci para, innalzamento palloni liberi, attraversamento zone soggette a restrizione, ecc.);',
+    'Specificare il modello e le caratteristiche (peso, equipaggiamenti, dotazioni ecc.);',
+    'Coordinate geografiche sessagesimali (gradi, minuti primi, minuti secondi) espresse in formato WGS 84 con risoluzione a 1 secondo, del centro della zona o dei vertici della spezzata che la delimita; località geografica.',
+    'Denominazione della zona come da riportato in AIP-Italia (es. LI R34)',
+    'Limiti verticali inferiori e superiori espressi in piedi al di sopra del mare/suolo (FT AMSL/AGL);',
+    'Data dell’attività: per indicare singoli giorni utilizzare la virgola (es. 1, 2, 5, 10); per indicare periodi di giorni consecutivi utilizzare il trattino (es. 1-3, 5-11) oppure utilizzare la dicitura “tutti i……” (es. “tutti i giovedì”). In nessun caso dovrà essere utilizzata la parola “prefestivo” per indicare, ad esempio, il sabato o il 14 agosto. Orario dell’attività: specificare se trattasi di ORA LOCALE o di orario UTC (ora di Greenwich). È possibile utilizzare in chiaro le dizioni “ALBA/TRAMONTO” o “H24”.',
+    'Specificare disponibilità collegamenti T/B/T e transponder SSR, sistemi di sicurezza (es. cavo di vincolo), ecc.;',
+    'Valutazione ATS Fornitore SNA responsabile di riferimento (ENAV o AM, a seconda dei casi).'];
+  return `<div class="atm-pag" style="font-family:Calibri,Carlito,Arial,sans-serif;font-size:10.5px;color:#000;background:#fff;max-width:720px;margin:0 auto;border:1px solid #2d8fc4;padding:14px 18px"><div style="text-align:center;font-weight:600;margin-bottom:12px">Note:</div>
+    ${N.map((t,i)=>`<div style="display:flex;gap:10px;margin-bottom:7px"><span style="min-width:22px">(${i+1})</span><span>${t}</span></div>`).join('')}</div>`;
+}
+
+const rqFt=m=>Math.round((+m||0)*3.281);
+function rqVertici(r){ const l=r.lav&&LAVORI.find(x=>x.id===r.lav), ms=l&&l.missione; return ms&&ms.tipo==='area'&&(ms.pts||[]).length>=3&&ms.pts.length<=10?ms.pts:null; }
+function rqCampiModulo(r){
+  const D=rqDati(r), dms=(la,lo)=>rqDMS(la,'N','S')+' '+rqDMS(lo,'E','O').replace(/^(\d\d)°/,'0$1°').replace(/^(\d)°/,'00$1°');
+  const coord=D.lat!=null?dms(D.lat,D.lon):'', caso=rqCaso(r), da=rqDaDi(r), daN=da?'ENAC – Direzione Aeroportuale '+RQ_DA[da]+' ('+RQ_ENAC_PEC+')':'ENAC – Direzione Aeroportuale competente ('+RQ_ENAC_PEC+')';
+  const de=RQ_DEST05[r.dest]||RQ_DEST05.altro, sg=rqSigla(r);
+  const pec05=r.destPec||(r.dest==='pref'&&sg?'protocollo.pref'+sg.toLowerCase()+'@pec.interno.it':de[1]);
+  const spec=D.d&&D.d.cat==='specific';
+  const rich=[OP.nome,OP.codice&&'operatore UAS '+OP.codice,D.att&&'attestati del pilota: '+D.att,spec?'categoria specifica'+(AUT_ENAC.num?' · autorizzazione ENAC n. '+AUT_ENAC.num:''):'categoria aperta'].filter(Boolean).join(' · ');
+  const uas=D.d?[D.d.nome,D.sc.classe&&'classe '+D.sc.classe,D.sc.peso&&D.sc.peso!=='—'&&'MTOM '+D.sc.peso,D.matr&&'matr. '+D.matr].filter(Boolean).join(' · '):'';
+  const att=String(r.att||'')+(/VLOS/i.test(r.att||'')?'':(r.att?' · ':'')+'VLOS');
+  const V=rqVertici(r), km=(+r.raggio||0)/1000;
+  const tel=(D.p&&(SCHEDEP[D.p.id]||{}).tel)||OP.tel||'';
+  const altre=[r.note,'Collegamento T/B/T: telefono cellulare del pilota'+(tel?' '+tel:''),'transponder SSR: non installato','sistemi di sicurezza: limiti di quota e distanza impostati, ritorno automatico al punto di decollo (RTH)','volo a vista (VLOS)'].filter(Boolean).join(' · ');
+  const quando=(r.data||'')+' · '+(r.dalle||'')+'-'+(r.alle||'')+' ORA LOCALE';
+  const F={mod:r.mod,fattN:r.mod==='09'?r.fattN:'',fattD:r.mod==='09'?r.fattD:'',rich,tel:OP.tel||'',email:[OP.email,r.pec].filter(Boolean).join(' · '),att,uas,
+    decollo:[r.luogo,coord].filter(Boolean).join(' · '),atterr:'Come il decollo',dove:r.luogo+(r.zona?' · zona D-Flight «'+r.zona.n+'»':''),
+    vertici:V?V.map(p=>dms(p[0],p[1])):[],raggioNM:V?'':rqNM(km),raggioKm:V?'':String(km.toFixed(2)).replace('.',','),centro:V?'':coord,
+    inf:'SFC',sup:rqFt(r.quota)+' FT AGL ('+(+r.quota||0)+' m)',ubic:r.ubic||'',aerop:r.mod==='09'?r.aerop||'':'',distNM:r.mod==='09'&&r.dist?rqNM(+r.dist):'',distKm:r.mod==='09'&&r.dist?String(r.dist).replace('.',','):'',
+    quando,altre,luogoData:String(OP.sede||r.luogo||'').replace(/\s*\(.*\)/,'')+', '+oggi(),firma:firmaDi('resp'),firmaNome:OP.resp?OP.resp+', responsabile dell’operatore':''};
+  if(r.mod==='09'){ F.a=caso==='civ'?'ENAV S.p.A. (protocollogenerale@pec.enav.it) · '+daN:caso==='mil'?'Comando Operazioni Aeree – COA (aerosquadra.coa@postacert.difesa.it) · '+daN:daN;
+    F.cc=caso==='mil'?'Reparto Servizio Coordinamento e Controllo AM – RSCCAM ACU (sccamciampino.acu@aeronautica.difesa.it)':''; }
+  else { F.a=de[0].replace(/\s*\(.*\)/,'')+(r.dest==='pref'&&sg?' di '+RQ_PROV[sg][0]:'')+' ('+pec05+')'; F.cc=RQ_ENAC05; F.zona=r.zona?r.zona.n:''; F.bollo=1; }
+  return F;
+}
+function rqPagine(r){ return [atmModulo(rqCampiModulo(r)),atmNote(r.mod)]; }
+function rqDoc(r){ return rqPagine(r).map(h=>`<div style="padding:16px 12px;background:#fff">${h}</div>`).join('<div style="height:10px;background:#e8edf0"></div>'); }
+// ubicazione rispetto al capoluogo: distanza in miglia e direzione (es. 15,3 NM E di Ferrara)
+function rqUbicazione(){ const r=RQ; if(!r||r.ubic||r.ubicAuto) return; const sg=rqSigla(r), D=rqDati(r); if(!sg||D.lat==null) return; r.ubicAuto=1;
+  zmGeo(RQ_PROV[sg][0]).then(x=>{ if(!x||RQ!==r||r.ubic) return; const km=kmDa([x.latitude,x.longitude],[D.lat,D.lon]), c=RQ_PROV[sg][0];
+    const a=Math.atan2((D.lon-x.longitude)*Math.cos(D.lat*Math.PI/180),D.lat-x.latitude)*180/Math.PI, dir=['N','NE','E','SE','S','SO','O','NO'][Math.round(((a+360)%360)/45)%8];
+    r.ubic=km<1?'nel comune di '+c:(km/1.852).toFixed(1).replace('.',',')+' NM '+dir+' di '+c; const e=document.querySelector('#rq-dati [data-k="ubic"]'); if(e) e.value=r.ubic; rqAggiorna(); }); }
 function rqPec(r){
   const D=rqDati(r), dove=(r.luogo||'')+(D.lat!=null?', entro '+(+r.raggio||0)+' m dal punto '+D.lat.toFixed(5)+' N '+D.lon.toFixed(5)+' E':'');
   const ogg=r.mod==='09'?'Richiesta riserva di spazio aereo per operazioni UAS – '+r.data+' – '+r.luogo:'Richiesta di nulla osta per operazioni UAS in zona '+(r.zona?r.zona.n:'')+' – '+r.data;
-  return 'Oggetto: '+ogg+'\n\nBuongiorno,\nin allegato la richiesta ('+(r.mod==='09'?'Modello ATM-09':'Modello ATM-05, circolare ATM-05B art. 11')+') per un’operazione con drone il '+r.data+', dalle '+r.dalle+' alle '+r.alle+', a '+dove+', fino a '+(+r.quota||0)+' m dal suolo'+(r.zona?', nella zona «'+r.zona.n+'»':'')+'.\nIn allegato anche '+(r.mod==='05'?'il documento d’identità, ':'')+'l’attestato del pilota e la polizza RC.\nRestiamo a disposizione per ogni chiarimento.\n\n'+[OP.nome,OP.codice&&'operatore UAS '+OP.codice].filter(Boolean).join(' · ')+'\n'+[OP.resp,OP.tel].filter(Boolean).join(' · ');
+  return 'Oggetto: '+ogg+'\n\nBuongiorno,\nin allegato la richiesta ('+(r.mod==='09'?'Modello ATM-09A, circolare ATM-09A cap. 9':'Modello ATM-05, circolare ATM-05B cap. 11')+') per un’operazione con drone il '+r.data+', dalle '+r.dalle+' alle '+r.alle+', a '+dove+', fino a '+(+r.quota||0)+' m dal suolo'+(r.zona?', nella zona «'+r.zona.n+'»':'')+'.\nIn allegato anche '+(r.mod==='05'?'il documento d’identità, ':'')+'l’attestato del pilota, la registrazione dell’operatore e la polizza RC'+(r.mod==='09'&&rqCaso(r)!=='mil'?', con la ricevuta del pagamento dei diritti ENAC'+(r.fattN?' (fattura '+r.fattN+')':''):'')+'.\nRestiamo a disposizione per ogni chiarimento.\n\n'+[OP.nome,OP.codice&&'operatore UAS '+OP.codice].filter(Boolean).join(' · ')+'\n'+[OP.resp,OP.tel].filter(Boolean).join(' · ');
 }
 function rqAggiorna(){ const r=RQ; if(!r) return;
   const M=rqManca(r); document.querySelectorAll('#rq-dati [data-k]').forEach(e=>{ const k=e.dataset.k; const v=k==='coord'?(r.lat!==''&&r.lon!==''):(k==='op'?!!(OP.nome&&OP.codice):!!String(r[k]||'').trim()); e.closest('.fld').classList.toggle('manca',!v&&e.dataset.req==='1'); });
@@ -6533,8 +6626,8 @@ function disegnaRichiesta(){
   const F=(l,h,cl)=>`<div class="fld rq-f ${cl||''}"><div class="k">${l}</div>${h}</div>`;
   const s=RQ_STATI[r.stato]||RQ_STATI.bozza, e=rqEntro(r), g=e?Math.ceil((e-new Date(new Date().toDateString()))/864e5):null;
   document.getElementById('rq-zona').innerHTML=(r.zona?`<div class="zm-z ${zmTipo(r.zona)}" style="margin-top:0"><div class="t">${ESC(r.zona.n)}</div><span class="zm-tipo ${zmTipo(r.zona)}">${ZM_TIPO[zmTipo(r.zona)]}</span><div class="nota">${r.zona.lo} – ${r.zona.hi!=null?r.zona.hi:'—'} m${r.zona.aut?' · '+ESC(r.zona.aut):''}</div></div>`:'<div class="nota">Nessuna zona scelta: per partire da una zona apri la mappa delle zone e tocca «Prepara la richiesta».</div>')
-    +`<div class="rq-scelta" id="rq-mod"><button type="button" class="rq-opz ${r.mod==='09'?'on':''}" onclick="rqCampo('mod','09')"><b>Modello ATM-09</b><span>Vicino ad aeroporti ed eliporti (ATZ, CTR): riserva di spazio aereo. A ENAV almeno 35 giorni prima, o all’Aeronautica Militare almeno 60 giorni prima; copia via PEC alla Direzione Territoriale ENAC.</span>${r.zona&&r.zona.r==='A'?'<i>Consigliato per questa zona</i>':''}</button>
-      <button type="button" class="rq-opz ${r.mod==='05'?'on':''}" onclick="rqCampo('mod','05')"><b>Modello ATM-05 (nulla osta)</b><span>Zone vietate (P) e regolamentate (R): carceri, città, parchi, zone militari. In bollo da 16 €. All’ente che ha chiesto la zona, con copia a ENAC.</span>${r.zona&&r.zona.r==='P'?'<i>Consigliato per questa zona</i>':''}</button></div>`;
+    +`<div class="rq-scelta" id="rq-mod"><button type="button" class="rq-opz ${r.mod==='09'?'on':''}" onclick="rqCampo('mod','09')"><b>Modello ATM-09</b><span>Vicino ad aeroporti, eliporti e aviosuperfici: riserva di spazio aereo. A ENAV e alla Direzione Aeroportuale ENAC almeno 35 giorni prima; aeroporto militare 60 giorni; aviosuperficie o aeroporto senza torre 15 giorni.</span>${r.zona&&r.zona.r==='A'?'<i>Consigliato per questa zona</i>':''}</button>
+      <button type="button" class="rq-opz ${r.mod==='05'?'on':''}" onclick="rqCampo('mod','05')"><b>Modello ATM-05 (nulla osta)</b><span>Zone vietate (P) e regolamentate (R): carceri, città, parchi, zone militari. In bollo da 16 €. All’ente che ha chiesto la zona, con copia all’ENAC (Regolazione Aeroporti e Spazio Aereo).</span>${r.zona&&r.zona.r==='P'?'<i>Consigliato per questa zona</i>':''}</button></div>`;
   const lav=[['','Nessun lavoro']].concat(LAVORI.filter(l=>l.stato!=='concluso'||l.id===r.lav).map(l=>[l.id,(l.codice?l.codice+' · ':'')+l.cliente+' · '+l.data]));
   document.getElementById('rq-dati').innerHTML=`<div class="hcap">Chi chiede</div><div class="fgrid">
       ${F('Operatore e codice UAS',`<div class="v" data-k="op" data-req="1">${ESC(OP.nome||'—')} · ${ESC(OP.codice||'codice da inserire')}</div>`)}
@@ -6551,8 +6644,11 @@ function disegnaRichiesta(){
       ${F('Longitudine',inp('lon',r.lon,'es. 11.66000',1))}
       ${F('Raggio dell’area (m)',inp('raggio',r.raggio,'200',1,'number'))}
       ${F('Quota massima (m dal suolo)',inp('quota',r.quota,'60',1,'number'))}
-      ${r.mod==='09'?F('Distanza dall’aeroporto (km)',inp('dist',r.dist,'es. 4.2')):F('Destinatario',sel('dest',Object.entries(RQ_DEST05).map(([k,v])=>[k,v[0]]),r.dest))}
-      ${r.mod==='05'?F('PEC del destinatario',inp('destPec',r.destPec||'',(RQ_DEST05[r.dest]||RQ_DEST05.altro)[1])):F('Fornitore dei servizi',sel('sna',[['civile','Civile (ENAV)'],['militare','Militare (Aeronautica Militare)']],r.sna))}
+      ${r.mod==='09'?F('Aeroporto vicino',sel('caso',Object.entries(RQ_CASI).map(([k,v])=>[k,v[0]]),rqCaso(r)))+F('Direzione Aeroportuale ENAC',sel('da',[['','Scegli (dalla provincia)']].concat(Object.entries(RQ_DA)),rqDaDi(r)))
+        +F('Nome dell’aeroporto',inp('aerop',r.aerop,'es. Ferrara (aviosuperficie)'))+F('Distanza dall’aeroporto (km)',inp('dist',r.dist,'es. 4.2'))
+        :F('Destinatario',sel('dest',Object.entries(RQ_DEST05).map(([k,v])=>[k,v[0]]),r.dest))+F('PEC del destinatario',inp('destPec',r.destPec||'',r.dest==='pref'&&rqSigla(r)?'protocollo.pref'+rqSigla(r).toLowerCase()+'@pec.interno.it':(RQ_DEST05[r.dest]||RQ_DEST05.altro)[1]))}
+      ${F('Ubicazione rispetto al capoluogo',inp('ubic',r.ubic,'si calcola da sola, es. 15,3 NM E di Ferrara'))}
+      ${r.mod==='09'&&rqCaso(r)!=='mil'?F('Fattura ENAC dei diritti: numero',inp('fattN',r.fattN,'dalla ricevuta di servizionline.enac.gov.it',1))+F('Anno del pagamento',inp('fattD',r.fattD,'es. 2026')):''}
       ${F('Data (gg/mm/aaaa)',inp('data',r.data,'es. 15/12/2026',1))}
       ${F('Dalle',inp('dalle',r.dalle,'09:00',1))}
       ${F('Alle',inp('alle',r.alle,'12:00',1))}
@@ -6562,27 +6658,27 @@ function disegnaRichiesta(){
   document.getElementById('rq-scad').innerHTML=e?`<div class="rq-scad ${g<0?'ko':''}"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><div><b>${g<0?'Termine passato: era il '+fmtData(e):'Da mandare entro il '+fmtData(e)}</b><span>${rqGiorni(r)} giorni prima del volo del ${ESC(r.data)}.${g>=0?' '+(g===0?'Scade oggi.':'Mancano '+pl(g,'giorno','giorni')+'.'):' Chiedi all’ente se si può ancora fare, o sposta il volo.'}</span></div></div>`
     :`<div class="nota">${r.mod==='05'&&!rqGiorni(r)?'Per questo ente non c’è un termine fisso: mandala il prima possibile.':'Scrivi la data del volo per sapere entro quando mandarla.'}</div>`;
   const de=RQ_DEST05[r.dest]||RQ_DEST05.altro;
-  document.getElementById('rq-dove').innerHTML=r.mod==='09'?`All’ente del traffico aereo dell’aeroporto (${r.sna==='militare'?'Aeronautica Militare':'ENAV'}) e, via PEC, alla Direzione Territoriale ENAC competente: <span class="dove">${RQ_ENAC_PEC}</span>. Il contatto dell’ente è scritto nella zona D-Flight.`
-    :`A <b>${ESC(de[0])}</b>: <span class="dove">${ESC(r.destPec||de[1])}</span>. In copia a ENAC: <span class="dove">${RQ_ENAC_PEC}</span>. Sul modulo va la marca da bollo da 16 €.`;
+  { const FM=rqCampiModulo(r); document.getElementById('rq-dove').innerHTML=`A: <span class="dove">${ESC(FM.a)}</span>${FM.cc?`<br>Copia (Cc): <span class="dove">${ESC(FM.cc)}</span>`:''}`+(r.mod==='09'&&rqCaso(r)!=='mil'?'<br>Prima di mandarla paga i diritti ENAC su <a href="https://servizionline.enac.gov.it" target="_blank" rel="noopener">servizionline.enac.gov.it</a> e scrivi il numero della fattura nel modulo.':'')+(r.mod==='05'?'<br>Sul modulo va la marca da bollo da 16 €.':''); }
   const ce=(ok,t,s,go)=>`<li><span class="mark ${ok?'ok':'warn'}">${svg(ok?'check':'esc')}</span><div class="t">${t}<small>${s}</small></div>${go||''}</li>`;
   const polOk=!!(ASSIC.scad||(D.p&&polP(D.p))), rkOk=!!(r.lav&&RISCHI.find(x=>x.lav===r.lav));
   document.getElementById('rq-all').innerHTML='<ul class="rq-lista">'+ce(true,'Modulo compilato e firmato',firmaDi('resp')&&(!D.p||firmaDi(D.p.id))?'il PDF qui sopra, con le firme già messe':'il PDF qui sopra: mancano delle firme, mettile in «Le firme» o firmalo a mano')
     +ce(!!D.att,'Attestato del pilota',D.att?'già in Quota 120':'manca: caricalo in Documenti',D.att?'':`<button class="btn sec mini" onclick="apriDocumenti()">Carica</button>`)
     +ce(polOk,'Polizza RC',polOk?'già in Quota 120':'manca: caricala in Documenti',polOk?'':`<button class="btn sec mini" onclick="apriDocumenti()">Carica</button>`)
     +ce(rkOk,'Valutazione del rischio',rkOk?'già in Quota 120':'consigliata: falla dal lavoro',rkOk?'':(r.lav?`<button class="btn sec mini" onclick="apriRischio(${r.lav})">Fai</button>`:''))
+    +(r.mod==='09'&&rqCaso(r)!=='mil'?ce(!!r.fattN,'Pagamento dei diritti ENAC',r.fattN?'fattura '+ESC(r.fattN):'su servizionline.enac.gov.it, poi scrivi il numero della fattura',r.fattN?'':'<a class="btn sec mini" href="https://servizionline.enac.gov.it" target="_blank" rel="noopener">Apri</a>'):'')
     +(r.mod==='05'?ce(false,'Documento d’identità','da unire alla PEC (obbligatorio per le carceri)')+ce(false,'Marca da bollo da 16 €','sul modulo, o bollo virtuale'):'')+'</ul>';
   document.getElementById('rq-stato').innerHTML=`<div class="riga-i"><span>Stato</span><b><span class="tag ${s[1]}">${s[0]}</span></b></div>${r.inviata?`<div class="riga-i"><span>Inviata il</span><b>${r.inviata}</b></div>`:''}${r.risposta?`<div class="riga-i"><span>Risposta il</span><b>${r.risposta}</b></div>`:''}
     <div class="row">${r.stato==='bozza'?`<button class="btn sec" id="rq-salva" onclick="lavora(this,()=>{rqSalva();toast('Richiesta salvata')})"><span class="spin"></span>Salva</button><button class="btn" id="rq-inv" onclick="lavora(this,()=>{rqSalva('inviata');toast('Segnata come inviata')})"><span class="spin"></span>Segna come inviata</button>`
       :r.stato==='inviata'?`<button class="btn" id="rq-ok" onclick="lavora(this,()=>{rqSalva('concessa');toast('Concessa: ora carica il nulla osta in Documenti')})"><span class="spin"></span>È arrivato il nulla osta</button><button class="btn sec" onclick="lavora(this,()=>{rqSalva('negata')})"><span class="spin"></span>È stata negata</button>`
       :r.stato==='concessa'?`<button class="btn sec" onclick="apriDocumenti()">Carica il nulla osta in Documenti</button>`:''}
       ${RICH.some(x=>x.id===r.id)?`<button class="btn sec" onclick="rqTogli('${r.id}')">Elimina</button>`:''}</div>`;
-  rqAggiorna();
+  rqAggiorna(); rqUbicazione();
 }
 function rqTogli(id){ RICH=RICH.filter(x=>x.id!==id); controllaModifiche(); RQ=null; toast('Richiesta eliminata'); disegnaRichiesta(); }
 function rqNomeFile(r){return (r.mod==='09'?'Richiesta_ATM-09_':'Richiesta_ATM-05_')+String(r.luogo||'luogo').replace(/\(.*?\)/g,'').replace(/[^\wàèéìòù]+/g,'_').replace(/^_|_$/g,'')+'_'+String(r.data||oggi()).replace(/\//g,'-')+'.pdf';}
 function rqPdf(b){ const r=RQ; if(!r) return; const M=rqManca(r); if(M.length) toast('Attenzione, mancano: '+M.join(', '));
   b.disabled=true; b.classList.add('busy');
-  pdfDaHtml(`<div>${rqDoc(r)}</div>`).then(bl=>{ const a=document.createElement('a'); a.href=URL.createObjectURL(bl); a.download=rqNomeFile(r); document.body.appendChild(a); a.click(); a.remove(); toast('PDF scaricato'); })
+  pdfPagine(rqPagine(r)).then(bl=>{ const a=document.createElement('a'); a.href=URL.createObjectURL(bl); a.download=rqNomeFile(r); document.body.appendChild(a); a.click(); a.remove(); toast('PDF scaricato'); })
     .catch(e=>toast('PDF non riuscito: '+((e&&e.message)||'riprova'))).finally(()=>{b.disabled=false;b.classList.remove('busy');}); }
 function rqDaZona(i){ const z=(ZM.zoneQui||[])[i]; if(!z||!ZM.scelto) return; nuovaRichiesta({zona:z,lat:ZM.scelto[0],lon:ZM.scelto[1],luogo:(document.getElementById('zm-q')||{}).value||''}); }
 
