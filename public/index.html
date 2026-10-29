@@ -2096,7 +2096,7 @@ function apriDrone(id, da, apriBatt){
 
   const chk='<svg viewBox="0 0 24 24">'+IC.check+'</svg>';
   const dati=[['Marca e modello',d.nome],['Classe',s.classe],['Categoria di volo',s.cat],['Matricola',MATR[d.nome]],
-    ['Peso',s.peso],['Codice D-Flight','ITA-xxxx · QR applicato'],['Remote ID',s.rid],['Acquistato il',s.acq],['Ore di volo',s.ore+' · '+s.voli+' voli'],
+    ['Peso',s.peso],['QR D-Flight',d.qr?'applicato':'da applicare'],['Remote ID',s.rid],['Acquistato il',s.acq],['Ore di volo',s.ore+' · '+s.voli+' voli'],
     ['Vento massimo',VENTO_BASE(d)+' km/h'+(ADM?` <button class="btn sec mini" onclick="cambiaVento(${d.id})">Cambia</button>`:'')],
     ['Affidato a',(PILOTI.filter(p=>inDotazione(p).includes(d)).map(p=>p.nome).join(', '))||'nessun pilota']];
   document.getElementById('dr-dati').innerHTML=dati.map(x=>`<div class="fld"><div class="k">${chk}${x[0]}</div><div class="v">${x[1]}</div></div>`).join('');
@@ -2247,9 +2247,9 @@ function apriEnac(){
 
   const chk='<svg viewBox="0 0 24 24">'+IC.check+'</svg>';
   document.getElementById('en-op').innerHTML=[
-    ['Codice operatore','ITA-xxxx',true],['Registrazione D-Flight','Attiva',true],['Abbonamento D-Flight','Scade il 14/02/2027',true],
-    ['Assicurazione RC','Scade il '+ASSIC.scad,true],['Categorie','Open'+(ok?' e Specific (agricola)':''),true],['Responsabile',(OP.resp||'—')+' (Admin)',true]
-  ].map(x=>`<div class="fld"><div class="k">${chk}${x[0]}</div><div class="v">${x[1]}</div></div>`).join('');
+    ...(OP.codice&&!/x{3}/i.test(OP.codice)?[['Codice operatore',ESC(OP.codice),true]]:[]),...(OP.dfAbb?[['Abbonamento D-Flight','Scade il '+OP.dfAbb,livData(OP.dfAbb)==='ok']]:[]),
+    ['Assicurazione RC',ASSIC.scad?'Scade il '+ASSIC.scad:'da inserire',!!ASSIC.scad],['Categorie','Open'+(ok?' e Specific (agricola)':''),true],['Responsabile',(OP.resp||'—')+' (Admin)',true]
+  ].map(x=>`<div class="fld"><div class="k">${x[2]?chk:''}${x[0]}</div><div class="v" style="${x[2]?'':'color:var(--warn)'}">${x[1]}</div></div>`).join('');
 
   let aut;
   if(ok) aut=`<div class="allegato"><div class="mark ok">${svg('check')}</div><div class="f"><b>Autorizzazione operativa agricola</b><br>AltMoC IT-UAS-2026-002</div><button class="btn sec mini vedi" onclick="${AUT_ENAC.doc?`apriFile('${AUT_ENAC.doc}')`:`toast('Autorizzazione di esempio: nella prova non c\u2019è il file')`}">Vedi</button></div>`;
@@ -2529,11 +2529,12 @@ let ZONE=[
 ];
 function apriDflight(){
   const qrOk=DRONI.filter(d=>d.qr).length, zg=ZONEINFO?giorni(ZONEINFO.scade||''):null, abb=OP.dfAbb?livData(OP.dfAbb):'ko', cod=OP.codice&&!/x{3}/i.test(OP.codice);
-  const prob=[!cod&&'codice operatore da inserire',abb!=='ok'&&(OP.dfAbb?'abbonamento '+(abb==='ko'?'scaduto':'in scadenza'):'abbonamento da inserire'),qrOk<DRONI.length&&pl(DRONI.length-qrOk,'drone','droni')+' senza QR',!ZONEINFO&&'file delle zone da caricare'].filter(Boolean);
-  const liv=!cod||abb==='ko'||qrOk<DRONI.length?'ko':prob.length?'warn':'ok';
+  // codice operatore e abbonamento sono facoltativi: contano solo se inseriti
+  const prob=[OP.dfAbb&&abb!=='ok'&&'abbonamento '+(abb==='ko'?'scaduto':'in scadenza'),qrOk<DRONI.length&&pl(DRONI.length-qrOk,'drone','droni')+' senza QR',!ZONEINFO&&'file delle zone da caricare'].filter(Boolean);
+  const liv=(OP.dfAbb&&abb==='ko')||qrOk<DRONI.length?'ko':prob.length?'warn':'ok';
   document.getElementById('df-light').className='light '+liv;
   document.getElementById('df-t').textContent=liv==='ok'?'D-Flight in regola':'D-Flight: qualcosa da sistemare';
-  document.getElementById('df-s').textContent=prob.length?prob.join(' · '):'Operatore registrato, abbonamento attivo, QR su tutti i droni'+(ZONEINFO?', zone aggiornate al '+ZONEINFO.data:'');
+  document.getElementById('df-s').textContent=prob.length?prob.join(' · '):'QR su tutti i droni'+(ZONEINFO?', zone aggiornate al '+ZONEINFO.data:'')+(OP.dfAbb?', abbonamento attivo':'');
   const IC2={mappa:'<path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/>',prof:'<circle cx="12" cy="8" r="3.5"/><path d="M5 20c1-4 4-6 7-6s6 2 7 6"/>',qr:'<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 8h3v3H8zM13 13h3v3h-3zM13 8h3M8 13v3"/>'};
   const B=(k,t,d)=>`<button type="button" class="df-b" id="df-b-${k}" onclick="window.open(DFLIGHT_MAPPA,'_blank')"><span class="ic"><svg viewBox="0 0 24 24">${IC2[k]}</svg></span><span><b>${t}</b><small>${d}</small></span><span class="go">›</span></button>`;
   document.getElementById('df-hub').innerHTML=B('mappa','Mappa: zone e avvisi del giorno','Prima di ogni volo. Una volta entrato, cerca il paese in alto.')+
@@ -2541,8 +2542,8 @@ function apriDflight(){
     B('qr','Droni e QR','Per un drone nuovo: «Associa un UAS», poi scarica il suo QR da attaccare sul drone.')+
     `<div class="df-tip"><b>Entra una volta sola.</b> D-Flight chiede il suo account (gratis). La prima volta, quando il telefono chiede di salvare la password, tocca <b>Salva</b>: le volte dopo entri con un tocco.</div>`;
   const chk='<svg viewBox="0 0 24 24">'+IC.check+'</svg>';
-  document.getElementById('df-op').innerHTML=[['Codice operatore',cod?OP.codice:'da inserire',cod],['Registrato il',OP.dfReg||'—',!!OP.dfReg],['Abbonamento',OP.dfAbb?'fino al '+OP.dfAbb:'da inserire',abb==='ok'],['QR sui droni',qrOk+' su '+DRONI.length,qrOk===DRONI.length],['File delle zone',ZONEINFO?'del '+ZONEINFO.data+(zg!=null&&zg<=7?' · da aggiornare':''):'da caricare',!!ZONEINFO&&!(zg!=null&&zg<=7)]]
-    .map(x=>`<div class="fld"><div class="k">${x[2]?chk:''}${x[0]}</div><div class="v" style="${x[2]?'':'color:var(--warn)'}">${ESC(x[1])}</div></div>`).join('')+(ADM?`<div class="row" style="grid-column:1/-1"><button class="btn sec mini" onclick="apriAdmin('ad-op')">Cambia i dati</button></div>`:'');
+  document.getElementById('df-op').innerHTML=[['Codice operatore',cod?OP.codice:'non inserito (facoltativo)',cod,!cod],['Registrato il',OP.dfReg||'—',!!OP.dfReg,!OP.dfReg],['Abbonamento',OP.dfAbb?'fino al '+OP.dfAbb:'non inserito (facoltativo)',OP.dfAbb&&abb==='ok',!OP.dfAbb],['QR sui droni',qrOk+' su '+DRONI.length,qrOk===DRONI.length],['File delle zone',ZONEINFO?'del '+ZONEINFO.data+(zg!=null&&zg<=7?' · da aggiornare':''):'da caricare',!!ZONEINFO&&!(zg!=null&&zg<=7)]]
+    .map(x=>`<div class="fld"><div class="k">${x[2]?chk:''}${x[0]}</div><div class="v" style="${x[2]?'':x[3]?'color:var(--muted);font-weight:500':'color:var(--warn)'}">${ESC(x[1])}</div></div>`).join('')+(ADM?`<div class="row" style="grid-column:1/-1"><button class="btn sec mini" onclick="apriAdmin('ad-op')">Cambia i dati</button></div>`:'');
   document.getElementById('df-qr').innerHTML=DRONI.filter(d=>!d.qr).map(d=>`<div class="allegato"><div class="mark warn">${svg('esc')}</div><div class="f"><b>${ESC(d.nome)}</b><br>QR da applicare</div><button class="btn sec mini" onclick="apriDrone(${d.id},'droni')">Scheda</button></div>`).join('');
   document.getElementById('df-notam').innerHTML=`<div style="font-size:15px">Si vedono sulla <b>mappa D-Flight</b>: nel controllo prima del volo il pilota la apre e segna cosa ha trovato. Come controllo in più c’è anche una mappa non ufficiale, senza account e in inglese.</div>
     <details class="nt-cosa" style="margin-top:8px"><summary>Cosa sono i NOTAM</summary>${SPIEGA_NT}</details>
