@@ -966,6 +966,22 @@
 .ms-az{display:grid;gap:8px;margin-top:12px}.ms-ol{padding-left:20px;font-size:14.5px}.ms-ol li{margin-bottom:8px}
 body.scuro .ml-card,body.scuro .ml-card b.t{color:#1f2a36}body.scuro .ml-card .ml-i{color:#5f6b78}
 .trovato.hidden{display:none}
+.pl-oggi{border:2px solid var(--accent)}
+.pl-oggi .row .btn.sec{flex:1;justify-content:center;padding-left:8px;padding-right:8px}
+.pl-oggi .ml-lav{padding:4px 0 10px}.pl-oggi{padding-bottom:4px}
+.btn.pl-big{width:100%;padding:13px;font-size:16.5px;justify-content:center}
+.pl-semplice .hsel.hlav{display:none}
+.pl-rg{display:flex;align-items:center;gap:10px;padding:10px 4px;border:0;border-top:1px solid var(--line);background:none;width:100%;text-align:left;font:inherit;color:inherit}
+button.pl-rg{cursor:pointer}
+.ml-card h2+.pl-rg{border-top:0}
+.pl-rg .q{font-size:12px;font-weight:700;border-radius:5px;padding:2px 7px;background:var(--line);min-width:72px;text-align:center;flex:none}
+.pl-rg .q.dom{background:var(--accent);color:#fff}
+.pl-rg .m{flex:1;min-width:0}.pl-rg .m b{display:block;font-size:15px}.pl-rg .m>span{font-size:13px;color:var(--muted)}
+.pl-rg .chev{width:16px;height:16px;stroke:var(--muted);fill:none;stroke-width:2;flex:none}
+.pl-rg .hl{width:4px;align-self:stretch;border-radius:2px;background:var(--ok);flex:none}.pl-rg .hl.warn{background:var(--warn)}.pl-rg .hl.ko{background:var(--ko)}
+.pl-det{background:var(--sup,#fff);border:1px solid var(--line);border-radius:12px;margin-top:12px}
+.pl-det summary{padding:12px 14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pl-det summary small{font-weight:500;color:var(--muted);font-size:13px}
 </style>
 </head>
 <body>
@@ -1987,7 +2003,7 @@ function disegnaHome(){
   { const o=new Date(); o.setHours(0,0,0,0); const n=LAVORI.filter(l=>l.stato!=='concluso'&&dt(l.data)&&dt(l.data)>=o&&dt(l.data)-o<=7*864e5).length; TILES.attivita[4].c=n?pl(n,'lavoro','lavori')+' in 7 giorni':'lavori e scadenze'; }
   const todo=calcolaTodo();
   const tieni=['h-data','h-cod','h-luogo'].map(i=>(document.getElementById(i)||{}).value), trov=LAVTROVATO;
-  document.getElementById('h-asp').innerHTML=(ADM&&!COME?homeAdm(todo):ASP==='A'?homeA(todo):ASP==='C'?homeC(todo):homeB(todo));
+  document.getElementById('h-asp').innerHTML=(ADM&&!COME?homeAdm(todo):ASP==='A'?homeA(todo):ASP==='C'?homeC(todo):(!ADM||COME)&&ioPilota()?homeP():homeB(todo));
   riempiSelect(vd,vp);
   ['h-data','h-cod','h-luogo'].forEach((i,k)=>{const e=document.getElementById(i); if(e&&tieni[k]) e.value=tieni[k];});
   if(tieni[1]) cercaCodice(); LAVTROVATO=trov; disegnaMeteo();
@@ -4281,6 +4297,51 @@ function msComeCaricare(){
     <div class="nota">Durante la missione resta pronto a riprendere i comandi: il pilota resta responsabile del volo.</div>
     <div class="row"><button class="btn" type="button">Ho capito</button></div></div>`;
   document.body.appendChild(ve); ve.querySelector('.btn').onclick=()=>ve.remove(); ve.onclick=e=>{if(e.target===ve) ve.remove();};
+}
+
+/* ---------- Home del pilota (aspetto normale): «Oggi», prossimi lavori, le sue scadenze, il resto chiuso ---------- */
+function scadenzePilota(p){
+  const R=[], s=SCHEDEP[p.id]||{att:{}};
+  const att=Object.entries(s.att||{}).filter(([k,a])=>a&&a.scad);
+  if(!att.length) R.push({liv:'ko',t:'Attestato da caricare',w:'senza attestato non puoi volare',go:'apriAccount()'});
+  att.forEach(([k,a])=>{ const g=giorni(a.scad); R.push({liv:g<0?'ko':g<90?'warn':'ok',t:(ATTNOMI[k]||'Attestato '+k),w:g<0?'scaduto il '+a.scad:'valido fino al '+a.scad+(g<90?', tra '+pl(g,'giorno','giorni'):''),go:g<90?'apriAccount()':''}); });
+  { const r=rcDi(p), g=r.scad?giorni(r.scad):null; R.push(r.ok?{liv:g!=null&&g<60?'warn':'ok',t:'Assicurazione RC',w:(r.chi==='personale'?'polizza personale':'polizza dell’operatore')+' valida fino al '+r.scad+(g!=null&&g<60?', tra '+pl(g,'giorno','giorni'):''),go:''}
+    :{liv:'ko',t:'Assicurazione RC',w:r.scad?'scaduta il '+r.scad:'nessuna polizza ti copre',go:'apriAccount()'}); }
+  const dc=VOLI.filter(v=>v.pilota===IO.n&&v.stato!=='completo').length;
+  if(dc) R.push({liv:'warn',t:pl(dc,'volo da completare','voli da completare'),w:'nel registro voli',go:'apriVoli()'});
+  if(permIo().flotta) droniMiei().forEach(d=>{ const sc=SCHEDE[d.id]; if(sc&&sc.man&&sc.man.liv!=='ok') R.push({liv:sc.man.liv,t:'Manutenzione del '+d.nome.replace('DJI ',''),w:sc.man.prox+' · mancano '+sc.man.mancano,go:'apriManut('+d.id+')'}); });
+  return R.sort((a,b)=>({ko:0,warn:1,ok:2}[a.liv])-({ko:0,warn:1,ok:2}[b.liv]));
+}
+function homeP(){
+  const o=new Date(), p=ioPilota(), oggi0=new Date(o.toDateString());
+  if(!p) return homeB(calcolaTodo());
+  const mio=LAVORI.filter(l=>l.pilota===p.id&&l.stato!=='concluso');
+  const gg=l=>{const d=dt(l.data); return d?Math.round((new Date(d.toDateString())-oggi0)/864e5):null;};
+  const oggiL=mio.filter(l=>{const g=gg(l); return g!=null&&g<=0;}).sort((a,b)=>(dt(a.data)||0)-(dt(b.data)||0));
+  const poi=mio.filter(l=>{const g=gg(l); return g==null||g>0;}).sort((a,b)=>(dt(a.data)||9e15)-(dt(b.data)||9e15));
+  const OK='<svg viewBox="0 0 24 24"><path d="M5 12l4 4 10-10"/></svg>', KO='<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+  const form=big=>`<div class="pl-semplice"><div class="hsel uno">${selDrone()}<span style="display:none">${selPilota()}</span></div>${campiLavoro()}
+      <button class="btn${big?' pl-big':''}" id="h-btn" onclick="avviaControllo(this)"><span class="spin"></span>${big?'Fai il controllo prima del volo':'Inizia il controllo'}</button></div>`;
+  const lavOggi=l=>{ const d=DRONI.find(x=>x.id===l.drone), V=verificaAssegna(l), g=gg(l);
+    const mail=OP.email?`mailto:${encodeURIComponent(OP.email)}?subject=${encodeURIComponent('Lavoro '+(l.codice||l.cliente)+': così non si vola')}&body=${encodeURIComponent(V.map(x=>'- '+x[0]).join('\n'))}`:OP.tel?'tel:'+String(OP.tel).replace(/\s/g,''):'';
+    return `<div class="ml-lav" id="ml-${l.id}">${g<0?`<span class="ml-q">In corso dal ${ESC(l.data)}</span>`:''}<b class="t">${ESC(l.cliente)} · ${ESC(String(l.titolo||'').toLowerCase())}</b>
+      <div class="ml-i">${ESC([l.luogo,d?d.nome:'drone da scegliere',l.codice?'codice '+l.codice:''].filter(Boolean).join(' · '))}</div>
+      ${V.length?`<div class="ml-v ko">${KO}<span><b>Così non si vola:</b> ${ESC(V.map(x=>x[0].replace(p.nome+' non può','non puoi')).join('; '))}. Avvisa l’Admin: può cambiare drone o pilota.</span></div>`:`<div class="ml-v ok">${OK}<span>Drone e documenti a posto per questo lavoro.</span></div>`}
+      <div class="row"><button class="btn pl-big" type="button" ${V.length?'disabled':''} onclick="controlloDaLavoro(${l.id},this)"><span class="spin"></span>Fai il controllo prima del volo</button></div>
+      <div class="row">${V.length&&mail?`<a class="btn sec" href="${mail}">Avvisa l’Admin</a>`:''}<button class="btn sec" type="button" onclick="apriMissione(${l.id})">${l.missione?'Missione':'Pianifica la missione'}</button>${l.luogo?`<button class="btn sec" type="button" onclick="zmLavoro(${l.id})">Mappa delle zone</button>`:''}</div></div>`; };
+  const rigaPoi=l=>{ const g=gg(l), d=dt(l.data), V=verificaAssegna(l), dr=DRONI.find(x=>x.id===l.drone);
+    const q=g==null?'senza data':g===1?'Domani':GIORNI[d.getDay()].slice(0,3)+' '+d.getDate()+' '+MESI_L[d.getMonth()].slice(0,3);
+    return `<button type="button" class="pl-rg" onclick="apriLavoro(${l.id})">${V.length?'<span class="hl ko"></span>':''}<span class="q ${g===1?'dom':''}">${ESC(q)}</span><span class="m"><b>${ESC(l.cliente)} · ${ESC(String(l.titolo||'').toLowerCase())}</b><span>${ESC([String(l.luogo||'').replace(/\s*\(.*\)/,''),dr?dr.nome.replace('DJI ',''):''].filter(Boolean).join(' · '))}${V.length?' · <b style="color:var(--ko);display:inline">così non si vola</b>':''}</span></span><svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>`; };
+  const sc=scadenzePilota(p);
+  const scH=sc.length?sc.map(x=>`<${x.go?'button type="button"':'div'} class="pl-rg" ${x.go?`onclick="${x.go}"`:''}><span class="hl ${x.liv==='ok'?'':x.liv}"></span><span class="m"><b>${x.t}</b><span>${x.w}</span></span>${x.go?'<svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>':''}</${x.go?'button':'div'}>`).join(''):'';
+  const menu=menuHome('lista');
+  return `<div class="pl-data">${GIORNI[o.getDay()]} ${o.getDate()} ${MESI_L[o.getMonth()]}<b>Ciao ${ESC((IO.n||'').split(' ')[0])}</b></div>
+    <div class="card ml-card pl-oggi" id="h-oggi"><h2>Oggi</h2>${oggiL.length?oggiL.map(lavOggi).join(''):`<div class="ml-vuoto" style="padding:0 0 8px">Nessun lavoro per oggi. Se voli lo stesso, fai il controllo:</div>${form(1)}`}</div>
+    ${poi.length?`<div class="card ml-card" id="h-miei"><h2>Prossimi lavori <small>${poi.length}</small></h2>${poi.slice(0,6).map(rigaPoi).join('')}</div>`:''}
+    <div class="card ml-card" id="h-scad"><h2>Le tue scadenze</h2>${scH}</div>
+    ${oggiL.length?`<details class="pl-det" id="h-senzalav"><summary>Volo senza lavoro <small>controllo per un volo non in elenco</small></summary><div style="padding:0 14px 14px">${form(0)}</div></details>`:''}
+    ${menu?`<details class="pl-det" id="h-altro"><summary>Altro <small>voli, droni, manutenzioni, documenti</small></summary><div style="padding:0 10px 10px">${menu.replace('<div class="hcap">Gestione</div>','')}</div></details>`:''}
+    ${segnHome()}`;
 }
 
 function homeB(todo){
