@@ -1000,6 +1000,11 @@ button.pl-rg{cursor:pointer}
 .cr-menu>*:first-child{border-top:0}.cr-menu button{cursor:pointer;color:var(--accent)}
 .cr-menu .qui{background:#eef3f7;font-weight:700}.cr-menu small{margin-left:auto;color:var(--muted);font-weight:500;font-size:12.5px}
 body.scuro .nav{background:transparent;border-color:#1F3241}
+.df-mini{display:block;width:100%;height:120px;border-radius:10px;margin-top:10px;background:linear-gradient(135deg,#d7e3cc,#c9dbc0);position:relative;overflow:hidden;cursor:pointer;border:1px solid var(--line);padding:0}
+.df-mini i{position:absolute;border-radius:50%;opacity:.35}
+.df-mini span{position:absolute;left:8px;bottom:8px;background:#fff;border-radius:7px;padding:4px 9px;font:600 14px Barlow,Arial,sans-serif;color:var(--accent)}
+.pl-det summary .t{flex:1;min-width:0}.pl-det summary .t b{display:block;font-size:15.5px}.pl-det summary .t small{display:block;font-weight:500;color:var(--muted);font-size:13px}
+.st{font-size:12.5px;font-weight:700;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;color:var(--ok)}.st:empty{display:none}.st::before{content:'';width:9px;height:9px;border-radius:50%;background:currentColor}.st.ko{color:var(--ko)}
 </style>
 </head>
 <body>
@@ -1685,18 +1690,7 @@ body.scuro .nav{background:transparent;border-color:#1F3241}
       </table></div>
   </div>
 
-  <div id="v-zone" class="hidden">
-    <div class="card">
-      <h2>Zone di volo D-Flight</h2>
-      <div style="font-size:15px;color:var(--muted)">Con il file ufficiale delle zone, nel controllo prima del volo Quota 120 dice da solo se in quel punto si può volare, fino a che altezza e perché.</div>
-      <div id="zn-info" style="margin-top:12px"></div>
-      <div class="hcap" style="margin:18px 0 8px">Come si aggiorna (una volta al mese)</div>
-      <ol class="zn-passi"><li>Entra su <b>d-flight.it</b> con il tuo profilo</li><li>Premi <b>Download UAS Zone Geo</b> e salva il file</li><li>Qui sotto premi <b>Carica il file delle zone</b> e sceglilo così com’è, anche compresso</li></ol>
-      <div class="row"><button class="btn" id="zn-btn" onclick="scegliZone()"><span class="spin"></span>Carica il file delle zone</button><button class="btn sec" onclick="window.open(DFLIGHT_MAPPA,'_blank')">Apri la mappa D-Flight</button></div>
-      <div class="prog" id="zn-prog" style="display:none"><span class="spin"></span><span id="zn-prog-t"></span></div>
-      <div class="nota">Il file vale circa un mese (le zone cambiano con il ciclo aeronautico). Una settimana prima della scadenza arriva anche la mail di avviso.</div>
-    </div>
-  </div>
+  <div id="v-zone" class="hidden"></div>
 
   <!-- ================= SCHEDA LAVORO ================= -->
   <div id="v-lavoro" class="hidden ro">
@@ -1809,12 +1803,21 @@ body.scuro .nav{background:transparent;border-color:#1F3241}
   <!-- ================= D-FLIGHT ================= -->
   <div id="v-dflight" class="hidden">
     <div class="card"><div class="sem"><div class="light" id="df-light"></div><div><div class="t" id="df-t"></div><div class="s" id="df-s"></div></div></div></div>
-    <div class="df-hub" id="df-hub" style="margin-top:12px"></div>
-    <div class="card" style="margin-top:12px"><h2>I tuoi dati D-Flight</h2><div class="fgrid" id="df-op"></div><div id="df-qr" style="margin-top:8px"></div></div>
-    <div class="card" style="margin-top:12px"><h2>Avvisi del giorno (NOTAM)</h2><div id="df-notam"></div></div>
-    <div class="card" style="margin-top:12px"><h2>Controlli D-Flight prima dei voli</h2>
-      <div style="font-size:14px;color:var(--muted)">Ogni volta che nel controllo prima del volo il pilota segna D-Flight, resta qui con data e ora.</div>
-      <ul class="storia" id="df-zone" style="margin-top:6px"></ul></div>
+    <div class="card" style="margin-top:12px"><h2>Mappa delle zone</h2><div class="nota">Tocca dove vuoi volare: fino a che quota si vola, le regole della zona e a chi chiedere.</div>
+      <button type="button" class="df-mini" id="df-b-zmappa" onclick="apriMappaZone()"><i style="left:58%;top:-25%;width:130px;height:130px;background:#a64b45"></i><i style="left:-8%;top:40%;width:115px;height:115px;background:#b8742a"></i><span>Apri la mappa ›</span></button>
+      <div class="nota" id="df-mapnota" style="margin-top:6px"></div></div>
+    <div class="card" style="margin-top:12px" id="df-file"><h2>File delle zone</h2>
+      <div class="nota">Quello ufficiale D-Flight, da aggiornare una volta al mese. Con il file, il controllo prima del volo dice da solo dove si vola e fino a che quota.</div>
+      <div id="zn-info" style="margin-top:10px"></div>
+      <div id="zn-adm"><ol class="zn-passi"><li>Entra su <b>d-flight.it</b> con il tuo profilo (serve l’abbonamento)</li><li>Premi <b>Download UAS Zone Geo</b> e salva il file</li><li>Qui sotto premi <b>Carica il file delle zone</b> e sceglilo così com’è, anche compresso</li></ol>
+      <div class="row"><button class="btn" id="zn-btn" onclick="scegliZone()"><span class="spin"></span>Carica il file delle zone</button><button class="btn sec" onclick="window.open(DFLIGHT_MAPPA,'_blank')">Apri D-Flight</button></div>
+      <div class="prog" id="zn-prog" style="display:none"><span class="spin"></span><span id="zn-prog-t"></span></div>
+      <div class="nota">Il file vale circa un mese (le zone cambiano con il ciclo aeronautico). Una settimana prima della scadenza arriva anche la mail di avviso.</div></div></div>
+    <details class="pl-det" id="df-d-dati"><summary><span class="t"><b>I tuoi dati D-Flight</b><small>codice operatore, abbonamento, QR dei droni</small></span><span class="st" id="df-st-dati"></span></summary><div style="padding:0 14px 14px"><div class="fgrid" id="df-op"></div><div id="df-qr" style="margin-top:8px"></div></div></details>
+    <details class="pl-det" id="df-d-sito"><summary><span class="t"><b>Sul sito D-Flight</b><small>mappa ufficiale e avvisi del giorno, profilo, QR</small></span></summary><div class="df-hub" id="df-hub" style="padding:0 14px 14px"></div></details>
+    <details class="pl-det" id="df-d-notam"><summary><span class="t"><b>Avvisi del giorno (NOTAM)</b><small>cosa sono e dove si guardano</small></span></summary><div style="padding:0 14px 14px" id="df-notam"></div></details>
+    <details class="pl-det" id="df-d-storia"><summary><span class="t"><b>Controlli D-Flight prima dei voli</b><small>chi ha guardato D-Flight, quando e cosa ha trovato</small></span><span class="st ok" id="df-st-storia"></span></summary>
+      <div style="padding:0 14px 14px"><ul class="storia" id="df-zone"></ul></div></details>
   </div>
 
   <!-- ================= CAMPI ================= -->
@@ -2005,7 +2008,7 @@ const TILES = {
   ],
   'regole':[
     {k:'enac',n:'Autorizzazioni ENAC',c:'manuale e dichiarazioni',f:'--f-regole',d:'ko',enac:true},
-    {k:'dflight',n:'D-Flight',c:'codice operatore e QR',f:'--f-regole'},
+    {k:'dflight',n:'Zone e D-Flight',c:'mappa, file delle zone, codice e QR',f:'--f-regole'},
     {k:'campi',n:'Campi',c:'modulo agricoltura',f:'--f-agri'},
     {k:'tratt',n:'Trattamenti',c:'quaderno di campagna',f:'--f-agri'}
   ]
@@ -2048,7 +2051,7 @@ function apriPagina(nome, gruppo){
   if(nome==='Clienti e lavori'){ apriLavori(); return; }
   if(nome==='Manutenzioni'){ apriManut(); return; }
   if(nome==='Inventario'){ apriInvent(); return; }
-  if(nome==='D-Flight'){ apriDflight(); return; }
+  if(nome==='D-Flight'||nome==='Zone e D-Flight'){ apriDflight(); return; }
   if(nome==='Campi'){ apriCampi(); return; }
   if(nome==='Trattamenti'){ apriTratt(); return; }
   if(nome==='Preventivi'){ apriPreventivi(); return; }
@@ -2973,12 +2976,12 @@ function apriDflight(){
   const prob=[!cod&&'codice operatore da inserire',abb!=='ok'&&(OP.dfAbb?'abbonamento '+(abb==='ko'?'scaduto':'in scadenza'):'abbonamento da inserire'),qrOk<DRONI.length&&pl(DRONI.length-qrOk,'drone','droni')+' senza QR',!ZONEINFO&&'file delle zone da caricare'].filter(Boolean);
   const liv=!cod||abb==='ko'||qrOk<DRONI.length?'ko':prob.length?'warn':'ok';
   document.getElementById('df-light').className='light '+liv;
-  document.getElementById('df-t').textContent=liv==='ok'?'D-Flight in regola':'D-Flight: qualcosa da sistemare';
+  document.getElementById('df-t').textContent=liv==='ok'?'Zone e D-Flight: tutto in regola':'Zone e D-Flight: '+pl(prob.length,'cosa','cose')+' da sistemare';
   document.getElementById('df-s').textContent=prob.length?prob.join(' · '):'Operatore registrato, abbonamento attivo, QR su tutti i droni'+(ZONEINFO?', zone aggiornate al '+ZONEINFO.data:'');
   const IC2={zmappa:'<circle cx="12" cy="10" r="3"/><path d="M12 21s-7-6.5-7-11a7 7 0 0114 0c0 4.5-7 11-7 11z"/>',mappa:'<path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/>',prof:'<circle cx="12" cy="8" r="3.5"/><path d="M5 20c1-4 4-6 7-6s6 2 7 6"/>',qr:'<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 8h3v3H8zM13 13h3v3h-3zM13 8h3M8 13v3"/>'};
   const B=(k,t,d,go)=>`<button type="button" class="df-b" id="df-b-${k}" onclick="${go||"window.open(DFLIGHT_MAPPA,'_blank')"}"><span class="ic"><svg viewBox="0 0 24 24">${IC2[k]}</svg></span><span><b>${t}</b><small>${d}</small></span><span class="go">›</span></button>`;
-  document.getElementById('df-hub').innerHTML=B('zmappa','Mappa delle zone in Quota 120','Tocca dove vuoi volare: fino a che quota si vola, le regole della zona e a chi chiedere.','apriMappaZone()')+B('mappa','Mappa: zone e avvisi del giorno','Prima di ogni volo. Una volta entrato, cerca il paese in alto.')+
-    B('prof','Profilo dell’operatore','Codice ITA e abbonamento. Qui c’è «Download UAS Zone Geo»: il file delle zone da caricare in Quota 120 (Home › Regole e sicurezza › Zone di volo).')+
+  document.getElementById('df-hub').innerHTML=B('mappa','Mappa: zone e avvisi del giorno','Prima di ogni volo. Una volta entrato, cerca il paese in alto.')+
+    B('prof','Profilo dell’operatore','Codice ITA e abbonamento. Qui c’è «Download UAS Zone Geo»: il file delle zone da caricare qui, nel riquadro «File delle zone».')+
     B('qr','Droni e QR','Per un drone nuovo: «Associa un UAS», poi scarica il suo QR da attaccare sul drone.')+
     `<div class="df-tip">${DF_ENTRA()}</div>`;
   const chk='<svg viewBox="0 0 24 24">'+IC.check+'</svg>';
@@ -2994,7 +2997,11 @@ function apriDflight(){
       <div class="row"><button class="btn sec mini" onclick="copiaTesto(NT_MAIL_EN,'Messaggio in inglese copiato')">Copia il messaggio (inglese)</button><button class="btn sec mini" onclick="document.getElementById('nt-it').toggleAttribute('hidden')">Leggi la traduzione</button></div>
       <pre id="nt-it" class="nt-pre" hidden>${ESC(NT_MAIL_IT)}</pre></details>`:''}`;
   document.getElementById('df-zone').innerHTML=ZONE.slice(0,8).map(z=>`<li><span class="d">${z.data}<br>${z.ora}</span><span><b style="font-weight:600">${ESC(z.drone)}</b><br><span style="color:var(--muted);font-size:13px">${ESC(z.pilota)}${z.esito?' · '+ESC(z.esito):''}</span></span></li>`).join('')||'<li style="color:var(--muted)">Ancora nessun controllo registrato.</li>';
-  vai('dflight','Regole e sicurezza &rsaquo; D-Flight');
+  disegnaFileZone();
+  document.getElementById('df-mapnota').innerHTML=ZONEINFO?'Zone dal file D-Flight del '+ESC(ZONEINFO.data)+'.':'<span style="color:var(--warn)">Senza il file delle zone la mappa è vuota'+(ADM?': caricalo qui sotto.':': lo carica l’Admin.')+'</span>';
+  { const nd=[!cod,abb!=='ok',qrOk<DRONI.length].filter(Boolean).length, e=document.getElementById('df-st-dati'); e.className='st'+(nd?' ko':' ok'); e.textContent=nd?pl(nd,'da sistemare','da sistemare'):'a posto';
+    const st=document.getElementById('df-st-storia'); st.textContent=ZONE.length?String(ZONE.length):''; }
+  vai('dflight','Regole e sicurezza &rsaquo; Zone e D-Flight');
 }
 function apriNotam(){ apriDflight(); setTimeout(()=>{const e=document.getElementById('df-notam'); e&&e.scrollIntoView({behavior:'smooth',block:'start'});},200); }
 
@@ -3214,7 +3221,7 @@ function calcolaTodo(){
 }
 /* ---------- cosa può vedere chi è entrato ---------- */
 const PERM_RIQ={'Droni':'flotta','Batterie':'flotta','Manutenzioni':'flotta','Inventario':'flotta','Clienti e lavori':'clienti','Preventivi':'prezzi',
-  'Autorizzazioni ENAC':'enac','D-Flight':'enac','Campi':'agri','Trattamenti':'agri'};
+  'Autorizzazioni ENAC':'enac','D-Flight':'enac','Zone e D-Flight':'enac','Campi':'agri','Trattamenti':'agri'};
 function permIo(){const p=PILOTI.find(x=>x.nome===IO.n);return p?(PERM[p.id]||{}):{};}
 function puoVedere(nome){if(ADM)return true;const k=PERM_RIQ[nome];return !k||!!permIo()[k];}
 function contaRiquadri(){
@@ -3247,7 +3254,7 @@ let NAVST=[], NAV_LOG=null, NAV_NO=false;
 const CRUMB_VAI={'Home':()=>vai('home'),'Home Admin':()=>vai('home'),'Controllo prima del volo':()=>{ if(dSel&&pSel) vai('controllo','Controllo prima del volo'); else vai('home'); },
   'Voli':()=>apriVoli(),'Registro voli':()=>apriVoli(),'Richieste di permesso':()=>apriRichieste(),'Valutazioni del rischio':()=>apriRischi(),'Checklist':()=>apriCheck(),'Segnalazioni':()=>apriSegnalazioni(),'Account':()=>apriAccount(),'Documenti':()=>apriDocumenti(),'Impostazioni':()=>{ if(ADM&&!COME) hadmApri('imp'); else vai('home'); }};
 const CRUMB_SEZ={'Lavoro':'lav','Flotta':'flotta','Persone':'persone','Regole e sicurezza':'regole'};
-['Clienti e lavori','Preventivi','Calendario','Droni','Batterie','Manutenzioni','Inventario','Piloti','D-Flight','Autorizzazioni ENAC','Campi','Trattamenti'].forEach(n=>CRUMB_VAI[n]=()=>apriPagina(n));
+['Clienti e lavori','Preventivi','Calendario','Droni','Batterie','Manutenzioni','Inventario','Piloti','D-Flight','Zone e D-Flight','Autorizzazioni ENAC','Campi','Trattamenti'].forEach(n=>CRUMB_VAI[n]=()=>apriPagina(n));
 function crumbAzione(t){ if(CRUMB_SEZ[t]) return ()=>{ if(ADM&&!COME) hadmApri(CRUMB_SEZ[t]); else vai('home'); }; return CRUMB_VAI[t]||null; }
 let CRUMB_P=[];
 function crumbLinks(){
@@ -4068,11 +4075,12 @@ const HADM_SEZ=[
   ['lav','Lavoro','lavori, calendario, voli, preventivi','--f-attivita','<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/>',[['t','Clienti e lavori'],['t','Calendario'],['t','Registro voli'],['t','Preventivi'],['x','ctrl']]],
   ['flotta','Flotta','droni, batterie, manutenzioni, inventario','--f-flotta','<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8 8l8 8M16 8l-8 8"/>',[['t','Droni'],['t','Batterie'],['t','Manutenzioni'],['t','Inventario'],['p','Aggiungi drone']]],
   ['persone','Persone','piloti, telefoni, permessi, firme','--f-persone','<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><path d="M16 4.5a3.5 3.5 0 010 7M18 14c2 .8 3 2.8 3 6"/>',[['t','Piloti'],['p','Aggiungi pilota'],['p','Telefoni collegati'],['p','Utenti e permessi'],['p','Le firme']]],
-  ['regole','Regole e sicurezza','D-Flight, ENAC, permessi, rischio, segnalazioni','--f-regole','<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',[['t','D-Flight'],['x','zmappa'],['p','Zone di volo'],['t','Autorizzazioni ENAC'],['p','Richieste di permesso'],['p','Valutazioni del rischio'],['p','Segnalazioni'],['p','Checklist'],['t','Campi'],['t','Trattamenti']]],
+  ['regole','Regole e sicurezza','D-Flight, ENAC, permessi, rischio, segnalazioni','--f-regole','<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',[['x','zd'],['t','Autorizzazioni ENAC'],['p','Richieste di permesso'],['p','Valutazioni del rischio'],['p','Segnalazioni'],['p','Checklist'],['t','Campi'],['t','Trattamenti']]],
   ['imp','Impostazioni','dati dell’operatore, avvisi, documenti, codice, studio','--f-imp','<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>',[['p','Dati dell’operatore'],['p','Avvisi via email'],['x','doc'],['p','Codice dell’Admin'],['p','Studio Gestionale']]]];
 function hadmVoce(tipo,n){
   if(tipo==='t'){ for(const [g,L] of Object.entries(TILES)){ const t=L.find(x=>x.n===n); if(t) return {n,c:t.c,d:t.d||'',i:svg(t.k),go:`apriPagina('${t.n.replace(/'/g,"\\'")}','${g}')`,vis:puoVedere(t.n)}; } return null; }
   if(tipo==='p'){ const t=(window.PANN_T||[]).find(x=>x.n===n); return t?{n:t.n.replace('Studio Gestionale','Studio'),c:t.c,d:t.d||'',i:t.i,go:t.go,vis:true}:null; }
+  if(n==='zd'){ const pr=(!OP.codice||/x{3}/i.test(OP.codice)?1:0)+(ZONEINFO?0:1)+(DRONI.some(d=>!d.qr)?1:0)+(ZONEINFO&&livZone()!=='ok'?1:0); return {n:'Zone e D-Flight',c:pr?pl(pr,'cosa da sistemare','cose da sistemare'):'mappa, file delle zone, dati D-Flight',d:pr?'warn':'',i:'<svg viewBox="0 0 24 24"><circle cx="12" cy="10" r="3"/><path d="M12 21s-7-6.5-7-11a7 7 0 0114 0c0 4.5-7 11-7 11z"/></svg>',go:'apriDflight()',vis:true}; }
   if(n==='zmappa') return {n:'Mappa delle zone',c:ZONEINFO?'tocchi un punto: quota e regole':'carica prima il file delle zone',d:'',i:'<svg viewBox="0 0 24 24"><circle cx="12" cy="10" r="3"/><path d="M12 21s-7-6.5-7-11a7 7 0 0114 0c0 4.5-7 11-7 11z"/></svg>',go:'apriMappaZone()',vis:true};
   if(n==='doc') return {n:'Documenti',c:DOCS.length?pl(DOCS.length,'caricato','caricati'):'si leggono da soli',d:'',i:'<svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z"/><path d="M12 17v-6M9 13l3-3 3 3"/></svg>',go:'apriDocumenti()',vis:true};
   if(n==='ctrl') return {n:'Controllo prima del volo',c:'drone, pilota, luogo',d:'',i:'<svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg>',go:"hadmApri('lav',1)",vis:true,ctrl:true};
@@ -4804,15 +4812,15 @@ function zoneDaJson(j){
   return out;
 }
 function livZone(){ if(!ZONEINFO) return 'ko'; const g=giorni(ZONEINFO.scade); return g<0?'ko':g<=7?'warn':'ok'; }
-function apriZone(){
-  if(!ADM) return;
-  const Z=ZONEINFO, lv=livZone();
-  document.getElementById('zn-info').innerHTML=Z?`<div class="riga-i"><span>Zone caricate</span><b>${Z.data} · ${Z.n.toLocaleString('it-IT')} zone</b></div>
-    <div class="riga-i"><span>Da aggiornare entro</span><b style="color:var(--${lv==='ok'?'ok':lv})">${Z.scade}</b></div>${Z.file?`<div class="riga-i"><span>File</span><b>${ESC(Z.file)}</b></div>`:''}`
-    :`<div class="riga-i"><span>Zone caricate</span><b style="color:var(--warn)">nessuna</b></div><div class="nota" style="margin-top:6px">Finché non carichi il file, nel controllo prima del volo il pilota apre la mappa D-Flight e segna «fatto» a mano.</div>`;
+function disegnaFileZone(){
+  const Z=ZONEINFO, lv=livZone(), e=document.getElementById('zn-info'); if(!e) return;
+  e.innerHTML=Z?`<div class="allegato" ${lv==='ok'?'':'style="background:var(--warn-bg)"'}><div class="mark ${lv==='ok'?'ok':'warn'}">${svg(lv==='ok'?'check':'esc')}</div><div class="f"><b>Caricato il ${ESC(Z.data)} · ${Z.n.toLocaleString('it-IT')} zone</b><br>${lv==='ok'?'vale fino al ':'da aggiornare entro il '}${ESC(Z.scade||'')}${Z.file?' · '+ESC(Z.file):''}</div></div>`
+    :`<div class="allegato" style="background:var(--warn-bg)"><div class="mark warn">${svg('esc')}</div><div class="f"><b>Da caricare</b><br>${ADM?'finché non c’è, il pilota guarda la mappa D-Flight e segna «fatto» a mano':'lo carica l’Admin'}</div></div>`;
+  document.getElementById('zn-adm').style.display=ADM?'':'none';
+  const b=document.getElementById('zn-btn'); if(b) b.lastChild.textContent=Z?'Carica il file del mese':'Carica il file delle zone';
   document.getElementById('zn-prog').style.display='none';
-  vai('zone','Regole e sicurezza &rsaquo; Zone di volo'); document.getElementById('back').onclick=()=>apriAdmin();
 }
+function apriZone(){ apriDflight(); setTimeout(()=>{ const e=document.getElementById('df-file'); e&&e.scrollIntoView({behavior:'smooth',block:'start'}); },150); }
 function scegliZone(){
   const i=document.createElement('input'); i.type='file'; i.accept='.zip,.json,.geojson,.gz,application/zip,application/json';
   i.onchange=()=>{ if(i.files[0]) caricaZone(i.files[0]); }; i.click();
@@ -6868,10 +6876,10 @@ const zmTipo=z=>z.r==='N'||(+z.lo||0)>=120?'N':(z.r==='P'||z.r==='A'?z.r:'C');
 const zmData=x=>{const d=x&&new Date(x); return d&&!isNaN(d)?fmtData(d):'';};
 function apriMappaZone(lat,lon,da){
   ZM.da=da||'';
-  vai('zmappa',(da==='ctrl'?'Controllo prima del volo &rsaquo; ':VISTA==='dflight'?'D-Flight &rsaquo; ':'')+'Mappa delle zone');
+  vai('zmappa',(da==='ctrl'?'Controllo prima del volo &rsaquo; ':VISTA==='dflight'?'Regole e sicurezza &rsaquo; Zone e D-Flight &rsaquo; ':'')+'Mappa delle zone');
   document.getElementById('back').onclick=()=>da==='ctrl'?vai('controllo','Controllo prima del volo'):apriDflight();
   document.getElementById('zm-info').innerHTML=ZONEINFO?'Zone dal file D-Flight del '+ZONEINFO.data+' ('+ZONEINFO.n.toLocaleString('it-IT')+' zone).':
-    '<b style="color:var(--warn)">Il file delle zone non è ancora caricato</b>: la mappa è vuota.'+(ADM?' Caricalo da Home › Regole e sicurezza › Zone di volo.':' Chiedi all’Admin di caricarlo.');
+    '<b style="color:var(--warn)">Il file delle zone non è ancora caricato</b>: la mappa è vuota.'+(ADM?' Caricalo da Home › Regole e sicurezza › Zone e D-Flight.':' Chiedi all’Admin di caricarlo.');
   let dove='';
   if(lat==null&&ZVERD&&ZVERD.pos){lat=ZVERD.pos.lat;lon=ZVERD.pos.lon;dove=ZVERD.pos.nome||'punto del controllo';}
   if(lat==null){ try{ const u=JSON.parse(localStorage.getItem('q120ZmUltimo')||'null'); if(u&&isFinite(u.lat)){lat=u.lat;lon=u.lon;dove=u.n+' (ultimo luogo cercato)';} }catch(e){} }
