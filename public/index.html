@@ -4812,10 +4812,21 @@ function passiVolo(){
       {t:'Torna al lavoro',p:'Home › «Clienti e lavori» › il lavoro.',w:'Dal lavoro parte il controllo prima del volo, con drone, pilota e luogo già scelti.',el:()=>gdTesto('#v-home .tile, #v-home li, #v-home button','Clienti e lavori')||gdVis('#tb-home'),ok:()=>VISTA==='lavoro'});
     S.push(
       {t:'Tocca «Fai il controllo prima del volo»',p:'In alto nella scheda del lavoro.',w:'Il controllo prende già drone, pilota e luogo del lavoro.',el:()=>gdTesto('#lw-azioni button','controllo prima del volo'),ok:()=>VISTA==='controllo'});
-  } else S.push(home,
+  } else { const io=ioPilota(), M=io?accVoci(io).filter(v=>!v.ok):[];
+    if(M.length){
+      const okV=k=>()=>{const p=ioPilota(); const v=p&&accVoci(p).find(x=>x.k===k); return !!(v&&v.ok);};
+      S.push({t:'Prima di tutto · completa il tuo account',p:'Ti '+(M.length===1?'manca 1 cosa':'mancano '+M.length+' cose')+': '+M.map(v=>v.t.replace(/^(La tua|I tuoi|Il tuo) /,'').toLowerCase()).join(', ')+'. Tocca «Account» in alto a destra.',w:'Senza questi dati il volo non si registra e non si firma come si deve. Si fa una volta: poi questi passi spariscono, e tornano solo se un attestato o la polizza scadono.',el:()=>gdVis('#chip'),vai:()=>apriAccount(),ok:()=>VISTA==='account'||!accMancano(ioPilota())});
+      const T={firma:['La tua firma','Firma nel riquadro con il dito e tocca «Salva la firma».','È obbligatoria: va nei documenti dei tuoi voli.','#ac-firma'],
+        att:['I tuoi attestati','Tocca «Carica» e fotografa l’attestato (A1-A3, A2, STS): Quota 120 legge numero e scadenza.','Senza un attestato valido per il drone il controllo prima del volo ti ferma.','#ac-v-att'],
+        rc:['L’assicurazione','Nessuna polizza ti copre: se hai una tua polizza tocca «Carica» e fotografa la quietanza, altrimenti avvisa l’Admin.','Senza assicurazione RC valida non si vola.','#ac-v-rc'],
+        inv:['L’invio automatico dei voli','Tocca «Imposta» e segui i passi sul telefono che usi con l’app DJI. Se ora non puoi (per esempio sei al computer), tocca «Avanti».','Poi i voli arrivano da soli quando chiudi l’app DJI.','#ac-v-inv'],
+        cont:['I tuoi contatti','Scrivi telefono ed email in «I miei dati» e tocca «Salva».','All’email arrivano gli avvisi delle tue scadenze.','#ac-dati']};
+      M.forEach(v=>{ const x=T[v.k]; if(!x) return; S.push({t:'Account · '+x[0],p:x[1],w:x[2],el:()=>VISTA==='account'?gdVis(x[3]):null,vai:()=>apriAccount(),ok:okV(v.k),nx:v.k==='inv'?1:undefined}); });
+    }
+    S.push(home,
       {t:'Il giorno del volo · scegli drone e pilota',p:'Nel riquadro del controllo prima del volo, in Home. Se l’azienda ti ha dato il codice lavoro, scrivilo.',w:'Con il codice lavoro il volo finisce da solo nel lavoro giusto.',el:()=>gdVis('#h-drone'),ok:()=>VISTA==='controllo'||!!((document.getElementById('h-drone')||{}).value&&(!gdVis('#h-pilota')||(document.getElementById('h-pilota')||{}).value))},
       {t:'Tocca «Dove sono ora»',p:'Il telefono dà la posizione: arrivano meteo e zone di quel punto.',w:'Il vento viene confrontato con il limite del tuo drone.',el:()=>gdTesto('#v-home button','Dove sono ora'),nx:1,opt:1},
-      {t:'Tocca «Inizia il controllo»',p:'In fondo al riquadro.',w:'Quota 120 controlla da solo attestati, assicurazione, drone, batterie, meteo e zone.',el:()=>gdVis('#h-btn'),ok:()=>VISTA==='controllo'});
+      {t:'Tocca «Inizia il controllo»',p:'In fondo al riquadro.',w:'Quota 120 controlla da solo attestati, assicurazione, drone, batterie, meteo e zone.',el:()=>gdVis('#h-btn'),ok:()=>VISTA==='controllo'}); }
   S.push(
     {t:'Sul posto · leggi le verifiche',p:'Ogni riga ha il suo esito. Quelle con un tasto vanno fatte adesso, sul posto.',w:'Una riga rossa senza tasto vuol dire che oggi non si vola.',el:()=>gdVis('#checks'),nx:1},
     {t:'D-Flight: apri la mappa e segna',p:'«Apri la mappa D-Flight», guarda il punto del volo, poi «Guardato: tutto a posto» oppure «C’è un avviso».',w:'Le zone le sa già Quota 120; gli avvisi del giorno (NOTAM) si vedono solo sulla mappa D-Flight.',el:()=>gdVis('.df-box'),ok:()=>!!NOTAM.stato},
@@ -4863,7 +4874,7 @@ function gdTick(){
   if(i!==GD.i||chiave!==GD.k){ const nuovo=i!==GD.i; GD.i=i; GD.k=chiave; if(fin) gdMarkDone(GD.g);
     const dots=N>14?`<span class="gd-prog"><i style="width:${Math.round((i+1)/N*100)}%"></i></span>`:Array.from({length:N},(_,j)=>`<span class="${j<=i?'on':''}"></span>`).join('');
     t.innerHTML=fin?`<div class="gd-n">Fatto</div><b>${ESC(G.n)}</b><p class="gd-end">${G.end}</p><div class="gd-bar"><span></span><button class="btn mini" onclick="gdStop()">Chiudi</button></div>`
-      :`<div class="gd-n">Passo ${i+1} di ${N} · ${ESC(G.n)}</div><b>${s.t}</b><p>${s.p}</p>${s.w?`<div class="gd-why"><b>Perché:</b> ${s.w}</div>`:''}<div class="gd-bar"><span class="gd-dots">${dots}</span><span class="gd-bb"><button class="gd-x" onclick="gdStop()">Esci</button>${!el&&!s.nx?(gdVaiDi(s)?`<button class="btn mini" onclick="gdPorta()">Portami lì</button>`:''):''}${s.nx?`<button class="btn mini" onclick="gdAvanti('${GD.g}:${i}')">Avanti</button>`:''}</span></div>${!el&&!s.nx&&!gdVaiDi(s)?'<div class="gd-qui">Non è in questa pagina: tocca «Indietro» in alto per tornare.</div>':''}`;
+      :`<div class="gd-n">Passo ${i+1} di ${N} · ${ESC(G.n)}</div><b>${s.t}</b><p>${s.p}</p>${s.w?`<div class="gd-why"><b>Perché:</b> ${s.w}</div>`:''}<div class="gd-bar"><span class="gd-dots">${dots}</span><span class="gd-bb"><button class="gd-x" onclick="gdStop()">Esci</button>${!el&&gdVaiDi(s)?`<button class="btn mini${s.nx?' sec':''}" onclick="gdPorta()">Portami lì</button>`:''}${s.nx?`<button class="btn mini" onclick="gdAvanti('${GD.g}:${i}')">Avanti</button>`:''}</span></div>${!el&&!s.nx&&!gdVaiDi(s)?'<div class="gd-qui">Non è in questa pagina: tocca «Indietro» in alto per tornare.</div>':''}`;
     if(el&&nuovo) try{const lg=el.offsetWidth>innerWidth-350||el.offsetHeight>innerHeight*0.45; el.style.scrollMarginTop='12px'; el.scrollIntoView({block:lg?'start':'center',behavior:'smooth'});}catch(e){} }
   if(fin||!el){ h.style.display='none'; t.style.left=Math.max(12,(innerWidth-t.offsetWidth)/2)+'px'; t.style.top=Math.max(12,innerHeight-t.offsetHeight-90)+'px'; return; }
   let r=el.getBoundingClientRect();
