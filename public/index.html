@@ -2364,16 +2364,25 @@ function apriLavori(){
   vai('lavori','Persone e attività &rsaquo; Clienti e lavori');
 }
 
-function problemiLavoro(l){
+// verifica di drone e pilota per quel lavoro, nel giorno del lavoro: [testo, cosa fare]
+function verificaAssegna(l){
   const d=DRONI.find(x=>x.id===l.drone), p=PILOTI.find(x=>x.id===l.pilota), out=[];
-  if(l.stato==='concluso') return out;
-  const [lv,t]=puoPilotare(p,d); if(lv==='ko') out.push(p.nome+': '+t.charAt(0).toLowerCase()+t.slice(1));
-  if(d.cat==='specific' && !AUT_ENAC.agricola) out.push('manca l\u2019autorizzazione ENAC per l\u2019'+d.nome.replace('DJI ',''));
+  if(!d||!p){ out.push(['Mancano '+(!d?'il drone':'il pilota'),'Sceglilo qui sopra.']); return out; }
+  const giorno=dt(l.data)||new Date();
+  const [lv,t]=puoPilotare(p,d); if(lv==='ko') out.push([p.nome+' non può usare il '+d.nome.replace('DJI ','')+': '+t.charAt(0).toLowerCase()+t.slice(1),'Scegli un pilota con l’attestato giusto, o un altro drone.']);
+  if(d.cat==='specific' && !AUT_ENAC.agricola) out.push(['Manca l’autorizzazione operativa ENAC per l’'+d.nome.replace('DJI ',''),'Finché non c’è, per questo lavoro usa un altro drone.']);
+  const att=Object.entries((SCHEDEP[p.id]||{}).att||{}).filter(([k,a])=>a.scad&&dt(a.scad)&&dt(a.scad)<giorno);
+  if(att.length) out.push(['L’attestato '+(ATTNOMI[att[0][0]]||att[0][0]).replace('Attestato ','')+' di '+p.nome+' scade il '+att[0][1].scad+', prima del lavoro','Fallo rinnovare prima, o scegli un altro pilota.']);
+  if(!ASSIC.scad||(dt(ASSIC.scad)&&dt(ASSIC.scad)<giorno)) out.push([ASSIC.scad?'L’assicurazione RC scade il '+ASSIC.scad+', prima del lavoro':'Manca l’assicurazione RC','Inseriscila o rinnovala nei dati dell’operatore.']);
+  if(!d.qr) out.push(['Il '+d.nome.replace('DJI ','')+' non ha il QR di D-Flight','Applica il QR (D-Flight › Droni e QR), o usa un altro drone.']);
+  const sf=typeof droneFermo==='function'?droneFermo(d):null; if(sf) out.push(['Il '+d.nome.replace('DJI ','')+' è fermo per una segnalazione','Lo sblocca l’Admin da Pannello Admin › Segnalazioni; intanto usa un altro drone.']);
   return out;
 }
+function problemiLavoro(l){ if(l.stato==='concluso') return []; return verificaAssegna(l).map(x=>x[0]); }
 
+let LAVCUR=null;
 function apriLavoro(id){
-  const l=LAVORI.find(x=>x.id===id), prob=problemiLavoro(l), s=LST[l.stato];
+  LAVCUR=id; const l=LAVORI.find(x=>x.id===id), prob=problemiLavoro(l), s=LST[l.stato];
   document.getElementById('lw-light').className='light '+(prob.length?'ko':s[0]);
   document.getElementById('lw-t').textContent=l.cliente+': '+l.titolo.toLowerCase()+(l.codice?' · codice '+l.codice:'');
   document.getElementById('lw-s').textContent= prob.length ? 'Così non si può volare: '+prob.join(' · ') : s[1]+' · '+l.data+(l.stato==='concluso'?'':' · drone e pilota in regola');
@@ -2395,7 +2404,9 @@ function apriLavoro(id){
   document.getElementById('lw-chi').innerHTML=
     `<li><div class="ico" style="background:var(--f-flotta)">${svg('drone')}</div><div class="main"><div class="b">Drone</div><select ${dis} onchange="LAVORI.find(x=>x.id===${l.id}).drone=+this.value;apriLavoro(${l.id})">${DRONI.map(x=>`<option value="${x.id}" ${x.id===l.drone?'selected':''}>${x.nome}</option>`).join('')}</select></div></li>
      <li><div class="ico" style="background:var(--f-persone)">${svg('pilota')}</div><div class="main"><div class="b">Pilota</div><select ${dis} onchange="LAVORI.find(x=>x.id===${l.id}).pilota=+this.value;apriLavoro(${l.id})">${PILOTI.map(x=>`<option value="${x.id}" ${x.id===l.pilota?'selected':''}>${x.nome}</option>`).join('')}</select></div></li>
-     <li><div class="mark ${lv}">${svg(lv==='ok'?'check':'x')}</div><div class="main"><div class="a">${lv==='ok'?'Il pilota può usare questo drone':'Il pilota non può usare questo drone'}</div><div class="b">${t}</div></div></li>`;
+     <li id="lw-verifica">${(()=>{ const V=l.stato==='concluso'?[]:verificaAssegna(l);
+       return V.length?`<div class="mark ko">${svg('x')}</div><div class="main"><div class="a">Così questo lavoro non si può fare</div>${V.map(x=>`<div class="b" style="margin-top:4px"><b style="color:var(--ink)">${ESC(x[0])}</b><br>Cosa fare: ${ESC(x[1])}</div>`).join('')}</div>`
+         :`<div class="mark ok">${svg('check')}</div><div class="main"><div class="a">Drone e pilota vanno bene per questo lavoro</div><div class="b">${t} · attestati, assicurazione e QR validi il ${ESC(l.data)}</div></div>`; })()}</li>`;
 
   const pr=PREV.find(x=>x.id===l.prev);
   const verde=(tit,sub,btn)=>`<div class="allegato"><div class="mark ok">${svg('check')}</div><div class="f"><b>${tit}</b><br>${sub}</div>${btn||''}</div>`;
@@ -4331,17 +4342,21 @@ function guidaVolo(){ VOLO_S=null; gdStart('unvolo'); }
 function passiVolo(){
   const S=[], zg=ZONEINFO&&ZONEINFO.scade?giorni(ZONEINFO.scade):null, zoneDaFare=!ZONEINFO||(zg!=null&&zg<=7);
   const home={t:'Vai alla Home',p:'Tocca «Home» in alto o nella barra in basso.',w:'Ogni parte di Quota 120 parte dalla Home.',el:()=>gdVis('#tb-home')||gdVis('#nb-home'),ok:()=>VISTA==='home'};
+  const lavOk=()=>{ const l=LAVORI.find(x=>x.id===LAVCUR); return VISTA==='lavoro'&&!!l&&!verificaAssegna(l).length; };
   if(ADM){
+    S.push(
+      {t:'Prima di tutto · apri «Clienti e lavori»',p:'Dalla Home, il riquadro «Clienti e lavori».',w:'Si parte dal lavoro: lì si sceglie chi vola e con quale drone.',el:()=>gdTesto('#v-home .tile, #v-home li, #v-home button','Clienti e lavori'),ok:()=>VISTA==='lavori'||VISTA==='lavoro'},
+      {t:'Tocca il lavoro',p:'Quello che stai per assegnare.',w:'Ogni lavoro ha il suo luogo, la sua data, il suo pilota e il suo drone.',el:()=>gdVis('#v-lavori li[onclick]'),ok:()=>VISTA==='lavoro'},
+      {t:'Verifica drone e pilota',get p(){ const l=LAVORI.find(x=>x.id===LAVCUR), V=l?verificaAssegna(l):[]; return V.length?'Qui sotto è rosso: '+V[0][0]+'. Cambia drone o pilota finché diventa verde «Drone e pilota vanno bene per questo lavoro».':'Verde: drone e pilota vanno bene per questo lavoro. Vai avanti.'; },
+       w:'Prima di assegnare il lavoro: Quota 120 controlla attestato giusto per quel drone, scadenze nel giorno del lavoro, assicurazione, QR e autorizzazione ENAC.',el:()=>gdVis('#lw-chi'),ok:lavOk},
+      {t:'La valutazione del rischio del luogo',p:'Se manca, tocca «Fai la valutazione del rischio» (2 minuti); se c’è già, vai avanti.',w:'Si fa una volta per luogo: le misure scelte te le ricorda il controllo prima del volo.',el:()=>gdVis('#lw-rischio'),nx:1});
     if(zoneDaFare) S.push(
-      {t:'Prima del volo · le zone D-Flight',p:ZONEINFO?'Il file delle zone è del '+ZONEINFO.data+' e sta per scadere: va aggiornato. Tocca «Pannello Admin».':'Il file ufficiale delle zone non è ancora caricato. Tocca «Pannello Admin».',w:'Con il file delle zone, nel controllo prima del volo Quota 120 dice da solo se nel punto si può volare e fino a che altezza.',el:()=>gdVis('#admbtn'),ok:()=>VISTA==='admin'||VISTA==='zone'},
+      {t:'Le zone D-Flight · Pannello Admin',p:ZONEINFO?'Il file delle zone è del '+ZONEINFO.data+' e sta per scadere: va aggiornato. Tocca «Pannello Admin».':'Il file ufficiale delle zone non è ancora caricato. Tocca «Pannello Admin».',w:'Con il file delle zone, nel controllo prima del volo Quota 120 dice da solo se nel punto si può volare e fino a che altezza.',el:()=>gdVis('#admbtn'),ok:()=>VISTA==='admin'||VISTA==='zone'},
       P_TILE('Zone di volo',()=>VISTA==='zone','Qui si carica il file ufficiale di D-Flight.'),
       {t:'Scarica il file da D-Flight',p:'Tocca «Apri D-Flight», entra con il tuo account, nel profilo dell’operatore tocca «Download UAS Zone Geo» e salva il file.',w:'È il file ufficiale con tutte le zone d’Italia: vale circa un mese.',el:()=>gdTesto('#v-zone button','D-Flight'),nx:1},
-      {t:'Carica il file in Quota 120',p:'Tocca «Carica il file delle zone» e scegli il file appena scaricato.',w:'Da adesso le zone si controllano da sole, anche senza rete nella zona del volo.',el:()=>gdVis('#zn-btn'),nx:1});
+      {t:'Carica il file in Quota 120',p:'Tocca «Carica il file delle zone» e scegli il file appena scaricato.',w:'Da adesso le zone si controllano da sole, anche senza rete nella zona del volo.',el:()=>gdVis('#zn-btn'),nx:1},
+      {t:'Torna al lavoro',p:'Home › «Clienti e lavori» › il lavoro.',w:'Dal lavoro parte il controllo prima del volo, con drone, pilota e luogo già scelti.',el:()=>gdTesto('#v-home .tile, #v-home li, #v-home button','Clienti e lavori')||gdVis('#tb-home'),ok:()=>VISTA==='lavoro'});
     S.push(
-      {t:'Il lavoro · apri «Clienti e lavori»',p:'Dalla Home, il riquadro «Clienti e lavori».',w:'Il volo si collega al lavoro: così finisce nel rapporto e nella fattura del cliente.',el:()=>gdTesto('#v-home .tile, #v-home li, #v-home button','Clienti e lavori'),ok:()=>VISTA==='lavori'||VISTA==='lavoro'},
-      {t:'Tocca il lavoro di oggi',p:'Quello che stai per fare.',w:'Il calendario ti avvisa se pilota o drone sono già impegnati quel giorno.',el:()=>gdVis('#v-lavori li[onclick]'),ok:()=>VISTA==='lavoro'},
-      {t:'Chi vola e con cosa',p:'Controlla pilota e drone del lavoro. Il pilota deve avere l’attestato giusto: A2 per i droni di classe C2, STS per gli agricoli. Se serve, cambiali qui.',w:'Se pilota e drone non vanno insieme, il controllo prima del volo dà rosso e non si vola.',el:()=>gdVis('#lw-chi'),nx:1},
-      {t:'La valutazione del rischio del luogo',p:'Se manca, tocca «Fai la valutazione del rischio» (2 minuti); se c’è già, vai avanti.',w:'Si fa una volta per luogo: le misure scelte te le ricorda il controllo prima del volo.',el:()=>gdVis('#lw-rischio'),nx:1},
       {t:'Tocca «Fai il controllo prima del volo»',p:'In alto nella scheda del lavoro.',w:'Il controllo prende già drone, pilota e luogo del lavoro.',el:()=>gdTesto('#lw-azioni button','controllo prima del volo'),ok:()=>VISTA==='controllo'});
   } else S.push(home,
       {t:'Il giorno del volo · scegli drone e pilota',p:'Nel riquadro del controllo prima del volo, in Home. Se l’azienda ti ha dato il codice lavoro, scrivilo.',w:'Con il codice lavoro il volo finisce da solo nel lavoro giusto.',el:()=>gdVis('#h-drone'),ok:()=>VISTA==='controllo'||!!((document.getElementById('h-drone')||{}).value&&(!gdVis('#h-pilota')||(document.getElementById('h-pilota')||{}).value))},
