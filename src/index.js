@@ -313,18 +313,20 @@ function mailHtml(nomeOp, righe, perAdmin, url) {
     <a href="${url}" style="display:inline-block;margin-top:16px;background:#1D5C7C;color:#fff;border-radius:8px;padding:12px 18px;font-weight:bold;text-decoration:none">Apri Quota 120</a>
     <p style="font-size:12.5px;color:#5E6D77;margin-top:18px;border-top:1px solid #E3E8EB;padding-top:10px">Ricevi questa mail perché ${perAdmin ? "sei l'Admin" : "sei un pilota"}${nomeOp ? " di " + esc(nomeOp) : ""} su Quota 120.${perAdmin ? " Per cambiare cosa ricevi: Pannello Admin › Avvisi via email." : " Per non riceverle più, chiedi all'Admin."}</p></div>`;
 }
-async function mandaMail(env, a, oggetto, html) {
-  if (env.POSTA_FINTA === "1") { (globalThis.__POSTA = globalThis.__POSTA || []).push({ a, oggetto, html }); return; }   // solo per le prove in locale
+async function mandaMail(env, a, oggetto, html, allegati, rispondi) {
+  const RISP = rispondi || env.RISPOSTE;
+  allegati = allegati || [];
+  if (env.POSTA_FINTA === "1") { (globalThis.__POSTA = globalThis.__POSTA || []).push({ a, oggetto, html, allegati: allegati.map(x => x.nome + " (" + x.b64.length + ")") }); return; }   // solo per le prove in locale
   // Resend (se c'è la sua chiave) oppure Brevo
   if (env.RESEND_API_KEY && env.MITTENTE) {
     const r = await fetch("https://api.resend.com/emails", { method: "POST", headers: { authorization: "Bearer " + env.RESEND_API_KEY, "content-type": "application/json" },
-      body: JSON.stringify(Object.assign({ from: "Quota 120 <" + env.MITTENTE + ">", to: [a], subject: oggetto, html }, env.RISPOSTE ? { reply_to: env.RISPOSTE } : {})) });
+      body: JSON.stringify(Object.assign({ from: "Quota 120 <" + env.MITTENTE + ">", to: [a], subject: oggetto, html }, RISP ? { reply_to: RISP } : {}, allegati.length ? { attachments: allegati.map(x => ({ filename: x.nome, content: x.b64 })) } : {})) });
     if (!r.ok) { const t = await r.text().catch(() => ""); throw new Error("La posta non ha accettato la mail (" + r.status + ") " + t.slice(0, 160)); }
     return;
   }
   if (!env.BREVO_API_KEY || !env.MITTENTE) throw new Error("posta:" + [env.RESEND_API_KEY || env.BREVO_API_KEY ? "" : "manca la chiave della posta (RESEND_API_KEY)", env.MITTENTE ? "" : "manca il mittente (MITTENTE)", "il programma vede: " + (Object.keys(env).filter(k => /KEY|MITTENTE|RISPOSTE/.test(k)).join(", ") || "nessuna impostazione")].filter(Boolean).join(" · "));
   const r = await fetch("https://api.brevo.com/v3/smtp/email", { method: "POST", headers: { "api-key": env.BREVO_API_KEY, "content-type": "application/json", accept: "application/json" },
-    body: JSON.stringify(Object.assign({ sender: { name: "Quota 120", email: env.MITTENTE }, to: [{ email: a }], subject: oggetto, htmlContent: html }, env.RISPOSTE ? { replyTo: { email: env.RISPOSTE } } : {})) });
+    body: JSON.stringify(Object.assign({ sender: { name: "Quota 120", email: env.MITTENTE }, to: [{ email: a }], subject: oggetto, htmlContent: html }, RISP ? { replyTo: { email: RISP } } : {}, allegati.length ? { attachment: allegati.map(x => ({ name: x.nome, content: x.b64 })) } : {})) });
   if (!r.ok) { const t = await r.text().catch(() => ""); throw new Error("La posta non ha accettato la mail (" + r.status + ") " + t.slice(0, 160)); }
 }
 const EMAIL = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e || "").trim());
@@ -687,6 +689,20 @@ export class Stato extends DurableObject {
       const nome = esc(decodeURIComponent(request.headers.get("x-nome") || "documento"), 120);
       await st.put("docinfo:" + did, { mime, pezzi, size: buf.byteLength, nome, da: me.n, at: now, confermato: false });
       return J({ id: did, nome, size: buf.byteLength });
+    }
+    // manda un documento (es. la valutazione del rischio in PDF) per email, con l'allegato; la risposta arriva all'operatore
+    if (p === "/api/doc/invia" && request.method === "POST") {
+      let b; try { b = await request.json(); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
+      const info = await st.get("docinfo:" + b.d); if (!info) return J({ errore: "Documento non trovato" }, 404);
+      if (!adm && info.da !== me.n) return J({ errore: "Non puoi mandarlo" }, 403);
+      const a = String(b.a || "").trim(); if (!EMAIL(a)) return J({ errore: "Indirizzo email non valido" }, 400);
+      const parti = []; for (let i = 0; i < info.pezzi; i++) parti.push(await st.get("doc:" + b.d + ":" + i));
+      const buf = await new Blob(parti).arrayBuffer(), m = await leggiMain(), op = m ? String((m.d.OP || {}).nome || "").replace(/ \(dati di esempio\)/, "") : "";
+      const testo = esc(String(b.testo || "").slice(0, 2000), 2000).replace(/\n/g, "<br>");
+      const html = `<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;color:#0F1C26;font-size:15px;line-height:1.5">${testo}<p style="font-size:12.5px;color:#5E6D77;margin-top:18px;border-top:1px solid #E3E8EB;padding-top:10px">Inviato da ${esc(op || "l'operatore", 120)} con Quota 120. In allegato: ${esc(info.nome, 120)}.</p></div>`;
+      try { await mandaMail(this.env, a, esc(String(b.oggetto || info.nome), 160), html, [{ nome: info.nome, b64: b64(buf) }], m && EMAIL((m.d.OP || {}).email) ? m.d.OP.email : null); }
+      catch (e) { return J({ errore: String(e.message || e).replace(/^posta:/, "La posta non è pronta: ").slice(0, 300) }, 502); }
+      return J({ ok: true });
     }
     if (p === "/api/doc/leggi" && request.method === "POST") {
       let b; try { b = await request.json(); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
