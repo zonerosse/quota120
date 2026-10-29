@@ -930,6 +930,18 @@
   .interr input:checked+span{background:var(--ok)}
   .interr input:checked+span::after{left:25px}
   .interr input:focus-visible+span{outline:3px solid #E8A317;outline-offset:2px}
+.ml-card .ml-lav{padding:12px 14px;border-top:1px solid var(--line)}
+.ml-card h2{display:flex;align-items:baseline;gap:8px}.ml-card h2 small{margin-left:auto;font-size:13px;font-weight:500;color:var(--muted)}
+.ml-card>.ml-lav:first-of-type{border-top:0}
+.ml-q{display:inline-block;font-size:12.5px;font-weight:700;border-radius:5px;padding:2px 8px;background:var(--notte,#132A3A);color:#fff;margin-bottom:5px}
+.ml-q.dom{background:var(--accent)}.ml-q.poi{background:var(--line);color:var(--ink)}
+.ml-lav b.t{display:block;font-size:16px}.ml-i{font-size:13.5px;color:var(--muted);margin-top:2px}
+.ml-v{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;margin-top:8px;border-radius:8px;padding:7px 9px}
+.ml-v.ok{background:var(--ok-bg);color:var(--ok)}.ml-v.ko{border:1.5px solid var(--ko);color:var(--ko)}
+.ml-v svg{width:16px;height:16px;flex:none;margin-top:1px;stroke:currentColor;fill:none;stroke-width:2.6}
+.ml-lav .row{margin-top:10px}.ml-lav .row .btn{text-decoration:none}
+.ml-fatti summary{padding:11px 14px;cursor:pointer;font-weight:600;color:var(--muted);border-top:1px solid var(--line)}
+.ml-fatti .ml-lav{opacity:.8}.ml-vuoto{padding:14px;color:var(--muted);font-size:14px}
 </style>
 </head>
 <body>
@@ -2642,7 +2654,7 @@ function verificaAssegna(l){
   const d=DRONI.find(x=>x.id===l.drone), p=PILOTI.find(x=>x.id===l.pilota), out=[];
   if(!d||!p){ out.push(['Mancano '+(!d?'il drone':'il pilota'),'Sceglilo qui sopra.']); return out; }
   const giorno=dt(l.data)||new Date();
-  const [lv,t]=puoPilotare(p,d); if(lv==='ko') out.push([p.nome+' non può usare il '+d.nome.replace('DJI ','')+': '+t.charAt(0).toLowerCase()+t.slice(1),'Scegli un pilota con l’attestato giusto, o un altro drone.']);
+  const [lv,t]=puoPilotare(p,d); if(lv==='ko') out.push([p.nome+' non può usare '+(/^[AEIOU]/i.test(d.nome.replace('DJI ',''))?'l’':'il ')+d.nome.replace('DJI ','')+': '+t.charAt(0).toLowerCase()+t.slice(1),'Scegli un pilota con l’attestato giusto, o un altro drone.']);
   if(d.cat==='specific' && !AUT_ENAC.agricola) out.push(['Manca l’autorizzazione operativa ENAC per l’'+d.nome.replace('DJI ',''),'Finché non c’è, per questo lavoro usa un altro drone.']);
   const att=Object.entries((SCHEDEP[p.id]||{}).att||{}).filter(([k,a])=>a.scad&&dt(a.scad)&&dt(a.scad)<giorno);
   if(att.length) out.push(['L’attestato '+(ATTNOMI[att[0][0]]||att[0][0]).replace('Attestato ','')+' di '+p.nome+' scade il '+att[0][1].scad+', prima del lavoro','Fallo rinnovare prima, o scegli un altro pilota.']);
@@ -3884,7 +3896,7 @@ function calTodo(x){
 
 function homeA(todo){
   const o=new Date(), dr=droniMiei(), av=todo.map((x,i)=>[x,i]).filter(([x])=>x.liv!=='ok'||todo.length===1);
-  return `<div class="cab-riga"><span>${ADM?ESC(OP.nome||'')+(OP.codice&&!/x{3}/i.test(OP.codice)?' · <b>'+ESC(OP.codice)+'</b>':''):'Pilota di '+ESC((OP.nome||'').replace(/ \(dati di esempio\)/,''))}</span>
+  return mieiLavori()+`<div class="cab-riga"><span>${ADM?ESC(OP.nome||'')+(OP.codice&&!/x{3}/i.test(OP.codice)?' · <b>'+ESC(OP.codice)+'</b>':''):'Pilota di '+ESC((OP.nome||'').replace(/ \(dati di esempio\)/,''))}</span>
       <span>${GIORNI[o.getDay()].slice(0,3).toLowerCase()} ${String(o.getDate()).padStart(2,'0')}/${String(o.getMonth()+1).padStart(2,'0')} · <b>${ora()}</b></span></div>
     <div class="cab-pf"><div class="h">PRIMA DEL VOLO</div>
       <div class="hsel ${ADM?'':'uno'}">${selDrone()}${ADM?selPilota():`<span style="display:none">${selPilota()}</span>`}</div>
@@ -3941,6 +3953,39 @@ function hadmToggle(k,on){ if(on) HADM_APERTE.add(k); else HADM_APERTE.delete(k)
 function hadmApri(k,ctrl){ if(VISTA!=='home') vai('home'); HADM_APERTE.add(k); const d=document.getElementById('ha-'+k); if(d) d.open=true;
   setTimeout(()=>{ const e=document.getElementById(ctrl?'ha-ctrl':'ha-'+k); if(e) e.scrollIntoView({behavior:'smooth',block:'start'}); if(ctrl){ const s=document.getElementById('h-drone'); s&&s.focus(); } },80); }
 
+/* ---------- «I miei lavori» nella Home del pilota: i lavori che l'Admin gli ha assegnato ---------- */
+function mieiLavori(){
+  if(ADM&&!COME) return ''; const p=ioPilota(); if(!p) return '';
+  const o=new Date(new Date().toDateString()), mio=LAVORI.filter(l=>l.pilota===p.id);
+  const aperti=mio.filter(l=>l.stato!=='concluso').sort((a,b)=>(dt(a.data)||0)-(dt(b.data)||0));
+  const fatti=mio.filter(l=>l.stato==='concluso').sort((a,b)=>(dt(b.data)||0)-(dt(a.data)||0)).slice(0,5);
+  if(!aperti.length&&!fatti.length) return '';
+  const OK='<svg viewBox="0 0 24 24"><path d="M5 12l4 4 10-10"/></svg>', KO='<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+  const riga=l=>{
+    const g=dt(l.data), gg=g?Math.round((new Date(g.toDateString())-o)/864e5):null, d=DRONI.find(x=>x.id===l.drone);
+    const q=gg==null?['poi',l.data||'senza data']:gg<0?['',(gg===-1?'Ieri':'Dal '+l.data)]:gg===0?['','Oggi']:gg===1?['dom','Domani']:['poi',GIORNI[g.getDay()].slice(0,3)+' '+g.getDate()+' '+MESI_L[g.getMonth()].slice(0,3)];
+    const V=verificaAssegna(l), oggiSi=gg!=null&&gg<=0;
+    const mail=OP.email?`mailto:${encodeURIComponent(OP.email)}?subject=${encodeURIComponent('Lavoro '+(l.codice||l.cliente)+': così non si vola')}&body=${encodeURIComponent(V.map(x=>'- '+x[0]).join('\n'))}`:OP.tel?'tel:'+String(OP.tel).replace(/\s/g,''):'';
+    return `<div class="ml-lav" id="ml-${l.id}"><span class="ml-q ${q[0]}">${ESC(q[1])}</span>
+      <b class="t">${ESC(l.cliente)} · ${ESC(String(l.titolo||'').toLowerCase())}</b>
+      <div class="ml-i">${ESC([l.luogo,d?d.nome:'drone da scegliere',l.codice?'codice '+l.codice:''].filter(Boolean).join(' · '))}</div>
+      ${V.length?`<div class="ml-v ko">${KO}<span><b>Così non si vola:</b> ${ESC(V.map((x,i)=>{let t=x[0].replace(p.nome+' non può','non puoi').replace(' di '+p.nome,'').replace(' copre '+p.nome,' ti copre'); return /^[A-Z][a-z]/.test(t)&&!/^(DJI|D-Flight|ENAC)/.test(t)?t.charAt(0).toLowerCase()+t.slice(1):t;}).join('; '))}. Avvisa l’Admin: può cambiare drone o pilota.</span></div>`
+        :`<div class="ml-v ok">${OK}<span>${oggiSi?'Tutto a posto: puoi fare il controllo e volare.':'Tutto a posto per ora. Il giorno del lavoro rifai il controllo.'}</span></div>`}
+      <div class="row">${oggiSi?`<button class="btn" type="button" ${V.length?'disabled':''} onclick="controlloDaLavoro(${l.id},this)"><span class="spin"></span>Fai il controllo</button>`:''}${V.length&&mail?`<a class="btn sec" href="${mail}">Avvisa l’Admin</a>`:''}${l.luogo?`<button class="btn sec" type="button" onclick="zmLavoro(${l.id})">Mappa delle zone</button>`:''}</div></div>`;};
+  return `<div class="card ml-card" id="h-miei"><h2>I miei lavori <small>${aperti.length?pl(aperti.length,'in arrivo','in arrivo'):'nessuno in arrivo'}</small></h2>
+    ${aperti.map(riga).join('')||'<div class="ml-vuoto">Nessun lavoro in arrivo. Quando l’Admin te ne assegna uno, lo trovi qui.</div>'}
+    ${fatti.length?`<details class="ml-fatti"><summary>Lavori fatti (${fatti.length})</summary>${fatti.map(l=>{const n=voliLavoro(l).length;return `<div class="ml-lav"><b class="t">${ESC(l.cliente)} · ${ESC(String(l.titolo||'').toLowerCase())}</b><div class="ml-i">${ESC(l.data||'')} · ${n?pl(n,'volo','voli'):'nessun volo registrato'} · concluso</div></div>`;}).join('')}</details>`:''}</div>`;
+}
+function zmLavoro(id){
+  const l=LAVORI.find(x=>x.id===id); if(!l) return;
+  apriMappaZone(null,null,'lav'); document.getElementById('back').onclick=()=>vai('home');
+  document.getElementById('zm-da').textContent='Cerco '+l.luogo+'…';
+  zmGeo(String(l.luogo).replace(/\s*\(.*\)/,'')).then(x=>{ if(VISTA!=='zmappa') return;
+    if(!x){ document.getElementById('zm-da').textContent='Non trovo «'+l.luogo+'»: cercalo qui sotto.'; return; }
+    document.getElementById('zm-da').textContent='Aperta su: lavoro '+(l.codice||'')+' · '+l.luogo+', '+l.data;
+    caricaLeaflet().then(()=>{ setTimeout(()=>{ ZM.m&&ZM.m.setView([x.latitude,x.longitude],13); zmCarica(x.latitude,x.longitude).then(()=>zmScegli(x.latitude,x.longitude,1)); },80); }); });
+}
+
 function homeB(todo){
   const o=new Date(), p=ioPilota();
   let quadro;
@@ -3958,6 +4003,7 @@ function homeB(todo){
   const sc=todo.map((x,i)=>[x,i]);
   return `<div class="pl-data">${GIORNI[o.getDay()]} ${o.getDate()} ${MESI_L[o.getMonth()]}<b>${ADM?ESC((OP.nome||'Quota 120').replace(/ \(dati di esempio\)/,'')):'Ciao '+ESC((IO.n||'').split(' ')[0])}</b></div>
     <div class="pl-quadro">${quadro}</div>
+    ${mieiLavori()}
     <div class="card pl-ctrl"><h2>Controllo prima del volo</h2>
       <div class="hsel ${ADM?'':'uno'}">${selDrone()}${ADM?selPilota():`<span style="display:none">${selPilota()}</span>`}</div>
       ${campiLavoro()}
@@ -3990,7 +4036,7 @@ function homeC(todo){
         <div class="fl-num"><div><b>${vm.length}</b>voli mese</div><div><b>${minOre(min)}</b>volate</div></div></div></div>
       <button class="az" onclick="${st==='ok'?`apriPilota(${p.id})`:'apriDocumenti()'}">${st==='ok'?'Vedi la tua scheda':'Carica il nuovo attestato'}</button></div>`;
   }
-  return `<div class="card fl-oggi"><h2>Il lavoro di oggi</h2>${ADM?`<div style="margin-bottom:10px"><label for="h-pilota">Chi vola</label>${selPilota()}</div>`:`<span style="display:none">${selPilota()}</span>`}${campiLavoro()}
+  return mieiLavori()+`<div class="card fl-oggi"><h2>Il lavoro di oggi</h2>${ADM?`<div style="margin-bottom:10px"><label for="h-pilota">Chi vola</label>${selPilota()}</div>`:`<span style="display:none">${selPilota()}</span>`}${campiLavoro()}
     <div class="nota">Poi tocca «Controlla e vola» sul drone che usi.</div></div><span style="display:none">${selDrone()}</span>
     <div class="hcap" style="margin-top:4px;font-size:24px;color:var(--ink)">${ADM?'I tuoi droni':'Droni che puoi usare'} <small>${pl(dr.length,'drone','droni')}</small></div>
     <div class="fl-grid">${dr.map(card).join('')||`<div class="card">${ADM?'Nessun drone ancora.':'Nessun drone affidato: chiedi all’Admin.'}</div>`}</div>
