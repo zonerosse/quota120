@@ -204,7 +204,7 @@ function unisci(full, m, n) {
   if (me && m.SCHEDEP) {
     const x = m.SCHEDEP[me.id] || m.SCHEDEP[String(me.id)];
     if (x && typeof x === "object") { const sp = (d.SCHEDEP = d.SCHEDEP || {})[me.id] = d.SCHEDEP[me.id] || { ruolo: "Pilota", ore: "0 h", voli: 0, ore90: "0 h", inc: 0, att: {} };
-      if (typeof x.tel === "string") sp.tel = esc(x.tel, 30); if (typeof x.email === "string") sp.email = EMAIL(x.email) ? x.email.trim().slice(0, 120) : ""; }
+      if (typeof x.tel === "string") sp.tel = esc(x.tel, 30); if (typeof x.email === "string") sp.email = EMAIL(x.email) ? x.email.trim().slice(0, 120) : "";       if (x.dfOk && typeof x.dfOk === "object") sp.dfOk = { il: DATA(x.dfOk.il) || oggi() }; else if ("dfOk" in sp) delete sp.dfOk; }
   }
   // la firma del pilota: la mette solo lui, dal suo telefono (immagine PNG piccola)
   if (me && m.SCHEDEP) {

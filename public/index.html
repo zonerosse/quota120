@@ -808,6 +808,8 @@
   .ac-voce .mark{width:26px;height:26px;border-radius:7px;flex:none;display:flex;align-items:center;justify-content:center}.ac-voce .t{flex:1;min-width:0}.ac-voce .t b{display:block}
   .ac-voce small{display:block;color:var(--muted);font-size:13px}.ac-voce small.r{color:var(--ko);font-weight:600}.ac-voce .num{font-weight:700;font-size:13px;color:var(--muted);width:14px;text-align:center;flex:none}
   .ac-bb{display:flex;flex-direction:column;gap:6px}
+  .ac-ol{margin:6px 0 0;padding-left:20px;font-size:14.5px}.ac-ol li{margin:4px 0}.ac-df{border-left:5px solid var(--accent)}
+  .df-entra{font-size:13.5px;color:var(--muted);margin-top:8px;line-height:1.4}
   .ac-banda{display:flex;gap:10px;align-items:center;background:#fff;border:1.5px solid var(--ko);border-radius:10px;padding:10px 12px;margin:0 0 10px}.ac-banda b{color:var(--ko)}.ac-banda .btn{margin-left:auto}
   .fi-pad{position:relative;border:1.5px dashed #9aa6b1;border-radius:10px;background:#fbfcfd;touch-action:none}
   .fi-pad canvas{display:block;width:100%;height:190px;cursor:crosshair;touch-action:none}
@@ -1486,6 +1488,14 @@
     <div class="card" id="ac-chi"></div>
     <div class="card" style="margin-top:12px"><h2>Per volare servono</h2><div id="ac-voci"></div></div>
     <div class="card" style="margin-top:12px" id="ac-firma"><h2>La mia firma</h2><div id="ac-firma-c"></div></div>
+    <div class="card ac-df" style="margin-top:12px" id="ac-df"><h2>Come si entra in D-Flight</h2>
+      <div style="font-size:14.5px">La mappa D-Flight si vede solo dopo aver fatto l’accesso. Serve:</div>
+      <ol class="ac-ol">
+        <li><b>Un account D-Flight con abbonamento</b> (BASIC o PRO). Di solito è quello dell’operatore: nome utente e password te li dà l’Admin. Se sei tu l’operatore, ti registri su d-flight.it › Accedi ai servizi › Registrati.</li>
+        <li><b>Il primo accesso da questo telefono</b> (o computer): apri la mappa, scrivi nome utente e password e, quando il browser chiede di salvare la password, tocca <b>Salva</b>. Le volte dopo entri con un tocco.</li>
+        <li>Torna qui e tocca <b>Fatto</b>.</li></ol>
+      <div class="nota" style="margin-top:6px">La password non passa da Quota 120: la tiene solo il tuo browser.</div>
+      <div class="row"><button class="btn" type="button" onclick="window.open(DFLIGHT_MAPPA,'_blank')">Apri la mappa D-Flight</button><button class="btn sec" type="button" id="ac-df-ok" onclick="accDf(1)">Fatto: sono entrato</button></div></div>
     <div class="card" style="margin-top:12px"><h2>I miei dati</h2><div id="ac-dati"></div></div>
     <div class="card" style="margin-top:12px" id="ac-tel"><h2>Il mio telefono</h2><div id="ac-tel-c"></div></div>
     <div class="nota" style="margin-top:10px">L’Admin vede le stesse spunte nella tua scheda: se manca qualcosa, la vede in rosso.</div>
@@ -2052,7 +2062,7 @@ function disegnaControllo(){
     let act='';
     if(x.act==='zone' && !zoneOk && false) act=`<button class="btn sec mini" onclick="window.open(DFLIGHT_MAPPA,'_blank')">Apri D-Flight</button><button class="btn mini" onclick="lavora(this,()=>{zoneOk=true;ZONE.unshift({data:oggi(),ora:ora(),drone:dSel.nome,pilota:pSel.nome});disegnaControllo();})"><span class="spin"></span>Fatto</button>`;
     if(x.act==='zona') act=`<button class="btn sec mini" onclick="window.open(DFLIGHT_MAPPA,'_blank')">Apri D-Flight</button><button class="btn mini" onclick="autorizzazioneZona()">Ho l’autorizzazione</button>`;
-    if(x.act==='df') act=`<div class="df-box"><button class="btn sec mini" id="df-mappa" onclick="window.open(DFLIGHT_MAPPA,'_blank')">Apri la mappa D-Flight</button><div class="df-due"><button class="btn mini" id="nt-no" onclick="dfFatto(this)"><span class="spin"></span>Guardato: tutto a posto</button><button class="btn sec mini" onclick="notamC()">C’è un avviso</button></div><a href="#" class="df-extra" id="nt-mappa" onclick="window.open(NOTAM_MAPPA,'_blank');return false">Controllo in più (facoltativo): mappa degli avvisi senza account, non ufficiale, in inglese</a></div>`;
+    if(x.act==='df') act=`<div class="df-box"><button class="btn sec mini" id="df-mappa" onclick="window.open(DFLIGHT_MAPPA,'_blank')">Apri la mappa D-Flight</button><div class="df-due"><button class="btn mini" id="nt-no" onclick="dfFatto(this)"><span class="spin"></span>Guardato: tutto a posto</button><button class="btn sec mini" onclick="notamC()">C’è un avviso</button></div><a href="#" class="df-extra" id="nt-mappa" onclick="window.open(NOTAM_MAPPA,'_blank');return false">Controllo in più (facoltativo): mappa degli avvisi senza account, non ufficiale, in inglese</a><div class="df-entra">${DF_ENTRA()}</div></div>`;
     if(x.cambia) act=`<button class="btn sec mini" onclick="NOTAM={};disegnaControllo()">Cambia</button>`;
     if(x.pd) act=`<button class="btn mini" id="c-pd" onclick="cambiaPD()">Cambia pilota o drone</button>`;
     if(x.act==='rischio') act=`<button class="btn mini" onclick="rischioDaCtrl()">Fai la valutazione</button>`;
@@ -2799,7 +2809,7 @@ function apriDflight(){
   document.getElementById('df-hub').innerHTML=B('zmappa','Mappa delle zone in Quota 120','Tocca dove vuoi volare: fino a che quota si vola, le regole della zona e a chi chiedere.','apriMappaZone()')+B('mappa','Mappa: zone e avvisi del giorno','Prima di ogni volo. Una volta entrato, cerca il paese in alto.')+
     B('prof','Profilo dell’operatore','Codice ITA e abbonamento. Qui c’è «Download UAS Zone Geo»: il file delle zone da caricare in Quota 120 (Pannello Admin › Zone di volo).')+
     B('qr','Droni e QR','Per un drone nuovo: «Associa un UAS», poi scarica il suo QR da attaccare sul drone.')+
-    `<div class="df-tip"><b>Entra una volta sola.</b> D-Flight chiede il suo account (gratis). La prima volta, quando il telefono chiede di salvare la password, tocca <b>Salva</b>: le volte dopo entri con un tocco.</div>`;
+    `<div class="df-tip">${DF_ENTRA()}</div>`;
   const chk='<svg viewBox="0 0 24 24">'+IC.check+'</svg>';
   document.getElementById('df-op').innerHTML=[['Codice operatore',cod?OP.codice:'da inserire',cod],['Registrato il',OP.dfReg||'—',!!OP.dfReg,!OP.dfReg],['Abbonamento',OP.dfAbb?'fino al '+OP.dfAbb:'da inserire',abb==='ok'],['QR sui droni',qrOk+' su '+DRONI.length,qrOk===DRONI.length],['File delle zone',ZONEINFO?'del '+ZONEINFO.data+(zg!=null&&zg<=7?' · da aggiornare':''):'da caricare',!!ZONEINFO&&!(zg!=null&&zg<=7)]]
     .map(x=>`<div class="fld"><div class="k">${x[2]?chk:''}${x[0]}</div><div class="v" style="${x[2]?'':x[3]?'color:var(--muted);font-weight:500':'color:var(--ko)'}">${ESC(x[1])}</div></div>`).join('')+(ADM?`<div class="row" style="grid-column:1/-1"><button class="btn sec mini" onclick="apriAdmin('ad-op')">Cambia i dati</button></div>`:'');
@@ -4820,6 +4830,7 @@ function passiVolo(){
         att:['I tuoi attestati','Tocca «Carica» e fotografa l’attestato (A1-A3, A2, STS): Quota 120 legge numero e scadenza.','Senza un attestato valido per il drone il controllo prima del volo ti ferma.','#ac-v-att'],
         rc:['L’assicurazione','Nessuna polizza ti copre: se hai una tua polizza tocca «Carica» e fotografa la quietanza, altrimenti avvisa l’Admin.','Senza assicurazione RC valida non si vola.','#ac-v-rc'],
         inv:['L’invio automatico dei voli','Tocca «Imposta» e segui i passi sul telefono che usi con l’app DJI. Se ora non puoi (per esempio sei al computer), tocca «Avanti».','Poi i voli arrivano da soli quando chiudi l’app DJI.','#ac-v-inv'],
+        df:['L’accesso a D-Flight','Apri la mappa D-Flight, entra con nome utente e password (di solito te li dà l’Admin), salva la password nel telefono, poi tocca «Fatto: sono entrato».','Senza accesso non vedi la mappa né gli avvisi del giorno.','#ac-df'],
         cont:['I tuoi contatti','Scrivi telefono ed email in «I miei dati» e tocca «Salva».','All’email arrivano gli avvisi delle tue scadenze.','#ac-dati']};
       M.forEach(v=>{ const x=T[v.k]; if(!x) return; S.push({t:'Account · '+x[0],p:x[1],w:x[2],el:()=>VISTA==='account'?gdVis(x[3]):null,vai:()=>apriAccount(),ok:okV(v.k),nx:v.k==='inv'?1:undefined}); });
     }
@@ -5906,6 +5917,10 @@ function stampaRischio(r){
 
 /* ---------- mappa del volo (Leaflet, OpenStreetMap) ---------- */
 let LEAF=null;
+const DF_ENTRA=()=>ADM?'D-Flight ti chiede di entrare: usa il <b>tuo account D-Flight di operatore</b> (quello con l’abbonamento). Al primo accesso da questo computer o telefono, quando il browser chiede di salvare la password, tocca <b>Salva</b>: le volte dopo entri con un tocco. Ai piloti dai nome utente e password, oppure ognuno usa un suo account con abbonamento.'
+  :'D-Flight ti chiede di entrare: serve un <b>account D-Flight con abbonamento</b>. Di solito è quello dell’operatore: nome utente e password te li dà l’Admin. Al primo accesso, quando il telefono chiede di salvare la password, tocca <b>Salva</b>: le volte dopo entri con un tocco.';
+function accDf(on){ const p=ioPilota(); if(!p) return; const s=SCHEDEP[p.id]=SCHEDEP[p.id]||{ruolo:'Pilota',ore:'0 h',voli:0,ore90:'0 h',inc:0,att:{}};
+  if(on) s.dfOk={il:oggi()}; else delete s.dfOk; controllaModifiche(); disegnaAccount(); disegnaChip(); toast(on?'Segnato: accesso a D-Flight fatto':'Tolto'); }
 /* ---------- Account del pilota: le cose che servono per volare, i suoi dati, il suo telefono ---------- */
 function accVoci(p){
   const s=SCHEDEP[p.id]||{}, oggiD=new Date(new Date().toDateString());
@@ -5916,7 +5931,8 @@ function accVoci(p){
     {k:'att',ok:attOk,t:'I tuoi attestati',d:(att.length?att.map(([k,a])=>(ATTNOMI[k]||k).replace('Attestato ','')+(livData(a.scad)==='ko'?' scaduto il ':' fino al ')+a.scad+(a.file?'':' (documento da caricare)')).join(' · '):'Nessun attestato inserito')},
     {k:'rc',ok:rc.ok,t:'Assicurazione RC',d:rc.ok?(rc.chi==='personale'?'Coperto dalla tua polizza fino al '+rc.scad+(rc.ver?'':' (l’Admin deve verificarla)'):'Coperto dalla polizza aziendale fino al '+rc.scad):'Nessuna polizza valida: senza non si vola'},
     {k:'inv',ok:!!inv,t:'Invio automatico dei voli',d:inv?'Ultimo invio il '+new Date(INVIO.ultimo.at).toLocaleDateString('it-IT'):'Da impostare · così i voli arrivano da soli quando chiudi l’app DJI'},
-    {k:'cont',ok:!!(s.tel&&s.email),t:'I tuoi contatti',d:s.tel&&s.email?ESC(s.tel)+' · '+ESC(s.email):'Telefono ed email per gli avvisi delle scadenze'}];
+    {k:'cont',ok:!!(s.tel&&s.email),t:'I tuoi contatti',d:s.tel&&s.email?ESC(s.tel)+' · '+ESC(s.email):'Telefono ed email per gli avvisi delle scadenze'},
+    {k:'df',ok:!!s.dfOk,t:'Accesso a D-Flight',d:s.dfOk?'Fatto il '+s.dfOk.il+': la mappa e gli avvisi del giorno si aprono con un tocco':'Da fare una volta su questo telefono · serve per vedere la mappa e gli avvisi del giorno'}];
 }
 function accMancano(p){ return p?accVoci(p).filter(v=>!v.ok).length:0; }
 function apriAccount(){
@@ -5931,11 +5947,12 @@ function disegnaAccount(){
     att:()=>`<div class="ac-bb"><button class="btn sec mini" type="button" onclick="apriPilota(${p.id})">Vedi</button><button class="btn mini" type="button" onclick="apriDocumenti()">Carica</button></div>`,
     rc:()=>`<div class="ac-bb"><button class="btn sec mini" type="button" onclick="apriPilota(${p.id});setTimeout(()=>{const e=document.getElementById('pi-rc-c');e&&e.scrollIntoView({behavior:'smooth'})},120)">Vedi</button><button class="btn mini" type="button" onclick="apriDocumenti()">Carica</button></div>`,
     inv:v=>`<button class="btn mini ${v.ok?'sec':''}" type="button" onclick="apriInvio()">${v.ok?'Vedi':'Imposta'}</button>`,
-    cont:v=>`<button class="btn mini ${v.ok?'sec':''}" type="button" onclick="document.getElementById('ac-dati').scrollIntoView({behavior:'smooth',block:'center'})">${v.ok?'Cambia':'Scrivi'}</button>`};
+    cont:v=>`<button class="btn mini ${v.ok?'sec':''}" type="button" onclick="document.getElementById('ac-dati').scrollIntoView({behavior:'smooth',block:'center'})">${v.ok?'Cambia':'Scrivi'}</button>`,
+    df:v=>v.ok?`<button class="btn sec mini" type="button" onclick="window.open(DFLIGHT_MAPPA,'_blank')">Apri</button>`:`<div class="ac-bb"><button class="btn sec mini" type="button" onclick="document.getElementById('ac-df').scrollIntoView({behavior:'smooth',block:'center'})">Come si fa</button><button class="btn mini" type="button" onclick="accDf(1)">Fatto</button></div>`};
   document.getElementById('ac-chi').innerHTML=`<div class="ac-chi"><i>${iniziali(p.nome)}</i><div><b>${ESC(p.nome)}</b><span>${ESC(s.ruolo||'Pilota')}${p.matr?' · matricola '+ESC(p.matr):''}${OP.nome?' · '+ESC(String(OP.nome).replace(/ \(dati di esempio\)/,'')):''}</span></div></div>`;
   document.getElementById('ac-voci').innerHTML=`<div class="ac-prog"><div class="bar"><i style="width:${Math.round(n/V.length*100)}%"></i></div>${n} su ${V.length}</div>`+
     V.map((v,i)=>`<div class="ac-voce" id="ac-v-${v.k}"><span class="num">${i+1}</span>${mk(v.ok)}<div class="t"><b>${v.t}</b><small class="${v.ok?'':'r'}">${v.d}</small>${v.k==='att'?'<small>Rinnovato, o ne hai uno nuovo (STS, patentino)? Carica la foto: Quota 120 legge numero e scadenza.</small>':v.k==='rc'?'<small>Hai una tua polizza (libero professionista)? Carica la quietanza.</small>':''}</div>${bt[v.k](v)}</div>`).join('');
-  padFirma('ac-firma-c',p.id);
+  padFirma('ac-firma-c',p.id); { const b=document.getElementById('ac-df-ok'); if(b){ b.textContent=s.dfOk?'Fatto il '+s.dfOk.il+' · togli':'Fatto: sono entrato'; b.onclick=()=>accDf(!s.dfOk); } }
   document.getElementById('ac-dati').innerHTML=`<div class="fgrid">
     <div class="fld"><div class="k">Nome e cognome</div><div class="v">${ESC(p.nome)}</div></div>
     <div class="fld"><div class="k">Matricola (la cambia l’Admin)</div><div class="v">${ESC(p.matr||'—')}</div></div>
