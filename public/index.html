@@ -746,8 +746,7 @@
 .cal-leg{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:8px}.cal-leg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
 .perche{margin-top:12px;border:1px solid var(--ko);border-left:4px solid var(--ko);border-radius:8px;padding:10px 12px;background:#fff}.perche>b{color:var(--ko);font-size:16px}
 .perche ol{margin:6px 0 0;padding-left:20px}.perche li{margin:6px 0;font-size:15px;line-height:1.4}.perche .m{display:block;font-weight:700}.perche .d{display:block;color:var(--ink3)}.perche .f{display:block;font-weight:600;color:var(--ink)}
-.h-ruolo{display:flex;gap:12px;align-items:center;background:#E8C15A;color:var(--notte);border-radius:12px;padding:12px 16px;margin:0 0 12px}.h-ruolo svg{width:28px;height:28px;stroke:var(--notte);fill:none;stroke-width:2;flex:none}
-.h-ruolo b{display:block;font-size:19px}.h-ruolo small{display:block;font-size:14.5px;line-height:1.35}
+.h-ruolo{display:flex;gap:8px;align-items:center;background:#FBF6E6;border:1px solid #EBD9A3;border-left:3px solid #E8C15A;color:var(--ink3);border-radius:8px;padding:6px 12px;margin:0 0 10px;font-size:14.5px}.h-ruolo svg{width:17px;height:17px;stroke:#A5862A;fill:none;stroke-width:2;flex:none}.h-ruolo b{color:var(--notte)}
 .guida-volo{display:flex;gap:14px;align-items:center;width:100%;border:0;border-radius:12px;background:var(--notte);padding:14px 16px;margin:0 0 14px;text-align:left;font:inherit;color:#fff;cursor:pointer;box-shadow:0 2px 8px rgba(15,28,38,.18)}
 .guida-volo .gv-logo{flex:none;border-radius:12px;outline:2px solid rgba(255,255,255,.25)}.guida-volo b{display:block;font-size:20px;line-height:1.2;letter-spacing:.01em}.guida-volo small{display:block;color:#C9D6DE;font-size:15px;margin-top:3px;line-height:1.35}
 .guida-volo .go{margin-left:auto;color:#E8C15A;font-weight:700;font-size:30px;line-height:1}.guida-volo:hover{background:#1C3A4F}.guida-volo:focus-visible{outline:3px solid #E8C15A;outline-offset:2px}
@@ -1678,7 +1677,7 @@ const TILES = {
 function disegnaHome(){
   const vd=(document.getElementById('h-drone')||{}).value||'', vp=(document.getElementById('h-pilota')||{}).value||'';
   contaRiquadri(); disegnaPannello();
-  { const e=document.getElementById('h-ruolo'); if(e) e.innerHTML=ADM&&!COME?`<div class="h-ruolo"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8.5-7 10-4-1.5-7-5-7-10V6z"/></svg><div><b>Sei nella Home dell’Admin</b><small>Vedi e gestisci tutto. Per vedere quello che vede un pilota tocca «Vista operatore» in alto.</small></div></div>`:''; }
+  { const e=document.getElementById('h-ruolo'); if(e) e.innerHTML=ADM&&!COME?`<div class="h-ruolo"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8.5-7 10-4-1.5-7-5-7-10V6z"/></svg><span><b>Home dell’Admin</b> · vedi e gestisci tutto</span></div>`:''; }
   { const a=LAVORI.filter(l=>l.stato!=='concluso').length; TILES.attivita[2].c=pl(a,'lavoro aperto','lavori aperti'); }
   { const n=Object.values(SCHEDE).filter(s=>s.man.liv!=='ok').length; TILES.flotta[2].c=n?pl(n,'in scadenza','in scadenza'):'in regola'; TILES.flotta[2].d=n?'warn':''; }
   { const n=TRATT.filter(t=>t.stato!=='ok').length; TILES.regole[3].c=n?pl(n,'da completare','da completare'):'quaderno in regola'; TILES.regole[3].d=n?'warn':''; }
