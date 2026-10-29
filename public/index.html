@@ -87,8 +87,9 @@
   .hidden{display:none}
   /* registro voli */
   .tot{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-  .tot div{background:var(--card);border:1px solid var(--line);border-radius:9px;padding:8px 10px;flex:1;min-width:90px}
-  .tot b{display:block;font-size:17px;white-space:nowrap}
+  .tot div{background:var(--card);border:1px solid var(--line);border-radius:9px;padding:8px 10px;flex:1;min-width:0}
+  .tot b{display:block;font-size:17px;line-height:1.15}
+  @media (max-width:420px){.tot{gap:6px}.tot div{padding:8px}.tot b{font-size:15.5px}}
   .tot span{font-size:12px;color:var(--muted)}
   .vlist{list-style:none;margin:0;padding:0}
   .vlist li{display:flex;align-items:center;gap:10px;padding:9px 4px;border-top:1px solid var(--line);cursor:pointer}
@@ -649,7 +650,7 @@
   .gd-tip.dock{width:min(720px,calc(100vw - 24px));padding:10px 16px}.gd-tip.dock p{margin-bottom:6px}.gd-tip.dock .gd-why{margin-bottom:8px}
   .gd-why{background:#EEF3F6;border-left:3px solid var(--accent);border-radius:6px;padding:7px 9px;font-size:13.5px;margin:0 0 10px}.gd-why b{display:inline!important;font-size:13.5px!important}
   .gd-bar{display:flex;justify-content:space-between;align-items:center;gap:8px}.gd-bb{display:flex;gap:10px;align-items:center}
-  .gd-dots{display:flex;gap:4px}.gd-dots span{width:8px;height:8px;border-radius:50%;background:#D5DDE2}.gd-dots span.on{background:#132A3A}
+  .gd-dots{display:flex;gap:4px}.gd-dots span{width:8px;height:8px;border-radius:50%;background:#D5DDE2}.gd-dots span.on{background:#132A3A}.gd-dots span.gd-prog{width:90px;height:6px;border-radius:3px;background:#D5DDE2;overflow:hidden;display:block}.gd-prog i{display:block;height:100%;background:#132A3A}
   .gd-x{background:none;border:0;color:var(--ink3);font:500 14px "Barlow",Arial,sans-serif;cursor:pointer;text-decoration:underline}
   .gd-n{font-size:12px;font-weight:700;color:var(--ink3);margin-bottom:4px}
   .gd-dim{position:fixed;inset:0;background:rgba(15,25,33,.55);z-index:100002;display:none}.gd-dim.on{display:block}
@@ -747,7 +748,7 @@
 .cal-leg{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:8px}.cal-leg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
 .perche{margin-top:12px;border:1px solid var(--ko);border-left:4px solid var(--ko);border-radius:8px;padding:10px 12px;background:#fff}.perche>b{color:var(--ko);font-size:16px}
 .perche ol{margin:6px 0 0;padding-left:20px}.perche li{margin:6px 0;font-size:15px;line-height:1.4}.perche .m{display:block;font-weight:700}.perche .d{display:block;color:var(--ink3)}.perche .f{display:block;font-weight:600;color:var(--ink)}
-.h-ruolo{display:flex;gap:8px;align-items:center;background:#FBF6E6;border:1px solid #EBD9A3;border-left:3px solid #E8C15A;color:var(--ink3);border-radius:8px;padding:6px 12px;margin:0 0 10px;font-size:14.5px}.h-ruolo svg{width:17px;height:17px;stroke:#A5862A;fill:none;stroke-width:2;flex:none}.h-ruolo b{color:var(--notte)}
+.h-giro{margin-left:auto;background:none;border:0;padding:2px 0;font:inherit;font-weight:600;color:#7a6320;text-decoration:underline;cursor:pointer;white-space:nowrap}.h-ruolo{display:flex;gap:8px;align-items:center;background:#FBF6E6;border:1px solid #EBD9A3;border-left:3px solid #E8C15A;color:var(--ink3);border-radius:8px;padding:6px 12px;margin:0 0 10px;font-size:14.5px}.h-ruolo svg{width:17px;height:17px;stroke:#A5862A;fill:none;stroke-width:2;flex:none}.h-ruolo b{color:var(--notte)}
 .guida-volo{display:flex;gap:14px;align-items:center;width:100%;border:0;border-radius:12px;background:var(--notte);padding:14px 16px;margin:0 0 14px;text-align:left;font:inherit;color:#fff;cursor:pointer;box-shadow:0 2px 8px rgba(15,28,38,.18)}
 .guida-volo .gv-logo{flex:none;border-radius:12px;outline:2px solid rgba(255,255,255,.25)}.guida-volo b{display:block;font-size:20px;line-height:1.2;letter-spacing:.01em}.guida-volo small{display:block;color:#C9D6DE;font-size:15px;margin-top:3px;line-height:1.35}
 .guida-volo .go{margin-left:auto;color:#E8C15A;font-weight:700;font-size:30px;line-height:1}.guida-volo:hover{background:#1C3A4F}.guida-volo:focus-visible{outline:3px solid #E8C15A;outline-offset:2px}
@@ -1686,7 +1687,7 @@ const TILES = {
 function disegnaHome(){
   const vd=(document.getElementById('h-drone')||{}).value||'', vp=(document.getElementById('h-pilota')||{}).value||'';
   contaRiquadri(); disegnaPannello();
-  { const e=document.getElementById('h-ruolo'); if(e) e.innerHTML=ADM&&!COME?`<div class="h-ruolo"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8.5-7 10-4-1.5-7-5-7-10V6z"/></svg><span><b>Home dell’Admin</b> · vedi e gestisci tutto</span></div>`:''; }
+  { const e=document.getElementById('h-ruolo'); if(e) e.innerHTML=ADM&&!COME?`<div class="h-ruolo"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8.5-7 10-4-1.5-7-5-7-10V6z"/></svg><span><b>Home dell’Admin</b> · vedi e gestisci tutto</span>${gdOn()?`<button class="h-giro" id="h-giro" onclick="gdStart('giro')">Giro delle voci</button>`:''}</div>`:''; }
   { const a=LAVORI.filter(l=>l.stato!=='concluso').length; TILES.attivita[2].c=pl(a,'lavoro aperto','lavori aperti'); }
   { const n=Object.values(SCHEDE).filter(s=>s.man.liv!=='ok').length; TILES.flotta[2].c=n?pl(n,'in scadenza','in scadenza'):'in regola'; TILES.flotta[2].d=n?'warn':''; }
   { const n=TRATT.filter(t=>t.stato!=='ok').length; TILES.regole[3].c=n?pl(n,'da completare','da completare'):'quaderno in regola'; TILES.regole[3].d=n?'warn':''; }
@@ -4044,7 +4045,63 @@ const P_VOLI={t:'Apri il registro voli',p:'Tocca «Voli» nella barra in basso (
   el:()=>gdVis('#nb-voli')||gdTesto('#v-home .tile, #v-home li, #v-home button','Registro voli'),ok:()=>['voli','importa','fotovolo','volo'].includes(VISTA)};
 const P_PAG=(nome,viste)=>({t:'Apri «'+nome+'»',p:'È tra i riquadri della Home.',w:'Ogni parte di Quota 120 parte dalla Home.',el:()=>gdTesto('#v-home .tile, #v-home li, #v-home button',nome),ok:()=>viste.includes(VISTA)});
 const P_HOME={t:'Vai alla Home',p:'Tocca «Home» in alto o nella barra in basso.',w:'Il controllo prima del volo parte dalla pagina iniziale.',el:()=>gdVis('#tb-home')||gdVis('#nb-home'),ok:()=>VISTA!=='admin'&&(VISTA==='home'||VISTA==='controllo')};
+
+/* giro dell'Admin: ogni voce della Home e del Pannello, cosa fa, perché e quando si compila */
+const GV=(t,p,w,q,el,opt)=>Object.assign({t,p,w:w+(q?'<br><b>Quando:</b> '+q:''),el,nx:1},opt?{opt:1}:{});
+const gvH=f=>()=>VISTA==='home'&&!COME?f():null;
+const gvA=f=>()=>VISTA==='admin'?f():null;
+const gvVoce=n=>gvH(()=>{for(const e of document.querySelectorAll('#v-home .tile, #v-home .lista li, #v-home .cab-str button')){const t=(e.textContent||'').replace(/\s+/g,' ').trim(); if(t.startsWith(n)){const r=e.getBoundingClientRect(); if(r.width&&r.height) return e;}} return null;});
+const gvTile=n=>gvA(()=>gdTesto('#ad-tiles .tile',n));
 const GUIDES={
+ giro:{n:'Giro dell’Admin: Home e Pannello, voce per voce',r:'adm',base:()=>0,done:()=>false,
+  why:{h:'Il giro di tutte le voci',p:'Ti mostro ogni voce della Home Admin e del Pannello Admin: cosa fa, perché c’è e quando va compilata. Non devi toccare niente: leggi e premi «Avanti».',uses:['Home Admin: barra in alto, controllo, scadenze e tutti i riquadri','Pannello Admin: telefoni, permessi, dati, zone, avvisi e gli altri comandi riservati'],tm:'Ci vogliono circa 10 minuti. Puoi uscire quando vuoi e riprendere dopo.'},
+  end:'Hai visto tutte le voci. Ogni pagina ha poi il suo tasto «Guidami» con le guide passo passo per compilarla.',
+  S:[
+   {t:'Vai alla Home Admin',p:'Tocca «Home Admin» in alto.',w:'Il giro parte dalla pagina iniziale.',el:()=>gdVis('#tb-home'),ok:()=>VISTA==='home'&&!COME},
+   GV('Home Admin','La tua pagina iniziale: da qui vedi lo stato di tutto e apri ogni parte del programma.','ci torni ogni volta che entri.','tutti i giorni, per vedere cosa c’è da sistemare.',gvH(()=>gdVis('#tb-home'))),
+   GV('Pannello Admin','I comandi che può usare solo l’Admin. Il pallino rosso vuol dire che un telefono aspetta la tua approvazione.','è separato dal resto, così i piloti non ci arrivano.','quando arriva un pilota o un drone nuovo, o quando c’è il pallino rosso.',gvH(()=>gdVis('#admbtn'))),
+   GV('Vista operatore','Ti fa vedere Quota 120 come lo vede un pilota, senza poter cambiare niente.','così controlli cosa vede ognuno prima di dargli i permessi.','dopo aver deciso i permessi di un pilota.',gvH(()=>gdVis('#tb-op'))),
+   GV('Guida','Accende o spegne i tasti «Guidami» e le guide come questa.','quando conosci il programma la spegni e lo schermo è più pulito.','tienila accesa le prime settimane.',gvH(()=>gdVis('#gd-sw')),1),
+   GV('Aspetto','Cambia come è fatta la Home: Cabina, Plancia o Flotta. Ognuno sceglie il suo.','le informazioni sono le stesse, cambia solo come sono disposte.','una volta, quando trovi quello che ti piace.',gvH(()=>gdVis('#asp-btn')),1),
+   GV('Modalità sole','Contrasto massimo per leggere lo schermo all’aperto.','sotto il sole lo schermo si legge male.','sul campo, quando serve.',gvH(()=>gdVis('#sole-btn')),1),
+   GV('Voli arrivati','Quando arrivano voli dai telefoni dei piloti compare questa riga.','Quota 120 li legge da solo: qui vedi solo quelli che hanno bisogno di te, per esempio un drone che non riconosce.','quando la riga c’è, tocca «Apri».',gvH(()=>gdVis('#rete')),1),
+   GV('Home dell’Admin','Questa striscia ti ricorda dove sei: nella Home dell’Admin vedi tutti i piloti e tutti i droni.','i piloti hanno una Home diversa, con solo le loro cose.','',gvH(()=>gdVis('#h-ruolo .h-ruolo'))),
+   GV('Guidami in un volo','Tutte le operazioni di un volo in ordine: zone D-Flight, verifica, rischio, controllo, registro e chiusura.','ti accompagna senza dover ricordare l’ordine dei passi.','le prime volte che organizzi un lavoro, o quando non ricordi un passo.',gvH(()=>gdVis('#h-guidavolo'))),
+   GV('Pannello Admin nella Home','Le stesse voci del Pannello Admin, a portata di mano. Le vediamo una per una alla fine del giro.','così i comandi che usi più spesso sono subito sotto il dito.','',gvH(()=>gdVis('#v-home .card.pannello'))),
+   GV('Il colpo d’occhio','Quanti droni sono pronti, quanti piloti sono in regola e quante cose sono urgenti.','in un secondo capisci se la giornata parte bene.','ogni mattina. Se un numero è rosso, guarda la lista delle scadenze.',gvH(()=>gdVis('#v-home .pl-quadro')||gdVis('#v-home .cab-riga')),1),
+   GV('Controllo prima del volo','Scegli drone, pilota, data e luogo (oppure il codice lavoro) e tocca «Inizia»: Quota 120 controlla attestati, assicurazione, QR, manutenzione, zone e meteo.','di solito lo fa il pilota sul posto; tu lo puoi usare per provare un lavoro in anticipo.','prima di ogni volo.',gvH(()=>gdVis('#v-home .pl-ctrl')||gdVis('#v-home .cab-pf')||gdVis('#v-home .fl-oggi'))),
+   GV('Scadenze e cose da sistemare','Tutto quello che scade o manca, in ordine di urgenza. Tocca una riga e ti porta dove si sistema.','rosso vuol dire subito, giallo presto.','ogni giorno, finché la lista non è vuota.',gvH(()=>gdVis('#v-home .pl-due .lista')||gdVis('#v-home .cab-av')||gdVis('#v-home .lista')),1),
+   GV('Droni','La scheda di ogni drone: classe, matricola, QR, ore di volo, documenti e manutenzioni.','senza la scheda il controllo prima del volo non sa cosa serve per quel drone.','quando compri un drone; ore e voli poi si aggiornano da soli.',gvVoce('Droni')),
+   GV('Batterie','Cicli, salute e andamento delle celle di ogni batteria.','una batteria che peggiora si vede prima che dia problemi in volo.','quando compri una batteria; i dati arrivano dai registri DJI.',gvVoce('Batterie')),
+   GV('Manutenzioni','Le manutenzioni previste dal costruttore, calcolate sulle ore di volo vere.','un drone senza manutenzione è un rischio e va fermato.','quando il drone torna dall’assistenza: segna la manutenzione fatta con la ricevuta.',gvVoce('Manutenzioni')),
+   GV('Inventario','I kit di ogni drone (radiocomando, caricabatterie, eliche, accessori), ognuno con il suo QR, e cosa c’è da riordinare.','sul campo non deve mancare niente.','quando compri qualcosa o quando un pezzo è da riordinare.',gvVoce('Inventario')),
+   GV('Piloti','La scheda di ogni pilota: attestati, polizza personale, droni che può usare e ore di volo.','il controllo prima del volo usa questi dati per dire se può volare.','appena un pilota ha un attestato, e quando lo rinnova.',gvVoce('Piloti')),
+   GV('Registro voli','Tutti i voli, arrivati dai telefoni o inseriti a mano. Si scarica in PDF o in Excel.','è il registro che ENAC può chiederti.','quando ci sono voli segnati «da completare».',gvVoce('Registro voli')),
+   GV('Clienti e lavori','Ogni lavoro con cliente, data, luogo, pilota e drone. Da qui partono verifica, valutazione del rischio e rapporto per il cliente.','il codice del lavoro collega i voli al lavoro giusto.','appena accetti un lavoro.',gvVoce('Clienti e lavori')),
+   GV('Preventivi','I preventivi per i clienti, che poi diventano lavori e fatture.','i dati si scrivono una volta sola.','quando un cliente chiede un prezzo.',gvVoce('Preventivi')),
+   GV('Calendario','Lavori e scadenze giorno per giorno, anche sul calendario del telefono.','vedi subito se lo stesso pilota o drone ha due lavori, e il vento previsto.','quando organizzi la settimana.',gvVoce('Calendario')),
+   GV('Autorizzazioni ENAC','Autorizzazione operativa per i voli in categoria Specific, manuale delle operazioni e polizza aziendale.','senza autorizzazione i droni Specific restano fermi.','quando ENAC ti rilascia l’autorizzazione: caricala da Documenti.',gvVoce('Autorizzazioni ENAC')),
+   GV('D-Flight','Codice operatore, abbonamento, QR dei droni, mappa delle zone e avvisi del giorno.','senza codice operatore e QR non si vola.','alla registrazione su D-Flight e a ogni drone nuovo.',gvVoce('D-Flight')),
+   GV('Campi','I campi dei clienti agricoli, con superficie e coltura.','servono per i trattamenti e il quaderno di campagna.','solo se fai agricoltura, al primo lavoro su quel campo.',gvVoce('Campi'),1),
+   GV('Trattamenti','Il quaderno di campagna: prodotto, dose, campo e data di ogni trattamento.','va tenuto in regola: ogni trattamento si annota entro 30 giorni.','dopo ogni trattamento.',gvVoce('Trattamenti'),1),
+   GV('Segnala un problema','Incidenti, guasti, perdita del segnale.','alcuni fatti vanno segnalati per legge: Quota 120 ti dice dove ed entro quando.','subito dopo il fatto.',gvH(()=>gdVis('#v-home .docbar.hsegn'))),
+   GV('Documenti','Carichi una foto o un PDF: Quota 120 lo legge e lo mette nella scheda giusta (attestati, polizze, autorizzazioni, fatture).','niente da ricopiare a mano.','ogni volta che arriva un documento nuovo.',gvH(()=>gdVis('#v-home .docbar.hdoc:not(.hsegn)'))),
+   GV('La barra in basso','Home, Controllo, Voli e Documenti, sempre a portata di dito sul telefono.','sono le quattro cose che si usano di più.','',gvH(()=>gdVis('#nb-home')&&gdVis('#nb-home').parentElement),1),
+   Object.assign({},P_ADMIN,{p:'È in alto, accanto a Home Admin. Ora vediamo le voci del Pannello.'}),
+   GV('Telefoni collegati','I telefoni dei piloti che chiedono di entrare e quelli già approvati.','nessuno entra senza il tuo sì. Approva solo se il codice è quello che il pilota vede sul suo telefono.','quando un pilota ti detta il suo codice di 4 cifre.',gvTile('Telefoni collegati')),
+   GV('Utenti e permessi','Per ogni pilota: matricola, cosa può vedere (voli di tutti, flotta, documenti, clienti, prezzi, ENAC, agricoltura) e il blocco.','ognuno vede solo quello che gli serve.','quando aggiungi un pilota o cambia il suo ruolo; «Blocca» se lascia l’azienda.',gvTile('Utenti e permessi')),
+   GV('Aggiungi pilota','Nome e cognome, matricola aziendale e ruolo.','senza questo il pilota non può entrare dal suo telefono.','per ogni pilota nuovo, prima che provi a entrare.',gvTile('Aggiungi pilota')),
+   GV('Aggiungi drone','Nome, classe, peso e data di acquisto.','il controllo prima del volo parte dai dati del drone.','per ogni drone nuovo, prima del primo volo.',gvTile('Aggiungi drone')),
+   GV('Avvisi via email','A chi mandare le mail delle scadenze e con quanto anticipo.','non devi ricordarti niente: le scadenze te le ricorda Quota 120.','una volta all’inizio; poi aggiungi l’email dei piloti che vuoi avvisare.',gvTile('Avvisi via email')),
+   GV('Dati dell’operatore','Nome dell’azienda, codice operatore D-Flight, responsabile, email e telefono.','finiscono nei rapporti, nei preventivi e nelle mail. Senza codice operatore resta in rosso.','subito, la prima volta; il codice D-Flight appena lo hai.',gvTile('Dati dell’operatore')),
+   GV('Zone di volo','Il file mensile delle zone di D-Flight, che Quota 120 usa per sapere dove si può volare.','le zone cambiano: il file vale un mese.','una volta al mese, quando arriva la mail di avviso.',gvTile('Zone di volo')),
+   GV('Segnalazioni','Gli incidenti e i guasti segnalati dai piloti, con cosa fare e i droni fermati.','un drone segnalato resta fermo finché non lo sblocchi tu.','appena arriva una segnalazione.',gvTile('Segnalazioni')),
+   GV('Checklist','Le liste di controllo che il pilota spunta prima di decollare, una per tipo di lavoro.','senza le voci obbligatorie spuntate non si decolla.','all’inizio, e quando cambiano le vostre procedure.',gvTile('Checklist')),
+   GV('Valutazioni del rischio','Tutte le valutazioni salvate, con il PDF da scaricare o mandare.','ENAC, l’assicurazione o il cliente possono chiederle.','prima di ogni lavoro in un luogo nuovo.',gvTile('Valutazioni del rischio')),
+   GV('Codice dell’Admin','Le 4 cifre per entrare come Admin.','chi lo conosce può vedere e cambiare tutto.','subito la prima volta, e se pensi che qualcuno lo conosca.',gvTile('Codice dell’Admin')),
+   GV('Studio Gestionale','Le lezioni sulle regole del volo e sul programma, con le tabelle da tenere sott’occhio.','capisci il perché di ogni controllo.','con calma, una lezione alla volta.',gvTile('Studio Gestionale')),
+   GV('Elenco dei telefoni','Sotto i riquadri ci sono le parti aperte: i telefoni e computer collegati, con l’ultimo accesso.','vedi chi usa Quota 120 e da dove.','quando cambia telefono un pilota, o per togliere un telefono perso.',gvA(()=>gdVis('#ad-tel'))),
+   GV('Accesso dell’Admin','Il tuo codice e il tasto per uscire da questo computer.','su un computer non tuo è meglio uscire alla fine.','quando usi un computer che non è il tuo.',gvA(()=>gdVis('#ad-acc')))]},
  dati:{n:'Dati della tua azienda',r:'adm',base:()=>JSON.stringify(OP),done:b=>JSON.stringify(OP)!==b,
   why:{h:'Dati della tua azienda',p:'Nome dell’azienda, responsabile, email e telefono: finiscono nei rapporti per il cliente, nel registro voli e negli avvisi.',uses:['Rapporto per il cliente (in testa al PDF)','Registro voli in PDF','Preventivi e schede dei trattamenti'],tm:'Ci vuole un minuto. Il codice operatore D-Flight è facoltativo.'},
   end:'I dati sono salvati: da ora compaiono in tutti i fogli che Quota 120 prepara.',
@@ -4370,7 +4427,7 @@ const GUIDES={
    {t:'Tocca il sole',p:'L’ultimo tasto in alto: contrasto massimo per lo schermo al sole.',w:'Si toglie toccandolo di nuovo.',el:()=>gdVis('#sole-btn'),nx:1}]}
 };
 // guide per pagina
-const GD_SEC=[['home','Home',['unvolo','controllo','segnala','doc','senzarete','aspetto','vistaop']],['segnala','Segnala un problema',['segnala']],['segnesito','Segnala un problema',['segnala']],['segnalazioni','Segnalazioni',['segngest']],['admin','Pannello Admin',['studio','segngest','ckedit','dati','codice','pilota','telefono','permessi','drone','zone','avvisi','vistaop']],
+const GD_SEC=[['home','Home',['giro','unvolo','controllo','segnala','doc','senzarete','aspetto','vistaop']],['segnala','Segnala un problema',['segnala']],['segnesito','Segnala un problema',['segnala']],['segnalazioni','Segnalazioni',['segngest']],['admin','Pannello Admin',['giro','studio','segngest','ckedit','dati','codice','pilota','telefono','permessi','drone','zone','avvisi','vistaop']],
   ['zone','Zone di volo',['zone']],['studio','Studio Gestionale',['studio']],['avvisi','Avvisi via email',['avvisi']],['controllo','Controllo prima del volo',['controllo','notam','ckvola']],['notam','NOTAM',['notam']],['checklist','Check list',['ckvola']],['check','Checklist',['ckedit']],['checked','Checklist',['ckedit']],
   ['voli','Registro voli',['arrivi','invio','dji','foto','mano','registro','senzarete','elimina']],['invio','Invio automatico dei voli',['invio']],['volo','Scheda del volo',['elimina','mano']],['importa','Registro voli',['dji']],['fotovolo','Registro voli',['foto']],
   ['lavori','Clienti e lavori',['rischio','pratica','rapporto']],['lavoro','Clienti e lavori',['rischio','spiega','pratica','rapporto']],['spiega','Spiega al cliente perché no',['spiega']],['rischio','Valutazione del rischio',['rischio']],['calendario','Calendario',['calendario']],['caltel','Calendario',['calendario']],['rischi','Valutazioni del rischio',['rischi','rischio']],['fattura','Dati per la fattura',['pratica']],['preventivi','Preventivi',['prev','pratica']],['preventivo','Preventivi',['prev','pratica']],['documenti','Documenti',['doc']],['droni','Droni',['droni']],['drone','Droni',['droni','batttrend']],['piloti','Piloti',['piloti','pilota']],['pilota','Piloti',['piloti']],['batterie','Batterie',['batttrend','batterie']],['manut','Manutenzioni',['manut']],['invent','Inventario',['invent']],['enac','Autorizzazioni ENAC',['enac']],['domanda','Autorizzazioni ENAC',['enac']],['dflight','D-Flight',['dflight']],['campi','Campi',['campi']],['campo','Campi',['campi']],['tratt','Trattamenti',['tratt']],['trattamento','Trattamenti',['tratt']],['rapporto','Rapporto per il cliente',['rapporto']]];
@@ -4453,7 +4510,7 @@ function gdTick(){
   const N=G.S.length;
   if(el) for(let d=el.closest('details');d;d=d.parentElement&&d.parentElement.closest('details')) if(!d.open) d.open=true;
   if(i!==GD.i){ GD.i=i; if(fin) gdMarkDone(GD.g);
-    const dots=Array.from({length:N},(_,j)=>`<span class="${j<=i?'on':''}"></span>`).join('');
+    const dots=N>14?`<span class="gd-prog"><i style="width:${Math.round((i+1)/N*100)}%"></i></span>`:Array.from({length:N},(_,j)=>`<span class="${j<=i?'on':''}"></span>`).join('');
     t.innerHTML=fin?`<div class="gd-n">Fatto</div><b>${ESC(G.n)}</b><p class="gd-end">${G.end}</p><div class="gd-bar"><span></span><button class="btn mini" onclick="gdStop()">Chiudi</button></div>`
       :`<div class="gd-n">Passo ${i+1} di ${N} · ${ESC(G.n)}</div><b>${s.t}</b><p>${s.p}</p>${s.w?`<div class="gd-why"><b>Perché:</b> ${s.w}</div>`:''}<div class="gd-bar"><span class="gd-dots">${dots}</span><span class="gd-bb"><button class="gd-x" onclick="gdStop()">Esci</button>${s.nx?`<button class="btn mini" onclick="gdAvanti('${GD.g}:${i}')">Avanti</button>`:''}</span></div>`;
     if(el) try{const lg=el.offsetWidth>innerWidth-350||el.offsetHeight>innerHeight*0.45; el.style.scrollMarginTop='12px'; el.scrollIntoView({block:lg?'start':'center',behavior:'smooth'});}catch(e){} }
@@ -4472,7 +4529,7 @@ function gdTick(){
 }
 function gdToggle(){
   const on=!gdOn(); try{ if(on) localStorage.removeItem('q120GdOff'); else localStorage.setItem('q120GdOff','1'); }catch(e){}
-  if(!on) gdStop(); gdDecora(); document.querySelectorAll('.gd-lez-w').forEach(e=>e.style.display=on?'':'none'); toast(on?'Guida accesa: in ogni pagina c’è il tasto Guidami.':'Guida spenta: i tasti Guidami non ci sono più.');
+  if(!on) gdStop(); gdDecora(); if(VISTA==='home'&&typeof disegnaHome==='function') disegnaHome(); document.querySelectorAll('.gd-lez-w').forEach(e=>e.style.display=on?'':'none'); toast(on?'Guida accesa: in ogni pagina c’è il tasto Guidami.':'Guida spenta: i tasti Guidami non ci sono più.');
 }
 // interruttore in alto e tasto «Guidami» accanto al percorso
 function gdDecora(){
