@@ -762,6 +762,9 @@
 .nt-h{font-size:16px;margin:14px 0 4px}.nt-pre{white-space:pre-wrap;font:14px/1.45 "Barlow",Arial,sans-serif;background:#F5F7F8;border-radius:8px;padding:10px 12px;margin-top:8px}
 .rk-pec{background:#EEF3F6;border-radius:8px;padding:8px 10px;font-size:14px;margin:10px 0 4px}
 .rk-arc{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid #E3E8EB;flex-wrap:wrap}.rk-arc .m{flex:1;min-width:200px;font-size:15px}.rk-arc .m small{display:block;color:var(--muted);font-size:13px}.rk-arc .b{display:flex;gap:6px;flex-wrap:wrap}.rk-arc .rk-pt{margin-top:7px}
+.rk-pervolare{border:1px solid var(--ko);border-radius:10px;padding:10px 12px;margin:0 0 10px;background:#fff}.rk-pervolare>b{color:var(--ko);font-size:16px}.rk-pervolare .s{font-size:14.5px;color:var(--ink3);margin:2px 0 6px}
+.rk-alto{border-top:1px solid #E3E8EB;padding:8px 0;display:grid;gap:6px}.rk-alto .t{font-weight:700;font-size:15px}.rk-alto .btn{text-align:left;white-space:normal;justify-self:start}.rk-alto .no{font-size:14px;color:var(--ko)}
+.rk-rifare{text-align:left;font:inherit;color:inherit;cursor:pointer;border:1px solid var(--accent)}.rk-cambia{color:var(--accent);font-weight:700;font-size:13.5px;margin-top:2px}
 .rk-sora{background:#F2F4F5;border-radius:8px;padding:8px 10px;font-size:14px;color:var(--ink3);margin-top:8px}
 .bspark{flex:none;margin-left:6px}@media (max-width:520px){.bspark{display:none}}.bgraf{display:block;margin:2px 0}
 .bverd{border-left:3px solid var(--warn);background:#FBF3E4;border-radius:6px;padding:8px 10px;font-size:14.5px;line-height:1.4;margin:6px 0}.bverd.warn b{color:var(--warn)}
@@ -5031,12 +5034,12 @@ function rkAgricolo(d){ return !!d&&(d.cat==='specific'||/agras|t\d{2}|mg-|xag/i
 // i pericoli che nascono dalle risposte: [chiave, titolo, probabilità, gravità, misure [testo, quanto abbassa la probabilità]]
 function rkPericoli(r){
   const d=DRONI.find(x=>x.id==r.drone), L=[], add=(k,t,p,g,mis,fisso)=>L.push({k,t,p,g,mis:mis.map(m=>({t:m[0],dp:m[1],on:false})),fisso:!!fisso});
-  if(r.pers==='gruppi') add('gruppi','Gruppi di persone nell’area',5,5,[['Spostare il volo in un altro momento, quando non ci sono',4]],true);
+  if(r.pers==='gruppi') add('gruppi','Gruppi di persone nell’area',5,5,[['Spostare il volo in un altro momento, quando non ci sono',4],['Area chiusa al pubblico e delimitata, con il permesso di chi organizza (serve la categoria Specific o un’autorizzazione)',4]],true);
   else if(r.pers==='passaggio') add('persone','Persone che entrano nell’area',3,4,[['Cartelli e nastro sui passaggi',1],['Un osservatore che ferma le persone',1]]);
   if(r.zona==='centro') add('centro','Area abitata',3,4,[['Drone e categoria adatti (A1 con C0/C1, oppure autorizzazione)',1],['Zona di decollo e atterraggio delimitata',1]]);
   if(r.zona==='industria') add('industria','Capannoni, gru e lavoratori',3,4,[['Accordo con il responsabile del sito',1],['Distanza dalle gru in movimento',1]]);
   const v=r.vic||[];
-  if(v.includes('linee')) add('linee','Linee elettriche nell’area',3,5,[['Sopralluogo e distanza di almeno 15 m dai cavi',1],['Volo manuale vicino alle linee, niente percorso automatico',1]]);
+  if(v.includes('linee')) add('linee','Linee elettriche nell’area',3,5,[['Sopralluogo e distanza di almeno 15 m dai cavi',1],['Volo manuale vicino alle linee, niente percorso automatico',1],['Linea staccata o lavoro concordato con il gestore della rete (e-distribuzione, Terna)',1]]);
   if(v.includes('strada')) add('strada','Strada vicina',2,4,[['Fascia di sicurezza di 30 m dalla strada',1],['Mai sorvolare la strada con veicoli in transito',1]]);
   if(v.includes('ferrovia')) add('ferrovia','Ferrovia vicina',2,5,[['Fascia di sicurezza di 50 m dai binari',1],['Mai sorvolare i binari',1]]);
   if(v.includes('case')) add('case','Case vicine',2,4,[['Avvisare i residenti prima del volo',1],['Non sorvolare le case e i cortili',1]]);
@@ -5141,10 +5144,14 @@ function disegnaRischio(){
   } else {
     const E=rkEsito(r), S=rkSora(r), col=(p,g)=>({ok:'#CFE6D6',warn:'#F3D9A4',ko:'#D98A4A'})[rkLiv(p,g)];
     let mat=''; for(let p=5;p>=1;p--) for(let g=1;g<=5;g++) mat+=`<i style="background:${col(p,g)}" class="${E.peg.p===p&&E.peg.g===g?'x':''}"></i>`;
-    e.innerHTML=passi+`<h2>Esito</h2><div class="rk-esito ${E.liv}"><b>${E.t}</b>${E.resta.length?'rischio che resta: '+ESC(E.resta.slice(0,3).join(', ')):'tutti i rischi sono bassi'}</div>
+    const alti=(r.per||[]).map((h,i)=>[h,i,rkDopo(h)]).filter(x=>x[2].liv==='ko');
+    const perVolare=E.liv==='ko'?`<div class="rk-pervolare"><b>Se devi proprio volare qui</b><div class="s">Il rischio è alto per ${alti.length===1?'questo pericolo':'questi pericoli'}. Prendi le misure che mancano: il rischio scende e l’esito si aggiorna subito.</div>
+      ${alti.map(([h,i,D])=>{ const resto=h.mis.map((m,j)=>[m,j]).filter(x=>!x[0].on); return `<div class="rk-alto"><div class="t">${ESC(h.t)} · probabilità ${D.p} × gravità ${D.g}</div>${resto.length?resto.map(([m,j])=>`<button type="button" class="btn sec mini" onclick="rkMis(${i},${j})">+ ${ESC(m.t)}</button>`).join(''):`<div class="no">Le misure sono già tutte prese e non bastano: così qui non si vola. Serve un’autorizzazione, un altro giorno o un altro punto.</div>`}</div>`; }).join('')}
+      <div class="row"><button class="btn sec mini" onclick="RK.step=2;disegnaRischio();window.scrollTo(0,0)">Rivedi pericoli e misure</button><button class="btn sec mini" onclick="RK.step=1;disegnaRischio();window.scrollTo(0,0)">Cambia le risposte sul luogo</button></div></div>`:'';
+    e.innerHTML=passi+`<h2>Esito</h2><div class="rk-esito ${E.liv}"><b>${E.t}</b>${E.resta.length?'rischio che resta: '+ESC(E.resta.slice(0,3).join(', ')):'tutti i rischi sono bassi'}</div>${perVolare}
       <div class="rk-mat" aria-hidden="true">${mat}</div><div style="text-align:center;font-size:12.5px;color:var(--muted)">probabilità (in alto la più alta) × gravità (a destra la più alta)</div>
       <div class="fgrid" style="margin-top:8px"><div class="fld"><div class="k">Fatta da</div><div class="v">${ESC(IO.n||'Admin')}</div></div><div class="fld"><div class="k">Il</div><div class="v">${oggi()}</div></div>
-      <div class="fld"><div class="k">Vale per</div><div class="v">${r.lav?'questo lavoro e luogo':'questo luogo'}</div></div><div class="fld"><div class="k">Da rifare</div><div class="v">se cambia il luogo o cosa c’è intorno</div></div></div>
+      <div class="fld"><div class="k">Vale per</div><div class="v">${r.lav?'questo lavoro e luogo':'questo luogo'}</div></div><button type="button" class="fld rk-rifare" onclick="RK.step=1;disegnaRischio();window.scrollTo(0,0)"><div class="k">Da rifare</div><div class="v">se cambia il luogo o cosa c’è intorno</div><div class="rk-cambia">Cambia le risposte ›</div></button></div>
       <div class="rk-sora"><b>Riferimento SORA (indicativo)</b>: rischio a terra ${S.grc}, rischio in aria ${S.arc}. Serve per capire, non sostituisce la valutazione per l’autorizzazione ENAC.</div>
       <div class="row"><button class="btn" id="rk-firma" onclick="rkSalva(this)"><span class="spin"></span>Firma e salva</button><button class="btn sec" onclick="stampaRischio(RK)">Anteprima da stampare</button></div>`;
   }
