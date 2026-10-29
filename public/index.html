@@ -718,6 +718,7 @@
   .pt-passo .n.ok{background:var(--ok)}.pt-passo .n.warn{background:var(--warn)}.pt-passo .n.ko{background:var(--ko)}.pt-passo .n.g{background:#fff;border:2px solid #9AA6AE;color:var(--ink3)}
   .pt-passo .n svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:3}.pt-passo .c{flex:1;min-width:0}.pt-passo b{font-size:16px}.pt-passo .s{font-size:14.5px;color:var(--ink3);margin-top:1px}.pt-passo .az{display:flex;gap:8px;flex-wrap:wrap;margin-top:7px}
   .tot .ko b{color:var(--ko)}
+.tot div{min-width:0}
   .ft-t{width:100%;border-collapse:collapse;font-size:15px;margin-top:10px}.ft-t th{text-align:left;background:var(--notte);color:#fff;padding:7px 9px;font-weight:600}.ft-t td{border-bottom:1px solid #E3E8EB;padding:7px 9px}.ft-t td:last-child,.ft-t th:last-child{text-align:right;white-space:nowrap}
   .ft-box{background:#EEF3F6;border-left:3px solid var(--accent);border-radius:6px;padding:9px 12px;font-size:14.5px;margin-top:10px}.ft-h{font-size:15px;margin:14px 0 4px}.ft-cli{font-size:15px;line-height:1.5}
 .arr-sist small{color:var(--warn)}
@@ -929,7 +930,7 @@
   <div id="v-voli" class="hidden">
     <div class="tot">
       <div><b id="tot-n"></b><span>voli registrati</span></div>
-      <div><b id="tot-h"></b><span>ore di volo totali</span></div>
+      <div><b id="tot-h"></b><span>ore di volo totali (ore:minuti)</span></div>
       <div><b id="tot-m"></b><span>voli questo mese</span></div>
     </div>
     <div class="card">
@@ -1915,7 +1916,7 @@ function oggi(){const n=new Date();return String(n.getDate()).padStart(2,'0')+'/
 function apriVoli(){
   const tot=VOLI.reduce((a,v)=>a+(+v.min||0),0);
   document.getElementById('tot-n').textContent=VOLI.length;
-  document.getElementById('tot-h').textContent=Math.floor(tot/60)+' h '+(tot%60)+' min';
+  {const b=document.getElementById('tot-h');b.textContent=Math.floor(tot/60)+':'+String(tot%60).padStart(2,'0');b.style.fontSize=b.textContent.length>5?'20px':b.textContent.length>4?'23px':'';}
   document.getElementById('tot-m').textContent=VOLI.filter(v=>v.data.slice(3)===oggi().slice(3)).length;
   document.getElementById('vlist').innerHTML=VOLI.map(v=>{
     const s=STATO[v.stato];
