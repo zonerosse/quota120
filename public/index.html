@@ -3032,7 +3032,8 @@ function calcolaTodo(){
     add(g!=null&&g<0?'ko':'warn','Richiesta di permesso da mandare: '+(q.zona?q.zona.n:q.luogo||'senza luogo'),e?(g<0?'il termine era il ':'entro il ')+fmtData(e):'per il volo del '+(q.data||'—'),()=>apriRichiesta(q.id)); }
   if(ASSIC.scad){const lv=livData(ASSIC.scad); if(lv!=='ok') add(lv,'Polizza RC aziendale',(lv==='ko'?'scaduta il ':'scade il ')+ASSIC.scad,puoVedere('Autorizzazioni ENAC')?()=>apriEnac():null);}
   else if(PILOTI.some(p=>!rcDi(p).ok)) add('ko','Assicurazione RC non inserita','carica la polizza aziendale, o quella personale di ogni pilota',()=>apriDocumenti());
-  if(OP.dfAbb){const g=giorni(OP.dfAbb); if(g<60) add(g<0?'ko':'warn','Abbonamento D-Flight',(g<0?'scaduto il ':'scade il ')+OP.dfAbb,puoVedere('D-Flight')?()=>apriDflight():null);}
+  if(OP.dfAbb){const g=giorni(OP.dfAbb); if(g<60) add(g<0?'ko':'warn','Abbonamento D-Flight Base (7 € all’anno)',(g<0?'scaduto il ':'scade il ')+OP.dfAbb+' · da rinnovare su d-flight.it: serve per la registrazione dell’operatore e i QR dei droni',puoVedere('D-Flight')?()=>apriDflight():null);}
+  else if(ADM) add('warn','Abbonamento D-Flight Base da attivare (7 € all’anno)','lo paga l’operatore su d-flight.it: serve per la registrazione dell’operatore e i QR dei droni; poi scrivi la scadenza in Dati dell’operatore',()=>apriDflight());
   const tr=TRATT.filter(t=>t.stato!=='ok').length; if(tr) add('warn',pl(tr,'trattamento da annotare','trattamenti da annotare')+' nel quaderno','entro 30 giorni',()=>apriTratt());
   const vd=VOLI.filter(v=>v.stato!=='completo'&&(ADM||v.pilota===IO.n)).length; if(vd) add('warn',pl(vd,'volo da completare','voli da completare'),'registro voli',()=>apriVoli());
   if(!L.length) add('ok','Tutto in regola','');
