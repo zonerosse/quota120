@@ -379,9 +379,34 @@ async function mandaMail(env, a, oggetto, html, allegati, rispondi) {
 const EMAIL = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e || "").trim());
 const b64 = buf => { let s = ""; const u = new Uint8Array(buf); for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); };
 
+/* ---------- spazi degli operatori: ognuno il suo contenitore di dati ("op:<nome>"), più il registro delle iscrizioni ---------- */
+const RISERVATI = new Set(["api", "interno", "prova", "privacy", "condizioni", "condividi", "leaflet", "lib", "dji", "index", "admin", "www", "app", "quota120", "registro", "iscriviti", "entra", "assistenza"]);
+const SLUG_OK = s => /^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/.test(s || "") && !RISERVATI.has(s);
+const cod6 = () => String(100000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 900000));
+const GIORNI_ADMIN = 15;   // l'Admin entrato con l'email resta dentro; se non usa quel telefono per 15 giorni, rifà il codice
+function codiceHtml(nome, nomeOp, codice, iscrizione) {
+  return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;color:#0F1C26;font-size:15px;line-height:1.5">
+    <div style="border-bottom:2px solid #132A3A;padding-bottom:10px;margin-bottom:14px;font-size:20px;font-weight:bold;color:#132A3A">Quota 120</div>
+    ${nome ? "Ciao " + esc(nome) + "," : "Ciao,"} ecco il codice ${iscrizione ? "per confermare l'iscrizione" : "per entrare"}${nomeOp ? " nello spazio di <b>" + esc(nomeOp) + "</b>" : ""}:
+    <div style="font-size:32px;font-weight:bold;letter-spacing:.25em;text-align:center;margin:18px 0;color:#0F1C26">${codice.slice(0, 3)} ${codice.slice(3)}</div>
+    Vale 15 minuti. Se non sei stato tu, ignora questa email: senza il codice nessuno può entrare.
+    <p style="font-size:12.5px;color:#5E6D77;margin-top:18px;border-top:1px solid #E3E8EB;padding-top:10px">Quota 120 · gestionale per operatori di droni · versione di prova gratuita</p></div>`;
+}
+function nomeSpazio(nome) {
+  let s = norm(nome).replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  s = s.replace(/-(srl|srls|snc|sas|spa|s-r-l|s-n-c|s-a-s|s-p-a|ss|soc-coop|coop)$/g, "").slice(0, 30).replace(/-+$/g, "");
+  return s.length >= 3 ? s : "operatore-" + rnd(2);
+}
+
 export class Stato extends DurableObject {
   async fetch(request) {
     const url = new URL(request.url), st = this.ctx.storage, p = url.pathname;
+    if (p.startsWith("/api/registro/")) return this.registro(request, url, p);
+    if (p === "/interno/elenco") return J((await st.get("elenco")) || []);
+    const OPN = request.headers.get("x-q120-op") || "";   // "" = versione di prova (dati di esempio)
+    const creato = OPN ? await st.get("creato") : null;
+    if (OPN && !creato && p !== "/interno/crea") return J({ errore: "operatore" }, 404);
+    const BASEURL = url.origin + (OPN ? "/" + OPN : "");
     const disp = (await st.get("disp")) || {};
     const pin = (await st.get("pin")) || "1234";
     const now = Date.now();
@@ -390,6 +415,27 @@ export class Stato extends DurableObject {
     const pub = () => Object.keys(disp).map(id => { const x = disp[id]; return { id, ruolo: x.ruolo, n: x.n, codice: x.codice, stato: x.stato, at: x.at, visto: x.visto, nuovo: !!x.nuovo, pid: x.pid }; });
     const leggiMain = async () => { const row = await st.get("main"); return row ? { row, d: JSON.parse(row.json) } : null; };
     const scriviMain = async (d, ver) => { await st.put("main", { json: JSON.stringify(d), ver }); };
+    const nuovoAdmin = async email => {
+      const id = rnd(8), k = rnd(18);
+      disp[id] = { k, ruolo: "adm", n: "Admin", pid: null, nuovo: false, codice: cod4(), stato: "ok", at: now, visto: now, app: true, via: "email", email };
+      await st.put("disp", disp);
+      return { id, k, n: "Admin", stato: "ok", codice: disp[id].codice, asp: aspetti.Admin || ASP_BASE };
+    };
+    // ---- porte interne: le usa solo il registro (dal mondo esterno /interno/ non arriva) ----
+    if (p === "/interno/crea" && request.method === "POST") {
+      if (!OPN) return J({ errore: "solo per gli spazi" }, 400);
+      if (creato) return J({ errore: "esiste già" }, 409);
+      const b = await request.json();
+      await st.put("creato", { at: now, email: b.email });
+      await st.put("pin", rnd(16));   // il codice di 4 cifre qui non si usa: l'Admin entra con l'email
+      await scriviMain(b.data || {}, 1);
+      return J(await nuovoAdmin(b.email));
+    }
+    if (p === "/interno/nuovoadmin" && request.method === "POST") {
+      if (!creato) return J({ errore: "operatore" }, 404);
+      const b = await request.json();
+      return J(await nuovoAdmin(b.email));
+    }
 
     // ---- entrata: Admin con codice, Pilota con nome e cognome + matricola ----
     if (p === "/api/disp/richiesta" && request.method === "POST") {
@@ -397,6 +443,7 @@ export class Stato extends DurableObject {
       const ruolo = b.ruolo === "adm" ? "adm" : "op";
       let n = "", pid = null, nuovo = false;
       if (ruolo === "adm") {
+        if (creato) return J({ errore: "Qui l'Admin entra con la sua email" }, 403);
         const ip = request.headers.get("cf-connecting-ip") || "x", kk = "pinerr:" + ip, err = (await st.get(kk)) || { n: 0, t: now };
         if (now - err.t > 900000) { err.n = 0; err.t = now; }
         if (err.n >= 5) return J({ errore: "Troppi codici sbagliati: riprova tra 15 minuti" }, 429);
@@ -472,6 +519,7 @@ export class Stato extends DurableObject {
     const h = request.headers.get("x-disp") || ""; if (h.includes(":")) [id, k] = h.split(":");
     const me = disp[id];
     if (!me || me.k !== k) return J({ errore: "dispositivo" }, 401);
+    if (me.via === "email" && now - (me.visto || 0) > GIORNI_ADMIN * 86400000) { delete disp[id]; await st.put("disp", disp); return J({ errore: "dispositivo", scaduto: true }, 401); }
     if (now - (me.visto || 0) > 60000) { me.visto = now; await st.put("disp", disp); }
     if (me.ruolo === "op" && me.pid == null) { const m0 = await leggiMain(), p0 = m0 && pilotaDi(m0.d, me.n); if (p0) { me.pid = p0.id; await st.put("disp", disp); } }
     if (me.ruolo === "op" && me.pid != null && blocchi[me.pid] && me.stato === "ok") { me.stato = "bloccato"; await st.put("disp", disp); }
@@ -522,7 +570,7 @@ export class Stato extends DurableObject {
     }
     if (p === "/api/avvisi/prova" && request.method === "POST") {
       if (!adm) return J({ errore: "Solo l'Admin" }, 403);
-      try { return J(await this.avvisi(true, url.origin)); } catch (e) { const m = String(e.message || e); return J({ errore: m.startsWith("posta") ? "posta" : m, dettaglio: m.startsWith("posta:") ? m.slice(6) : "" }, 502); }
+      try { return J(await this.avvisi(true, BASEURL)); } catch (e) { const m = String(e.message || e); return J({ errore: m.startsWith("posta") ? "posta" : m, dettaglio: m.startsWith("posta:") ? m.slice(6) : "" }, 502); }
     }
     if (p === "/api/volo/trk") {
       const vid = +url.searchParams.get("id"), m = await leggiMain(), v = m && (m.d.VOLI || []).find(x => x.id === vid);
@@ -573,7 +621,7 @@ export class Stato extends DurableObject {
         const html = `<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;color:#0F1C26;font-size:15px;line-height:1.45"><div style="border-bottom:2px solid #132A3A;padding-bottom:10px;margin-bottom:14px;font-size:20px;font-weight:bold;color:#132A3A">Quota 120</div>
           <div style="background:${x.liv === "grave" ? "#AE2F28" : "#A5660A"};color:#fff;border-radius:8px;padding:10px 14px;font-weight:bold">${esc(txt)}</div>
           <p><b>${esc(SG_TIPI[x.tipo])}</b> · ${esc(x.drone)}<br>${esc(x.pilota)} · ${x.data} ${x.ora}${x.luogo ? " · " + esc(x.luogo) : ""}<br>Feriti: ${x.feriti ? "sì" : "no"} · Danni: ${x.danni ? "sì" : "no"}</p><p>${esc(x.testo)}</p>
-          <p>Il drone resta fermo finché non lo sblocchi in Pannello Admin › Segnalazioni.</p><a href="${(await st.get("origine")) || url.origin}" style="display:inline-block;background:#1D5C7C;color:#fff;border-radius:8px;padding:12px 18px;font-weight:bold;text-decoration:none">Apri Quota 120</a></div>`;
+          <p>Il drone resta fermo finché non lo sblocchi in Pannello Admin › Segnalazioni.</p><a href="${(await st.get("origine")) || BASEURL}" style="display:inline-block;background:#1D5C7C;color:#fff;border-radius:8px;padding:12px 18px;font-weight:bold;text-decoration:none">Apri Quota 120</a></div>`;
         try { await mandaMail(this.env, A.email.trim(), (x.liv === "grave" ? "URGENTE · " : "") + "Segnalazione: " + SG_TIPI[x.tipo] + " · " + x.drone, html); } catch (e) {}
       }
       return J({ ok: true, segn: x, ver: m.row.ver + 1 });
@@ -714,9 +762,9 @@ export class Stato extends DurableObject {
     if (p === "/api/stato") {
       const m = await leggiMain();
       if (!m) return J({ vuoto: true });
-      const { row } = m, io = { r: me.ruolo, n: me.n, id, asp: aspetti[me.n] || ASP_BASE }, extra = adm ? { disp: pub(), blocchi } : {};
+      const { row } = m, io = { r: me.ruolo, n: me.n, id, asp: aspetti[me.n] || ASP_BASE, email: me.via === "email" ? me.email : "" }, extra = adm ? { disp: pub(), blocchi } : {};
       if (request.method === "GET") {
-        if (adm && !/localhost|127\.0\.0\.1/.test(url.origin) && (await st.get("origine")) !== url.origin) await st.put("origine", url.origin);
+        if (adm && !/localhost|127\.0\.0\.1/.test(url.origin) && (await st.get("origine")) !== BASEURL) await st.put("origine", BASEURL);
         // l'Admin guarda il programma come lo vede un pilota (solo lettura)
         const come = adm && url.searchParams.get("come");
         if (come) { const pc = pilotaDi(m.d, come); if (!pc) return J({ errore: "Pilota non trovato" }, 404);
@@ -849,16 +897,112 @@ Stato.prototype.avvisi = async function (prova, origine) {
 };
 const pl0 = (n, s, p) => n + " " + (n === 1 ? s : p);
 
+/* ---------- registro delle iscrizioni (un solo contenitore, "registro") ----------
+   op:<spazio> → operatore · em:<email> → i suoi spazi · att:<email> → codice in attesa · elenco → tutti gli spazi */
+Stato.prototype.registro = async function (request, url, p) {
+  const st = this.ctx.storage, now = Date.now(), env = this.env, POST = request.method === "POST";
+  const ip = request.headers.get("cf-connecting-ip") || "x";
+  const corpo = async () => { try { return await request.json(); } catch (e) { return {}; } };
+  const troppi = async (k, max, ms) => { const r = (await st.get(k)) || { n: 0, t: now }; if (now - r.t > ms) { r.n = 0; r.t = now; } r.n++; await st.put(k, r); return r.n > max; };
+  const mail = b => String(b.email || "").trim().toLowerCase();
+  const spazio = op => env.STATO.get(env.STATO.idFromName("op:" + op));
+  const manda = async (email, dati) => {
+    const prima = await st.get("att:" + email);
+    if (prima && now - prima.inviato < 60000) return J({ errore: "Ti ho appena mandato un codice: aspetta un minuto prima di chiederne un altro" }, 429);
+    if (await troppi("lim:mail:" + email, 8, 86400000)) return J({ errore: "Troppi codici chiesti oggi per questa email: riprova domani" }, 429);
+    const codice = cod6();
+    await st.put("att:" + email, Object.assign({ codice, scad: now + 15 * 60000, tent: 0, inviato: now }, dati));
+    const op = dati.op ? (await st.get("op:" + dati.op)) || {} : {};
+    try { await mandaMail(env, email, "Il tuo codice per Quota 120: " + codice, codiceHtml(dati.nome || op.adm || "", dati.nomeOp || op.nome || "", codice, dati.tipo === "iscrizione")); }
+    catch (e) { await st.delete("att:" + email); return J({ errore: "Non sono riuscito a mandare l'email: riprova tra poco" }, 502); }
+    return J({ ok: true });
+  };
+
+  // il nome dell'operatore, per la pagina di entrata del pilota
+  if (p === "/api/registro/info") {
+    const op = String(url.searchParams.get("op") || "").toLowerCase(), x = SLUG_OK(op) ? await st.get("op:" + op) : null;
+    return x ? J({ nome: x.nome }) : J({ errore: "non trovato" }, 404);
+  }
+  // iscrizione: dati dell'operatore, poi il codice via email
+  if (p === "/api/registro/iscrivi" && POST) {
+    if (await troppi("lim:isc:" + ip, 6, 86400000)) return J({ errore: "Troppe iscrizioni da questa rete oggi: riprova domani" }, 429);
+    const b = await corpo(), email = mail(b);
+    const nomeOp = esc(String(b.op || "").replace(/\s+/g, " ").trim(), 80), nome = esc(String(b.nome || "").replace(/\s+/g, " ").trim(), 80), df = esc(String(b.df || "").trim(), 40);
+    if (nomeOp.length < 2) return J({ errore: "Scrivi il nome dell'operatore." }, 400);
+    if (nome.length < 3) return J({ errore: "Scrivi il tuo nome e cognome." }, 400);
+    if (!EMAIL(email)) return J({ errore: "L'email non sembra giusta: controllala." }, 400);
+    if (!b.ok) return J({ errore: "Per continuare spunta l'accettazione delle condizioni d'uso e della privacy." }, 400);
+    if (((await st.get("em:" + email)) || []).length) return J({ errore: "Con questa email c'è già uno spazio: torna indietro e tocca Admin per entrare." }, 409);
+    return manda(email, { tipo: "iscrizione", nomeOp, nome, df });
+  }
+  // entrata dell'Admin: il codice arriva all'email dello spazio
+  if (p === "/api/registro/codice" && POST) {
+    if (await troppi("lim:cod:" + ip, 30, 3600000)) return J({ errore: "Troppe richieste: riprova tra un'ora" }, 429);
+    const b = await corpo(), email = mail(b);
+    if (!EMAIL(email)) return J({ errore: "L'email non sembra giusta: controllala." }, 400);
+    const ops = (await st.get("em:" + email)) || [];
+    if (!ops.length) return J({ errore: "Questa email non risulta iscritta a Quota 120. Controlla di averla scritta giusta." }, 404);
+    const op = ops.includes(b.op) ? b.op : ops[0];
+    return manda(email, { tipo: "accesso", op });
+  }
+  // il codice giusto: crea lo spazio (iscrizione) o fa entrare l'Admin da questo telefono
+  if (p === "/api/registro/verifica" && POST) {
+    const b = await corpo(), email = mail(b), c = String(b.codice || "").replace(/\D/g, "");
+    const a = await st.get("att:" + email);
+    if (!a || now > a.scad) return J({ errore: "Il codice è scaduto o non è stato chiesto: chiedine uno nuovo." }, 410);
+    if (a.tent >= 5) return J({ errore: "Troppi tentativi sbagliati: chiedi un codice nuovo." }, 429);
+    if (c !== a.codice) { a.tent++; await st.put("att:" + email, a); return J({ errore: "Codice sbagliato: controlla l'ultima email arrivata." }, 403); }
+    await st.delete("att:" + email);
+    if (a.tipo === "iscrizione") {
+      if (((await st.get("em:" + email)) || []).length) return J({ errore: "Con questa email c'è già uno spazio: tocca Admin per entrare." }, 409);
+      let base = nomeSpazio(a.nomeOp), op = base, n = 1;
+      while (RISERVATI.has(op) || !SLUG_OK(op) || (await st.get("op:" + op))) op = base.slice(0, 34) + "-" + (++n);
+      const data = { OP: { nome: a.nomeOp, codice: a.df, resp: a.nome, dfReg: "", dfAbb: "", email, tel: "" } };
+      const r = await spazio(op).fetch("https://q/interno/crea", { method: "POST", headers: { "x-q120-op": op, "content-type": "application/json" }, body: JSON.stringify({ email, data }) });
+      if (!r.ok) return J({ errore: "Non sono riuscito a creare lo spazio: riprova." }, 500);
+      const dev = await r.json();
+      await st.put("op:" + op, { nome: a.nomeOp, email, adm: a.nome, df: a.df, at: now });
+      await st.put("em:" + email, [op]);
+      const L = (await st.get("elenco")) || []; L.push(op); await st.put("elenco", L);
+      return J(Object.assign({ op, nuovo: true }, dev));
+    }
+    const r = await spazio(a.op).fetch("https://q/interno/nuovoadmin", { method: "POST", headers: { "x-q120-op": a.op, "content-type": "application/json" }, body: JSON.stringify({ email }) });
+    if (!r.ok) return J({ errore: "Lo spazio non risponde: riprova." }, 500);
+    return J(Object.assign({ op: a.op }, await r.json()));
+  }
+  return J({ errore: "Richiesta sconosciuta" }, 404);
+};
+
 export default {
   async scheduled(evento, env, ctx) {
-    const stub = env.STATO.get(env.STATO.idFromName("main"));
-    ctx.waitUntil(stub.fetch("https://quota120.interno/interno/avvisi").catch(() => {}));
+    const main = env.STATO.get(env.STATO.idFromName("main"));
+    ctx.waitUntil(main.fetch("https://quota120.interno/interno/avvisi").catch(() => {}));
+    // gli avvisi di ogni spazio
+    ctx.waitUntil((async () => {
+      const L = await env.STATO.get(env.STATO.idFromName("registro")).fetch("https://quota120.interno/interno/elenco").then(r => r.json()).catch(() => []);
+      for (const op of L) await env.STATO.get(env.STATO.idFromName("op:" + op)).fetch("https://quota120.interno/interno/avvisi", { headers: { "x-q120-op": op } }).catch(() => {});
+    })());
   },
   async fetch(request, env) {
-    const url = new URL(request.url);
-    if (url.pathname === "/api/salute") { const c = n => !!(env[n] && String(env[n]).trim()); const r = await env.STATO.get(env.STATO.idFromName("main")).fetch(request).then(x => x.json()).catch(() => ({})); return Response.json({ ...r, worker: { RESEND_API_KEY: c("RESEND_API_KEY"), ANTHROPIC_API_KEY: c("ANTHROPIC_API_KEY"), DJI_API_KEY: c("DJI_API_KEY"), nomi: Object.keys(env).filter(k => /KEY/.test(k)) } }); }
-    if (url.pathname.startsWith("/api/")) return env.STATO.get(env.STATO.idFromName("main")).fetch(request);
-    if (url.pathname.startsWith("/interno/") && env.POSTA_FINTA === "1") return env.STATO.get(env.STATO.idFromName("main")).fetch(request);
+    const url = new URL(request.url), p = url.pathname;
+    const main = () => env.STATO.get(env.STATO.idFromName("main"));
+    // nessuno da fuori può dire di essere uno spazio: l'intestazione la mette solo questo smistatore
+    const pulita = (op) => { const r = new Request(request); r.headers.delete("x-q120-op"); if (op) r.headers.set("x-q120-op", op); return r; };
+    if (p === "/api/salute") { const c = n => !!(env[n] && String(env[n]).trim()); const r = await main().fetch(pulita()).then(x => x.json()).catch(() => ({})); return Response.json({ ...r, worker: { RESEND_API_KEY: c("RESEND_API_KEY"), ANTHROPIC_API_KEY: c("ANTHROPIC_API_KEY"), DJI_API_KEY: c("DJI_API_KEY"), nomi: Object.keys(env).filter(k => /KEY/.test(k)) } }); }
+    if (p.startsWith("/api/registro/")) return env.STATO.get(env.STATO.idFromName("registro")).fetch(pulita());
+    if (p.startsWith("/api/")) {
+      const op = String(request.headers.get("x-op") || url.searchParams.get("op") || "").toLowerCase();
+      if (!op || op === "prova") return main().fetch(pulita());
+      if (!SLUG_OK(op)) return J({ errore: "operatore" }, 404);
+      return env.STATO.get(env.STATO.idFromName("op:" + op)).fetch(pulita(op));
+    }
+    if (p.startsWith("/interno/") && env.POSTA_FINTA === "1") {   // solo per le prove in locale
+      const q = url.searchParams.get("do") || "", stub = q === "registro" ? env.STATO.get(env.STATO.idFromName("registro")) : SLUG_OK(q) ? env.STATO.get(env.STATO.idFromName("op:" + q)) : main();
+      return stub.fetch(pulita(SLUG_OK(q) ? q : ""));
+    }
+    // /prova e /<spazio> aprono il programma; / è l'ingresso
+    const seg = p.replace(/^\/+|\/+$/g, "");
+    if (seg && !seg.includes("/") && !seg.includes(".") && (seg === "prova" || SLUG_OK(seg.toLowerCase()))) return env.ASSETS.fetch(new Request(new URL("/", url), request));
     return env.ASSETS.fetch(request);
   }
 };

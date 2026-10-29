@@ -8,7 +8,18 @@ I dati di esempio sono inventati.
 - `src/index.js` – Worker: serve i file di `public` e le API `/api/*`; i dati e i documenti stanno in un Durable Object (SQLite), niente database da creare.
 - `wrangler.jsonc` – configurazione: Cloudflare la usa da sola con «npx wrangler deploy» a ogni push.
 
-## Accessi
+## Spazi degli operatori (prova gratuita)
+- `/` è l'ingresso: chi non ha Quota 120 tocca «Crea il tuo spazio gratis», scrive nome dell'operatore, codice D-Flight (se c'è),
+  nome e email, e conferma con un codice di 6 cifre via email. Nasce lo spazio `/<nome-operatore>` (es. `/rossi-droni`), vuoto.
+- Ogni spazio ha i suoi dati in un Durable Object separato (`op:<nome>`); il registro delle iscrizioni sta in `registro`.
+  Lo smistatore mette l'intestazione `x-q120-op` solo lui: un telefono di uno spazio non può leggere un altro spazio.
+- L'Admin di uno spazio entra con la sua email (codice di 6 cifre, vale 15 minuti). Il telefono resta riconosciuto; se non
+  lo usa per 15 giorni, rifà il codice. I piloti entrano dall'indirizzo dello spazio con nome e matricola, come prima.
+- `/prova` è la versione di prova con i dati di esempio e il codice Admin 1234 (era la pagina principale).
+- `/privacy` e `/condizioni`: informativa e condizioni d'uso, da accettare all'iscrizione.
+- Gli avvisi programmati partono per la prova e per ogni spazio.
+
+## Accessi (versione di prova)
 Un solo indirizzo. Si sceglie «Admin» (codice di 4 cifre, nella prova 1234) oppure «Pilota»: il pilota scrive nome e cognome
 e la sua matricola aziendale (maiuscole, spazi e accenti non contano; 5 tentativi sbagliati = 15 minuti di attesa).
 L'elenco dei piloti non si vede mai. Il primo ingresso dell'Admin prepara i dati di esempio (matricole di prova 0412, 0587, 0633).

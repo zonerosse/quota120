@@ -432,6 +432,15 @@
   body.come .come-banda{display:flex}
   .come-banda select{font:500 15px "Barlow",Arial,sans-serif;padding:7px 10px;border:1px solid #D5DDE2;border-radius:8px;min-width:200px;background:#fff}
   .come-banda .btn{margin-left:auto}
+  a.btn{text-decoration:none}
+  .btn.ambra{background:#E8C15A;color:#132A3A}
+  .btn.ambra .spin{border-color:rgba(19,42,58,.3);border-top-color:#132A3A}
+  .lg-dietro{display:flex;align-items:center;gap:12px;max-width:520px;margin:20px auto 0;flex-wrap:wrap}
+  .lg-dietro .back{display:inline-flex}
+  .cod6{font-size:30px;letter-spacing:.35em;text-align:center;font-weight:700;padding:10px 8px!important}
+  .ind-piloti{background:var(--sup2,#F5F7F8);border:1px dashed var(--accent);border-radius:9px;padding:10px 12px;font-weight:600;font-size:15px;color:var(--accent);margin-top:8px;word-break:break-all}
+  .spunta-ok{display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--ink2);margin-top:12px;cursor:pointer}
+  .spunta-ok input{width:20px;height:20px;margin:1px 0 0;flex:none}
   .err{display:none;margin-top:10px;background:#fff;border:1px solid var(--bordo);border-left:4px solid var(--ko);border-radius:8px;padding:10px 12px;font-size:16px}
   .sapere{text-align:left;font-size:15px;margin-top:14px;border-top:1px solid var(--bordo);padding-top:12px;color:var(--ink2)}
   .sapere>div{padding:3px 0 3px 14px;position:relative}
@@ -895,16 +904,62 @@
 
   <!-- ================= ENTRATA ================= -->
   <div id="v-login" class="hidden">
-    <div class="card" style="max-width:520px;margin:20px auto 0">
+    <div class="card" id="lg-card" style="max-width:520px;margin:20px auto 0">
       <h2>Entra in Quota 120</h2>
+      <div id="lg-op" style="display:none;font-size:15px;margin-bottom:6px"></div>
       <div style="font-size:13px;color:var(--muted)">Chi sei?</div>
       <div class="fonti" style="grid-template-columns:1fr 1fr">
-        <button class="fonte" onclick="scegliRuolo('adm')"><div class="ico" style="background:var(--accent)"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg></div><div><div class="a">Admin</div><div class="b">Il responsabile: vede tutto</div></div></button>
+        <button class="fonte" onclick="scegliRuolo('adm')"><div class="ico" style="background:var(--accent)"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg></div><div><div class="a">Admin</div><div class="b" id="lg-adm-b">Il responsabile: vede tutto</div></div></button>
         <button class="fonte" onclick="scegliRuolo('op')"><div class="ico" style="background:var(--f-persone)"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1-4 4-6 7-6s6 2 7 6"/></svg></div><div><div class="a">Pilota</div><div class="b">Nome e matricola</div></div></button>
       </div>
       <div id="lg-form" style="margin-top:12px"></div>
     </div>
+  <div class="card" id="lg-nuovo" style="max-width:520px;margin:12px auto 0;border-left:4px solid #E8C15A;display:none">
+    <h2>Non hai ancora Quota 120?</h2>
+    <div style="font-size:15px;color:var(--ink2)">Crea lo spazio per il tuo operatore in due minuti. Gratis durante la prova, senza carta di credito.</div>
+    <div class="row"><button class="btn ambra" onclick="apriIscrivi()">Crea il tuo spazio gratis</button></div>
+    <div class="row" style="margin-top:12px"><a class="btn sec mini" href="/prova">Guarda la versione di prova con i dati di esempio</a></div>
   </div>
+  <div id="lg-noop" class="card hidden" style="max-width:520px;margin:20px auto 0">
+    <h2>Questo indirizzo non esiste</h2>
+    <div style="font-size:15px;color:var(--ink2)">Controlla di averlo scritto giusto, oppure chiedi di nuovo l'indirizzo al tuo responsabile.</div>
+    <div class="row"><a class="btn" href="/?resta">Vai all'ingresso di Quota 120</a></div>
+  </div>
+  </div>
+
+  <!-- ================= ISCRIZIONE (spazio nuovo, gratis) ================= -->
+  <div id="v-iscrivi" class="hidden">
+    <div class="lg-dietro"><button class="back" onclick="tornaIngresso()">&larr; Indietro</button><div class="crumb">Ingresso &rsaquo; <b>Crea il tuo spazio</b></div></div>
+    <div class="card" style="max-width:520px;margin:10px auto 0">
+      <h2>Crea il tuo spazio</h2>
+      <div class="tag ok" style="display:inline-block;margin-bottom:8px;font-size:13px">Gratis durante la prova</div>
+      <div class="fill" style="grid-template-columns:1fr">
+        <div><label for="is-op">Nome dell'operatore <span style="font-weight:400;color:var(--muted)">(azienda, o nome e cognome)</span></label><input type="text" id="is-op" autocomplete="organization" placeholder="Es. Rossi Droni Srl"></div>
+        <div><label for="is-df">Codice operatore D-Flight <span style="font-weight:400;color:var(--muted)">(se lo hai già)</span></label><input type="text" id="is-df" autocomplete="off" autocapitalize="characters" placeholder="ITA-rpt…"></div>
+        <div><label for="is-n">Il tuo nome e cognome</label><input type="text" id="is-n" autocomplete="name" autocapitalize="words" placeholder="Nome e Cognome"></div>
+        <div><label for="is-e">La tua email</label><input type="text" id="is-e" autocapitalize="none" spellcheck="false" autocomplete="email" inputmode="email" placeholder="nome@esempio.it"></div>
+      </div>
+      <label class="spunta-ok"><input type="checkbox" id="is-ok"><span>Ho letto e accetto le <a href="/condizioni" target="_blank">condizioni d'uso</a> e l'<a href="/privacy" target="_blank">informativa sulla privacy</a></span></label>
+      <div class="row"><button class="btn" id="is-btn" onclick="iscrivi(this)"><span class="spin"></span>Crea il mio spazio</button></div>
+      <div class="err" id="is-err"></div>
+    </div>
+  </div>
+
+  <!-- ================= CODICE VIA EMAIL ================= -->
+  <div id="v-codice" class="hidden">
+    <div class="lg-dietro"><button class="back" onclick="indietroDaCodice()">&larr; Indietro</button><div class="crumb" id="cd-crumb"></div></div>
+    <div class="card" style="max-width:520px;margin:10px auto 0">
+      <h2>Controlla la tua email</h2>
+      <div style="font-size:15px;color:var(--ink2)">Abbiamo mandato un codice di 6 cifre a <b id="cd-mail"></b>. Scrivilo qui sotto.</div>
+      <div class="fill" style="grid-template-columns:1fr;margin-top:10px"><div><input type="text" id="cd-cod" class="cod6" inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="······" onkeydown="if(event.key==='Enter')document.getElementById('cd-ok').click()"></div></div>
+      <div class="row"><button class="btn" id="cd-ok" onclick="confermaCodice(this)"><span class="spin"></span>Conferma</button></div>
+      <div class="err" id="cd-err"></div>
+      <div class="sapere"><div>Il codice vale 15 minuti. Non è arrivato? Guarda nella posta indesiderata, poi
+        <button class="btn sec mini" onclick="rimandaCodice(this)"><span class="spin"></span>Rimanda il codice</button></div>
+        <div style="margin-top:8px">Questo telefono resta riconosciuto: il codice serve di nuovo solo se non entri da qui per 15 giorni.</div></div>
+    </div>
+  </div>
+
   <div id="v-attesa" class="hidden">
     <div class="card" style="max-width:520px;margin:20px auto 0;text-align:center">
       <h2>In attesa dell'Admin</h2>
@@ -930,6 +985,7 @@
   <!-- ================= HOME ================= -->
   <div id="v-home">
     <div id="h-ruolo"></div>
+    <div id="h-benv"></div>
     <button type="button" class="guida-volo" id="h-guidavolo" onclick="guidaVolo()"><svg viewBox="0 0 120 120" width="52" height="52" class="gv-logo"><rect width="120" height="120" rx="26" fill="#132A3A"/><rect x="18" y="24" width="84" height="7" rx="3.5" fill="#E8C15A"/><g transform="translate(60 72)"><g stroke="#fff" stroke-width="6" stroke-linecap="round"><path d="M-17 -17 L17 17"/><path d="M17 -17 L-17 17"/></g><g fill="none" stroke="#fff" stroke-width="4.5"><circle cx="-20" cy="-20" r="10"/><circle cx="20" cy="-20" r="10"/><circle cx="-20" cy="20" r="10"/><circle cx="20" cy="20" r="10"/></g><rect x="-8" y="-8" width="16" height="16" rx="4" fill="#1E6B6F" stroke="#fff" stroke-width="3"/></g></svg><span><b>Guidami in un volo</b><small>Tutte le operazioni in ordine, dalle zone D-Flight alla chiusura</small></span><span class="go">›</span></button>
     <div class="card pannello solo-adm">
       <div class="tit"><svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg> Pannello Admin</div>
@@ -1199,6 +1255,7 @@
     <div class="card" id="ad-tel" style="margin-top:12px">
       <h2>Telefoni e computer collegati</h2>
       <div style="font-size:14px;color:var(--muted)">Il pilota entra scrivendo nome e matricola. Ogni telefono si approva <b>una volta sola</b>: da lì il pilota resta dentro. Per fermare un pilota usa <b>Blocca</b> in Utenti e permessi.</div>
+      <div id="pa-ind"></div>
       <ul class="dlist" id="pl-disp" style="margin-top:6px"></ul>
     </div>
     <div class="card" id="ad-ute" style="margin-top:12px">
@@ -1708,6 +1765,13 @@
   <button id="nb-doc" onclick="apriDocumenti()"><svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z"/><path d="M12 17v-6M9 13l3-3 3 3"/></svg>Documenti</button>
 </nav>
 <script>
+/* ---------- quale spazio: /rossi-droni = lo spazio di un operatore, /prova = versione di prova, / = ingresso ---------- */
+const SLUG=(location.pathname.replace(/^\/+|\/+$/g,'').split('/')[0]||'').toLowerCase();
+const PROVA=SLUG==='prova', SPAZIO=!!SLUG&&!PROVA, INGRESSO=!SLUG;
+const KS=SPAZIO?':'+SLUG:'';                                   // i dati sul telefono restano separati per ogni spazio
+const OPQ=SPAZIO?'op='+encodeURIComponent(SLUG)+'&':'';        // per gli indirizzi usati fuori dal programma (calendario, invio voli)
+(function(){ const f=window.fetch.bind(window); window.fetch=(u,o)=>{ if(SPAZIO&&typeof u==='string'&&u.startsWith('/api/')&&!u.startsWith('/api/registro/')){ o=Object.assign({},o||{}); const h=new Headers(o.headers||{}); h.set('x-op',SLUG); o.headers=h; } return f(u,o); }; })();
+if(INGRESSO&&!/[?&]resta/.test(location.search)){ try{ const u=localStorage.getItem('q120Ultimo'); if(u&&/^[a-z0-9-]+$/.test(u)) location.replace('/'+u+location.search); else if(localStorage.getItem('quota120Disp')) location.replace('/prova'+location.search); }catch(e){} }
 const IC = {
   drone:'<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/>',
   batt:'<rect x="3" y="7" width="16" height="10" rx="2"/><path d="M21 10v4M7 10v4M11 10v4"/>',
@@ -1774,7 +1838,7 @@ const TILES = {
 /* ---------- home ---------- */
 function disegnaHome(){
   const vd=(document.getElementById('h-drone')||{}).value||'', vp=(document.getElementById('h-pilota')||{}).value||'';
-  contaRiquadri(); disegnaPannello();
+  contaRiquadri(); disegnaPannello(); disegnaBenvenuto();
   { const e=document.getElementById('h-ruolo'); if(e) e.innerHTML=ADM&&!COME?`<div class="h-ruolo"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8.5-7 10-4-1.5-7-5-7-10V6z"/></svg><span><b>Home dell’Admin</b> · vedi e gestisci tutto</span>${gdOn()?`<button class="h-giro" id="h-giro" onclick="gdStart('giro')">Giro delle voci</button>`:''}</div>`:''; }
   { const a=LAVORI.filter(l=>l.stato!=='concluso').length; TILES.attivita[2].c=pl(a,'lavoro aperto','lavori aperti'); }
   { const n=Object.values(SCHEDE).filter(s=>s.man.liv!=='ok').length; TILES.flotta[2].c=n?pl(n,'in scadenza','in scadenza'):'in regola'; TILES.flotta[2].d=n?'warn':''; }
@@ -2955,8 +3019,8 @@ function contaRiquadri(){
 /* ---------- entrata ---------- */
 let SEGN=[], CHECK=[], CLIDATI={}, RISCHI=[], RICH=[], BLOCCHI={}, ASP='B', AVVISI={ora:7,giorni:[60,30,7,0],adm:{email:'',on:true},piloti:{}};
 let COME=null, ME=null, IO={r:'',n:''}, ADM=false, VER=0, DISP=[], LASTJ='', SAVING=false, BASE='', VISTA='', T_ATT=0, T_SAL=0, T_POLL=0;
-try{ME=JSON.parse(localStorage.getItem('quota120Disp')||'null');}catch(e){}
-function meSave(){try{if(ME)localStorage.setItem('quota120Disp',JSON.stringify(ME));else localStorage.removeItem('quota120Disp');}catch(e){}}
+try{ME=JSON.parse(localStorage.getItem('quota120Disp'+KS)||'null');}catch(e){}
+function meSave(){try{if(ME)localStorage.setItem('quota120Disp'+KS,JSON.stringify(ME));else localStorage.removeItem('quota120Disp'+KS);}catch(e){}}
 function api(m,path,b){if(COME&&m!=='GET'){toast('Sei in Vista operatore: qui non si modifica niente');return Promise.resolve({errore:'Vista operatore: solo da guardare',_s:0});}
   return fetch(path,{method:m,headers:{'content-type':'application/json','x-disp':ME?ME.id+':'+ME.k:''},body:b?JSON.stringify(b):undefined})
   .then(r=>r.json().then(j=>{j._s=r.status;return j;}));}
@@ -2987,12 +3051,84 @@ function avvio(){
   dz.addEventListener('dragover',e=>{e.preventDefault();dz.style.borderColor='var(--accent)';});
   dz.addEventListener('dragleave',()=>{dz.style.borderColor='';});
   dz.addEventListener('drop',e=>{e.preventDefault();dz.style.borderColor='';const f=e.dataTransfer.files[0];if(f)caricaFile(f,'file');});
-  if(!ME){schermata('login');return;}
+  document.getElementById('demo').style.display=PROVA?'':'none';
+  if(INGRESSO) ME=null;
+  if(SPAZIO) try{localStorage.setItem('q120Ultimo',SLUG);}catch(e){}
+  if(!ME){mostraIngresso();return;}
   if(ME.stato!=='ok'){attesa();return;}
   entra();
 }
+/* ---------- ingresso: versione di prova, spazio di un operatore, oppure ingresso generale ---------- */
+let LG={email:'',tipo:'',dati:null};
+function mostraIngresso(){
+  schermata('login');
+  document.getElementById('lg-adm-b').textContent=PROVA?'Il responsabile: vede tutto':'Entra con la tua email';
+  document.getElementById('lg-nuovo').style.display=INGRESSO?'':'none';
+  const op=document.getElementById('lg-op');
+  if(SPAZIO){
+    fetch('/api/registro/info?op='+encodeURIComponent(SLUG)).then(r=>r.json()).then(j=>{
+      if(j.nome){ op.innerHTML='Operatore: <b>'+ESC(j.nome)+'</b>'; op.style.display=''; }
+      else { document.getElementById('lg-card').classList.add('hidden'); document.getElementById('lg-noop').classList.remove('hidden'); try{if(localStorage.getItem('q120Ultimo')===SLUG)localStorage.removeItem('q120Ultimo');}catch(e){} }
+    }).catch(()=>{});
+  }
+}
+function tornaIngresso(){ document.getElementById('lg-form').innerHTML=''; mostraIngresso(); }
+function apriIscrivi(){ schermata('iscrivi'); document.getElementById('is-err').style.display='none'; setTimeout(()=>document.getElementById('is-op').focus(),50); }
+function erroreIn(id,txt){ const e=document.getElementById(id); e.innerHTML=txt; e.style.display='block'; }
+function iscrivi(b){
+  const v=i=>document.getElementById(i).value.trim();
+  const d={op:v('is-op'),df:v('is-df'),nome:v('is-n'),email:v('is-e'),ok:document.getElementById('is-ok').checked};
+  document.getElementById('is-err').style.display='none';
+  if(!d.op||!d.nome||!d.email){erroreIn('is-err','Scrivi il nome dell’operatore, il tuo nome e la tua email.');return;}
+  if(!d.ok){erroreIn('is-err','Per continuare spunta l’accettazione delle condizioni d’uso e della privacy.');return;}
+  chiediCodice('/api/registro/iscrivi',d,'iscrizione',b,'is-err');
+}
+function chiediCodice(url,d,tipo,b,errId){
+  b.disabled=true;b.classList.add('busy');
+  fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(d)}).then(r=>r.json()).then(j=>{
+    b.disabled=false;b.classList.remove('busy');
+    if(j.errore){erroreIn(errId,j.errore);return;}
+    LG={email:d.email,tipo,dati:d,url};
+    schermata('codice');
+    document.getElementById('cd-mail').textContent=d.email;
+    document.getElementById('cd-crumb').innerHTML=tipo==='iscrizione'?'Crea il tuo spazio &rsaquo; <b>Conferma</b>':'Ingresso &rsaquo; <b>Codice dell’Admin</b>';
+    document.getElementById('cd-cod').value=''; document.getElementById('cd-err').style.display='none';
+    setTimeout(()=>document.getElementById('cd-cod').focus(),50);
+  }).catch(()=>{b.disabled=false;b.classList.remove('busy');erroreIn(errId,'Niente rete: riprova');});
+}
+function rimandaCodice(b){ if(!LG.url) return; b.disabled=true;b.classList.add('busy');
+  fetch(LG.url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(LG.dati)}).then(r=>r.json()).then(j=>{
+    b.disabled=false;b.classList.remove('busy'); if(j.errore) erroreIn('cd-err',j.errore); else { document.getElementById('cd-err').style.display='none'; toast('Codice nuovo mandato a '+LG.email); } })
+  .catch(()=>{b.disabled=false;b.classList.remove('busy');erroreIn('cd-err','Niente rete: riprova');}); }
+function indietroDaCodice(){ if(LG.tipo==='iscrizione') apriIscrivi(); else tornaIngresso(); }
+function confermaCodice(b){
+  const c=document.getElementById('cd-cod').value.replace(/\D/g,'');
+  if(c.length!==6){erroreIn('cd-err','Il codice ha 6 cifre.');return;}
+  b.disabled=true;b.classList.add('busy');
+  fetch('/api/registro/verifica',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:LG.email,codice:c})}).then(r=>r.json()).then(j=>{
+    if(j.errore){b.disabled=false;b.classList.remove('busy');erroreIn('cd-err',j.errore);return;}
+    const me={id:j.id,k:j.k,stato:j.stato,codice:j.codice,n:j.n};
+    try{ localStorage.setItem('quota120Disp:'+j.op,JSON.stringify(me)); localStorage.setItem('q120Ultimo',j.op); }catch(e){}
+    if(j.op===SLUG){ b.disabled=false;b.classList.remove('busy'); ME=me; if(j.asp) ASP=j.asp; entra(); }
+    else location.replace('/'+j.op+(j.nuovo?'?benvenuto=1':''));
+  }).catch(()=>{b.disabled=false;b.classList.remove('busy');erroreIn('cd-err','Niente rete: riprova');});
+}
 function scegliRuolo(r){
   const f=document.getElementById('lg-form');
+  if(r==='adm'&&!PROVA){
+    f.innerHTML=`<div class="fill" style="grid-template-columns:1fr"><div><label for="lg-mail">La tua email</label><input type="text" id="lg-mail" autocapitalize="none" spellcheck="false" inputmode="email" autocomplete="email" placeholder="nome@esempio.it" onkeydown="if(event.key==='Enter')document.getElementById('lg-ok').click()"></div></div>
+      <div class="row"><button class="btn" id="lg-ok" onclick="adminEmail(this)"><span class="spin"></span>Mandami il codice</button></div>
+      <div style="font-size:13px;color:var(--muted);margin-top:6px">Ti arriva un codice di 6 cifre. Da questo telefono poi resti dentro.</div><div class="err" id="lg-err"></div>`;
+    setTimeout(()=>document.getElementById('lg-mail').focus(),50);
+    return;
+  }
+  if(r==='op'&&INGRESSO){
+    f.innerHTML=`<div style="font-size:15px;color:var(--ink2)">Apri l’indirizzo che ti ha mandato il tuo responsabile: ti porta direttamente nel tuo spazio. Se ce l’hai scritto, incollalo qui.</div>
+      <div class="fill" style="grid-template-columns:1fr;margin-top:8px"><div><label for="lg-ind">Indirizzo del tuo spazio</label><input type="text" id="lg-ind" autocomplete="off" autocapitalize="none" placeholder="Es. …workers.dev/rossi-droni" onkeydown="if(event.key==='Enter')document.getElementById('lg-ok').click()"></div></div>
+      <div class="row"><button class="btn" id="lg-ok" onclick="vaiSpazio()">Vai</button></div><div class="err" id="lg-err"></div>`;
+    setTimeout(()=>document.getElementById('lg-ind').focus(),50);
+    return;
+  }
   if(r==='adm'){
     f.innerHTML=`<div class="fill" style="grid-template-columns:1fr"><div><label>Codice dell'Admin (4 cifre)</label><input type="password" id="lg-pin" inputmode="numeric" maxlength="4" autocomplete="off"></div></div>
       <div class="row"><button class="btn" onclick="richiesta('adm',this)"><span class="spin"></span>Entra come Admin</button></div>
@@ -3006,6 +3142,16 @@ function scegliRuolo(r){
       <div><label for="lg-m">Matricola</label><input type="text" id="lg-m" autocomplete="off" autocapitalize="characters" placeholder="La tua matricola Aziendale" onkeydown="if(event.key==='Enter')document.getElementById('lg-ok').click()"></div></div>
     <div class="row"><button class="btn" id="lg-ok" onclick="richiesta('op',this)"><span class="spin"></span>Entra</button></div><div class="err" id="lg-err"></div>`;
   setTimeout(()=>document.getElementById('lg-n').focus(),50);
+}
+function adminEmail(b){
+  const email=document.getElementById('lg-mail').value.trim();
+  if(!email){erroreIn('lg-err','Scrivi la tua email.');return;}
+  chiediCodice('/api/registro/codice',{email,op:SLUG},'accesso',b,'lg-err');
+}
+function vaiSpazio(){
+  const s=(document.getElementById('lg-ind').value.trim().toLowerCase().split('?')[0].replace(/\/+$/,'').split('/').pop()||'');
+  if(!/^[a-z0-9-]{3,40}$/.test(s)){erroreIn('lg-err','Non riconosco l’indirizzo: chiedilo di nuovo al tuo responsabile.');return;}
+  location.href='/'+s;
 }
 function richiesta(r,b){
   const body={ruolo:r};
@@ -3085,7 +3231,7 @@ function esci(){
   if(ME) fetch('/api/disp/esci',{method:'POST',headers:{'x-disp':ME.id+':'+ME.k}}).catch(()=>{});
   ME=null;meSave();clearInterval(T_ATT);clearInterval(T_SAL);clearInterval(T_POLL);
   IO={r:'',n:''};ADM=false;document.body.classList.remove('op');
-  document.getElementById('lg-form').innerHTML='';schermata('login');
+  document.getElementById('lg-form').innerHTML='';mostraIngresso();
 }
 /* salvataggio: ogni modifica parte da sola verso il server */
 function controllaModifiche(){
@@ -3471,11 +3617,35 @@ function disegnaPannello(){
     {i:'<svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>',n:'Valutazioni del rischio',c:RISCHI.length?pl(RISCHI.length,'salvata','salvate'):'nessuna',go:'apriRischi()'},
     (()=>{const da=RICH.filter(x=>x.stato==='bozza').length, at=RICH.filter(x=>x.stato==='inviata').length; return {i:'<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>',n:'Richieste di permesso',c:da?pl(da,'da mandare','da mandare'):at?pl(at,'in attesa','in attesa'):'ATM-09 e ATM-05',d:da?'warn':'',go:'apriRichieste()'};})(),
     {i:'<svg viewBox="0 0 24 24"><path d="M3 17c3-1 4-9 7-9s1 9 4 9 3-4 4-4 1 2 3 2"/><path d="M3 21h18"/></svg>',n:'Le firme',c:OP.firma&&OP.firma.img?(PILOTI.filter(p=>!(SCHEDEP[p.id]||{}).firma).length?pl(PILOTI.filter(p=>!(SCHEDEP[p.id]||{}).firma).length,'pilota senza','piloti senza'):'tutte fatte'):'manca la tua',d:OP.firma&&OP.firma.img&&!PILOTI.some(p=>!(SCHEDEP[p.id]||{}).firma)?'':'warn',go:"apriAdmin('ad-firma')"},
-    {i:SHIELD,n:'Codice dell’Admin',c:'cambia il codice',go:'cambiaCodice()'},
+    ...(SPAZIO?[]:[{i:SHIELD,n:'Codice dell’Admin',c:'cambia il codice',go:'cambiaCodice()'}]),
     {i:'<svg viewBox="0 0 24 24"><path d="M4 5c3-1.5 5.5-1.5 8 0v14c-2.5-1.5-5-1.5-8 0z"/><path d="M12 5c2.5-1.5 5-1.5 8 0v14c-3-1.5-5.5-1.5-8 0"/></svg>',n:'Studio Gestionale',c:stuFatte().length+' lezioni su '+LEZIONI.length,go:'apriStudio()'}];
   document.getElementById('t-admin').innerHTML=document.getElementById('ad-tiles').innerHTML=T.map(t=>`<button class="tile" onclick="${t.go}">
     <div class="ico" style="background:var(--accent)">${t.i}</div>
     <div><div class="n">${t.n}</div><div class="c">${t.c}</div></div>${t.d?`<span class="dot ${t.d}"></span>`:''}</button>`).join('');
+}
+/* ---------- spazio nuovo: benvenuto, indirizzo per i piloti e primi passi ---------- */
+function indPiloti(){ return location.origin+'/'+SLUG; }
+function copiaInd(){ const u=indPiloti(); (navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(()=>toast('Indirizzo copiato')).catch(()=>{ prompt('Copia l’indirizzo:',u); }); }
+function waInd(){ const nome=(OP.nome||'').replace(/ \(dati di esempio\)/,'');
+  window.open('https://wa.me/?text='+encodeURIComponent('Ciao, per Quota 120'+(nome?' di '+nome:'')+' apri questo indirizzo dal telefono ed entra con il tuo nome e cognome e la tua matricola aziendale: '+indPiloti()),'_blank'); }
+function boxInd(){ return `<div class="ind-piloti">${ESC(indPiloti())}</div>
+  <div class="row"><button class="btn sec mini" onclick="copiaInd()">Copia l’indirizzo</button><button class="btn sec mini" onclick="waInd()">Manda su WhatsApp</button></div>`; }
+function disegnaBenvenuto(){
+  const e=document.getElementById('h-benv'); if(!e) return;
+  const pa=document.getElementById('pa-ind'); if(pa) pa.innerHTML=SPAZIO&&ADM?`<div style="margin-top:10px;font-size:14px"><b>Indirizzo per i tuoi piloti</b></div>${boxInd()}`:'';
+  if(!(SPAZIO&&ADM&&!COME&&(!DRONI.length||!PILOTI.length))){ e.innerHTML=''; return; }
+  const opOk=!!(OP.tel&&OP.codice), nome=(OP.resp||'').split(' ')[0];
+  const T=[{i:svg('dflight'),n:'Dati dell’operatore',c:opOk?'fatto':'da completare',d:!opOk,go:"apriAdmin('ad-op')"},
+    {i:svg('drone'),n:'Primo drone',c:DRONI.length?'fatto':'da aggiungere',d:!DRONI.length,go:'nuovoDrone()'},
+    {i:svg('pilota'),n:'Primo pilota',c:PILOTI.length?'fatto':'da aggiungere',d:!PILOTI.length,go:'nuovoPilota()'},
+    {i:'<svg viewBox="0 0 24 24"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg>',n:'Zone di volo',c:ZONEINFO?'fatto':'da caricare',d:!ZONEINFO,go:'apriZone()'}];
+  e.innerHTML=`<div class="card" style="background:var(--notte,#132A3A);color:#fff;border-color:var(--notte,#132A3A);margin-bottom:12px">
+      <div style="font-size:20px;font-weight:600">Benvenuto${nome?', '+ESC(nome):''}</div>
+      <div style="font-size:15px;color:#cfd9e0">Lo spazio di <b>${ESC(OP.nome||'')}</b> è pronto.</div></div>
+    <div class="card" style="margin-bottom:12px"><h2>Indirizzo per i tuoi piloti</h2>
+      <div style="font-size:15px;color:var(--ink2)">Mandalo ai piloti: entrano con nome e matricola, tu li approvi una volta sola.</div>${boxInd()}</div>
+    <div class="card" style="margin-bottom:12px"><h2>Primi passi</h2><div class="tiles">${T.map(t=>`<button class="tile" onclick="${t.go}">
+      <div class="ico" style="background:var(--accent)">${t.i}</div><div><div class="n">${t.n}</div><div class="c">${t.c}</div></div>${t.d?'<span class="dot warn"></span>':''}</button>`).join('')}</div></div>`;
 }
 function apriAdmin(sez,apri){
   if(!ADM) return;
@@ -4723,8 +4893,8 @@ function stuApri(i){ document.querySelectorAll('.stu-l').forEach((d,j)=>d.open=j
 /* ---------- senza rete: si lavora con gli ultimi dati, le modifiche e i file partono quando torna la rete ---------- */
 let OFFLINE=false, T_RETE=0, CODA_OFF=[];
 if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
-function salvaLocale(loc){ if(!IO.r||COME) return; try{ localStorage.setItem('q120Dati',JSON.stringify({id:ME&&ME.id,ver:VER,io:IO,disp:DISP,blocchi:BLOCCHI,srv:LASTJ,loc:loc||JSON.stringify(stato()),zi:ZONEINFO})); }catch(e){} }
-function datiLocali(){ try{ const c=JSON.parse(localStorage.getItem('q120Dati')||'null'); return c&&ME&&c.id===ME.id?c:null; }catch(e){ return null; } }
+function salvaLocale(loc){ if(!IO.r||COME) return; try{ localStorage.setItem('q120Dati'+KS,JSON.stringify({id:ME&&ME.id,ver:VER,io:IO,disp:DISP,blocchi:BLOCCHI,srv:LASTJ,loc:loc||JSON.stringify(stato()),zi:ZONEINFO})); }catch(e){} }
+function datiLocali(){ try{ const c=JSON.parse(localStorage.getItem('q120Dati'+KS)||'null'); return c&&ME&&c.id===ME.id?c:null; }catch(e){ return null; } }
 function entraSenzaRete(){
   const c=datiLocali(); if(!c) return false;
   COME=null; IO=c.io; ADM=IO.r==='adm'; document.body.classList.toggle('op',!ADM); document.body.classList.toggle('adm',ADM); document.body.classList.remove('come');
@@ -5242,7 +5412,7 @@ function disegnaInvio(){
       <li><div>Aggiungi ${D('Ottieni contenuti della cartella')}: scegli ${D('Sul mio iPhone')} › ${D('DJI Fly')} › ${D('Apri')}, poi ${D('›')} e accendi ${D('Ricorsivo')}.</div></li>
       <li><div>Aggiungi ${D('Filtra file')}: ${D('Nome')} ${D('inizia con')} <b>DJIFlightRecord</b>.</div></li>
       <li><div>Aggiungi ${D('Ripeti con ognuno')} (in ${D('File')}).</div></li>
-      <li><div>Aggiungi ${D('Ottieni contenuti dell’URL')} e mettilo dentro il ripeti (tieni premuto › ${D('Copia')} › ${D('Rimuovi')}, poi su «Interrompi ripetizione» › ${D('Incolla sopra')}). URL: <span class="inv-url">${location.origin}/api/invio?t=</span> poi la variabile ${D('Testo')}, poi <span class="inv-url">&amp;nome=</span> poi ${D('Elemento ripetizione')} › ${D('Nome')}. Metodo ${D('POST')}, corpo della richiesta ${D('File')}: ${D('Elemento ripetizione')}.</div></li>
+      <li><div>Aggiungi ${D('Ottieni contenuti dell’URL')} e mettilo dentro il ripeti (tieni premuto › ${D('Copia')} › ${D('Rimuovi')}, poi su «Interrompi ripetizione» › ${D('Incolla sopra')}). URL: <span class="inv-url">${location.origin}/api/invio?${OPQ}t=</span> poi la variabile ${D('Testo')}, poi <span class="inv-url">&amp;nome=</span> poi ${D('Elemento ripetizione')} › ${D('Nome')}. Metodo ${D('POST')}, corpo della richiesta ${D('File')}: ${D('Elemento ripetizione')}.</div></li>
       <li><div>Tocca ${D('ⓘ')} › ${D('Domande di importazione')}: una domanda sul ${D('Testo')} («Incolla il tuo codice di invio di Quota 120») e una sulla ${D('Cartella')} («Scegli la cartella DJI Fly»).</div></li>
       <li><div>Tieni premuto il comando › ${D('Condividi')} › ${D('Copia link iCloud')} e incollalo qui sotto.</div></li></ol>
      <label for="inv-link" style="display:block;font-size:14px;color:var(--ink3);margin:8px 0 4px">Link del comando rapido</label><input type="text" id="inv-link" value="${ESC(link)}" placeholder="https://www.icloud.com/shortcuts/…" style="width:100%">
@@ -5572,7 +5742,7 @@ function apriCalTel(){
   vai('caltel','Calendario &rsaquo; Sul telefono'); document.getElementById('back').onclick=()=>apriCalendario(); disegnaCalTel();
   if(!OFFLINE) api('GET','/api/cal/codice').then(j=>{ if(j.codice){ CALTK=j.codice; disegnaCalTel(); } }).catch(()=>{});
 }
-function calUrl(){ return CALTK?location.origin+'/api/cal.ics?t='+CALTK:''; }
+function calUrl(){ return CALTK?location.origin+'/api/cal.ics?'+OPQ+'t='+CALTK:''; }
 function disegnaCalTel(){
   const e=document.getElementById('ct-c'); if(!e) return; const u=calUrl(), D=t=>`<span class="dove">${t}</span>`;
   e.innerHTML=`<h2>Metti il calendario sul telefono</h2><div style="font-size:15px;color:var(--muted)">Si fa una volta. Poi i lavori nuovi e i cambi di data compaiono da soli nel calendario del telefono. ${ADM?'Tu, da Admin, vedi tutti i lavori e le scadenze.':'Vedi solo i tuoi lavori e le tue scadenze.'}</div>
