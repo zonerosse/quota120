@@ -212,6 +212,18 @@ function unisci(full, m, n) {
     const sp = (d.SCHEDEP = d.SCHEDEP || {})[me.id] = d.SCHEDEP[me.id] || { ruolo: "Pilota", ore: "0 h", voli: 0, ore90: "0 h", inc: 0, att: {} };
     if (f && typeof f.img === "string" && /^data:image\/png;base64,[A-Za-z0-9+\/=]+$/.test(f.img) && f.img.length <= 80000) sp.firma = { img: f.img, il: DATA(f.il) || oggi() };
   }
+  // manutenzioni: i piloti con il permesso «Droni, batterie e manutenzioni» registrano gli interventi
+  if (permDi(d, n).flotta && m.SCHEDE && typeof m.SCHEDE === "object") {
+    for (const dr of d.DRONI || []) {
+      const x = m.SCHEDE[dr.id] || m.SCHEDE[String(dr.id)], sc = (d.SCHEDE || {})[dr.id]; if (!x || !sc || !Array.isArray(x.storia)) continue;
+      const ha = new Set((sc.storia || []).map(r => JSON.stringify(r))), nuovi = [];
+      for (const r of x.storia.slice(0, 10)) { if (!Array.isArray(r) || ha.has(JSON.stringify(r))) continue; const p = [DATA(r[0]) || oggi(), esc(r[1], 300)]; if (!/registrato da /.test(p[1])) p[1] += " · registrato da " + n; nuovi.push(p); }
+      if (!nuovi.length) continue;
+      sc.storia = nuovi.concat(sc.storia || []).slice(0, 200);
+      if (x.man && typeof x.man === "object") sc.man = Object.assign(sc.man || {}, { perc: Math.max(0, Math.min(100, +x.man.perc || 0)), liv: ["ok", "warn", "ko"].includes(x.man.liv) ? x.man.liv : (sc.man || {}).liv, mancano: esc(x.man.mancano, 40), prox: esc(x.man.prox, 120) });
+      const md = (m.DRONI || []).find(y => y && y.id === dr.id); if (md && ["ok", "warn", "ko"].includes(md.manut)) dr.manut = md.manut;
+    }
+  }
   // valutazioni del rischio: il pilota aggiunge o cambia solo le sue
   const rv = new Map((d.RISCHI || []).map(r => [r.id, r]));
   for (const r of (m.RISCHI || []).slice(0, 300)) {

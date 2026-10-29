@@ -233,6 +233,7 @@
   body.op .solo-adm{display:none!important}
   body:not(.op) .solo-op{display:none!important}
   body.op .ro .btn:not(.vedi){display:none!important}
+  body.op .ro .mn-reg input,body.op .ro .mn-reg select{pointer-events:auto;background:#fff}body.op .ro .mn-reg .btn{display:inline-flex!important}
   body.op .ro input,body.op .ro select,body.op .ro textarea{pointer-events:none;background:#f3f5f7}
   .todo li.go{cursor:pointer}
   .demo{background:#e3e8ee;border:1px solid var(--line);color:var(--muted);font-size:12px;padding:6px 10px;border-radius:8px;margin-bottom:10px}
@@ -1668,13 +1669,13 @@
       <h2>Prossime scadenze</h2>
       <ul class="dlist" id="mn-pros"></ul>
     </div>
-    <div class="card solo-op nota" style="margin-top:12px">Gli interventi di manutenzione li registra l’Admin: se hai fatto qualcosa sul drone (per esempio eliche cambiate), diglielo o usa «Segnala un problema».</div>
-    <div class="card solo-adm" style="margin-top:12px">
+    <div class="card nota" id="mn-noperm" style="margin-top:12px;display:none">Gli interventi di manutenzione li registra l’Admin, o i piloti a cui l’ha permesso: se hai fatto qualcosa sul drone (per esempio eliche cambiate), diglielo o usa «Segnala un problema».</div>
+    <div class="card mn-reg" id="mn-reg" style="margin-top:12px">
       <h2>Registra un intervento</h2>
       <div class="fill">
         <div><label>Drone</label><select id="mn-drone" onchange="tipiIntervento()"></select></div>
         <div><label>Intervento</label><select id="mn-tipo"></select></div>
-        <div><label>Fatto da</label><select id="mn-chi"><option>Noi (operatore)</option><option>Centro assistenza DJI</option><option>Altro tecnico</option></select></div>
+        <div><label>Fatto da</label><select id="mn-chi"></select></div>
         <div><label>Note</label><input type="text" id="mn-note" placeholder="Es. eliche sostituite con ricambi originali"></div>
       </div>
       <div class="row"><button class="btn" onclick="registraIntervento(this)"><span class="spin"></span>Registra</button></div>
@@ -2766,7 +2767,7 @@ const INTERVENTI={1:['Controllo generale a 50 ore','Sostituzione eliche','Aggior
   3:['Pulizia ugelli e pompa','Controllo generale','Aggiornamento firmware','Riparazione']};
 function apriManut(scelto){
   const ord={warn:0,ko:0,ok:1};
-  const lista=DRONI.map(d=>({d,s:SCHEDE[d.id]})).sort((a,b)=>ord[a.s.man.liv]-ord[b.s.man.liv]||b.s.man.perc-a.s.man.perc);
+  const lista=DRONI.map(d=>({d,s:SCHEDE[d.id]})).filter(x=>x.s&&x.s.man).sort((a,b)=>ord[a.s.man.liv]-ord[b.s.man.liv]||b.s.man.perc-a.s.man.perc);
   document.getElementById('mn-pros').innerHTML=lista.map(({d,s})=>`<li onclick="apriDrone(${d.id},'droni')">
     <div class="ico" style="background:var(--f-flotta)">${svg('manut')}</div>
     <div class="main"><div class="a">${d.nome}</div><div class="b">${s.man.prox} · mancano ${s.man.mancano}</div>
@@ -2774,10 +2775,12 @@ function apriManut(scelto){
     <span class="tag ${s.man.liv}">${s.man.liv==='ok'?'In regola':'Presto'}</span></li>`).join('');
   document.getElementById('mn-drone').innerHTML=DRONI.map(d=>`<option value="${d.id}" ${(scelto?d.id===scelto:(SCHEDE[d.id]||{man:{}}).man.liv!=='ok')?'selected':''}>${d.nome}</option>`).join('');
   tipiIntervento();
-  const tutti=[]; DRONI.forEach(d=>SCHEDE[d.id].storia.forEach(x=>tutti.push([x[0],d.nome,x[1]])));
+  const tutti=[]; DRONI.forEach(d=>((SCHEDE[d.id]||{}).storia||[]).forEach(x=>tutti.push([x[0],d.nome,x[1]])));
   const k=s=>s.split('/').reverse().join('');
   tutti.sort((a,b)=>k(b[0]).localeCompare(k(a[0])));
   document.getElementById('mn-storia').innerHTML=tutti.slice(0,8).map(x=>`<li><span class="d">${x[0]}</span><span><b style="font-weight:600">${x[1]}</b><br><span style="color:var(--muted);font-size:13px">${x[2]}</span></span></li>`).join('');
+  const puo=ADM||!!permIo().flotta; document.getElementById('mn-reg').style.display=puo?'':'none'; document.getElementById('mn-noperm').style.display=puo?'none':'';
+  document.getElementById('mn-chi').innerHTML=(ADM?['Noi (operatore)']:['Io ('+(IO.n||'pilota')+')']).concat(['Centro assistenza DJI','Altro tecnico']).map(x=>`<option>${ESC(x)}</option>`).join('');
   vai('manut','Flotta &rsaquo; Manutenzioni');
 }
 function tipiIntervento(){
@@ -2789,7 +2792,7 @@ function registraIntervento(b){
     const id=+document.getElementById('mn-drone').value, tipo=document.getElementById('mn-tipo').value,
           chi=document.getElementById('mn-chi').value, note=document.getElementById('mn-note').value.trim();
     const s=SCHEDE[id];
-    s.storia.unshift([oggi(), tipo+(chi.startsWith('Noi')?'':' ('+chi.toLowerCase()+')')+(note?' · '+note:'')]);
+    s.storia.unshift([oggi(), tipo+(chi.startsWith('Noi')||chi.startsWith('Io')?'':' ('+chi.toLowerCase()+')')+(note?' · '+note:'')+(ADM?'':' · registrato da '+IO.n)]);
     // se è l'intervento in scadenza, il contatore riparte
     if(tipo===(INTERVENTI[id]||INTERV_BASE)[0]){ s.man.perc=0; s.man.liv='ok';
       s.man.mancano= id===3?'10 ore':'50 ore'; DRONI.find(d=>d.id===id).manut='ok';
