@@ -1764,7 +1764,7 @@ function verifiche(){
   if(d.cat==='specific'){ abil=p.sts?'ok':'ko'; det=p.sts?'Ha l’attestato STS-01':'Per questo drone serve l’attestato STS'; }
   else if(d.classe==='C2'){ abil=p.att.includes('A2')?'ok':'ko'; det=p.att.includes('A2')?'Ha l’attestato A2 per la classe C2':'Per la classe C2 vicino alle persone serve l’A2'; }
   else { abil='ok'; det='Classe '+d.classe+': basta l’A1-A3'; }
-  L.push({l:'Pilota abilitato per questo drone',s:abil,d:det});
+  L.push({l:'Pilota abilitato per questo drone',s:abil,d:det,pd:abil==='ko'});
   { const at=Object.values((SCHEDEP[p.id]||{}).att||{}).filter(a=>a.scad).sort((a,b)=>dt(a.scad)-dt(b.scad))[0];
     const lv=at?livData(at.scad):'ko';
     L.push({l:'Attestato valido',s:lv,d:at?(lv==='ko'?'Scaduto il ':'Scadenza ')+at.scad+(lv==='warn'?' (tra meno di 90 giorni)':''):'Nessun attestato inserito'}); }
@@ -1826,6 +1826,13 @@ Grazie mille. Cordiali saluti, NOME E COGNOME.`;
 function copiaTesto(t,msg){ (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast(msg||'Copiato')).catch(()=>toast('Copia non riuscita')); }
 const NT_AZ={fuori:'volo fuori dall’area',nonvolo:'non volo oggi',permesso:'ho il permesso'};
 function notamTesto(){ const n=NOTAM; if(!n.stato) return ''; return n.stato==='nessuno'?'D-Flight guardato alle '+n.ora+': nessun avviso':'«'+n.testo+'» · '+(n.quota==='sopra'?'sopra i 120 m, non riguarda il volo':NT_AZ[n.azione])+' (controllati alle '+n.ora+')'; }
+function cambiaPD(){
+  const abile=(d,p)=>d.cat==='specific'?!!p.sts:d.classe==='C2'?(p.att||[]).includes('A2'):true;
+  modulo('Cambia pilota o drone',[{k:'d',l:'Drone',t:'sel',o:DRONI.map(d=>[String(d.id),d.nome]),v:String(dSel.id),req:1},
+    {k:'p',l:'Pilota',t:'sel',o:PILOTI.map(p=>[String(p.id),p.nome+(abile(dSel,p)?'':' (non abilitato per questo drone)')]),v:String(pSel.id),req:1}],v=>{
+    dSel=DRONI.find(x=>x.id==v.d); pSel=PILOTI.find(x=>x.id==v.p); disegnaControllo();
+    toast(abile(dSel,pSel)?'Ora: '+dSel.nome+' con '+pSel.nome:'Questo pilota non è abilitato per '+dSel.nome+': scegline un altro'); },'Cambia');
+}
 function dfFatto(b){ lavora(b,()=>{ NOTAM={stato:'nessuno',ora:ora()}; zoneOk=true; ZONE.unshift({data:oggi(),ora:ora(),drone:dSel.nome,pilota:pSel.nome,esito:'D-Flight guardato: tutto a posto'}); disegnaControllo(); }); }
 function notamNessuno(b){ dfFatto(b); }
 function notamC(){
@@ -1850,6 +1857,7 @@ function disegnaControllo(){
     if(x.act==='zona') act=`<button class="btn sec mini" onclick="window.open(DFLIGHT_MAPPA,'_blank')">Apri D-Flight</button><button class="btn mini" onclick="autorizzazioneZona()">Ho l’autorizzazione</button>`;
     if(x.act==='df') act=`<div class="df-box"><button class="btn sec mini" id="df-mappa" onclick="window.open(DFLIGHT_MAPPA,'_blank')">Apri la mappa D-Flight</button><div class="df-due"><button class="btn mini" id="nt-no" onclick="dfFatto(this)"><span class="spin"></span>Guardato: tutto a posto</button><button class="btn sec mini" onclick="notamC()">C’è un avviso</button></div><a href="#" class="df-extra" id="nt-mappa" onclick="window.open(NOTAM_MAPPA,'_blank');return false">Controllo in più (facoltativo): mappa degli avvisi senza account, non ufficiale, in inglese</a></div>`;
     if(x.cambia) act=`<button class="btn sec mini" onclick="NOTAM={};disegnaControllo()">Cambia</button>`;
+    if(x.pd) act=`<button class="btn mini" id="c-pd" onclick="cambiaPD()">Cambia pilota o drone</button>`;
     if(x.act==='rischio') act=`<button class="btn mini" onclick="rischioDaCtrl()">Fai la valutazione</button>`;
     if(x.act==='rischioV') act=`<button class="btn sec mini" onclick="apriRischio(${x.lav||'null'},'${x.rid}',{luogo:CTRLINFO.luogo,drone:dSel.id})">Apri la valutazione</button>`;
     if(x.act==='check' && !checklistOk) act=`<button class="btn mini" onclick="apriChecklist()">Spunta check list</button>`;
@@ -4320,7 +4328,8 @@ function passiVolo(){
       {t:'Carica il file in Quota 120',p:'Tocca «Carica il file delle zone» e scegli il file appena scaricato.',w:'Da adesso le zone si controllano da sole, anche senza rete nella zona del volo.',el:()=>gdVis('#zn-btn'),nx:1});
     S.push(
       {t:'Il lavoro · apri «Clienti e lavori»',p:'Dalla Home, il riquadro «Clienti e lavori».',w:'Il volo si collega al lavoro: così finisce nel rapporto e nella fattura del cliente.',el:()=>gdTesto('#v-home .tile, #v-home li, #v-home button','Clienti e lavori'),ok:()=>VISTA==='lavori'||VISTA==='lavoro'},
-      {t:'Tocca il lavoro di oggi',p:'Controlla data, pilota e drone.',w:'Il calendario ti avvisa se pilota o drone sono già impegnati quel giorno.',el:()=>gdVis('#v-lavori li[onclick]'),ok:()=>VISTA==='lavoro'},
+      {t:'Tocca il lavoro di oggi',p:'Quello che stai per fare.',w:'Il calendario ti avvisa se pilota o drone sono già impegnati quel giorno.',el:()=>gdVis('#v-lavori li[onclick]'),ok:()=>VISTA==='lavoro'},
+      {t:'Chi vola e con cosa',p:'Controlla pilota e drone del lavoro. Il pilota deve avere l’attestato giusto: A2 per i droni di classe C2, STS per gli agricoli. Se serve, cambiali qui.',w:'Se pilota e drone non vanno insieme, il controllo prima del volo dà rosso e non si vola.',el:()=>gdVis('#lw-chi'),nx:1},
       {t:'La valutazione del rischio del luogo',p:'Se manca, tocca «Fai la valutazione del rischio» (2 minuti); se c’è già, vai avanti.',w:'Si fa una volta per luogo: le misure scelte te le ricorda il controllo prima del volo.',el:()=>gdVis('#lw-rischio'),nx:1},
       {t:'Tocca «Fai il controllo prima del volo»',p:'In alto nella scheda del lavoro.',w:'Il controllo prende già drone, pilota e luogo del lavoro.',el:()=>gdTesto('#lw-azioni button','controllo prima del volo'),ok:()=>VISTA==='controllo'});
   } else S.push(home,
@@ -4331,7 +4340,7 @@ function passiVolo(){
     {t:'Sul posto · leggi le verifiche',p:'Ogni riga ha il suo esito. Quelle con un tasto vanno fatte adesso, sul posto.',w:'Una riga rossa senza tasto vuol dire che oggi non si vola.',el:()=>gdVis('#checks'),nx:1},
     {t:'D-Flight: apri la mappa e segna',p:'«Apri la mappa D-Flight», guarda il punto del volo, poi «Guardato: tutto a posto» oppure «C’è un avviso».',w:'Le zone le sa già Quota 120; gli avvisi del giorno (NOTAM) si vedono solo sulla mappa D-Flight.',el:()=>gdVis('.df-box'),ok:()=>!!NOTAM.stato},
     {t:'La check list',p:'Tocca «Spunta check list» e spunta le voci davanti al drone.',w:'Le voci obbligatorie vanno spuntate tutte: è la prova che il drone è pronto.',el:()=>gdTesto('#checks button','check list'),ok:()=>checklistOk,opt:1},
-    {t:'Il semaforo',p:'Verde: si vola. Arancione: si vola con attenzione. Rosso: oggi no.',w:'Se è rosso, sotto c’è scritto perché.',el:()=>gdVis('#c-light'),nx:1},
+    {t:'Il semaforo',get p(){ return gdVis('#c-btn')?'Verde: si vola. Arancione: si vola con attenzione. Rosso: oggi no.':'È rosso: così non si vola. Guarda le righe rosse: se il pilota non è abilitato per quel drone, tocca «Cambia pilota o drone»; se manca un’autorizzazione ENAC, per oggi con quel drone non si vola.'; },w:'Con i dati di esempio alcuni lavori sono fatti apposta per dare rosso: servono a vedere come Quota 120 ti ferma.',el:()=>gdVis('#c-light'),nx:1},
     {t:'Tocca «Salva e apri il registro volo»',get p(){ return gdVis('#c-btn')?'In fondo alla pagina.':'Il semaforo è rosso: il tasto per salvare non c’è. Leggi la riga rossa, risolvi il problema (o cambia drone o pilota) e rifai il controllo: la guida riparte da qui.'; },w:'Il controllo resta scritto nel registro, con ora, meteo, D-Flight e check list.',el:()=>gdVis('#c-btn'),ok:()=>VISTA==='voli'},
     {t:'Adesso si vola',p:'Il volo è nel registro «in attesa»: si completa da solo quando arriva il file DJI.',w:'Durata, quota, percorso e batteria li scrive il file DJI: non serve scriverli a mano.',el:()=>gdVis('#vlist'),nx:1},
     {t:'Dopo il volo · chiudi DJI Fly',p:'Se l’invio automatico è pronto, chiudendo DJI Fly il volo arriva da solo. Se non l’hai ancora preparato, tocca «Invio automatico dei voli».',w:'Si prepara una volta sola: poi non devi più caricare niente a mano.',el:()=>gdVis('#vl-invio'),nx:1},
