@@ -3096,7 +3096,21 @@ function meSave(){try{if(ME)localStorage.setItem('quota120Disp'+KS,JSON.stringif
 function api(m,path,b){if(COME&&m!=='GET'){toast('Sei in Vista operatore: qui non si modifica niente');return Promise.resolve({errore:'Vista operatore: solo da guardare',_s:0});}
   return fetch(path,{method:m,headers:{'content-type':'application/json','x-disp':ME?ME.id+':'+ME.k:''},body:b?JSON.stringify(b):undefined})
   .then(r=>r.json().then(j=>{j._s=r.status;return j;}));}
+/* «Indietro» torna alla pagina dove eri davvero (storia delle pagine aperte); senza storia, alla pagina «madre» */
+let NAVST=[], NAV_LOG=null, NAV_NO=false;
+(function(){ const b=document.getElementById('back'); if(!b) return; b.removeAttribute('onclick'); b.onclick=null;
+  Object.defineProperty(b,'onclick',{configurable:true,get(){return NAV_LOG;},set(f){NAV_LOG=f;}});
+  b.addEventListener('click',e=>{ e.preventDefault(); navIndietro(); });
+})();
+function navIndietro(){
+  const p=NAVST.pop();
+  if(!p){ const f=NAV_LOG; if(f) f(); else vai('home'); return; }
+  NAV_NO=true; try{ vai(p.v,p.t); }finally{ NAV_NO=false; }
+  document.getElementById('crumb').innerHTML=p.crumb; NAV_LOG=p.log;
+  setTimeout(()=>window.scrollTo(0,p.y||0),30);
+}
 function vai(v, crumb){
+  if(!NAV_NO){ if(v==='home') NAVST=[]; else if(typeof VISTA!=='undefined'&&VISTA&&VISTA!==v&&VISTA!=='login'){ NAVST.push({v:VISTA,t:'',crumb:document.getElementById('crumb').innerHTML,log:NAV_LOG,y:window.scrollY}); if(NAVST.length>30) NAVST.shift(); } }
   if(v==='home') disegnaHome();
   document.getElementById('back').onclick=()=>vai('home');
   document.querySelectorAll('.wrap > [id^="v-"]').forEach(e=>e.classList.toggle('hidden',e.id!=='v-'+v));
