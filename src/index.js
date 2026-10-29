@@ -177,7 +177,7 @@ function unisci(full, m, n) {
     const pulito = { id: +id, data: DATA(v.data) || oggi(), ora: esc(v.ora, 5), drone: esc(v.drone, 80), pilota: n, luogo: esc(v.luogo, 120),
       min: Math.max(0, Math.min(600, +v.min || 0)), stato: ["completo", "dacompl", "attesa"].includes(v.stato) ? v.stato : "dacompl",
       ctrl: !!v.ctrl, ctrlOra: esc(v.ctrlOra, 5), cliente: esc(v.cliente, 200), note: esc(v.note, 2000), importato: !!v.importato, amano: !!v.amano,
-      cat: esc(v.cat, 60), inc: esc(v.inc, 60), codLav: esc(v.codLav, 20), meteo: esc(v.meteo, 160), zona: esc(v.zona, 200), ck: esc(v.ck, 400), docLog: (o && o.docLog) || esc(v.docLog, 40), logNome: esc(v.logNome, 120) };
+      cat: esc(v.cat, 60), inc: esc(v.inc, 60), codLav: esc(v.codLav, 20), meteo: esc(v.meteo, 160), zona: esc(v.zona, 200), notam: esc(v.notam, 300), ck: esc(v.ck, 400), docLog: (o && o.docLog) || esc(v.docLog, 40), logNome: esc(v.logNome, 120) };
     // i dati letti dal registro li scrive solo il server (/api/volo/importa): il telefono non li può cambiare
     if (o && o.letto) Object.assign(pulito, pulisciLetto(o), { drone: o.drone, data: o.data, ora: o.ora, min: o.min, pilota: o.pilota });
     if (o) Object.assign(o, pulito); else { d.VOLI = d.VOLI || []; d.VOLI.unshift(pulito); }
