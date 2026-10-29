@@ -744,6 +744,8 @@
 .cal-mese .chip.l{background:var(--accent)}.cal-mese .chip.c{background:var(--ok)}.cal-mese .chip.w{background:var(--warn)}.cal-mese .chip.s{background:#7A8791}
 @media (max-width:600px){.cal-mese .d{min-height:54px}.cal-mese .chip{font-size:0;height:6px;padding:0}}
 .cal-leg{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:8px}.cal-leg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+.perche{margin-top:12px;border:1px solid var(--ko);border-left:4px solid var(--ko);border-radius:8px;padding:10px 12px;background:#fff}.perche>b{color:var(--ko);font-size:16px}
+.perche ol{margin:6px 0 0;padding-left:20px}.perche li{margin:6px 0;font-size:15px;line-height:1.4}.perche .m{display:block;font-weight:700}.perche .d{display:block;color:var(--ink3)}.perche .f{display:block;font-weight:600;color:var(--ink)}
 .guida-volo{display:flex;gap:14px;align-items:center;width:100%;border:0;border-radius:12px;background:var(--notte);padding:14px 16px;margin:0 0 14px;text-align:left;font:inherit;color:#fff;cursor:pointer;box-shadow:0 2px 8px rgba(15,28,38,.18)}
 .guida-volo .gv-logo{flex:none;border-radius:12px;outline:2px solid rgba(255,255,255,.25)}.guida-volo b{display:block;font-size:20px;line-height:1.2;letter-spacing:.01em}.guida-volo small{display:block;color:#C9D6DE;font-size:15px;margin-top:3px;line-height:1.35}
 .guida-volo .go{margin-left:auto;color:#E8C15A;font-weight:700;font-size:30px;line-height:1}.guida-volo:hover{background:#1C3A4F}.guida-volo:focus-visible{outline:3px solid #E8C15A;outline-offset:2px}
@@ -906,6 +908,7 @@
         <div class="light" id="c-light"></div>
         <div><div class="t" id="c-t"></div><div class="s" id="c-s"></div></div>
       </div>
+      <div id="c-perche"></div>
     </div>
     <div class="card" style="margin-top:12px">
       <h2>Verifiche</h2>
@@ -1865,6 +1868,14 @@ function disegnaControllo(){
   }).join('');
   const cb=document.getElementById('c-btn');
   cb.style.display = bloccanti?'none':'inline-flex';
+  // perché non si vola: ogni motivo in chiaro, con cosa fare
+  const FARE=[[/Pilota abilitato/,()=>'Scegli un pilota con l’attestato giusto: tocca «Cambia pilota o drone».'],[/Attestato valido/,()=>'Il pilota deve rinnovare l’attestato; intanto fai volare un altro pilota («Cambia pilota o drone»).'],
+    [/Assicurazione/,()=>'Senza polizza RC valida non si vola: l’Admin la inserisce o la rinnova nei dati dell’operatore.'],[/QR/,()=>'Applica sul drone il QR di D-Flight e segnalo nella scheda del drone (oppure cambia drone).'],
+    [/Autorizzazione operativa ENAC/,()=>'Con questo drone serve l’autorizzazione operativa ENAC: finché non c’è, usa un altro drone.'],[/Drone fermo/,()=>'Il drone è fermo per una segnalazione: lo sblocca l’Admin da Pannello Admin › Segnalazioni. Intanto usa un altro drone.'],
+    [/Zona di volo/,()=>'Qui serve un’autorizzazione della zona: se ce l’hai, tocca «Ho l’autorizzazione»; altrimenti sposta il volo fuori dalla zona.'],[/Meteo/,()=>'Vento oltre il limite del drone: aspetta che cali o rimanda il volo.'],
+    [/D-Flight/,()=>'Un avviso di D-Flight chiude l’area per oggi: sposta il volo o rimandalo.'],[/Valutazione del rischio/,()=>'La valutazione del rischio dice di non volare qui: rivedila con misure in più, o cambia luogo.']];
+  const ko=L.filter(x=>x.s==='ko'&&!x.act);
+  document.getElementById('c-perche').innerHTML=ko.length?`<div class="perche"><b>Perché non si vola</b><ol>${ko.map(x=>{const f=FARE.find(r=>r[0].test(x.l)); return `<li><span class="m">${x.l}</span><span class="d">${x.d}</span>${f?`<span class="f">Cosa fare: ${f[1]()}</span>`:''}</li>`;}).join('')}</ol>${ko.some(x=>/Pilota abilitato|Attestato valido|ENAC|QR|Drone fermo/.test(x.l))?`<div class="row"><button class="btn" onclick="cambiaPD()">Cambia pilota o drone</button></div>`:''}</div>`:'';
 }
 
 function salvaVolo(b){
