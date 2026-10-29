@@ -39,6 +39,8 @@ function applicaVolo(d, v) {
     if (sc.man) { const r = minDi(sc.man.mancano) - min; sc.man.mancano = r > 0 ? oreDi(r) : "da fare subito"; sc.man.liv = r <= 0 ? "ko" : r <= 300 ? "warn" : sc.man.liv === "ko" ? "warn" : sc.man.liv;
       if (r <= 300 && sc.man.liv === "ok") sc.man.liv = "warn"; }
   }
+  // il numero di serie del drone resta come matricola: la volta dopo il volo si riconosce da solo
+  if (dr && v.sn) { d.MATR = d.MATR || {}; if (!d.MATR[dr.nome]) d.MATR[dr.nome] = String(v.sn).slice(0, 40); }
   const b = (d.BATT || []).find(x => x.id === v.batt);
   if (b) { b.cicli = (+b.cicli || 0) + 1; b.ultimo = v.data; if (v.bsn && !b.sn) b.sn = v.bsn;
     if (Array.isArray(v.celle) && v.celle.length) b.celle = v.celle.slice(0, 14);
@@ -505,6 +507,26 @@ export class Stato extends DurableObject {
       await st.put(k1, did);
       const L = (await st.get("arrivi")) || []; L.push({ id: did, nome, size: buf.byteLength, da: me.n, at: now, via: esc(request.headers.get("x-via") || "Android", 20) }); await st.put("arrivi", L.slice(-300));
       return J({ ok: true, id: did });
+    }
+    // lettura automatica: chi apre Quota 120 «prende» i voli arrivati (uno alla volta, nessun doppione tra due telefoni aperti insieme)
+    if (p === "/api/arrivi/prendi" && request.method === "POST") {
+      let b; try { b = await request.json(); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
+      const ids = new Set(Array.isArray(b.ids) ? b.ids.slice(0, 20) : []), L = (await st.get("arrivi")) || [], presi = [];
+      for (const x of L) if (ids.has(x.id) && (adm || x.da === me.n) && !x.sist && !(x.presa && now - x.presa < 600000)) { x.presa = now; x.chi = me.n; presi.push(x.id); }
+      await st.put("arrivi", L);
+      return J({ presi });
+    }
+    if (p === "/api/arrivi/sistemare" && request.method === "POST") {
+      let b; try { b = await request.json(); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
+      const L = (await st.get("arrivi")) || [], x = L.find(y => y.id === b.id && (adm || y.da === me.n));
+      if (x) { x.sist = esc(b.motivo || "da controllare", 200); x.presa = 0; if (b.info && typeof b.info === "object") x.info = { data: esc(b.info.data, 10), ora: esc(b.info.ora, 5), drone: esc(b.info.drone, 80) }; await st.put("arrivi", L); }
+      return J({ ok: true });
+    }
+    if (p === "/api/arrivi/libera" && request.method === "POST") {
+      let b; try { b = await request.json(); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
+      const ids = new Set(Array.isArray(b.ids) ? b.ids : []), L = (await st.get("arrivi")) || [];
+      for (const x of L) if (ids.has(x.id) && (adm || x.da === me.n)) x.presa = 0;
+      await st.put("arrivi", L); return J({ ok: true });
     }
     if (p === "/api/arrivi/letti" && request.method === "POST") {
       let b; try { b = await request.json(); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
