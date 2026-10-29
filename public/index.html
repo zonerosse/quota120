@@ -103,6 +103,7 @@
   .vlist .dur{font-size:13px;color:var(--muted);white-space:nowrap}
   .fgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
   @media(max-width:760px){.fgrid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:560px){#rq-dati .fgrid{grid-template-columns:1fr}}
   .fld{border:1px solid var(--line);border-radius:8px;padding:7px 9px;background:#fafbfc}
   .fld .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;display:flex;align-items:center;gap:5px}
   .fld .v{font-weight:600;font-size:14px;margin-top:2px}
@@ -948,8 +949,8 @@
 .ms-tipi button.on{border-color:var(--accent);color:var(--accent);background:var(--sup2,#f5f7f8)}
 .ms-tipi small{font-weight:500;font-size:11.5px;color:var(--muted)}
 .ms-mw{position:relative}.ms-mappa{height:340px;border-radius:10px}
-.ms-tag{position:absolute;left:8px;top:8px;z-index:500;background:rgba(255,255,255,.95);color:#1f2a36;border-radius:7px;padding:5px 8px;font-size:12.5px;max-width:70%;pointer-events:none}
-.ms-mbt{position:absolute;right:8px;bottom:8px;z-index:500;display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.ms-tag{position:absolute;left:52px;top:8px;z-index:500;background:rgba(255,255,255,.95);color:#1f2a36;border-radius:7px;padding:5px 8px;font-size:12.5px;max-width:70%;pointer-events:none}
+.ms-mbt{position:static;margin-top:8px;z-index:500;display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
 .ms-mbt button{background:#fff;border:1px solid var(--line);border-radius:7px;font:600 12.5px inherit;font-family:inherit;padding:5px 8px;color:var(--accent);cursor:pointer}
 .ms-pt{background:#fff;border:2.5px solid #3d5f80;border-radius:50%;font:700 9px/11px sans-serif;color:#3d5f80;text-align:center}
 .ms-pt.home{background:#132A3A;border-color:#fff;color:#fff;font-size:11px;line-height:17px}
@@ -963,6 +964,8 @@
 .ms-v.ok{background:var(--ok-bg);color:var(--ok)}.ms-v.warn{background:var(--warn-bg);color:var(--warn)}.ms-v.ko{border:1.5px solid var(--ko);color:var(--ko)}
 .ms-v svg{width:16px;height:16px;flex:none;margin-top:2px;stroke:currentColor;fill:none;stroke-width:2.4}
 .ms-az{display:grid;gap:8px;margin-top:12px}.ms-ol{padding-left:20px;font-size:14.5px}.ms-ol li{margin-bottom:8px}
+body.scuro .ml-card,body.scuro .ml-card b.t{color:#1f2a36}body.scuro .ml-card .ml-i{color:#5f6b78}
+.trovato.hidden{display:none}
 </style>
 </head>
 <body>
@@ -1868,7 +1871,6 @@
       <div class="fonti">
         <button class="fonte" onclick="sceglFile('foto')"><div class="ico" style="background:var(--accent)"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="12" cy="13.5" r="3.5"/><path d="M8 7l2-3h4l2 3"/></svg></div><div><div class="a">Fotografa</div><div class="b">Scatta una foto chiara del foglio intero</div></div></button>
         <button class="fonte" onclick="sceglFile('file')"><div class="ico" style="background:var(--accent)"><svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z"/><path d="M9 12h6M9 16h6"/></svg></div><div><div class="a">Scegli un file</div><div class="b">PDF o foto dal telefono o dal computer</div></div></button>
-        <button class="fonte" onclick="toast('Dall\u2019email arriva quando il programma avrà il suo dominio')"><div class="ico" style="background:var(--accent)"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></div><div><div class="a">Da un'email</div><div class="b">Inoltra l'email con l'allegato</div></div></button>
       </div>
       <div class="drop" id="dc-drop">Dal computer puoi anche trascinare il file qui</div>
       <div class="prog" id="dc-prog"><span class="spin"></span><span id="dc-prog-t"></span></div>
@@ -2174,14 +2176,15 @@ function disegnaControllo(){
   // perché non si vola: ogni motivo in chiaro, con cosa fare
   const FARE=[[/Pilota abilitato/,()=>'Scegli un pilota con l’attestato giusto: tocca «Cambia pilota o drone».'],[/Attestato valido/,()=>'Il pilota deve rinnovare l’attestato; intanto fai volare un altro pilota («Cambia pilota o drone»).'],
     [/Assicurazione/,()=>'Senza polizza RC valida non si vola: l’Admin la inserisce o la rinnova nei dati dell’operatore.'],[/QR/,()=>'Applica sul drone il QR di D-Flight e segnalo nella scheda del drone (oppure cambia drone).'],
-    [/Autorizzazione operativa ENAC/,()=>'Con questo drone serve l’autorizzazione operativa ENAC: finché non c’è, usa un altro drone.'],[/Drone fermo/,()=>'Il drone è fermo per una segnalazione: lo sblocca l’Admin da Pannello Admin › Segnalazioni. Intanto usa un altro drone.'],
+    [/Autorizzazione operativa ENAC/,()=>'Con questo drone serve l’autorizzazione operativa ENAC: finché non c’è, usa un altro drone.'],[/Drone fermo/,()=>'Il drone è fermo per una segnalazione: lo sblocca l’Admin da Home › Regole e sicurezza › Segnalazioni. Intanto usa un altro drone.'],
     [/Zona di volo/,()=>'Qui serve un’autorizzazione della zona: se ce l’hai, tocca «Ho l’autorizzazione»; altrimenti sposta il volo fuori dalla zona.'],[/Meteo/,()=>'Vento oltre il limite del drone: aspetta che cali o rimanda il volo.'],
     [/D-Flight/,()=>'Un avviso di D-Flight chiude l’area per oggi: sposta il volo o rimandalo.'],[/Valutazione del rischio/,()=>'La valutazione del rischio dice di non volare qui: rivedila con misure in più, o cambia luogo.']];
   const ko=L.filter(x=>x.s==='ko'&&!x.act);
   document.getElementById('c-perche').innerHTML=ko.length?`<div class="perche"><b>Perché non si vola</b><ol>${ko.map(x=>{const f=FARE.find(r=>r[0].test(x.l)); return `<li><span class="m">${x.l}</span><span class="d">${x.d}</span>${f?`<span class="f">Cosa fare: ${f[1]()}</span>`:''}</li>`;}).join('')}</ol>${ko.some(x=>/Pilota abilitato|Attestato valido|ENAC|QR|Drone fermo/.test(x.l))?`<div class="row"><button class="btn sec" onclick="cambiaPD()">Cambia pilota o drone</button></div>`:''}<div class="row"><button class="btn" id="c-spiega" onclick="spiegaDaCtrl()">Spiega al cliente perché no</button></div></div>`:'';
 }
 
-function salvaVolo(b){
+function salvaVolo(b,ok){
+  if(!ok){ const L=verifiche().filter(x=>x.s==='ko'); if(L.length){ conferma('Mancano ancora delle verifiche','Non hai ancora fatto: <b>'+L.map(x=>ESC(String(x.l||'').toLowerCase())).join(', ')+'</b>.<br>Se salvi adesso, nel registro resta scritto che non sono state fatte.','Salva lo stesso',()=>salvaVolo(b,1)); return; } }
   lavora(b,()=>{
     controlloSalvato={ora:ora(), drone:dSel.nome, pilota:pSel.nome, pid:pSel.id};
     const ZE=ZVERD?esitoZona():null, zona=ZE?ZE.t+(ZAUT?' · autorizzazione: '+ZAUT:''):zoneOk?'guardata sulla mappa D-Flight':'';
@@ -2209,6 +2212,8 @@ function apriVoli(){
   document.getElementById('tot-n').textContent=VOLI.length;
   {const b=document.getElementById('tot-h');b.textContent=Math.floor(tot/60)+':'+String(tot%60).padStart(2,'0');b.style.fontSize=b.textContent.length>5?'20px':b.textContent.length>4?'23px':'';}
   document.getElementById('tot-m').textContent=VOLI.filter(v=>v.data.slice(3)===oggi().slice(3)).length;
+  const ds=v=>{const d=dt(v.data); return (d?d.getTime():0)+(/^\d{1,2}:\d{2}$/.test(v.ora||'')?(+v.ora.split(':')[0]*60+ +v.ora.split(':')[1])*6e4:0);};
+  VOLI.sort((a,b)=>ds(b)-ds(a));
   document.getElementById('vlist').innerHTML=VOLI.map(v=>{
     const s=STATO[v.stato];
     return `<li onclick="apriVolo(${v.id})">
@@ -2218,12 +2223,13 @@ function apriVoli(){
   }).join('');
   document.getElementById('prog').style.display='none';
   disegnaScarica(); disegnaCoda(); disegnaArrivi();
-  vai('voli','Persone e attività &rsaquo; Registro voli');
+  vai('voli','Lavoro &rsaquo; Registro voli');
 }
 
 let voloAperto=null;
+let VOLO_NUOVO=null;
 function apriVolo(id){
-  const v=VOLI.find(x=>x.id===id); voloAperto=v;
+  const v=VOLI.find(x=>x.id===id)||(VOLO_NUOVO&&VOLO_NUOVO.id===id?VOLO_NUOVO:null); if(!v) return; voloAperto=v;
   { const e=document.getElementById('vo-elim'); document.getElementById('vo-elim-w').style.display=ADM?'':'none'; delete e.dataset.sicuro; e.lastChild.textContent='Elimina il volo'; e.style.color='';
     document.getElementById('vo-elim-n').textContent='Le ore del drone e del pilota e i cicli della batteria tornano come prima.'; }
   const s=STATO[v.stato];
@@ -2286,15 +2292,17 @@ function apriVolo(id){
   document.getElementById('vo-cli').value = v.cliente||'';
   document.getElementById('vo-inc').value = v.inc||'Nessuno';
   document.getElementById('vo-note').value = v.note||'';
-  vai('volo','Persone e attività &rsaquo; Registro voli &rsaquo; Volo del '+v.data);
+  vai('volo','Lavoro &rsaquo; Registro voli &rsaquo; Volo del '+v.data);
   // il tasto Indietro torna al registro, non alla home
   document.getElementById('back').onclick=()=>apriVoli();
 }
 function fine(o,m){const [h,mi]=o.split(':').map(Number);const t=(h*60+mi+m)%1440;return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');}
 
 function salvaScheda(b){
+  { const v=voloAperto, g=id=>((document.getElementById(id)||{}).value||'').trim();
+    if(v&&v.amano&&document.getElementById('vm-luogo')){ if(!g('vm-luogo')){toast('Scrivi il luogo del volo');document.getElementById('vm-luogo').focus();return;} if(!(+g('vm-min')>0)){toast('Scrivi quanti minuti è durato');document.getElementById('vm-min').focus();return;} } }
   lavora(b,()=>{
-    const v=voloAperto;
+    const v=voloAperto; if(v.nuovo){ delete v.nuovo; VOLI.unshift(v); VOLO_NUOVO=null; }
     v.pilota=document.getElementById('vo-pil').value;
     v.cliente=document.getElementById('vo-cli').value;
     v.note=document.getElementById('vo-note').value;
@@ -2336,7 +2344,7 @@ const chev='<svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
 function statoDrone(d){
   const s=SCHEDE[d.id], b=BATT.filter(x=>x.drone===d.id);
   if(d.cat==='specific' && !AUT_ENAC.agricola) return 'ko';
-  if(s.man.liv!=='ok' || b.some(x=>x.stato!=='ok') || !s.doc.fattura) return 'warn';
+  if(s.man.liv!=='ok' || b.some(x=>x.stato!=='ok') || !s.doc.fattura || !d.qr) return 'warn';
   return 'ok';
 }
 function apriDroni(){
@@ -2417,7 +2425,7 @@ function apriDrone(id, da, apriBatt){
   if(d.cat==='specific' && !AUT_ENAC.agricola) motivi.push('manca l\u2019autorizzazione ENAC');
   if(s.man.liv!=='ok') motivi.push('manutenzione tra '+s.man.mancano);
   BATT.filter(x=>x.drone===id && x.stato!=='ok').forEach(x=>motivi.push(x.nome.toLowerCase()+' da controllare'));
-  if(!s.doc.fattura) motivi.push('manca la fattura di acquisto');
+  if(!d.qr) motivi.push('manca il QR di D-Flight'); if(!s.doc.fattura) motivi.push('manca la fattura di acquisto');
   document.getElementById('dr-s').textContent=motivi.length?motivi.join(' · '):'Documenti, manutenzione e batterie in regola';
 
   const chk='<svg viewBox="0 0 24 24">'+IC.check+'</svg>';
@@ -2425,14 +2433,15 @@ function apriDrone(id, da, apriBatt){
     ['Peso',s.peso],['QR D-Flight',d.qr?'applicato':'da applicare'],['Remote ID',s.rid],['Acquistato il',s.acq],['Ore di volo',s.ore+' · '+s.voli+' voli'],
     ['Vento massimo',VENTO_BASE(d)+' km/h'+(ADM?` <button class="btn sec mini" onclick="cambiaVento(${d.id})">Cambia</button>`:'')],
     ['Affidato a',(PILOTI.filter(p=>inDotazione(p).includes(d)).map(p=>p.nome).join(', '))||'nessun pilota']];
-  document.getElementById('dr-dati').innerHTML=dati.map(x=>`<div class="fld"><div class="k">${chk}${x[0]}</div><div class="v">${x[1]}</div></div>`).join('');
+  const pieno=v=>v!=null&&String(v).trim()!==''&&!/^(—|-|da applicare)$/.test(String(v).trim());
+  document.getElementById('dr-dati').innerHTML=dati.map(x=>`<div class="fld"><div class="k">${pieno(x[1])?chk:''}${x[0]}</div><div class="v">${pieno(x[1])?x[1]:x[1]==='da applicare'?'<span style="color:var(--warn)">da applicare</span>':'<span style="color:var(--warn)">da completare</span>'}</div></div>`).join('');
 
   // documenti: se c'è già, si vede con la spunta verde e il tasto Vedi
   document.getElementById('dr-doc').innerHTML=Object.keys(DOCNOMI).map(k=>{
     if(k==='classe' && d.cat==='specific') return '';
     return s.doc[k]
       ? `<div class="allegato"><div class="mark ok">${svg('check')}</div><div class="f"><b>${DOCNOMI[k]}</b><br>Allegato</div><button class="btn sec mini vedi" onclick="apriDocDrone(${id},'${k}')">Vedi</button></div>`
-      : `<div class="allegato" style="background:var(--warn-bg)"><div class="mark warn">${svg('esc')}</div><div class="f"><b>${DOCNOMI[k]}</b><br>Non ancora allegato</div><button class="btn mini" onclick="lavora(this,()=>{SCHEDE[${id}].doc.${k}=true;apriDrone(${id},'${da}');})"><span class="spin"></span>Allega</button></div>`;
+      : `<div class="allegato" style="background:var(--warn-bg)"><div class="mark warn">${svg('esc')}</div><div class="f"><b>${DOCNOMI[k]}</b><br>Non ancora allegato</div><button class="btn mini" onclick="apriDocumenti();toast('Carica il file: Quota 120 lo legge e lo mette nella scheda del drone')">Carica</button></div>`;
   }).join('');
 
   document.getElementById('dr-man').innerHTML=`
@@ -2496,6 +2505,7 @@ let SCHEDEP={
           'STS-01':{num:'ITA-STS-6p7q8r',ril:'14/02/2026',scad:'14/02/2031',liv:'ok',file:false}}}
 };
 function puoPilotare(p,d){
+  if(!p||!d) return ['ok',''];
   if(d.cat==='specific') return p.sts?['ok','Ha l’STS-01'+(AUT_ENAC.agricola?'':'; serve anche l’autorizzazione ENAC dell’operatore')]:['ko','Serve l’attestato STS'];
   if(d.classe==='C2') return p.att.includes('A2')?['ok','Ha l’A2']:['ko','Serve l’A2 per volare vicino alle persone'];
   return ['ok','Basta l’A1-A3'];
@@ -2517,7 +2527,7 @@ function apriPiloti(){
       <div class="main"><div class="a">${p.nome}</div><div class="b">${s.ruolo} · ${(p.att||[]).join(', ')||'nessun attestato'} · ${s.ore}</div></div>
       <span class="tag ${st}">${LIVTXT[st]}</span></li>`;
   }).join('');
-  vai('piloti','Persone e attività &rsaquo; Piloti');
+  vai('piloti','Persone &rsaquo; Piloti');
 }
 /* ---- assicurazione RC: polizza aziendale (Admin) o polizza personale del pilota ---- */
 function polP(p){return p?((SCHEDEP[p.id]||{}).polizza||null):null;}
@@ -2590,7 +2600,7 @@ function apriPilota(id){
 
   disegnaPermessi(id);
 
-  vai('pilota','Persone e attività &rsaquo; Piloti &rsaquo; '+p.nome);
+  vai('pilota','Persone &rsaquo; Piloti &rsaquo; '+p.nome);
   document.getElementById('back').onclick=()=>apriPiloti();
 }
 
@@ -2623,7 +2633,7 @@ function apriEnac(){
     ? `<div class="allegato"><div class="mark ok">${svg('check')}</div><div class="f"><b>${n}</b><br>Allegato</div><button class="btn sec mini vedi" onclick="docOperatore('${n}')">Vedi</button></div>`
     : `<div class="att manca"><div class="top"><div class="mark" style="background:#c3cad2">${svg('x')}</div><div class="main"><div class="a">${n}</div><div class="b">Si prepara da solo con la domanda di autorizzazione</div></div></div></div>`).join('');
 
-  vai('enac','Regole e agricoltura &rsaquo; Autorizzazioni ENAC');
+  vai('enac','Regole e sicurezza &rsaquo; Autorizzazioni ENAC');
 }
 
 function apriDomanda(){
@@ -2642,7 +2652,7 @@ function apriDomanda(){
   aggiornaGen();
   document.getElementById('dom-esito').classList.toggle('hidden', DOMANDA.stato==='manca');
   if(DOMANDA.stato!=='manca') mostraDoc();
-  vai('domanda','Regole e agricoltura &rsaquo; Autorizzazioni ENAC &rsaquo; Domanda agricola');
+  vai('domanda','Regole e sicurezza &rsaquo; Autorizzazioni ENAC &rsaquo; Domanda agricola');
   document.getElementById('back').onclick=()=>apriEnac();
 }
 function aggiornaGen(){
@@ -2696,12 +2706,13 @@ function apriLavori(){
   document.getElementById('lv-list').innerHTML=grp('In corso',LAVORI.filter(l=>l.stato==='incorso'))+grp('Da fare',LAVORI.filter(l=>l.stato==='dafare'))+grp('Conclusi',LAVORI.filter(l=>l.stato==='concluso'));
   document.getElementById('cl-list').innerHTML=CLIENTI.map(c=>{const n=LAVORI.filter(l=>l.cliente===c).length, p=PREV.filter(x=>x.cliente===c).length;
     return `<li style="cursor:default"><div class="ini" style="background:var(--f-attivita)">${iniziali(c).slice(0,2)}</div><div class="main"><div class="a">${c}</div><div class="b">${pl(n,'lavoro','lavori')} · ${pl(p,'preventivo','preventivi')}</div></div></li>`;}).join('');
-  vai('lavori','Persone e attività &rsaquo; Clienti e lavori');
+  vai('lavori','Lavoro &rsaquo; Clienti e lavori');
 }
 
 // verifica di drone e pilota per quel lavoro, nel giorno del lavoro: [testo, cosa fare]
 function verificaAssegna(l){
   const d=DRONI.find(x=>x.id===l.drone), p=PILOTI.find(x=>x.id===l.pilota), out=[];
+  if(!ADM&&!p&&l.pilota) return out;   // lavoro di un altro pilota: la verifica la vede l'Admin
   if(!d||!p){ out.push(['Mancano '+(!d?'il drone':'il pilota'),'Sceglilo qui sopra.']); return out; }
   const giorno=dt(l.data)||new Date();
   const [lv,t]=puoPilotare(p,d); if(lv==='ko') out.push([p.nome+' non può usare '+(/^[AEIOU]/i.test(d.nome.replace('DJI ',''))?'l’':'il ')+d.nome.replace('DJI ','')+': '+t.charAt(0).toLowerCase()+t.slice(1),'Scegli un pilota con l’attestato giusto, o un altro drone.']);
@@ -2710,7 +2721,7 @@ function verificaAssegna(l){
   if(att.length) out.push(['L’attestato '+(ATTNOMI[att[0][0]]||att[0][0]).replace('Attestato ','')+' di '+p.nome+' scade il '+att[0][1].scad+', prima del lavoro','Fallo rinnovare prima, o scegli un altro pilota.']);
   { const r=rcDi(p,giorno); if(!r.ok) out.push([r.scad?'L’assicurazione RC di '+p.nome+' scade il '+r.scad+', prima del lavoro':'Nessuna assicurazione RC copre '+p.nome,'Carica la polizza aziendale (Documenti) o la polizza personale del pilota (scheda del pilota).']); }
   if(!d.qr) out.push(['Il '+d.nome.replace('DJI ','')+' non ha il QR di D-Flight','Applica il QR (D-Flight › Droni e QR), o usa un altro drone.']);
-  const sf=typeof droneFermo==='function'?droneFermo(d):null; if(sf) out.push(['Il '+d.nome.replace('DJI ','')+' è fermo per una segnalazione','Lo sblocca l’Admin da Pannello Admin › Segnalazioni; intanto usa un altro drone.']);
+  const sf=typeof droneFermo==='function'?droneFermo(d):null; if(sf) out.push(['Il '+d.nome.replace('DJI ','')+' è fermo per una segnalazione','Lo sblocca l’Admin da Home › Regole e sicurezza › Segnalazioni; intanto usa un altro drone.']);
   return out;
 }
 function problemiLavoro(l){ if(l.stato==='concluso') return []; return verificaAssegna(l).map(x=>x[0]); }
@@ -2723,6 +2734,7 @@ function apriLavoro(id){
   document.getElementById('lw-s').textContent= prob.length ? 'Così non si può volare: '+prob.join(' · ') : s[1]+' · '+l.data+(l.stato==='concluso'?'':' · drone e pilota in regola');
   document.getElementById('lw-azioni').innerHTML = l.stato==='concluso' ? '' :
     `<button class="btn" onclick="controlloDaLavoro(${l.id},this)"><span class="spin"></span>Fai il controllo prima del volo</button>`+
+    (ADM?`<button class="btn sec" id="lw-mod" onclick="modificaLavoro(${l.id})">Modifica data e luogo</button>`:'')+
     `<button class="btn sec" id="lw-ms" onclick="apriMissione(${l.id})">${l.missione?'Missione pianificata':'Pianifica la missione'}</button>`+`<button class="btn sec" onclick="apriRapporto(LAVORI.find(x=>x.id===${l.id}).cliente,LAVORI.find(x=>x.id===${l.id}).codice)">Rapporto per il cliente</button>`+
     `<button class="btn sec" id="lw-ics" onclick="lavoroIcs(${l.id})">Aggiungi al calendario</button>`+
     (l.stato==='incorso'?`<button class="btn sec" onclick="lavora(this,()=>{LAVORI.find(x=>x.id===${l.id}).stato='concluso';apriLavoro(${l.id});})"><span class="spin"></span>Segna concluso</button>`:'');
@@ -2730,12 +2742,12 @@ function apriLavoro(id){
   { const r=rischioPer(l.id,l.luogo), E=r?{ok:'si vola',warn:'si vola con le misure',ko:'non si vola'}[r.esito]:'';
     document.getElementById('lw-rischio').innerHTML=`<h2>Valutazione del rischio</h2>`+(r&&r.esito==='ko'?`<div class="row" style="margin:0 0 6px"><button class="btn mini" onclick="spiegaCliente(${l.id},(rischioPer(${l.id},LAVORI.find(x=>x.id===${l.id}).luogo).per||[]).filter(h=>rkDopo(h).liv==='ko').map(h=>h.t),'lavoro')">Spiega al cliente perché no</button></div>`:'')+(r?`<div class="rk-rig"><i class="rk-pt ${r.esito}"></i><div>${ESC(r.il)} · ${E}<small>firmata da ${ESC(r.firma||'')} · ${ESC(r.luogo)}</small></div><div class="row" style="margin:0 0 0 auto"><button class="btn sec mini" onclick="apriRischio(${l.id},'${r.id}')">Apri</button><button class="btn sec mini" onclick="rkScarica('${r.id}',this)"><span class="spin"></span>PDF</button>${ADM?`<button class="btn mini" onclick="rkInvia('${r.id}')">Manda</button>`:''}</div></div>${(r.invii||[]).length?`<div style="font-size:13px;color:var(--muted)">Mandata a ${ESC(r.invii[0].a)} il ${ESC(r.invii[0].il)}</div>`:''}`
       :`<div style="font-size:14.5px;color:var(--muted);margin-bottom:8px">Si fa una volta per questo luogo: cosa c’è intorno, i pericoli e le misure. Quota 120 compila da solo zone D-Flight e meteo.</div><button class="btn" id="lw-rk" onclick="apriRischio(${l.id})">Fai la valutazione del rischio</button>`); }
-  document.getElementById('lw-dati').innerHTML=[['Cliente',l.cliente],['Tipo',l.tipo],['Luogo',l.luogo],['Data',l.data],['Importo',euro(l.importo)],['Stato',s[1]]]
+  document.getElementById('lw-dati').innerHTML=[['Cliente',l.cliente],['Tipo',l.tipo],['Luogo',l.luogo],['Data',l.data]].concat(ADM||permIo().prezzi?[['Importo',euro(l.importo)]]:[]).concat([['Stato',s[1]]])
     .map(x=>`<div class="fld"><div class="k">${chk}${x[0]}</div><div class="v">${x[1]}</div></div>`).join('');
 
   // chi vola: scelta di drone e pilota, con la verifica dell'abilitazione
   const d=DRONI.find(x=>x.id===l.drone), p=PILOTI.find(x=>x.id===l.pilota), [lv,t]=puoPilotare(p,d);
-  const dis=l.stato==='concluso'?'disabled':'';
+  const dis=l.stato==='concluso'||!ADM?'disabled':'';
   document.getElementById('lw-chi').innerHTML=
     `<li><div class="ico" style="background:var(--f-flotta)">${svg('drone')}</div><div class="main"><div class="b">Drone</div><select ${dis} onchange="LAVORI.find(x=>x.id===${l.id}).drone=+this.value;apriLavoro(${l.id})">${DRONI.map(x=>`<option value="${x.id}" ${x.id===l.drone?'selected':''}>${x.nome}</option>`).join('')}</select></div></li>
      <li><div class="ico" style="background:var(--f-persone)">${svg('pilota')}</div><div class="main"><div class="b">Pilota</div><select ${dis} onchange="LAVORI.find(x=>x.id===${l.id}).pilota=+this.value;apriLavoro(${l.id})">${PILOTI.map(x=>`<option value="${x.id}" ${x.id===l.pilota?'selected':''}>${x.nome}</option>`).join('')}</select></div></li>
@@ -2755,13 +2767,13 @@ function apriLavoro(id){
   document.getElementById('lw-voli').innerHTML = vv.length ? vv.map(v=>`<li onclick="apriVolo(${v.id})"><div class="main"><div class="a">${v.data} · ${v.drone}</div><div class="b">${v.pilota} · ${v.luogo}${v.min?' · '+v.min+' min':''}</div></div><span class="tag ${STATO[v.stato][0]}">${STATO[v.stato][1]}</span></li>`).join('')
     : '<li style="cursor:default"><div class="b">Ancora nessun volo. Quando importi un registro e scegli questo cliente, il volo compare qui.</div></li>';
 
-  vai('lavoro','Persone e attività &rsaquo; Clienti e lavori &rsaquo; '+l.cliente);
+  vai('lavoro','Lavoro &rsaquo; Clienti e lavori &rsaquo; '+l.cliente);
   document.getElementById('back').onclick=()=>apriLavori();
 }
 function controlloDaLavoro(id,b){
   const l=LAVORI.find(x=>x.id===id);
-  lavora(b,()=>{ dSel=DRONI.find(x=>x.id===l.drone); pSel=PILOTI.find(x=>x.id===l.pilota); zoneOk=false; checklistOk=false; CKRES=''; NOTAM={}; CTRLINFO={data:dt(l.data)?l.data:oggi(),luogo:l.luogo,cliente:l.cliente+': '+String(l.titolo||'').toLowerCase(),codice:l.codice||''};
-    disegnaControllo(); vai('controllo','Persone e attività &rsaquo; Clienti e lavori &rsaquo; '+l.cliente+' &rsaquo; Controllo prima del volo');
+  lavora(b,()=>{ dSel=DRONI.find(x=>x.id===l.drone); pSel=PILOTI.find(x=>x.id===l.pilota); zoneOk=false; checklistOk=false; CKRES=''; NOTAM={}; CTRLINFO={data:oggi(),luogo:l.luogo,cliente:l.cliente+': '+String(l.titolo||'').toLowerCase(),codice:l.codice||''};
+    disegnaControllo(); vai('controllo','Controllo prima del volo · '+ESC(l.cliente));
     document.getElementById('back').onclick=()=>apriLavoro(id); });
 }
 
@@ -2781,18 +2793,18 @@ function apriPreventivi(){
        <span class="dur" style="font-size:13px;font-weight:600;white-space:nowrap">${euro(totale(p).tot)}</span>
        <span class="tag ${PST[p.stato][0]}">${PST[p.stato][1]}</span></li>`).join('');
   }).join('');
-  vai('preventivi','Persone e attività &rsaquo; Preventivi');
+  vai('preventivi','Lavoro &rsaquo; Preventivi');
 }
 function nuovoPreventivo(b){
-  lavora(b,()=>{ const p={id:nuovoId(),cliente:CLIENTI[0],titolo:'',luogo:'',data:oggi(),regime:'iva',stato:'bozza',voci:[['',1,0]]}; PREV.unshift(p); apriPreventivo(p.id); });
+  lavora(b,()=>{ const p={id:nuovoId(),cliente:'',titolo:'',luogo:'',data:oggi(),regime:'iva',stato:'bozza',voci:[['',1,0]]}; PREV.unshift(p); apriPreventivo(p.id); });
 }
 let PRV=null;
 function apriPreventivo(id){
   PRV=PREV.find(x=>x.id===id); const p=PRV, s=PST[p.stato], chiuso=p.stato==='accettato';
   document.getElementById('pr-light').className='light '+s[0];
   document.getElementById('pr-t').textContent='Preventivo '+(p.titolo?'· '+p.titolo.toLowerCase():'nuovo');
-  document.getElementById('pr-s').textContent=s[1]+' · '+p.cliente+' · '+p.data+(chiuso?' · è diventato un lavoro':'');
-  document.getElementById('pr-cli').innerHTML=CLIENTI.map(c=>`<option ${c===p.cliente?'selected':''}>${c}</option>`).join('')+'<option value="+">+ Nuovo cliente…</option>';
+  document.getElementById('pr-s').textContent=s[1]+' · '+(p.cliente||'cliente da scegliere')+' · '+p.data+(chiuso?' · è diventato un lavoro':'');
+  document.getElementById('pr-cli').innerHTML=(p.cliente?'':'<option value="" selected disabled>Scegli il cliente</option>')+CLIENTI.map(c=>`<option ${c===p.cliente?'selected':''}>${c}</option>`).join('')+'<option value="+">+ Nuovo cliente…</option>';
   document.getElementById('pr-tit').value=p.titolo; document.getElementById('pr-luogo').value=p.luogo;
   document.getElementById('pr-reg').value=p.regime;
   ['pr-cli','pr-tit','pr-luogo','pr-reg'].forEach(i=>document.getElementById(i).disabled=chiuso);
@@ -2802,7 +2814,7 @@ function apriPreventivo(id){
   if(p.stato==='inviato') az=`<button class="btn" onclick="accetta(this)"><span class="spin"></span>Accettato: crea il lavoro</button><button class="btn sec" onclick="lavora(this,()=>{PRV.stato='rifiutato';apriPreventivo(PRV.id);})"><span class="spin"></span>Rifiutato</button>`;
   if(p.stato!=='bozza') az+=`<button class="btn sec vedi" onclick="stampaPreventivo(${p.id})">Stampa o salva in PDF</button>`;
   document.getElementById('pr-azioni').innerHTML=az;
-  vai('preventivo','Persone e attività &rsaquo; Preventivi &rsaquo; '+p.cliente);
+  vai('preventivo','Lavoro &rsaquo; Preventivi &rsaquo; '+p.cliente);
   document.getElementById('back').onclick=()=>apriPreventivi();
 }
 function disegnaVoci(){
@@ -2823,11 +2835,20 @@ function conti(){
     : `<div><span>Compenso</span><span>${euro(t.imp)}</span></div>${t.bollo?`<div><span>Marca da bollo (sopra 77,47 €)</span><span>${euro(2)}</span></div>`:''}<div class="tot"><span>Totale</span><span>${euro(t.tot)}</span></div>
        <div style="font-size:12px;color:var(--muted);margin-top:6px">Prestazione occasionale senza IVA. Se il cliente è un'azienda o un ente, trattiene il 20% di ritenuta d'acconto e lo versa per te.</div>`;
 }
+const TIPI_LAV=['Foto e video','Rilievo','Ispezione','Agricoltura','Altro'];
+function nuovoCodiceLavoro(){ let n=Math.max(2610,...LAVORI.map(l=>+((/^L-(\d+)$/.exec(l.codice||'')||[])[1]||0))); return 'L-'+(n+1); }
 function accetta(b){
-  lavora(b,()=>{ const p=PRV; p.stato='accettato';
-    const id=nuovoId();
-    LAVORI.push({id,cliente:p.cliente,titolo:p.titolo||'Lavoro',tipo:'Rilievo',luogo:p.luogo||'—',data:'da fissare',drone:2,pilota:1,prev:p.id,stato:'dafare',consegna:false,pagato:false,importo:totale(p).tot});
-    apriLavoro(id); });
+  const p=PRV;
+  modulo('Il lavoro: quando e con chi',[{k:'data',l:'Data del lavoro',t:'data',req:1},{k:'luogo',l:'Luogo',v:p.luogo||'',p:'es. Ostellato (FE)',req:1},{k:'tipo',l:'Tipo di lavoro',t:'sel',o:TIPI_LAV,v:'Rilievo',req:1},
+    {k:'drone',l:'Drone',t:'sel',o:DRONI.map(d=>[d.id,d.nome]),v:(DRONI[0]||{}).id,req:1},{k:'pilota',l:'Pilota',t:'sel',o:PILOTI.map(x=>[x.id,x.nome]),v:(PILOTI[0]||{}).id,req:1}],
+    v=>{ p.stato='accettato'; const id=nuovoId();
+      LAVORI.push({id,codice:nuovoCodiceLavoro(),cliente:p.cliente,titolo:p.titolo||'Lavoro',tipo:v.tipo,luogo:v.luogo,data:v.data,drone:+v.drone,pilota:+v.pilota,prev:p.id,stato:'dafare',consegna:false,pagato:false,importo:totale(p).tot});
+      controllaModifiche(); apriLavoro(id); },'Crea il lavoro');
+}
+function modificaLavoro(id){
+  const l=LAVORI.find(x=>x.id===id); if(!l) return;
+  modulo('Modifica il lavoro',[{k:'data',l:'Data del lavoro',t:'data',v:dt(l.data)?l.data:'',req:1},{k:'luogo',l:'Luogo',v:l.luogo||'',req:1},{k:'titolo',l:'Cosa si fa',v:l.titolo||'',req:1},{k:'tipo',l:'Tipo di lavoro',t:'sel',o:TIPI_LAV,v:l.tipo||'Rilievo',req:1}],
+    v=>{ Object.assign(l,{data:v.data,luogo:v.luogo,titolo:v.titolo,tipo:v.tipo}); if(!l.codice) l.codice=nuovoCodiceLavoro(); controllaModifiche(); apriLavoro(id); toast('Lavoro aggiornato'); },'Salva');
 }
 
 /* ---------- manutenzioni ---------- */
@@ -2857,6 +2878,11 @@ function tipiIntervento(){
   document.getElementById('mn-tipo').innerHTML=(INTERVENTI[id]||INTERV_BASE).map(t=>`<option>${t}</option>`).join('');
 }
 function registraIntervento(b){
+  const id=+document.getElementById('mn-drone').value, tipo=document.getElementById('mn-tipo').value, d=DRONI.find(x=>x.id===id)||{};
+  const azzera=tipo===(INTERVENTI[id]||INTERV_BASE)[0];
+  conferma('Registro l’intervento?',`<b>${ESC(tipo)}</b> sul ${ESC(d.nome||'drone')}, oggi ${oggi()}.${azzera?'<br>È la manutenzione in scadenza: il conto delle ore riparte da zero.':''}`,'Sì, registra',()=>registraInterventoOk(b));
+}
+function registraInterventoOk(b){
   lavora(b,()=>{
     const id=+document.getElementById('mn-drone').value, tipo=document.getElementById('mn-tipo').value,
           chi=document.getElementById('mn-chi').value, note=document.getElementById('mn-note').value.trim();
@@ -2867,7 +2893,7 @@ function registraIntervento(b){
       s.man.mancano= id===3?'10 ore':'50 ore'; DRONI.find(d=>d.id===id).manut='ok';
       if(id===2) s.man.prox='Controllo motori ed eliche a 170 ore'; if(id===1) s.man.prox='Controllo generale a 100 ore'; }
     document.getElementById('mn-note').value='';
-    apriManut();
+    controllaModifiche(); apriManut(); toast('Intervento registrato');
   });
 }
 
@@ -2908,7 +2934,7 @@ function apriDflight(){
   const IC2={zmappa:'<circle cx="12" cy="10" r="3"/><path d="M12 21s-7-6.5-7-11a7 7 0 0114 0c0 4.5-7 11-7 11z"/>',mappa:'<path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/>',prof:'<circle cx="12" cy="8" r="3.5"/><path d="M5 20c1-4 4-6 7-6s6 2 7 6"/>',qr:'<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 8h3v3H8zM13 13h3v3h-3zM13 8h3M8 13v3"/>'};
   const B=(k,t,d,go)=>`<button type="button" class="df-b" id="df-b-${k}" onclick="${go||"window.open(DFLIGHT_MAPPA,'_blank')"}"><span class="ic"><svg viewBox="0 0 24 24">${IC2[k]}</svg></span><span><b>${t}</b><small>${d}</small></span><span class="go">›</span></button>`;
   document.getElementById('df-hub').innerHTML=B('zmappa','Mappa delle zone in Quota 120','Tocca dove vuoi volare: fino a che quota si vola, le regole della zona e a chi chiedere.','apriMappaZone()')+B('mappa','Mappa: zone e avvisi del giorno','Prima di ogni volo. Una volta entrato, cerca il paese in alto.')+
-    B('prof','Profilo dell’operatore','Codice ITA e abbonamento. Qui c’è «Download UAS Zone Geo»: il file delle zone da caricare in Quota 120 (Pannello Admin › Zone di volo).')+
+    B('prof','Profilo dell’operatore','Codice ITA e abbonamento. Qui c’è «Download UAS Zone Geo»: il file delle zone da caricare in Quota 120 (Home › Regole e sicurezza › Zone di volo).')+
     B('qr','Droni e QR','Per un drone nuovo: «Associa un UAS», poi scarica il suo QR da attaccare sul drone.')+
     `<div class="df-tip">${DF_ENTRA()}</div>`;
   const chk='<svg viewBox="0 0 24 24">'+IC.check+'</svg>';
@@ -2924,7 +2950,7 @@ function apriDflight(){
       <div class="row"><button class="btn sec mini" onclick="copiaTesto(NT_MAIL_EN,'Messaggio in inglese copiato')">Copia il messaggio (inglese)</button><button class="btn sec mini" onclick="document.getElementById('nt-it').toggleAttribute('hidden')">Leggi la traduzione</button></div>
       <pre id="nt-it" class="nt-pre" hidden>${ESC(NT_MAIL_IT)}</pre></details>`:''}`;
   document.getElementById('df-zone').innerHTML=ZONE.slice(0,8).map(z=>`<li><span class="d">${z.data}<br>${z.ora}</span><span><b style="font-weight:600">${ESC(z.drone)}</b><br><span style="color:var(--muted);font-size:13px">${ESC(z.pilota)}${z.esito?' · '+ESC(z.esito):''}</span></span></li>`).join('')||'<li style="color:var(--muted)">Ancora nessun controllo registrato.</li>';
-  vai('dflight','Regole e agricoltura &rsaquo; D-Flight');
+  vai('dflight','Regole e sicurezza &rsaquo; D-Flight');
 }
 function apriNotam(){ apriDflight(); setTimeout(()=>{const e=document.getElementById('df-notam'); e&&e.scrollIntoView({behavior:'smooth',block:'start'});},200); }
 
@@ -2954,7 +2980,7 @@ function apriCampi(){
       return `<li onclick="apriCampo(${c.id})"><div class="ico" style="background:var(--f-agri)">${svg('campi')}</div>
       <div class="main"><div class="a">${c.nome}</div><div class="b">${c.coltura} · ${fmtHa(c.ha)} ha · ${c.comune}${ul?' · ultimo trattamento '+ul.data:''}</div></div>
       <span class="tag ${c.confini?'ok':'warn'}">${c.confini?'Confini ok':'Mancano i confini'}</span></li>`;}).join('')+'</ul>').join('');
-  vai('campi','Regole e agricoltura &rsaquo; Campi');
+  vai('campi','Regole e sicurezza &rsaquo; Campi');
 }
 function apriCampo(id){
   const c=CAMPI.find(x=>x.id===id);
@@ -2969,12 +2995,12 @@ function apriCampo(id){
     .map(x=>`<div class="fld"><div class="k">${chk}${x[0]}</div><div class="v">${x[1]}</div></div>`).join('');
   const tt=TRATT.filter(t=>t.campo===id);
   document.getElementById('ca-tr').innerHTML=tt.length?tt.map(rigaTratt).join(''):'<li style="cursor:default"><div class="b">Nessun trattamento registrato su questo campo.</div></li>';
-  vai('campo','Regole e agricoltura &rsaquo; Campi &rsaquo; '+c.nome);
+  vai('campo','Regole e sicurezza &rsaquo; Campi &rsaquo; '+c.nome);
   document.getElementById('back').onclick=()=>apriCampi();
 }
 function rigaTratt(t){
   const c=CAMPI.find(x=>x.id===t.campo);
-  return `<li onclick="apriTrattamento(${t.id})"><div class="dt"><b>${t.data.slice(0,5)}</b>${t.data.slice(6)}</div>
+  return `<li onclick="apriTrattamento(${t.id})"><div class="dt"><b style="display:block">${t.data.slice(0,5)}</b>${t.data.slice(6)}</div>
     <div class="main"><div class="a">${c.nome} · ${c.cliente.replace('Az. Agricola ','')}</div>
     <div class="b">${t.prod||'Prodotto da scrivere'} · ${fmtHa(t.ha)} ha · ${t.litri} L</div></div>
     <span class="tag ${t.stato==='ok'?'ok':'warn'}">${t.stato==='ok'?'Registrato':'Da completare'}</span></li>`;
@@ -2982,7 +3008,7 @@ function rigaTratt(t){
 function apriTratt(){
   document.getElementById('tr-list').innerHTML=TRATT.map(rigaTratt).join('');
   document.getElementById('ag-prog').style.display='none';
-  vai('tratt','Regole e agricoltura &rsaquo; Trattamenti');
+  vai('tratt','Regole e sicurezza &rsaquo; Trattamenti');
 }
 function verificheTratt(t){
   const p=PILOTI.find(x=>x.id===t.pilota);
@@ -3013,7 +3039,7 @@ function apriTrattamento(id){
   document.getElementById('tt-azioni').innerHTML= ok
     ? `<button class="btn vedi" onclick="stampaTrattamento(${id})">Stampa la scheda per il quaderno del cliente</button>`
     : `<button class="btn" onclick="registraTratt(${id},this)"><span class="spin"></span>Registra nel quaderno</button><div id="tt-err" style="font-size:13px;color:var(--ko);align-self:center"></div>`;
-  vai('trattamento','Regole e agricoltura &rsaquo; Trattamenti &rsaquo; '+t.data);
+  vai('trattamento','Regole e sicurezza &rsaquo; Trattamenti &rsaquo; '+t.data);
   document.getElementById('back').onclick=()=>apriTratt();
 }
 function salvaCampiTratt(id){const t=TRATT.find(x=>x.id===id);['prod','dose','avv'].forEach(k=>t[k]=document.getElementById('tt-'+k).value.trim());}
@@ -3171,7 +3197,8 @@ let NAVST=[], NAV_LOG=null, NAV_NO=false;
   Object.defineProperty(b,'onclick',{configurable:true,get(){return NAV_LOG;},set(f){NAV_LOG=f;}});
   b.addEventListener('click',e=>{ e.preventDefault(); navIndietro(); });
 })();
-function navIndietro(){
+let BACK_PASSO=null;
+function navIndietro(){ if(BACK_PASSO&&BACK_PASSO()) return;
   const p=NAVST.pop();
   if(!p){ const f=NAV_LOG; if(f) f(); else vai('home'); return; }
   NAV_NO=true; try{ vai(p.v,p.t); }finally{ NAV_NO=false; }
@@ -3440,6 +3467,12 @@ function toast(t){
 }
 
 /* ---------- moduli per inserire dati nuovi ---------- */
+function conferma(tit,testo,btn,fn){
+  const ve=document.createElement('div'); ve.className='velo';
+  ve.innerHTML=`<div class="card"><h2>${tit}</h2><div style="font-size:15px;line-height:1.45">${testo}</div><div class="row"><button class="btn sec" type="button" data-a="no">Annulla</button><button class="btn" type="button" data-a="si"><span class="spin"></span>${btn}</button></div></div>`;
+  document.body.appendChild(ve); ve.querySelector('[data-a="no"]').onclick=()=>ve.remove();
+  ve.querySelector('[data-a="si"]').onclick=function(){ lavora(this,()=>{ ve.remove(); fn(); }); };
+}
 function modulo(tit,campi,fn,testoBtn){
   const ve=document.createElement('div'); ve.className='velo';
   const isoDa=s=>{const d=dt(s);return d?d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'):'';};
@@ -3547,8 +3580,8 @@ function dispAz(op,id,b,pid){
 /* ---------- registro voli: file del drone e dati a mano ---------- */
 function manuale(){
   const mio=ADM?((PILOTI[0]||{}).nome||''):IO.n;
-  const v={id:nuovoId(),data:oggi(),ora:ora(),drone:(DRONI[0]||{}).nome||'',pilota:mio,luogo:'',min:0,stato:'dacompl',ctrl:false,amano:true};
-  VOLI.unshift(v); apriVolo(v.id);
+  VOLO_NUOVO={id:nuovoId(),data:oggi(),ora:ora(),drone:(DRONI[0]||{}).nome||'',pilota:mio,luogo:'',min:0,stato:'dacompl',ctrl:false,amano:true,nuovo:true};
+  apriVolo(VOLO_NUOVO.id);
 }
 function nuovoVoloDaLog(j,nome){
   document.getElementById('prog').style.display='none';
@@ -3856,7 +3889,7 @@ function salvaMatr(id,b){
   const d=matrDoppia(m,id); if(d){toast('Questa matricola è già di '+d.nome);return;}
   lavora(b,()=>{p.matr=m;disegnaPermAdm(id);toast('Matricola salvata: ora può entrare');});
 }
-const CAMPI_OP=[['nome','Nome dell’operatore'],['codice','Codice operatore UAS (D-Flight)',1],['resp','Responsabile (Admin)'],['dfReg','Registrato su D-Flight il'],['dfAbb','Abbonamento D-Flight fino al'],['email','Email'],['tel','Telefono']];
+const CAMPI_OP=[['nome','Nome dell’operatore'],['codice','Codice operatore UAS (D-Flight), es. ITA-rp1234abcd'],['resp','Responsabile (Admin)'],['dfReg','Registrato su D-Flight il'],['dfAbb','Abbonamento D-Flight fino al'],['email','Email'],['tel','Telefono']];
 function disegnaDatiOp(mod){
   const chk='<svg viewBox="0 0 24 24">'+IC.check+'</svg>', q=v=>String(v==null?'':v).replace(/"/g,'&quot;');
   const val=k=>k==='codice'&&/x{3}/i.test(OP[k]||'')?'':OP[k];   // «ITA-xxxx» dei dati di esempio = vuoto
@@ -3984,7 +4017,7 @@ function homeAdm(todo){
   const sez=HADM_SEZ.map(([k,t,sub,col,ico,V])=>{
     const voci=V.map(([tp,n])=>hadmVoce(tp,n)).filter(v=>v&&v.vis); if(!voci.length) return '';
     const ctrl=voci.some(v=>v.ctrl);
-    return `<details class="ha-sez" id="ha-${k}" ${HADM_APERTE.has(k)?'open':''} ontoggle="hadmToggle('${k}',this.open)" style="--fc:var(${col})">
+    return `<details class="ha-sez" id="ha-${k}" ${HADM_APERTE.has(k)?'open':''} ontoggle="window.hadmToggle&&hadmToggle('${k}',this.open)" style="--fc:var(${col})">
       <summary><span class="ico">${'<svg viewBox="0 0 24 24">'+ico+'</svg>'}</span><span class="tt"><b>${t}</b><small>${sub}</small></span>${(()=>{const k=voci.filter(v=>v.d==='ko').length, w=voci.filter(v=>v.d==='warn').length; return k?`<span class="tag ko">${k===1?'1 da fare subito':k+' da fare subito'}</span>`:w?`<span class="tag warn">${w===1?'1 da guardare':w+' da guardare'}</span>`:'';})()}<svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></summary>
       <div class="ha-voci">${voci.filter(v=>!v.ctrl).map(v=>`<button class="ha-v" type="button" onclick="${v.go}">${v.d?`<span class="d ${v.d}"></span>`:''}<span class="ico">${v.i}</span><span><b>${ESC(v.n)}</b><small>${ESC(v.c||'')}</small></span></button>`).join('')}</div>
       ${ctrl?`<div class="ha-ctrl" id="ha-ctrl"><div class="hcap">Controllo prima del volo</div><div class="nota" style="margin-bottom:6px">Di solito lo fa il pilota sul posto, dal suo telefono. Qui puoi provarlo in anticipo per un lavoro.</div>
@@ -4062,7 +4095,7 @@ function apriMissione(id){
   document.getElementById('ms-sub').textContent=[String(l.titolo||''),l.luogo,l.codice?'codice '+l.codice:''].filter(Boolean).join(' · ');
   document.getElementById('ms-drone').innerHTML=DRONI.map(d=>`<option value="${d.id}" ${d.id===MS.drone?'selected':''}>${ESC(d.nome)}</option>`).join('');
   ['quota','fo','fs','vel','fine','gimbal'].forEach(k=>{const e=document.getElementById('ms-'+k); if(e) e.value=MS[k];});
-  vai('missione',ESC(l.cliente)+' &rsaquo; Missione');
+  vai('missione','Lavoro &rsaquo; '+ESC(l.cliente)+' &rsaquo; Missione');
   caricaLeaflet().then(()=>{
     if(!MS.m){ MS.m=L.map('ms-mappa',{scrollWheelZoom:false}); MAPPE['ms-mappa']=MS.m;
       L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(MS.m);
@@ -4372,7 +4405,7 @@ function prossimoRegistro(){
   const resto=CODA.length;
   document.getElementById('im-leggi').classList.remove('hidden'); document.getElementById('im-letto').classList.add('hidden');
   document.getElementById('im-file').textContent=f.name; document.getElementById('im-resto').textContent=resto?'Dopo questo: '+pl(resto,'altro file','altri file'):'';
-  vai('importa','Persone e attività &rsaquo; Registro voli &rsaquo; Carica registro'); document.getElementById('back').onclick=()=>{CODA=[];apriVoli();};
+  vai('importa','Lavoro &rsaquo; Registro voli &rsaquo; Carica registro'); document.getElementById('back').onclick=()=>{CODA=[];apriVoli();};
   if(VOLI.some(v=>v.logNome===f.name)){IMP.saltati++;toast('Già caricato: '+f.name);setTimeout(prossimoRegistro,700);return;}
   if(f.size>10*1024*1024){IMP.errori++;erroreImp(f,'Il file supera i 10 MB');return;}
   const T=['File ricevuto','Lettura del registro','Chiave chiesta a DJI (resta sul server, non sul telefono)','Lettura del volo, punto per punto'];
@@ -4664,7 +4697,7 @@ function apriZone(){
     <div class="riga-i"><span>Da aggiornare entro</span><b style="color:var(--${lv==='ok'?'ok':lv})">${Z.scade}</b></div>${Z.file?`<div class="riga-i"><span>File</span><b>${ESC(Z.file)}</b></div>`:''}`
     :`<div class="riga-i"><span>Zone caricate</span><b style="color:var(--warn)">nessuna</b></div><div class="nota" style="margin-top:6px">Finché non carichi il file, nel controllo prima del volo il pilota apre la mappa D-Flight e segna «fatto» a mano.</div>`;
   document.getElementById('zn-prog').style.display='none';
-  vai('zone','Pannello Admin &rsaquo; Zone di volo'); document.getElementById('back').onclick=()=>apriAdmin();
+  vai('zone','Regole e sicurezza &rsaquo; Zone di volo'); document.getElementById('back').onclick=()=>apriAdmin();
 }
 function scegliZone(){
   const i=document.createElement('input'); i.type='file'; i.accept='.zip,.json,.geojson,.gz,application/zip,application/json';
@@ -5323,7 +5356,7 @@ const LEZIONI=[{"t": "Come è fatto Quota 120", "s": "Admin, piloti, telefoni, d
 /* ---------- Studio Gestionale (solo Admin): lezioni con legende e «Prova tu» che avvia la guida interattiva ---------- */
 const stuFatte=()=>{try{ if(localStorage.getItem('q120StuV')!=='17'){ const L=JSON.parse(localStorage.getItem('q120Studio')||'[]').map(i=>i===15?16:i); localStorage.setItem('q120Studio',JSON.stringify(L)); localStorage.setItem('q120StuV','17'); } return JSON.parse(localStorage.getItem('q120Studio')||'[]');}catch(e){return [];}};
 function stuSegna(i,on){ try{ const L=stuFatte().filter(x=>x!==i); if(on) L.push(i); localStorage.setItem('q120Studio',JSON.stringify(L)); }catch(e){} disegnaStudio(i); disegnaPannello(); }
-function apriStudio(apri){ if(!ADM) return; disegnaStudio(apri); vai('studio','Pannello Admin &rsaquo; Studio Gestionale'); document.getElementById('back').onclick=()=>apriAdmin(); }
+function apriStudio(apri){ if(!ADM) return; disegnaStudio(apri); vai('studio','Impostazioni &rsaquo; Studio Gestionale'); document.getElementById('back').onclick=()=>apriAdmin(); }
 function disegnaStudio(apri){
   const F=stuFatte(), n=F.length;
   document.getElementById('stu-prog').innerHTML=`<div class="stu-bar"><i style="width:${Math.round(n/LEZIONI.length*100)}%"></i></div>${pl(n,'lezione studiata','lezioni studiate')} su ${LEZIONI.length}`;
@@ -5537,7 +5570,7 @@ function disegnaSgFoto(){
   e.innerHTML=SG_FOTO.map((f,i)=>`<div class="ft" style="background-image:url(${URL.createObjectURL(f)})"><button type="button" onclick="SG_FOTO.splice(${i},1);disegnaSgFoto()">×</button></div>`).join('')+(SG_FOTO.length<8?'<button type="button" class="add" onclick="sgFoto()">+</button>':'');
 }
 function datiSegnala(volo){
-  const g=id=>(document.getElementById(id)||{}).value||'', v=volo&&VOLI.find(x=>x.id===volo);
+  const g=id=>(document.getElementById(id)||{}).value||'', v=(volo&&VOLI.find(x=>x.id===volo))||VOLI.find(x=>x.data===oggi()&&(ADM?x.pilota===g('sg-pil'):x.pilota===IO.n)&&(!g('sg-drone')||x.drone===g('sg-drone')));
   return {tipo:g('sg-tipo'),drone:g('sg-drone'),pilota:ADM?g('sg-pil'):IO.n,feriti:document.getElementById('sg-fer').dataset.v==='1',danni:document.getElementById('sg-dan').dataset.v==='1',
     testo:g('sg-testo').trim(),data:v?v.data:oggi(),ora:v?v.ora:ora(),luogo:v?v.luogo:(document.getElementById('h-luogo')||{}).value||(MPOS&&MPOS.nome!=='La tua posizione'?MPOS.nome:MPOS?'Posizione GPS '+(+MPOS.lat).toFixed(5)+', '+(+MPOS.lon).toFixed(5):''),volo:v?String(v.id):''};
 }
@@ -5586,7 +5619,7 @@ function mostraEsito(x,inCoda){
   vai('segnesito','Segnala un problema &rsaquo; Inviata');
 }
 // Admin: elenco, dati per ECCAIRS, numero della segnalazione, sblocco del drone
-function apriSegnalazioni(){ if(!ADM) return; disegnaSegnalazioni(); vai('segnalazioni','Pannello Admin &rsaquo; Segnalazioni'); document.getElementById('back').onclick=()=>apriAdmin(); }
+function apriSegnalazioni(){ if(!ADM) return; disegnaSegnalazioni(); vai('segnalazioni','Regole e sicurezza &rsaquo; Segnalazioni'); document.getElementById('back').onclick=()=>apriAdmin(); }
 function disegnaSegnalazioni(){
   const e=document.getElementById('sgl'); if(!e) return;
   if(!SEGN.length){ e.innerHTML='<div class="nota">Nessuna segnalazione. Quando un pilota segnala un problema, ti arriva una mail e la trovi qui.</div>'; return; }
@@ -5621,7 +5654,7 @@ function datiEccairs(id){
 
 /* ---------- checklist su misura: l'Admin le scrive, il pilota le spunta nel controllo prima del volo ---------- */
 const ckVale=(c,d)=>c.vale==='tutti'||(c.vale==='specific'&&d.cat==='specific')||(Array.isArray(c.vale)&&c.vale.includes(d.nome));
-const ckPer=d=>CHECK.filter(c=>d&&ckVale(c,d)&&c.voci.length);
+const ckPer=d=>{ if(!d) return []; const L=CHECK.filter(c=>ckVale(c,d)&&c.voci.length); return L.length?L:[Object.assign({},CK_BASE[0],{id:'base',nome:'Check list di base'})]; };
 const ckDroni=c=>c.vale==='tutti'?'tutti i droni':DRONI.filter(d=>ckVale(c,d)).map(d=>d.nome).join(', ')||'nessun drone';
 // pilota
 let CKSPUN={}, CKRES='';
@@ -5643,7 +5676,7 @@ function fineChecklist(b){
   lavora(b,()=>{ checklistOk=true; disegnaControllo(); vai('controllo','Controllo prima del volo'); });
 }
 // Admin
-function apriCheck(){ if(!ADM) return; disegnaCheck(); vai('check','Pannello Admin &rsaquo; Checklist'); document.getElementById('back').onclick=()=>apriAdmin(); }
+function apriCheck(){ if(!ADM) return; disegnaCheck(); vai('check','Regole e sicurezza &rsaquo; Checklist'); document.getElementById('back').onclick=()=>apriAdmin(); }
 function disegnaCheck(){
   document.getElementById('ckl').innerHTML=(CHECK.length?CHECK.map(c=>`<button type="button" class="cl" onclick="apriCkEd(${c.id})"><span class="ic" style="background:${c.col||'#1D5C7C'}"></span><span class="tx"><b>${ESC(c.nome)}</b><small>${ESC(ckDroni(c))} · ${pl(c.voci.length,'voce','voci')}, ${pl(c.voci.filter(v=>v.ob).length,'obbligatoria','obbligatorie')}</small></span><span class="fr">›</span></button>`).join(''):'<div class="nota">Nessuna checklist: creane una.</div>');
 }
@@ -5651,7 +5684,7 @@ let CKED=null;
 function apriCkEd(id){
   const c=id?CHECK.find(x=>x.id===id):{id:0,nome:'',vale:'tutti',col:'#1D5C7C',voci:[{t:'',ob:true}]};
   CKED=JSON.parse(JSON.stringify(c)); if(CKED.vale==='specific') CKED.vale=DRONI.filter(d=>d.cat==='specific').map(d=>d.nome);
-  disegnaCkEd(); vai('checked','Pannello Admin &rsaquo; Checklist &rsaquo; '+ESC(c.nome||'Nuova')); document.getElementById('back').onclick=()=>apriCheck();
+  disegnaCkEd(); vai('checked','Regole e sicurezza &rsaquo; Checklist &rsaquo; '+ESC(c.nome||'Nuova')); document.getElementById('back').onclick=()=>apriCheck();
 }
 function ckLeggi(){ document.querySelectorAll('#cke-voci input[type=text]').forEach((e,i)=>{ if(CKED.voci[i]) CKED.voci[i].t=e.value; }); const n=document.getElementById('cke-nome'); if(n) CKED.nome=n.value; }
 function ckAz(az,i){
@@ -5960,7 +5993,8 @@ function rkEsito(r){
   const res=(r.per||[]).map(rkDopo), peg=res.reduce((a,x)=>Math.max(a,x.p*x.g),0);
   const liv=res.some(x=>x.liv==='ko')?'ko':res.some(x=>x.liv==='warn')?'warn':'ok';
   const resta=(r.per||[]).filter((h,i)=>res[i].liv!=='ok').map(h=>h.t.toLowerCase());
-  return {liv,t:{ok:'Si vola',warn:'Si vola con le misure',ko:'Non si vola'}[liv],resta,peg:res.find(x=>x.p*x.g===peg)||{p:1,g:1}};
+  const senza=(r.per||[]).filter((h,i)=>res[i].liv==='warn'&&h.mis.length&&!h.mis.some(m=>m.on)).map(h=>h.t.toLowerCase());
+  return {liv,t:liv==='warn'&&senza.length?'Mancano le misure':{ok:'Si vola',warn:'Si vola con le misure',ko:'Non si vola'}[liv],resta,senza,peg:res.find(x=>x.p*x.g===peg)||{p:1,g:1}};
 }
 // riferimento SORA indicativo: rischio a terra (dalla zona e dalle dimensioni del drone) e classe del rischio in aria
 function rkSora(r){
@@ -5974,8 +6008,9 @@ function apriRischio(lavId,rid,daCtrl){
   RK=vec?JSON.parse(JSON.stringify(vec)):{id:'R'+Date.now().toString(36),lav:l?l.id:null,cod:l?l.codice||'':'',luogo:l?l.luogo:((daCtrl&&daCtrl.luogo)||''),data:l?l.data:oggi(),
     drone:l?l.drone:(daCtrl&&daCtrl.drone)||(DRONI[0]||{}).id,pilota:IO.n,zona:'',pers:'',vic:[],per:[],auto:{},step:1};
   RK.step=1; RK._da=daCtrl?'ctrl':l?'lav':'';
-  vai('rischio',(l?'Clienti e lavori &rsaquo; '+ESC(l.cliente)+' &rsaquo; ':'')+'Valutazione del rischio');
+  vai('rischio',(l?'Lavoro &rsaquo; '+ESC(l.cliente)+' &rsaquo; ':'')+'Valutazione del rischio');
   document.getElementById('back').onclick=()=>{ if(RK.step>1){RK.step--;disegnaRischio();} else rkEsci(); };
+  BACK_PASSO=()=>{ if(VISTA==='rischio'&&RK&&RK.step>1){ RK.step--; disegnaRischio(); window.scrollTo(0,0); return true; } return false; };
   disegnaRischio(); rkAuto();
 }
 function rkEsci(){ const r=RK; RK=null; if(r&&r._da==='ctrl'&&dSel) { disegnaControllo(); vai('controllo','Controllo prima del volo'); } else if(r&&r.lav) apriLavoro(r.lav); else vai('home'); }
@@ -6004,6 +6039,7 @@ function rkAggiungi(){
 }
 function rkSalva(b){
   const r=RK, E=rkEsito(r); if(!r.luogo.trim()){toast('Scrivi il luogo');return;}
+  if(E.senza&&E.senza.length){toast('Spunta almeno una misura per: '+E.senza.slice(0,2).join(', '));return;}
   lavora(b,()=>{ const x=JSON.parse(JSON.stringify(r)); delete x.step; delete x._da; x.esito=E.liv; x.firma=IO.n; x.il=oggi(); x.sora=rkSora(r);
     delete x.pdf; delete x.pdfNome;
     const i=RISCHI.findIndex(y=>y.id===x.id); if(i>=0) RISCHI[i]=Object.assign(x,{invii:RISCHI[i].invii||[]}); else RISCHI.unshift(x);
@@ -6134,7 +6170,7 @@ function apriRischi(){
       return `<div class="rk-arc"><i class="rk-pt ${r.esito}"></i><div class="m"><b>${ESC(r.luogo)}</b>${l?' · '+ESC(l.cliente):''}<small>${ESC(r.il)} · ${({ok:'si vola',warn:'si vola con le misure',ko:'non si vola'})[r.esito]} · ${ESC(r.firma||'')}${r.pdf?' · PDF salvato':''}${inv?' · mandata a '+ESC(inv.a)+' il '+ESC(inv.il):''}</small></div>
         <div class="b"><button class="btn sec mini" onclick="apriRischio(${r.lav||'null'},'${r.id}')">Apri</button><button class="btn sec mini" onclick="rkScarica('${r.id}',this)"><span class="spin"></span>PDF</button><button class="btn sec mini" onclick="testoPec('${r.id}')">Testo PEC</button><button class="btn mini" onclick="rkInvia('${r.id}')">Manda</button></div></div>`; }).join('')
       :`<div style="margin-top:10px;font-size:15px">Ancora nessuna valutazione. Si fa dalla scheda di un lavoro: «Fai la valutazione del rischio».</div>`);
-  vai('rischi','Pannello Admin &rsaquo; Valutazioni del rischio');
+  vai('rischi','Regole e sicurezza &rsaquo; Valutazioni del rischio');
 }
 /* ---------- calendario dei lavori e delle scadenze ----------
    Prossimi giorni (telefono) e mese (computer); controlli: stesso pilota o drone due volte nello stesso giorno,
@@ -6179,7 +6215,7 @@ function meteoCal(E){
         CAL_MET[k]={v:Math.round(m.daily.wind_speed_10m_max[0]),g:Math.round(m.daily.wind_gusts_10m_max[0])}; if(VISTA==='calendario') disegnaCal(); }); }).catch(()=>{});
   });
 }
-function apriCalendario(){ if(!CAL.mese){ const o=new Date(); CAL.mese=new Date(o.getFullYear(),o.getMonth(),1); } disegnaCal(); vai('calendario','Persone e attività &rsaquo; Calendario'); }
+function apriCalendario(){ if(!CAL.mese){ const o=new Date(); CAL.mese=new Date(o.getFullYear(),o.getMonth(),1); } disegnaCal(); vai('calendario','Lavoro &rsaquo; Calendario'); }
 function calVista(v){ CAL.vista=v; disegnaCal(); }
 function calMese(n){ CAL.mese=new Date(CAL.mese.getFullYear(),CAL.mese.getMonth()+n,1); disegnaCal(); }
 function evHtml(e,E){
@@ -6317,7 +6353,8 @@ function spiegaManda(b){
 function rischioDaCtrl(){ const ci=CTRLINFO||{}, lw=ci.codice?LAVORI.find(x=>x.codice===ci.codice):null; apriRischio(lw?lw.id:null,null,{luogo:ci.luogo,drone:dSel.id}); }
 function rischioPer(lav,luogo){
   const n=s=>String(s||'').toLowerCase().replace(/\(.*?\)/g,'').replace(/[^a-zà-ù0-9]/g,'');
-  return RISCHI.find(x=>lav&&x.lav===lav)||RISCHI.find(x=>luogo&&n(x.luogo)&&n(x.luogo)===n(luogo));
+  const cli=id=>(LAVORI.find(l=>l.id===id)||{}).cliente||'';
+  return RISCHI.find(x=>lav&&x.lav===lav)||RISCHI.find(x=>luogo&&n(x.luogo)&&n(x.luogo)===n(luogo)&&(!lav||!x.lav||cli(x.lav)===cli(lav)));
 }
 function stampaRischio(r){
   if(!r) return; const E=rkEsito(r), S=rkSora(r), d=DRONI.find(x=>x.id==r.drone)||{}, l=LAVORI.find(x=>x.id===r.lav);
@@ -6434,7 +6471,7 @@ function padFirma(elId,chi){
   bS.onclick=()=>{ if(vuoto) return; const img=firmaRitaglia(cv); if(!img){toast('Firma troppo piccola: riprova');return;}
     lavora(bS,()=>{ const x={img,il:oggi()};
       if(chi==='resp') OP.firma=Object.assign(x,{chi:IO.n}); else { SCHEDEP[chi]=SCHEDEP[chi]||{ruolo:'Pilota',ore:'0 h',voli:0,ore90:'0 h',inc:0,att:{}}; SCHEDEP[chi].firma=x; }
-      delete FPAD[elId+'r']; controllaModifiche(); padFirma(elId,chi); if(typeof disegnaPannello==='function') disegnaPannello(); toast('Firma salvata: da ora va nei documenti'); }); };
+      delete FPAD[elId+'r']; controllaModifiche(); padFirma(elId,chi); if(VISTA==='account'&&typeof disegnaAccount==='function') disegnaAccount(); if(typeof disegnaChip==='function') disegnaChip(); if(typeof disegnaPannello==='function') disegnaPannello(); toast('Firma salvata: da ora va nei documenti'); }); };
 }
 function firmaRitaglia(cv){
   const w=cv.width,h=cv.height,d=cv.getContext('2d').getImageData(0,0,w,h).data; let x0=w,y0=h,x1=-1,y1=-1;
@@ -6483,12 +6520,12 @@ function nuovaRichiesta(o){
     raggio:200,quota:z&&+z.lo>0?Math.min(+z.lo,120):60,dist,data:l?l.data:'',dalle:'09:00',alle:'12:00',
     att:l?('Lavoro aereo · '+String(l.titolo||'').toLowerCase()):'',pec:OP.pec||'',caso:'civ',da:'',fattN:'',fattD:'',aerop:z&&z.r==='A'?z.n:'',ubic:'',dest:'altro',note:'',stato:'bozza',creata:oggi()};
   if(l){ const rk=RISCHI.find(x=>x.lav===l.id); if(rk) r.note=(rk.per||[]).flatMap(h=>(h.mis||[]).filter(m=>m.on).map(m=>m.t)).join(', ').slice(0,300); }
-  RQ=r; disegnaRichiesta(); vai('rich','Pannello Admin &rsaquo; Richieste di permesso'); document.getElementById('back').onclick=()=>apriRichieste();
+  RQ=r; disegnaRichiesta(); vai('rich','Regole e sicurezza &rsaquo; Richieste di permesso'); document.getElementById('back').onclick=()=>apriRichieste();
 }
-function apriRichiesta(id){ const r=RICH.find(x=>x.id===id); if(!r) return; RQ=JSON.parse(JSON.stringify(r)); disegnaRichiesta(); vai('rich','Pannello Admin &rsaquo; Richieste di permesso'); document.getElementById('back').onclick=()=>apriRichieste(); }
-function apriRichieste(){ if(!ADM) return; RQ=null; disegnaRichiesta(); vai('rich','Pannello Admin &rsaquo; Richieste di permesso'); document.getElementById('back').onclick=()=>apriAdmin(); }
+function apriRichiesta(id){ const r=RICH.find(x=>x.id===id); if(!r) return; RQ=JSON.parse(JSON.stringify(r)); disegnaRichiesta(); vai('rich','Regole e sicurezza &rsaquo; Richieste di permesso'); document.getElementById('back').onclick=()=>apriRichieste(); }
+function apriRichieste(){ if(!ADM) return; RQ=null; disegnaRichiesta(); vai('rich','Regole e sicurezza &rsaquo; Richieste di permesso'); document.getElementById('back').onclick=()=>apriAdmin(); }
 function rqCampo(k,v){ if(!RQ) return; RQ[k]=v; if(k==='lav'){ const l=LAVORI.find(x=>x.id===+v); if(l){ RQ.lav=l.id; RQ.data=l.data; RQ.luogo=RQ.luogo||l.luogo; RQ.pil=l.pilota; RQ.dr=l.drone; RQ.att=RQ.att||('Lavoro aereo · '+String(l.titolo||'').toLowerCase()); } else RQ.lav=null; }
-  if(k==='luogo'||k==='lat'||k==='lon') RQ.ubicAuto=0; if(['mod','caso','da','dest','lav','pil','dr','data'].includes(k)) disegnaRichiesta(); else rqAggiorna(); }
+  if(k==='luogo'||k==='lat'||k==='lon') RQ.ubicAuto=0; if(k==='luogo') RQ.coordAuto=0; if(['mod','caso','da','dest','lav','pil','dr','data'].includes(k)) disegnaRichiesta(); else rqAggiorna(); }
 function rqSalva(stato){ if(!RQ) return; if(stato){ RQ.stato=stato; if(stato==='inviata') RQ.inviata=oggi(); if(stato==='concessa'||stato==='negata') RQ.risposta=oggi(); }
   const i=RICH.findIndex(x=>x.id===RQ.id); if(i>=0) RICH[i]=JSON.parse(JSON.stringify(RQ)); else RICH.unshift(JSON.parse(JSON.stringify(RQ)));
   controllaModifiche(); disegnaRichiesta(); }
@@ -6598,6 +6635,10 @@ function rqCampiModulo(r){
 }
 function rqPagine(r){ return [atmModulo(rqCampiModulo(r)),atmNote(r.mod)]; }
 function rqDoc(r){ return rqPagine(r).map(h=>`<div style="padding:16px 12px;background:#fff">${h}</div>`).join('<div style="height:10px;background:#e8edf0"></div>'); }
+// coordinate dal luogo, se mancano (si possono correggere a mano)
+function rqCoordDaLuogo(){ const r=RQ; if(!r||r.lat!==''&&r.lat!=null||!r.luogo||r.coordAuto) return; r.coordAuto=1;
+  zmGeo(String(r.luogo).replace(/\s*\(.*\)/,'')).then(x=>{ if(!x||RQ!==r||(r.lat!==''&&r.lat!=null)) return; r.lat=+x.latitude.toFixed(5); r.lon=+x.longitude.toFixed(5);
+    ['lat','lon'].forEach(k=>{const e=document.querySelector('#rq-dati [data-k="'+k+'"]'); if(e) e.value=r[k];}); toast('Coordinate prese dal luogo: correggile se il punto è diverso'); rqAggiorna(); rqUbicazione(); }); }
 // ubicazione rispetto al capoluogo: distanza in miglia e direzione (es. 15,3 NM E di Ferrara)
 function rqUbicazione(){ const r=RQ; if(!r||r.ubic||r.ubicAuto) return; const sg=rqSigla(r), D=rqDati(r); if(!sg||D.lat==null) return; r.ubicAuto=1;
   zmGeo(RQ_PROV[sg][0]).then(x=>{ if(!x||RQ!==r||r.ubic) return; const km=kmDa([x.latitude,x.longitude],[D.lat,D.lon]), c=RQ_PROV[sg][0];
@@ -6672,7 +6713,7 @@ function disegnaRichiesta(){
       :r.stato==='inviata'?`<button class="btn" id="rq-ok" onclick="lavora(this,()=>{rqSalva('concessa');toast('Concessa: ora carica il nulla osta in Documenti')})"><span class="spin"></span>È arrivato il nulla osta</button><button class="btn sec" onclick="lavora(this,()=>{rqSalva('negata')})"><span class="spin"></span>È stata negata</button>`
       :r.stato==='concessa'?`<button class="btn sec" onclick="apriDocumenti()">Carica il nulla osta in Documenti</button>`:''}
       ${RICH.some(x=>x.id===r.id)?`<button class="btn sec" onclick="rqTogli('${r.id}')">Elimina</button>`:''}</div>`;
-  rqAggiorna(); rqUbicazione();
+  rqAggiorna(); rqUbicazione(); rqCoordDaLuogo();
 }
 function rqTogli(id){ RICH=RICH.filter(x=>x.id!==id); controllaModifiche(); RQ=null; toast('Richiesta eliminata'); disegnaRichiesta(); }
 function rqNomeFile(r){return (r.mod==='09'?'Richiesta_ATM-09_':'Richiesta_ATM-05_')+String(r.luogo||'luogo').replace(/\(.*?\)/g,'').replace(/[^\wàèéìòù]+/g,'_').replace(/^_|_$/g,'')+'_'+String(r.data||oggi()).replace(/\//g,'-')+'.pdf';}
@@ -6692,7 +6733,7 @@ function apriMappaZone(lat,lon,da){
   vai('zmappa',(da==='ctrl'?'Controllo prima del volo &rsaquo; ':VISTA==='dflight'?'D-Flight &rsaquo; ':'')+'Mappa delle zone');
   document.getElementById('back').onclick=()=>da==='ctrl'?vai('controllo','Controllo prima del volo'):apriDflight();
   document.getElementById('zm-info').innerHTML=ZONEINFO?'Zone dal file D-Flight del '+ZONEINFO.data+' ('+ZONEINFO.n.toLocaleString('it-IT')+' zone).':
-    '<b style="color:var(--warn)">Il file delle zone non è ancora caricato</b>: la mappa è vuota.'+(ADM?' Caricalo da Pannello Admin › Zone di volo.':' Chiedi all’Admin di caricarlo.');
+    '<b style="color:var(--warn)">Il file delle zone non è ancora caricato</b>: la mappa è vuota.'+(ADM?' Caricalo da Home › Regole e sicurezza › Zone di volo.':' Chiedi all’Admin di caricarlo.');
   let dove='';
   if(lat==null&&ZVERD&&ZVERD.pos){lat=ZVERD.pos.lat;lon=ZVERD.pos.lon;dove=ZVERD.pos.nome||'punto del controllo';}
   if(lat==null){ try{ const u=JSON.parse(localStorage.getItem('q120ZmUltimo')||'null'); if(u&&isFinite(u.lat)){lat=u.lat;lon=u.lon;dove=u.n+' (ultimo luogo cercato)';} }catch(e){} }
@@ -6843,7 +6884,7 @@ let FCODA=[], FLETTO=null, FIMP={fatti:0,saltati:0,errori:0};
 function apriFotoVolo(){
   document.getElementById('fv-istr').classList.remove('hidden'); document.getElementById('fv-letto').classList.add('hidden');
   document.getElementById('fv-passi').classList.add('hidden');
-  vai('fotovolo','Persone e attività &rsaquo; Registro voli &rsaquo; Foto del volo'); document.getElementById('back').onclick=()=>apriVoli();
+  vai('fotovolo','Lavoro &rsaquo; Registro voli &rsaquo; Foto del volo'); document.getElementById('back').onclick=()=>apriVoli();
 }
 function scegliFotoVolo(){
   const i=document.createElement('input'); i.type='file'; i.accept='image/*'; i.multiple=true;
@@ -6939,7 +6980,7 @@ function caricaPdfLib(){
   LIBPDF=Promise.all([js('/lib/jspdf.umd.min.js'),js('/lib/html2canvas.min.js')]); return LIBPDF;
 }
 function apriRapporto(cliente,codice){
-  vai('rapporto','Persone e attività &rsaquo; Clienti e lavori &rsaquo; Rapporto per il cliente');
+  vai('rapporto','Lavoro &rsaquo; Clienti e lavori &rsaquo; Rapporto per il cliente');
   document.getElementById('back').onclick=()=>apriLavori();
   const sc=document.getElementById('rp-cl'), cl=[...new Set(LAVORI.map(l=>l.cliente).concat(CLIENTI))];
   sc.innerHTML=cl.map(c=>`<option>${ESC(c)}</option>`).join(''); if(cliente) sc.value=cliente;
@@ -7036,7 +7077,7 @@ function apriAvvisi(){
   const G=A.giorni||[60,30,7,0];
   document.getElementById('av-giorni').innerHTML=[60,30,7,0].map(g=>`<label><input type="checkbox" value="${g}" ${G.includes(g)?'checked':''}>${g?g+' giorni':'il giorno stesso'}</label>`).join('');
   document.getElementById('av-ora').innerHTML=[6,7,8,9,12,15,18,20].map(h=>`<option value="${h}" ${(+A.ora||7)===h?'selected':''}>alle ${h}</option>`).join('');
-  vai('avvisi','Pannello Admin &rsaquo; Avvisi via email'); document.getElementById('back').onclick=()=>apriAdmin();
+  vai('avvisi','Impostazioni &rsaquo; Avvisi via email'); document.getElementById('back').onclick=()=>apriAdmin();
 }
 function leggiAvvisi(){
   const g=id=>document.getElementById(id), em=v=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
