@@ -231,6 +231,7 @@
   .adm-in{border:1px solid var(--accent);border-radius:6px;padding:4px 6px;font-size:14px;font-weight:600;width:100%;margin-top:2px}
   header .op button{background:none;border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:6px;font-size:12px;padding:3px 8px;margin-top:3px;cursor:pointer}
   body.op .solo-adm{display:none!important}
+  body:not(.op) .solo-op{display:none!important}
   body.op .ro .btn:not(.vedi){display:none!important}
   body.op .ro input,body.op .ro select,body.op .ro textarea{pointer-events:none;background:#f3f5f7}
   .todo li.go{cursor:pointer}
@@ -1628,7 +1629,8 @@
       <h2>Prossime scadenze</h2>
       <ul class="dlist" id="mn-pros"></ul>
     </div>
-    <div class="card" style="margin-top:12px">
+    <div class="card solo-op nota" style="margin-top:12px">Gli interventi di manutenzione li registra l’Admin: se hai fatto qualcosa sul drone (per esempio eliche cambiate), diglielo o usa «Segnala un problema».</div>
+    <div class="card solo-adm" style="margin-top:12px">
       <h2>Registra un intervento</h2>
       <div class="fill">
         <div><label>Drone</label><select id="mn-drone" onchange="tipiIntervento()"></select></div>
