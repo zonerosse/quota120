@@ -16,7 +16,7 @@
   :root{
     --bg:#eef1f4; --card:#ffffff; --line:#d9dee4; --text:#1f2a36; --muted:#5f6b78;
     --head:#2b3a4a;
-    --f-flotta:#4a6a8a; --f-persone:#5b7f6e; --f-attivita:#5d6b7c; --f-regole:#8a7a4e; --f-agri:#6b7a45;
+    --f-flotta:#4a6a8a; --f-persone:#5b7f6e; --f-attivita:#5d6b7c; --f-regole:#8a7a4e; --f-agri:#6b7a45; --f-imp:#56616d;
     --ok:#3f7d5a; --ok-bg:#e6f1ea; --warn:#a57a2a; --warn-bg:#f6efdf; --ko:#a64b45; --ko-bg:#f5e4e2;
     --accent:#3d5f80;
   }
@@ -431,7 +431,7 @@
   .hsep{display:none;width:1px;height:30px;background:#3A5568;margin:0 2px}
   body.adm .htabs,body.come .htabs{display:flex} body.adm .hsep,body.come .hsep{display:block}
   @media(max-width:900px){body.adm header,body.come header{height:auto;flex-wrap:wrap;padding:10px 12px;row-gap:8px}
-    body.adm .htabs,body.come .htabs{order:9;width:100%;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:0}
+    body.adm .htabs,body.come .htabs{order:9;width:100%;display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin:0}
     .htabs .hbtn{flex-direction:column;height:54px;gap:3px;font-size:13px;padding:0 4px} .hsep{display:none!important} header .marchio{margin-right:auto}}
   .come-banda{display:none;background:#FBF3E4;border:1px solid #E7C98F;color:#5B3B05;border-radius:10px;padding:10px 14px;align-items:center;gap:10px;flex-wrap:wrap;font-size:15px;margin:12px 0}
   body.come .come-banda{display:flex}
@@ -830,6 +830,35 @@
   .rq-docbox{border:1px solid #c9d1d8;box-shadow:0 6px 18px rgba(19,42,58,.12);max-width:680px;margin:4px auto 0;overflow:auto;background:#fff}
   .rq-lista{list-style:none;padding:0;margin:4px 0 0}.rq-lista li{display:flex;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}.rq-lista li:first-child{border-top:0}
   .rq-lista .mark{width:24px;height:24px;border-radius:6px;flex:none;display:flex;align-items:center;justify-content:center}.rq-lista .t{flex:1}.rq-lista small{display:block;color:var(--muted);font-size:13px}
+  .ha-barra{position:relative;display:flex;gap:14px;align-items:center;background:linear-gradient(180deg,#132A3A,#1C3A4F);color:#fff;border-radius:12px;padding:16px 18px 14px;overflow:hidden;margin-bottom:12px}
+  .ha-barra::before{content:"";position:absolute;left:18px;right:18px;top:0;height:4px;background:#E8C15A;border-radius:0 0 3px 3px}
+  .ha-barra .sc{width:44px;height:44px;border-radius:11px;background:#E8C15A;display:flex;align-items:center;justify-content:center;flex:none}.ha-barra .sc svg{width:25px;height:25px;stroke:#132A3A;fill:none;stroke-width:2.2;stroke-linejoin:round}
+  .ha-barra b{display:block;font:700 22px "Barlow Semi Condensed","Barlow",sans-serif;line-height:1.1}.ha-barra span{color:#c9d5de;font-size:14px}
+  .ha-barra .g{margin-left:auto;background:#E8C15A;color:#132A3A;border:0;border-radius:8px;padding:9px 14px;font:700 14.5px "Barlow",sans-serif;cursor:pointer}
+  @media(max-width:520px){.ha-barra b{font-size:18px}.ha-barra .g{padding:8px 10px}.ha-barra{gap:10px;padding:14px 12px 12px}}
+  .ha-daf{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .ha-daf h2{margin:0;padding:11px 16px;font-size:17px;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center;text-transform:none;letter-spacing:0;color:var(--text)}
+  .ha-daf h2 i{font-style:normal;background:var(--ko);color:#fff;border-radius:10px;font:700 12.5px "Barlow",sans-serif;padding:1px 8px}
+  .ha-rg{display:flex;gap:12px;align-items:center;padding:9px 16px;border-top:1px solid #edf0f2}.ha-daf h2+.ha-rg{border-top:0}
+  .ha-rg .hl{width:4px;align-self:stretch;min-height:34px;border-radius:2px;flex:none;display:block}.ha-rg .hl.ko{background:var(--ko)}.ha-rg .hl.warn{background:var(--warn)}.ha-rg .hl.ok{background:var(--ok)}
+  .ha-rg .t{flex:1;min-width:0}.ha-rg b{display:block}.ha-rg small{color:var(--muted);font-size:13px}.ha-piu{padding:8px 16px;border-top:1px solid #edf0f2}
+  .ha-volo{display:flex;gap:14px;align-items:center;width:100%;background:#fff;border:1px solid var(--line);border-left:6px solid #E8C15A;border-radius:12px;padding:11px 16px;margin-top:12px;text-align:left;font:inherit;color:inherit;cursor:pointer}
+  .ha-volo .ic{width:42px;height:42px;border-radius:10px;background:#132A3A;display:flex;align-items:center;justify-content:center;flex:none}.ha-volo .ic svg{width:24px;height:24px;stroke:#fff;fill:none;stroke-width:1.8}
+  .ha-volo .t{flex:1}.ha-volo b{font:700 17px "Barlow Semi Condensed","Barlow",sans-serif;display:block}.ha-volo small{color:var(--muted);font-size:13.5px}
+  details.ha-sez{background:var(--card);border:1px solid var(--line);border-radius:10px;margin-top:10px}
+  details.ha-sez>summary{list-style:none;display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer}details.ha-sez>summary::-webkit-details-marker{display:none}
+  .ha-sez .ico{width:36px;height:36px;border-radius:9px;background:var(--fc);display:flex;align-items:center;justify-content:center;flex:none}
+  .ha-sez .ico svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+  .ha-sez summary .tt{flex:1;min-width:0}.ha-sez summary .tt b{font-size:16.5px;display:block}.ha-sez summary .tt small{color:var(--muted);font-size:13px}
+  .ha-sez .tag{font-size:12.5px;font-weight:600;border-radius:5px;padding:2px 8px;max-width:45%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ha-sez .tag.warn{background:var(--warn-bg);color:var(--warn)}.ha-sez .tag.ko{background:#f1f3f5;color:var(--ko);border:1px solid var(--ko)}
+  .ha-sez .chev{width:18px;height:18px;stroke:var(--muted);fill:none;stroke-width:2;transition:transform .2s;flex:none}details.ha-sez[open] .chev{transform:rotate(90deg)}
+  .ha-voci{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;padding:0 14px 14px}
+  .ha-v{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:9px;padding:9px 10px;background:#fbfcfd;text-align:left;font:inherit;color:inherit;cursor:pointer;position:relative}
+  .ha-v:hover{border-color:var(--fc)}.ha-v .ico{width:30px;height:30px;border-radius:8px}.ha-v .ico svg{width:17px;height:17px}
+  .ha-v b{display:block;font-size:15px}.ha-v small{color:var(--muted);font-size:12.5px}.ha-v .d{position:absolute;top:7px;right:7px;width:9px;height:9px;border-radius:50%}.ha-v .d.ko{background:var(--ko)}.ha-v .d.warn{background:var(--warn)}
+  .ha-ctrl{padding:4px 14px 14px;border-top:1px solid var(--line);margin-top:4px}.ha-leg{font-size:13px;color:var(--muted);margin:12px 0}
+  body.adm:not(.come) #v-home .guida-volo,body.adm:not(.come) #v-home > .card.pannello,body.adm:not(.come) #admbtn,body.adm:not(.come) #asp-btn,body.adm #ad-tiles,body.adm #v-admin > .card.pannello{display:none!important}
   .zm-cerca{display:flex;gap:8px;flex-wrap:wrap}.zm-cerca input{flex:1;min-width:180px}
   .zm-mappa{height:420px;margin-top:10px}@media(max-width:600px){.zm-mappa{height:340px}}
   .zm-ver{display:flex;gap:12px;align-items:center;border-radius:10px;padding:12px 14px;color:#fff}.zm-ver.ok{background:var(--ok)}.zm-ver.warn{background:var(--warn)}.zm-ver.ko{background:var(--ko)}
@@ -1878,7 +1907,7 @@ const TILES = {
 function disegnaHome(){
   const vd=(document.getElementById('h-drone')||{}).value||'', vp=(document.getElementById('h-pilota')||{}).value||'';
   contaRiquadri(); disegnaPannello(); disegnaBenvenuto();
-  { const e=document.getElementById('h-ruolo'); if(e) e.innerHTML=ADM&&!COME?`<div class="h-ruolo"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8.5-7 10-4-1.5-7-5-7-10V6z"/></svg><span><b>Home dell’Admin</b> · vedi e gestisci tutto</span>${gdOn()?`<button class="h-giro" id="h-giro" onclick="gdStart('giro')">Giro delle voci</button>`:''}</div>`:(!COME&&ioPilota()&&accMancano(ioPilota())?`<div class="ac-banda" id="h-acc"><div><b>Completa il tuo account</b><div class="nota">${pl(accMancano(ioPilota()),'cosa da fare','cose da fare')} prima di volare</div></div><button class="btn mini" type="button" onclick="apriAccount()">Apri</button></div>`:''); }
+  { const e=document.getElementById('h-ruolo'); if(e) e.innerHTML=ADM&&!COME?'':false?`<div class="h-ruolo"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8.5-7 10-4-1.5-7-5-7-10V6z"/></svg><span><b>Home dell’Admin</b> · vedi e gestisci tutto</span>${gdOn()?`<button class="h-giro" id="h-giro" onclick="gdStart('giro')">Giro delle voci</button>`:''}</div>`:(!COME&&ioPilota()&&accMancano(ioPilota())?`<div class="ac-banda" id="h-acc"><div><b>Completa il tuo account</b><div class="nota">${pl(accMancano(ioPilota()),'cosa da fare','cose da fare')} prima di volare</div></div><button class="btn mini" type="button" onclick="apriAccount()">Apri</button></div>`:''); }
   { const a=LAVORI.filter(l=>l.stato!=='concluso').length; TILES.attivita[2].c=pl(a,'lavoro aperto','lavori aperti'); }
   { const n=Object.values(SCHEDE).filter(s=>s.man.liv!=='ok').length; TILES.flotta[2].c=n?pl(n,'in scadenza','in scadenza'):'in regola'; TILES.flotta[2].d=n?'warn':''; }
   { const n=TRATT.filter(t=>t.stato!=='ok').length; TILES.regole[3].c=n?pl(n,'da completare','da completare'):'quaderno in regola'; TILES.regole[3].d=n?'warn':''; }
@@ -1886,7 +1915,7 @@ function disegnaHome(){
   { const o=new Date(); o.setHours(0,0,0,0); const n=LAVORI.filter(l=>l.stato!=='concluso'&&dt(l.data)&&dt(l.data)>=o&&dt(l.data)-o<=7*864e5).length; TILES.attivita[4].c=n?pl(n,'lavoro','lavori')+' in 7 giorni':'lavori e scadenze'; }
   const todo=calcolaTodo();
   const tieni=['h-data','h-cod','h-luogo'].map(i=>(document.getElementById(i)||{}).value), trov=LAVTROVATO;
-  document.getElementById('h-asp').innerHTML=(ASP==='A'?homeA(todo):ASP==='C'?homeC(todo):homeB(todo));
+  document.getElementById('h-asp').innerHTML=(ADM&&!COME?homeAdm(todo):ASP==='A'?homeA(todo):ASP==='C'?homeC(todo):homeB(todo));
   riempiSelect(vd,vp);
   ['h-data','h-cod','h-luogo'].forEach((i,k)=>{const e=document.getElementById(i); if(e&&tieni[k]) e.value=tieni[k];});
   if(tieni[1]) cercaCodice(); LAVTROVATO=trov; disegnaMeteo();
@@ -3068,7 +3097,7 @@ function vai(v, crumb){
   if(v==='home') disegnaHome();
   document.getElementById('back').onclick=()=>vai('home');
   document.querySelectorAll('.wrap > [id^="v-"]').forEach(e=>e.classList.toggle('hidden',e.id!=='v-'+v));
-  document.querySelector('.nav').style.display='';
+  document.querySelector('.nav').style.display=v==='home'&&ADM&&!COME?'none':'';
   document.getElementById('back').style.display = v==='home'?'none':'inline-flex';
   { const H=ADM&&!COME?'Home Admin':'Home'; document.getElementById('crumb').innerHTML = v==='home' ? '<b>'+H+'</b>' : H+' &rsaquo; <b>'+crumb+'</b>'; }
   VISTA=v; window.scrollTo(0,0); scuro(); if(typeof disegnaChip==='function'&&IO&&IO.n) disegnaChip();
@@ -3659,6 +3688,7 @@ function disegnaPannello(){
     {i:'<svg viewBox="0 0 24 24"><path d="M3 17c3-1 4-9 7-9s1 9 4 9 3-4 4-4 1 2 3 2"/><path d="M3 21h18"/></svg>',n:'Le firme',c:OP.firma&&OP.firma.img?(PILOTI.filter(p=>!(SCHEDEP[p.id]||{}).firma).length?pl(PILOTI.filter(p=>!(SCHEDEP[p.id]||{}).firma).length,'pilota senza','piloti senza'):'tutte fatte'):'manca la tua',d:OP.firma&&OP.firma.img&&!PILOTI.some(p=>!(SCHEDEP[p.id]||{}).firma)?'':'warn',go:"apriAdmin('ad-firma')"},
     ...(SPAZIO?[]:[{i:SHIELD,n:'Codice dell’Admin',c:'cambia il codice',go:'cambiaCodice()'}]),
     {i:'<svg viewBox="0 0 24 24"><path d="M4 5c3-1.5 5.5-1.5 8 0v14c-2.5-1.5-5-1.5-8 0z"/><path d="M12 5c2.5-1.5 5-1.5 8 0v14c-3-1.5-5.5-1.5-8 0"/></svg>',n:'Studio Gestionale',c:stuFatte().length+' lezioni su '+LEZIONI.length,go:'apriStudio()'}];
+  window.PANN_T=T;
   document.getElementById('t-admin').innerHTML=document.getElementById('ad-tiles').innerHTML=T.map(t=>`<button class="tile" onclick="${t.go}">
     <div class="ico" style="background:var(--accent)">${t.i}</div>
     <div><div class="n">${t.n}</div><div class="c">${t.c}</div></div>${t.d?`<span class="dot ${t.d}"></span>`:''}</button>`).join('');
@@ -3690,7 +3720,7 @@ function disegnaBenvenuto(){
 function apriAdmin(sez,apri){
   if(!ADM) return;
   disegnaDisp(); disegnaPermAdm(apri); disegnaDatiOp(false); padFirma('ad-firma-c','resp'); document.getElementById('ad-firme-sp').innerHTML=spuntaFirme();
-  vai('admin','Pannello Admin');
+  vai('admin','Impostazioni');
   if(sez) setTimeout(()=>{const e=document.getElementById(sez); if(e) e.scrollIntoView({behavior:'smooth'});},60);
 }
 function disegnaPermAdm(apri){
@@ -3844,6 +3874,48 @@ function homeA(todo){
     ${menuHome('tiles')}${docHome()}`;
 }
 
+/* ---------- Home dell'Admin: un solo pannello (barra, Da fare, Guidami in un volo, cinque sezioni a tendina) ---------- */
+let HADM_APERTE=new Set();
+const HADM_SEZ=[
+  ['lav','Lavoro','lavori, calendario, voli, preventivi','--f-attivita','<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/>',[['t','Clienti e lavori'],['t','Calendario'],['t','Registro voli'],['t','Preventivi'],['x','ctrl']]],
+  ['flotta','Flotta','droni, batterie, manutenzioni, inventario','--f-flotta','<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8 8l8 8M16 8l-8 8"/>',[['t','Droni'],['t','Batterie'],['t','Manutenzioni'],['t','Inventario'],['p','Aggiungi drone']]],
+  ['persone','Persone','piloti, telefoni, permessi, firme','--f-persone','<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><path d="M16 4.5a3.5 3.5 0 010 7M18 14c2 .8 3 2.8 3 6"/>',[['t','Piloti'],['p','Aggiungi pilota'],['p','Telefoni collegati'],['p','Utenti e permessi'],['p','Le firme']]],
+  ['regole','Regole e sicurezza','D-Flight, ENAC, permessi, rischio, segnalazioni','--f-regole','<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',[['t','D-Flight'],['x','zmappa'],['p','Zone di volo'],['t','Autorizzazioni ENAC'],['p','Richieste di permesso'],['p','Valutazioni del rischio'],['p','Segnalazioni'],['p','Checklist'],['t','Campi'],['t','Trattamenti']]],
+  ['imp','Impostazioni','dati dell’operatore, avvisi, documenti, codice, studio','--f-imp','<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>',[['p','Dati dell’operatore'],['p','Avvisi via email'],['x','doc'],['p','Codice dell’Admin'],['p','Studio Gestionale']]]];
+function hadmVoce(tipo,n){
+  if(tipo==='t'){ for(const [g,L] of Object.entries(TILES)){ const t=L.find(x=>x.n===n); if(t) return {n,c:t.c,d:t.d||'',i:svg(t.k),go:`apriPagina('${t.n.replace(/'/g,"\\'")}','${g}')`,vis:puoVedere(t.n)}; } return null; }
+  if(tipo==='p'){ const t=(window.PANN_T||[]).find(x=>x.n===n); return t?{n:t.n.replace('Studio Gestionale','Studio'),c:t.c,d:t.d||'',i:t.i,go:t.go,vis:true}:null; }
+  if(n==='zmappa') return {n:'Mappa delle zone',c:ZONEINFO?'tocchi un punto: quota e regole':'carica prima il file delle zone',d:'',i:'<svg viewBox="0 0 24 24"><circle cx="12" cy="10" r="3"/><path d="M12 21s-7-6.5-7-11a7 7 0 0114 0c0 4.5-7 11-7 11z"/></svg>',go:'apriMappaZone()',vis:true};
+  if(n==='doc') return {n:'Documenti',c:DOCS.length?pl(DOCS.length,'caricato','caricati'):'si leggono da soli',d:'',i:'<svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z"/><path d="M12 17v-6M9 13l3-3 3 3"/></svg>',go:'apriDocumenti()',vis:true};
+  if(n==='ctrl') return {n:'Controllo prima del volo',c:'drone, pilota, luogo',d:'',i:'<svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg>',go:"hadmApri('lav',1)",vis:true,ctrl:true};
+  return null;
+}
+function homeAdm(todo){
+  const o=new Date(), att=DISP.filter(x=>x.stato==='attesa');
+  const righe=att.map(x=>`<div class="ha-rg"><span class="hl ko"></span><div class="t"><b>Telefono da approvare: ${ESC(x.n)}</b><small>codice ${ESC(x.codice||'')} · approva solo se è quello che vede sul suo telefono</small></div><button class="btn mini" type="button" onclick="dispAz('approva','${x.id}',this)"><span class="spin"></span>Approva</button></div>`)
+    .concat(todo.map((x,i)=>[x,i]).filter(([x])=>x.liv==='ko'||x.liv==='warn').sort((a,b)=>(a[0].liv==='ko'?0:1)-(b[0].liv==='ko'?0:1)).map(([x,i])=>`<div class="ha-rg"><span class="hl ${x.liv}"></span><div class="t"><b>${x.t}</b><small>${x.w||''}</small></div>${x.go?`<button class="btn sec mini" type="button" onclick="TODOGO[${i}]()">Apri</button>`:''}</div>`));
+  const tutte=HADM_APERTE.has('_daf'), vis=tutte?righe:righe.slice(0,6);
+  const sez=HADM_SEZ.map(([k,t,sub,col,ico,V])=>{
+    const voci=V.map(([tp,n])=>hadmVoce(tp,n)).filter(v=>v&&v.vis); if(!voci.length) return '';
+    const ctrl=voci.some(v=>v.ctrl);
+    return `<details class="ha-sez" id="ha-${k}" ${HADM_APERTE.has(k)?'open':''} ontoggle="hadmToggle('${k}',this.open)" style="--fc:var(${col})">
+      <summary><span class="ico">${'<svg viewBox="0 0 24 24">'+ico+'</svg>'}</span><span class="tt"><b>${t}</b><small>${sub}</small></span>${(()=>{const k=voci.filter(v=>v.d==='ko').length, w=voci.filter(v=>v.d==='warn').length; return k?`<span class="tag ko">${k===1?'1 da fare subito':k+' da fare subito'}</span>`:w?`<span class="tag warn">${w===1?'1 da guardare':w+' da guardare'}</span>`:'';})()}<svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></summary>
+      <div class="ha-voci">${voci.filter(v=>!v.ctrl).map(v=>`<button class="ha-v" type="button" onclick="${v.go}">${v.d?`<span class="d ${v.d}"></span>`:''}<span class="ico">${v.i}</span><span><b>${ESC(v.n)}</b><small>${ESC(v.c||'')}</small></span></button>`).join('')}</div>
+      ${ctrl?`<div class="ha-ctrl" id="ha-ctrl"><div class="hcap">Controllo prima del volo</div><div class="nota" style="margin-bottom:6px">Di solito lo fa il pilota sul posto, dal suo telefono. Qui puoi provarlo in anticipo per un lavoro.</div>
+        <div class="hsel">${selDrone()}${selPilota()}</div>${campiLavoro()}<button class="btn" id="h-btn" onclick="avviaControllo(this)"><span class="spin"></span>Inizia il controllo</button></div>`:''}
+    </details>`;}).join('');
+  return `<div class="ha-barra"><span class="sc"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg></span><div><b>Quota 120 · Home dell’Admin</b><span>${GIORNI[o.getDay()].toLowerCase()} ${o.getDate()} ${MESI_L[o.getMonth()]} · qui vedi e gestisci tutto</span></div><button class="g" type="button" id="ha-guidami" onclick="gdMenu()">Guidami</button></div>
+    <div class="ha-daf"><h2>Da fare ${righe.length?`<i>${righe.length}</i>`:''}</h2>${righe.length?vis.join(''):'<div class="ha-rg"><span class="hl ok"></span><div class="t"><b>Niente da fare</b><small>tutto in regola</small></div></div>'}
+      ${righe.length>6?`<div class="ha-piu"><button class="btn sec mini" type="button" onclick="hadmToggle('_daf',${tutte?0:1});disegnaHome()">${tutte?'Mostra meno':'Mostra tutte ('+righe.length+')'}</button></div>`:''}</div>
+    <button type="button" class="ha-volo" id="h-guidavolo" onclick="guidaVolo()"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8 8l8 8M16 8l-8 8"/></svg></span><span class="t"><b>Guidami in un volo</b><small>Tutte le operazioni in ordine, dalle zone D-Flight alla chiusura</small></span><span class="btn mini">Inizia</span></button>
+    ${sez}
+    <div class="ha-leg">Barretta o pallino <b style="color:var(--ko)">rosso</b>: da fare subito · <b style="color:var(--warn)">giallo</b>: presto · niente: tutto a posto. Le sezioni restano chiuse finché non le apri.</div>
+    ${segnHome()}`;
+}
+function hadmToggle(k,on){ if(on) HADM_APERTE.add(k); else HADM_APERTE.delete(k); }
+function hadmApri(k,ctrl){ if(VISTA!=='home') vai('home'); HADM_APERTE.add(k); const d=document.getElementById('ha-'+k); if(d) d.open=true;
+  setTimeout(()=>{ const e=document.getElementById(ctrl?'ha-ctrl':'ha-'+k); if(e) e.scrollIntoView({behavior:'smooth',block:'start'}); if(ctrl){ const s=document.getElementById('h-drone'); s&&s.focus(); } },80); }
+
 function homeB(todo){
   const o=new Date(), p=ioPilota();
   let quadro;
@@ -3939,7 +4011,7 @@ function scegliAspetto(k,b){
 function sole(b){const on=!document.body.classList.contains('sole');document.body.classList.toggle('sole',on);b.setAttribute('aria-pressed',on);
   try{localStorage.setItem('quota120Sole',on?'1':'');}catch(e){} toast(on?'Modalità sole accesa: contrasto massimo':'Modalità sole spenta');}
 try{if(localStorage.getItem('quota120Sole')){document.body.classList.add('sole');document.addEventListener('DOMContentLoaded',()=>{});}}catch(e){}
-function vaiControllo(){vai('home');setTimeout(()=>{const e=document.getElementById(ASP==='C'?'h-pilota':'h-drone');if(e){e.scrollIntoView({block:'center'});if(ASP!=='C'||ADM)e.focus();}},60);}
+function vaiControllo(){if(ADM&&!COME){hadmApri('lav',1);return;}vai('home');setTimeout(()=>{const e=document.getElementById(ASP==='C'?'h-pilota':'h-drone');if(e){e.scrollIntoView({block:'center'});if(ASP!=='C'||ADM)e.focus();}},60);}
 
 /* ---------- registri di volo DJI: letti nel telefono, le chiavi DJI passano dal server ---------- */
 let DJIMOD=null, CODA=[], LETTO=null, IMP={fatti:0,saltati:0,errori:0};
