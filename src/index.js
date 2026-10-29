@@ -153,6 +153,7 @@ function vista(d, n) {
   v.DOCS = (d.DOCS || []).filter(x => docVisibile(d, x, n));
   v.ZONEINFO = d.ZONEINFO || null;
   if (d.CHECK) v.CHECK = d.CHECK;
+  v.RISCHI = d.RISCHI || [];
   // segnalazioni: le sue per intero; degli altri solo i droni fermi
   v.SEGN = (d.SEGN || []).map(x => x.pilota === n ? x : (x.fermo ? { id: x.id, drone: x.drone, data: x.data, tipo: x.tipo, fermo: true } : null)).filter(Boolean);
   return v;
@@ -188,6 +189,15 @@ function unisci(full, m, n) {
     if (!zs.has(zk(pz))) { d.ZONE = d.ZONE || []; d.ZONE.unshift(pz); zs.add(zk(pz)); }
   }
   d.ZONE = (d.ZONE || []).slice(0, 2000);
+  // valutazioni del rischio: il pilota aggiunge o cambia solo le sue
+  const rv = new Map((d.RISCHI || []).map(r => [r.id, r]));
+  for (const r of (m.RISCHI || []).slice(0, 300)) {
+    if (!r || typeof r !== "object" || !/^R[a-z0-9]{4,14}$/.test(String(r.id || ""))) continue;
+    const o = rv.get(r.id); if (o && o.firma !== n) continue;
+    const t = JSON.stringify(r); if (t.length > 30000) continue;
+    const pulito = JSON.parse(t.replace(/[<>]/g, "")); pulito.firma = n;
+    if (o) Object.assign(o, pulito); else { d.RISCHI = d.RISCHI || []; d.RISCHI.unshift(pulito); rv.set(r.id, pulito); }
+  }
   return d;
 }
 
