@@ -189,6 +189,17 @@ function unisci(full, m, n) {
     if (!zs.has(zk(pz))) { d.ZONE = d.ZONE || []; d.ZONE.unshift(pz); zs.add(zk(pz)); }
   }
   d.ZONE = (d.ZONE || []).slice(0, 2000);
+  // polizza RC personale: il pilota cambia solo la sua; la verifica e il documento li tiene il server
+  const me = pilotaDi(d, n), mp = me && ((m.SCHEDEP || {})[me.id] || {}).polizza;
+  if (me && m.SCHEDEP && (m.SCHEDEP[me.id] || m.SCHEDEP[String(me.id)])) {
+    const sp = (d.SCHEDEP = d.SCHEDEP || {})[me.id] = d.SCHEDEP[me.id] || { ruolo: "Pilota", ore: "0 h", voli: 0, ore90: "0 h", inc: 0, att: {} }, o = sp.polizza;
+    if (mp && typeof mp === "object") {
+      const q = { comp: esc(mp.comp, 80), num: esc(mp.num, 60), mass: esc(mp.mass, 40), scad: DATA(mp.scad) || "" };
+      if (o && o.doc) q.doc = o.doc;
+      if (o && o.ver && o.scad === q.scad && o.num === q.num) q.ver = o.ver;
+      sp.polizza = q;
+    } else if (o) delete sp.polizza;
+  }
   // valutazioni del rischio: il pilota aggiunge o cambia solo le sue
   const rv = new Map((d.RISCHI || []).map(r => [r.id, r]));
   for (const r of (m.RISCHI || []).slice(0, 300)) {
@@ -210,6 +221,8 @@ function applicaDoc(d, doc) {
       sp.att[s.voce] = Object.assign(sp.att[s.voce] || {}, { num: esc(c.numero, 60) || (sp.att[s.voce] || {}).num || "", ril: DATA(c.rilascio) || (sp.att[s.voce] || {}).ril || "", scad: DATA(c.scadenza) || (sp.att[s.voce] || {}).scad || "", file: true, doc: doc.id });
       const p = (d.PILOTI || []).find(x => x.id === s.id); if (p) { p.att = p.att || []; if (!p.att.includes(s.voce)) p.att.push(s.voce); if (s.voce === "STS-01") p.sts = true; }
     }
+    if (s.voce === "polizza") { const q = sp.polizza || {};
+      sp.polizza = { comp: esc(c.compagnia, 80) || q.comp || "", num: esc(c.numero, 60) || q.num || "", mass: esc(c.massimale, 40) || q.mass || "", scad: DATA(c.scadenza) || q.scad || "", doc: doc.id }; }
     if (s.voce === "patentino") { (d.PATENTINO = d.PATENTINO || {})[s.id] = DATA(c.scadenza) ? "scade il " + c.scadenza : "presente"; }
   }
   if (s.k === "drone") {
@@ -233,8 +246,10 @@ async function leggiConClaude(env, b64, mime, d) {
     "Piloti dell'operatore: " + (piloti || "nessuno") + ". Droni dell'operatore: " + (droni || "nessuno") + ". " +
     "Rispondi SOLO con un oggetto JSON, senza altro testo, con questa forma: " +
     '{"tipo":"nome del tipo di documento in italiano","categorie":{"Nome categoria":[["voce","valore"]]},' +
-    '"dest":{"k":"pilota|drone|operatore|altro","id":numero o null,"voce":"A1-A3|A2|STS-01|patentino|qr|classe|manuale|fattura|manutenzione|assicurazione|autorizzazione|dflight|altro"},' +
-    '"dati":{"numero":"","rilascio":"","scadenza":""}}';
+    '"dest":{"k":"pilota|drone|operatore|altro","id":numero o null,"voce":"A1-A3|A2|STS-01|patentino|polizza|qr|classe|manuale|fattura|manutenzione|assicurazione|autorizzazione|dflight|altro"},' +
+    '"dati":{"numero":"","rilascio":"","scadenza":"","compagnia":"","massimale":""}}. ' +
+    'Una polizza o quietanza RC intestata a una persona che è tra i piloti va a k=pilota, voce=polizza; una intestata alla ditta va a k=operatore, voce=assicurazione. ' +
+    'Per le polizze la scadenza è la fine del periodo pagato (copertura valida fino al), non la data di emissione.';
   const blocco = mime === "application/pdf"
     ? { type: "document", source: { type: "base64", media_type: "application/pdf", data: b64 } }
     : { type: "image", source: { type: "base64", media_type: mime, data: b64 } };
@@ -271,7 +286,9 @@ function scadenze(d) {
     for (const [k, a] of Object.entries(((d.SCHEDEP || {})[p.id] || {}).att || {})) if (a.scad) L.push(["att|" + p.id + "|" + k, "Attestato " + k + " di " + p.nome, "scade il " + a.scad + " · senza, " + p.nome.split(" ")[0] + " non può volare con i droni che lo richiedono", a.scad, p.id]);
     const pt = (d.PATENTINO || {})[p.id]; if (pt && dtS(pt)) L.push(["pat|" + p.id, "Patentino fitosanitario di " + p.nome, pt, (/(\d{2}\/\d{2}\/\d{4})/.exec(pt) || [])[1], p.id]);
   }
-  if ((d.ASSIC || {}).scad) L.push(["assic", "Assicurazione RC dell'operatore", "scade il " + d.ASSIC.scad, d.ASSIC.scad, null]);
+  for (const p of piloti) { const q = ((d.SCHEDEP || {})[p.id] || {}).polizza;
+    if (q && dtS(q.scad)) L.push(["pol|" + p.id + "|" + q.scad, "Polizza RC personale di " + p.nome, "scade il " + q.scad + " · carica la quietanza nuova quando la rinnova", q.scad, p.id]); }
+  if ((d.ASSIC || {}).scad) L.push(["assic", "Polizza RC aziendale", "scade il " + d.ASSIC.scad, d.ASSIC.scad, null]);
   if ((d.OP || {}).dfAbb) L.push(["dflight", "Abbonamento D-Flight", "scade il " + d.OP.dfAbb, d.OP.dfAbb, null]);
   for (const l of d.LAVORI || []) if (l.fatt && !l.pagato && dtS(l.scad)) L.push(["pag|" + l.id + "|" + l.scad, "Pagamento da incassare: " + l.cliente, "fattura n. " + l.fatt.n + " del " + l.fatt.data + " · " + l.titolo + " · scadenza " + l.scad, l.scad, null]);
   const Z = d.ZONEINFO; if (Z && dtS(Z.scade) && dtS(Z.scade) - oggiRoma().t <= 7 * 864e5) L.push(["zone|" + Z.data, "Zone di volo D-Flight da aggiornare", "caricate il " + Z.data + " · scarica il file nuovo da D-Flight e caricalo in Pannello Admin › Zone di volo", Z.scade, null]);
@@ -318,9 +335,10 @@ function calendarioIcs(d, chi) {
       [p && "Pilota: " + p.nome, dr && "Drone: " + dr.nome, l.codice && "Codice lavoro: " + l.codice, "Da Quota 120"].filter(Boolean).join("\n"));
   }
   for (const p of d.PILOTI || []) { if (!tutti && !(io && p.id === io.id)) continue;
+    { const q = ((d.SCHEDEP || {})[p.id] || {}).polizza; if (q && q.scad) add("pol-" + p.id, q.scad, "Scade la polizza RC personale di " + p.nome, "", "Carica la quietanza nuova quando la rinnovi"); }
     for (const [k, a] of Object.entries(((d.SCHEDEP || {})[p.id] || {}).att || {})) if (a.scad) add("att-" + p.id + "-" + k, a.scad, "Scade l'attestato " + k + " di " + p.nome, "", "Senza, non può volare con i droni che lo richiedono"); }
   if (tutti) {
-    if ((d.ASSIC || {}).scad) add("assic", d.ASSIC.scad, "Scade l'assicurazione RC", "", "Senza assicurazione non si vola");
+    if ((d.ASSIC || {}).scad) add("assic", d.ASSIC.scad, "Scade la polizza RC aziendale", "", "Senza assicurazione non si vola");
     if ((d.OP || {}).dfAbb) add("dflight", d.OP.dfAbb, "Scade l'abbonamento D-Flight", "", "");
     for (const l of d.LAVORI || []) if (l.fatt && !l.pagato && l.scad) add("pag-" + l.id, l.scad, "Pagamento da incassare: " + l.cliente, "", "Fattura n. " + ((l.fatt || {}).n || ""));
   }
