@@ -303,6 +303,29 @@ function battPeggio(d) {
     L.push(["batt|" + b.id + "|" + t.liv + "|" + v(t.ult), b.nome + (dr ? " (" + dr.nome + ")" : ""), t.liv === "ko" ? "differenza tra le celle " + v(t.ult) + " V: da controllare prima di usarla" : "celle in peggioramento: da " + v(t.primo) + " a " + v(t.ult) + " V in " + t.n + " voli, al limite tra circa " + t.mancano + " voli"]); }
   return L;
 }
+function calendarioIcs(d, chi) {
+  const e = s => String(s || "").replace(/([,;\\])/g, "\\$1").replace(/\r?\n/g, "\\n");
+  const ymd = s => { const m = /(\d{2})\/(\d{2})\/(\d{4})/.exec(s || ""); return m ? m[3] + m[2] + m[1] : null; };
+  const dopo = y => { const t = new Date(Date.UTC(+y.slice(0, 4), +y.slice(4, 6) - 1, +y.slice(6, 8)) + 864e5); return t.toISOString().slice(0, 10).replace(/-/g, ""); };
+  const stamp = new Date().toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z", ev = [];
+  const add = (uid, data, tit, luogo, desc) => { const y = ymd(data); if (!y) return;
+    ev.push(["BEGIN:VEVENT", "UID:" + uid + "@quota120", "DTSTAMP:" + stamp, "DTSTART;VALUE=DATE:" + y, "DTEND;VALUE=DATE:" + dopo(y), "SUMMARY:" + e(tit), luogo ? "LOCATION:" + e(luogo) : "", desc ? "DESCRIPTION:" + e(desc) : "", "TRANSP:TRANSPARENT", "END:VEVENT"].filter(Boolean).join("\r\n")); };
+  const io = (d.PILOTI || []).find(p => p.nome === chi.n), tutti = chi.adm;
+  for (const l of d.LAVORI || []) {
+    if (!tutti && !(io && l.pilota === io.id)) continue;
+    const p = (d.PILOTI || []).find(x => x.id === l.pilota), dr = (d.DRONI || []).find(x => x.id === l.drone);
+    add("lav-" + l.id, l.data, (l.stato === "concluso" ? "✓ " : "") + l.cliente + " · " + (l.titolo || "lavoro"), l.luogo,
+      [p && "Pilota: " + p.nome, dr && "Drone: " + dr.nome, l.codice && "Codice lavoro: " + l.codice, "Da Quota 120"].filter(Boolean).join("\n"));
+  }
+  for (const p of d.PILOTI || []) { if (!tutti && !(io && p.id === io.id)) continue;
+    for (const [k, a] of Object.entries(((d.SCHEDEP || {})[p.id] || {}).att || {})) if (a.scad) add("att-" + p.id + "-" + k, a.scad, "Scade l'attestato " + k + " di " + p.nome, "", "Senza, non può volare con i droni che lo richiedono"); }
+  if (tutti) {
+    if ((d.ASSIC || {}).scad) add("assic", d.ASSIC.scad, "Scade l'assicurazione RC", "", "Senza assicurazione non si vola");
+    if ((d.OP || {}).dfAbb) add("dflight", d.OP.dfAbb, "Scade l'abbonamento D-Flight", "", "");
+    for (const l of d.LAVORI || []) if (l.fatt && !l.pagato && l.scad) add("pag-" + l.id, l.scad, "Pagamento da incassare: " + l.cliente, "", "Fattura n. " + ((l.fatt || {}).n || ""));
+  }
+  return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Quota 120//IT", "CALSCALE:GREGORIAN", "METHOD:PUBLISH", "X-WR-CALNAME:Quota 120", "X-WR-TIMEZONE:Europe/Rome", "REFRESH-INTERVAL;VALUE=DURATION:PT1H", "X-PUBLISHED-TTL:PT1H"].concat(ev, ["END:VCALENDAR"]).join("\r\n");
+}
 function manutenzioni(d) { return (d.DRONI || []).map(x => [x, (d.SCHEDE || {})[x.id]]).filter(([x, s]) => s && s.man && s.man.liv !== "ok").map(([x, s]) => ["man|" + x.id + "|" + s.man.prox, "Manutenzione " + x.nome, s.man.prox + " · " + (s.man.mancano === "da fare subito" ? "da fare subito" : "mancano " + s.man.mancano + " di volo")]); }
 function mailHtml(nomeOp, righe, perAdmin, url) {
   const col = g => g <= 7 ? "#AE2F28" : "#A5660A", et = g => g < 0 ? "scaduto" : g === 0 ? "oggi" : g === 1 ? "domani" : "tra " + g + " giorni";
@@ -392,6 +415,13 @@ export class Stato extends DurableObject {
       return J({ prova, versione: "c12", posta: c("RESEND_API_KEY") || c("BREVO_API_KEY"), RESEND_API_KEY: c("RESEND_API_KEY"), BREVO_API_KEY: c("BREVO_API_KEY"), MITTENTE: c("MITTENTE"), RISPOSTE: c("RISPOSTE"), ANTHROPIC_API_KEY: c("ANTHROPIC_API_KEY"), DJI_API_KEY: c("DJI_API_KEY") }); }
 
     // ---- invio automatico dei voli dal telefono del pilota (Comandi Rapidi su iPhone): basta il codice di invio, niente password ----
+    // calendario a cui il telefono si iscrive (iPhone / Google): lavori e scadenze, solo quelli della persona
+    if (p === "/api/cal.ics") {
+      const tk = url.searchParams.get("t") || "", chi = tk.length >= 16 ? await st.get("cal:" + tk) : null;
+      if (!chi) return new Response("calendario non valido", { status: 403 });
+      const m = await leggiMain(); const d = m ? m.d : {};
+      return new Response(calendarioIcs(d, chi), { headers: { "content-type": "text/calendar; charset=utf-8", "cache-control": "private, max-age=900", "content-disposition": "inline; filename=quota120.ics" } });
+    }
     if (p === "/api/invio" && request.method === "POST") {
       const tk = url.searchParams.get("t") || "", chi = tk.length >= 16 ? await st.get("invio:" + tk) : null;
       if (!chi) return new Response("codice di invio non valido", { status: 403 });
@@ -525,6 +555,11 @@ export class Stato extends DurableObject {
       return J({ ok: true, segn: x, ver: m.row.ver + 1 });
     }
     // codice di invio personale (per il comando rapido) e voli arrivati dal telefono
+    if (p === "/api/cal/codice") {
+      let tk = await st.get("cal:di:" + me.n);
+      if (!tk || url.searchParams.get("nuovo") === "1") { if (tk) await st.delete("cal:" + tk); tk = crypto.randomUUID().replace(/-/g, ""); await st.put("cal:" + tk, { n: me.n, adm: !!adm }); await st.put("cal:di:" + me.n, tk); }
+      return J({ codice: tk });
+    }
     if (p === "/api/invio/codice") {
       let tk = await st.get("invio:di:" + me.n);
       if (!tk || url.searchParams.get("nuovo") === "1") { if (tk) await st.delete("invio:" + tk); tk = crypto.randomUUID().replace(/-/g, ""); await st.put("invio:" + tk, { n: me.n }); await st.put("invio:di:" + me.n, tk); }
