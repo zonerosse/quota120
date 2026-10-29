@@ -1789,8 +1789,8 @@ function verifiche(){
       L.push({l:'Valutazione del rischio del luogo',s:r.esito==='ko'?'ko':'ok',d:r.esito==='ko'?'La valutazione dice: non si vola qui ('+r.il+')':'Presente ('+r.il+')'+(mis.length?' · ricorda: '+mis.join(', '):''),act:r.esito==='ko'?'rischioV':null,rid:r.id,lav:r.lav}); }
     else L.push({l:'Valutazione del rischio del luogo',s:d.cat==='specific'?'ko':'warn',d:'Manca: falla prima di volare (2 minuti)',act:'rischio'}); }
   { const n=NOTAM;
-    if(!n.stato) L.push({l:'NOTAM del giorno',s:'ko',d:'Guarda sulla mappa D-Flight se oggi c’è un avviso temporaneo in questo punto',act:'notam'});
-    else if(n.stato==='nessuno') L.push({l:'NOTAM del giorno',s:'ok',d:'Nessun NOTAM attivo qui · controllati alle '+n.ora+' su D-Flight',cambia:1});
+    if(!n.stato) L.push({l:'NOTAM del giorno',s:'ko',d:'Guarda su D-Flight (con il tuo account) se oggi c’è un avviso temporaneo in questo punto. Senza account: la mappa NOTAM non ufficiale, in inglese',act:'notam'});
+    else if(n.stato==='nessuno') L.push({l:'NOTAM del giorno',s:'ok',d:'Nessun NOTAM attivo qui · controllati alle '+n.ora,cambia:1});
     else L.push({l:'NOTAM del giorno',s:n.quota==='sopra'||n.azione==='permesso'?'ok':n.azione==='nonvolo'?'ko':'warn',d:'«'+n.testo+'» · '+(n.quota==='sopra'?'sopra i 120 m, non riguarda il volo':NT_AZ[n.azione]),cambia:1}); }
   { const n=ckPer(d).map(c=>c.nome).join(' · '); L.push({l:'Check list prima del decollo',s:checklistOk?'ok':'ko',d:checklistOk?(CKRES||'Completata'):'Da spuntare sul posto'+(n?': '+n:''),act:'check'}); }
   return L;
@@ -1803,6 +1803,7 @@ const SPIEGA_NT=`<p>Un <b>NOTAM</b> (dall’inglese <i>Notice to Air Missions</i
 <tr><td>BIRDTAM: molti uccelli (migrazioni)</td><td>rischio di urto: meglio rimandare</td></tr>
 <tr><td>Avviso che vale solo sopra i 120 m</td><td>non riguarda il drone</td></tr></table>
 <p>Come si legge: <b>B</b> e <b>C</b> sono inizio e fine (in ora UTC, un’ora indietro rispetto all’Italia d’inverno e due d’estate), <b>D</b> gli orari del giorno, <b>F</b> e <b>G</b> la quota più bassa e più alta (GND vuol dire da terra).</p>`;
+const NOTAM_MAPPA='https://notaminfo.com/italymap';
 let NOTAM={};
 const NT_MAIL_EN=`Subject: Request for NMS API access (NOTAM data, Italy)
 
@@ -1829,8 +1830,13 @@ Grazie mille. Cordiali saluti, NOME E COGNOME.`;
 function apriNotam(){
   const e=document.getElementById('nt-c'), D=t=>`<span class="dove">${t}</span>`;
   e.innerHTML=`<h2>NOTAM</h2>
-    <div class="nt-stato"><i></i><div><b>Lettura automatica: in attesa della chiave</b><small>Per ora i NOTAM si guardano sulla mappa D-Flight: il pilota lo segna nel controllo prima del volo e resta scritto nel volo.</small></div></div>
+    <div class="nt-stato"><i></i><div><b>Lettura automatica: in attesa della chiave</b><small>Per ora il pilota guarda i NOTAM su D-Flight (o sulla mappa senza account), lo segna nel controllo prima del volo e resta scritto nel volo.</small></div></div>
     <details class="nt-cosa" open><summary>Cosa sono i NOTAM</summary>${SPIEGA_NT}</details>
+    <h3 class="nt-h">Dove li guarda il pilota</h3>
+    <ol class="inv-passi">
+     <li><div><b>D-Flight</b>, la fonte ufficiale: tasto ${D('Apri D-Flight')} nel controllo prima del volo. Le mappe di D-Flight si vedono solo entrando con il proprio account (gratis): il pilota entra una volta e, se il telefono gli propone di salvare la password, tocca ${D('Salva')}. Così le volte dopo entra con un tocco.</div></li>
+     <li><div><b>Mappa NOTAM senza account</b> (Notam.Info): tutti i NOTAM italiani su una mappa, aggiornata più volte al giorno, senza registrazione. Non è ufficiale ed è in inglese: aiuta, ma in caso di dubbio vale D-Flight.</div></li></ol>
+    <div class="row"><button class="btn sec" onclick="window.open(DFLIGHT_MAPPA,'_blank')">Apri D-Flight</button><button class="btn sec" onclick="window.open(NOTAM_MAPPA,'_blank')">Mappa NOTAM senza account</button></div>
     <h3 class="nt-h">Nota · la chiave per leggerli in automatico</h3>
     <ol class="inv-passi">
      <li><div><b>FAA (Stati Uniti), gratis.</b> Raccoglie i NOTAM di tutto il mondo (l’Italia dovrebbe esserci, ma va confermato), e la chiave non si chiede con un modulo: si scrive a ${D('NOTAMS@faa.gov')}. Non dicono a chi la danno né se include l’Italia: va chiesto. Il messaggio è pronto qui sotto, in inglese: copialo, sostituisci NOME E COGNOME e mandalo dalla tua email.</div></li>
@@ -1842,7 +1848,7 @@ function apriNotam(){
 }
 function copiaTesto(t,msg){ (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast(msg||'Copiato')).catch(()=>toast('Copia non riuscita')); }
 const NT_AZ={fuori:'volo fuori dall’area',nonvolo:'non volo oggi',permesso:'ho il permesso'};
-function notamTesto(){ const n=NOTAM; if(!n.stato) return ''; return n.stato==='nessuno'?'nessuno attivo (controllati alle '+n.ora+' su D-Flight)':'«'+n.testo+'» · '+(n.quota==='sopra'?'sopra i 120 m, non riguarda il volo':NT_AZ[n.azione])+' (controllati alle '+n.ora+')'; }
+function notamTesto(){ const n=NOTAM; if(!n.stato) return ''; return n.stato==='nessuno'?'nessuno attivo (controllati alle '+n.ora+')':'«'+n.testo+'» · '+(n.quota==='sopra'?'sopra i 120 m, non riguarda il volo':NT_AZ[n.azione])+' (controllati alle '+n.ora+')'; }
 function notamNessuno(b){ lavora(b,()=>{ NOTAM={stato:'nessuno',ora:ora()}; disegnaControllo(); }); }
 function notamC(){
   modulo('C’è un NOTAM',[{k:'testo',l:'Cosa dice (in breve)',p:'es. area chiusa ai droni per evento sportivo',req:1},{k:'quota',l:'Da che quota vale',t:'sel',o:[['terra','Da terra (riguarda anche me)'],['sopra','Sopra i 120 m (non mi riguarda)']],v:'terra',req:1},
@@ -1864,7 +1870,7 @@ function disegnaControllo(){
     let act='';
     if(x.act==='zone' && !zoneOk) act=`<button class="btn sec mini" onclick="window.open(DFLIGHT_MAPPA,'_blank')">Apri D-Flight</button><button class="btn mini" onclick="lavora(this,()=>{zoneOk=true;ZONE.unshift({data:oggi(),ora:ora(),drone:dSel.nome,pilota:pSel.nome});disegnaControllo();})"><span class="spin"></span>Fatto</button>`;
     if(x.act==='zona') act=`<button class="btn sec mini" onclick="window.open(DFLIGHT_MAPPA,'_blank')">Apri D-Flight</button><button class="btn mini" onclick="autorizzazioneZona()">Ho l’autorizzazione</button>`;
-    if(x.act==='notam') act=`<button class="btn sec mini" onclick="window.open(DFLIGHT_MAPPA,'_blank')">Apri D-Flight</button><button class="btn mini" id="nt-no" onclick="notamNessuno(this)"><span class="spin"></span>Nessun NOTAM qui</button><button class="btn sec mini" onclick="notamC()">C’è un NOTAM</button>`;
+    if(x.act==='notam') act=`<button class="btn sec mini" onclick="window.open(DFLIGHT_MAPPA,'_blank')">Apri D-Flight</button><button class="btn sec mini" id="nt-mappa" onclick="window.open(NOTAM_MAPPA,'_blank')">Mappa NOTAM senza account</button><button class="btn mini" id="nt-no" onclick="notamNessuno(this)"><span class="spin"></span>Nessun NOTAM qui</button><button class="btn sec mini" onclick="notamC()">C’è un NOTAM</button>`;
     if(x.cambia) act=`<button class="btn sec mini" onclick="NOTAM={};disegnaControllo()">Cambia</button>`;
     if(x.act==='rischio') act=`<button class="btn mini" onclick="rischioDaCtrl()">Fai la valutazione</button>`;
     if(x.act==='rischioV') act=`<button class="btn sec mini" onclick="apriRischio(${x.lav||'null'},'${x.rid}',{luogo:CTRLINFO.luogo,drone:dSel.id})">Apri la valutazione</button>`;
@@ -4220,7 +4226,8 @@ const GUIDES={
   why:{h:'Gli avvisi temporanei del giorno',p:'I NOTAM sono avvisi temporanei per chi vola: aree chiuse per eventi, elicotteri del soccorso, lanci di palloni. Non sono sulle mappe fisse delle zone: vanno guardati il giorno del volo.',uses:['Non entri in un’area chiusa solo per oggi','Resta scritto nel volo che li hai guardati','Lo vede anche il cliente nel rapporto'],tm:'Ci vuole 1 minuto, sul posto.'},
   end:'Fatto. Ogni volta, nel controllo prima del volo, guarda D-Flight e segna cosa hai trovato.',
   S:[P_HOME,{t:'Fai il controllo prima del volo',p:'Scegli drone e pilota, poi «Inizia il controllo».',w:'La riga dei NOTAM è nel controllo.',el:()=>gdVis('#v-home .btn'),ok:()=>VISTA==='controllo'},
-   {t:'Tocca «Apri D-Flight»',p:'Nella riga «NOTAM del giorno». Sulla mappa cerca il punto del volo.',w:'D-Flight è la mappa ufficiale e ora mostra anche i NOTAM.',el:()=>gdTesto('#v-controllo button','Apri D-Flight'),nx:1},
+   {t:'Tocca «Apri D-Flight»',p:'Nella riga «NOTAM del giorno». Entra con il tuo account D-Flight e cerca il punto del volo.',w:'D-Flight è la fonte ufficiale. Le mappe si vedono solo con l’account: la prima volta, se il telefono propone di salvare la password, tocca «Salva».',el:()=>gdTesto('#v-controllo button','Apri D-Flight'),nx:1},
+   {t:'Senza account: «Mappa NOTAM senza account»',p:'Tutti i NOTAM italiani su una mappa, in inglese.',w:'Non è ufficiale, ma è meglio di niente: se trovi qualcosa vicino al punto del volo, segnalo.',el:()=>gdVis('#nt-mappa'),nx:1,opt:1},
    {t:'Segna cosa hai trovato',p:'«Nessun NOTAM qui», oppure «C’è un NOTAM» e scrivi cosa dice.',w:'Se un NOTAM chiude l’area e scegli «Non volo oggi», il semaforo diventa rosso.',el:()=>gdVis('#nt-no'),ok:()=>!!NOTAM.stato}]},
  calendario:{n:'Calendario',r:'tutti',base:()=>0,done:()=>false,
   why:{h:'Tutti i lavori e le scadenze in un colpo d’occhio',p:'Il calendario mette insieme i lavori e le scadenze (attestati, assicurazione, pagamenti) e controlla da solo i giorni: stesso pilota o drone su due lavori, attestato scaduto il giorno del lavoro, vento previsto troppo forte.',uses:['Niente lavori sovrapposti','Ti accorgi prima di un attestato in scadenza','Con un tocco i lavori finiscono nel calendario del telefono'],tm:'Ci vuole 1 minuto.'},
