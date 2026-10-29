@@ -200,6 +200,12 @@ function unisci(full, m, n) {
       sp.polizza = q;
     } else if (o) delete sp.polizza;
   }
+  // telefono ed email del pilota: li scrive lui nel suo Account
+  if (me && m.SCHEDEP) {
+    const x = m.SCHEDEP[me.id] || m.SCHEDEP[String(me.id)];
+    if (x && typeof x === "object") { const sp = (d.SCHEDEP = d.SCHEDEP || {})[me.id] = d.SCHEDEP[me.id] || { ruolo: "Pilota", ore: "0 h", voli: 0, ore90: "0 h", inc: 0, att: {} };
+      if (typeof x.tel === "string") sp.tel = esc(x.tel, 30); if (typeof x.email === "string") sp.email = EMAIL(x.email) ? x.email.trim().slice(0, 120) : ""; }
+  }
   // la firma del pilota: la mette solo lui, dal suo telefono (immagine PNG piccola)
   if (me && m.SCHEDEP) {
     const f = ((m.SCHEDEP[me.id] || m.SCHEDEP[String(me.id)] || {}).firma) || null;
@@ -888,9 +894,10 @@ Stato.prototype.avvisi = async function (prova, origine) {
     esiti.push(adm.email.trim());
   }
   if (!prova) for (const p of d.PILOTI || []) {
-    const c = (A.piloti || {})[p.id] || {}; if (!c.on || !EMAIL(c.email)) continue;
+    const c = (A.piloti || {})[p.id] || {}, pe = ((d.SCHEDEP || {})[p.id] || {}).email || "", em = EMAIL(c.email) ? c.email : pe, on = c.on !== undefined ? !!c.on : !!pe;
+    if (!on || !EMAIL(em)) continue;
     const mie = righe.filter(r => r.pid === p.id); if (!mie.length) continue;
-    await mandaMail(this.env, c.email.trim(), pl0(mie.length, "tua scadenza in arrivo", "tue scadenze in arrivo"), mailHtml(nomeOp, mie, false, url)); esiti.push(c.email.trim());
+    await mandaMail(this.env, em.trim(), pl0(mie.length, "tua scadenza in arrivo", "tue scadenze in arrivo"), mailHtml(nomeOp, mie, false, url)); esiti.push(em.trim());
   }
   if (nuovi.length) { for (const k of nuovi) inviati[k] = oggi.data; await st.put("avvisi:inviati", inviati); }
   return { ok: true, mandate: esiti, righe: righe.length };
