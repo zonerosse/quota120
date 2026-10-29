@@ -1005,6 +1005,28 @@ body.scuro .nav{background:transparent;border-color:#1F3241}
 .df-mini span{position:absolute;left:8px;bottom:8px;background:#fff;border-radius:7px;padding:4px 9px;font:600 14px Barlow,Arial,sans-serif;color:var(--accent)}
 .pl-det summary .t{flex:1;min-width:0}.pl-det summary .t b{display:block;font-size:15.5px}.pl-det summary .t small{display:block;font-weight:500;color:var(--muted);font-size:13px}
 .st{font-size:12.5px;font-weight:700;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;color:var(--ok)}.st:empty{display:none}.st::before{content:'';width:9px;height:9px;border-radius:50%;background:currentColor}.st.ko{color:var(--ko)}
+.imp-g,.imp-d{background:var(--sup,#fff);border:1px solid var(--line);border-left:5px solid var(--ok);border-radius:12px;margin-top:12px}
+.imp-g.ko,.imp-d.ko{border-left-color:var(--ko)}
+.imp-d{margin-top:6px;border-radius:10px}
+.imp-in{padding:0 8px 10px}
+.imp-g>summary,.imp-d>summary{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;list-style:none}
+.imp-g>summary{padding:12px 14px}
+.imp-g>summary::-webkit-details-marker,.imp-d>summary::-webkit-details-marker{display:none}
+.imp-ic{width:26px;height:26px;border-radius:7px;background:var(--ok);display:flex;align-items:center;justify-content:center;flex:none}
+.imp-g>summary .imp-ic{width:34px;height:34px;background:var(--f-imp,#56616d)}
+.imp-d.ko>summary .imp-ic{background:var(--ko)}
+.imp-ic svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:1.9}.imp-g>summary .imp-ic svg{width:20px;height:20px}
+.imp-t{flex:1;min-width:0;font-weight:700;font-size:15px;line-height:1.2}.imp-t b{font-size:17px}.imp-t small{display:block;font-weight:500;font-size:12.5px;color:var(--muted);margin-top:2px}
+.imp-ch{width:16px;height:16px;stroke:var(--muted);fill:none;stroke-width:2;flex:none;transition:transform .15s}
+.imp-g[open]>summary .imp-ch,.imp-d[open]>summary .imp-ch{transform:rotate(90deg)}
+.imp-c{padding:2px 12px 12px}
+.dsp-att{border:1.5px solid var(--ko);border-radius:9px;padding:9px 10px;margin:6px 0 8px}
+.dsp-p{border-top:1px solid var(--line);padding:8px 0}.dsp-p:first-of-type{border-top:0}
+.dsp-p .h{display:flex;align-items:center;gap:8px}.dsp-p .h b{flex:1}
+.dsp-p .av{width:28px;height:28px;border-radius:50%;background:var(--f-persone,#5B7F6E);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none}
+.dsp-r{display:flex;align-items:center;gap:8px;padding:6px 0 6px 36px;font-size:14px}.dsp-r .t{flex:1;min-width:0}.dsp-r .t small{display:block;color:var(--muted);font-size:12.5px}
+.dsp-r svg{width:18px;height:18px;stroke:var(--muted);fill:none;stroke-width:1.8;flex:none}
+.dsp-alt{display:inline-block;margin:2px 0 0 36px;font-size:13.5px;color:var(--accent)}
 </style>
 </head>
 <body>
@@ -1381,34 +1403,33 @@ body.scuro .nav{background:transparent;border-color:#1F3241}
   <div id="v-admin" class="hidden">
     <div class="card pannello" style="margin-bottom:0;padding:10px 14px"><div class="tit"><svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg> Pannello Admin</div><div class="sub" style="margin-bottom:0">Comandi riservati: solo l'Admin vede questa pagina.</div></div>
     <div class="tiles" id="ad-tiles" style="margin-top:12px"></div>
-    <div class="card" id="ad-tel" style="margin-top:12px">
-      <h2>Telefoni e computer collegati</h2>
+    <details class="imp-g" id="ad-g"><summary><span class="imp-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg></span><span class="imp-t"><b>Impostazioni</b><small>telefoni, operatore, firma, permessi, avvisi, codice, studio</small></span><span class="st" id="st-g"></span><svg class="imp-ch" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></summary><div class="imp-in">
+    <details class="imp-d" id="ad-tel"><summary><span class="imp-ic"><svg viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/></svg></span><span class="imp-t">Telefoni e computer</span><span class="st" id="st-tel"></span><svg class="imp-ch" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></summary><div class="imp-c">
       <div style="font-size:14px;color:var(--muted)">Il pilota entra scrivendo nome e matricola. Ogni telefono si approva <b>una volta sola</b>: da lì il pilota resta dentro. Per fermare un pilota usa <b>Blocca</b> in Utenti e permessi.</div>
       <div id="pa-ind"></div>
-      <ul class="dlist" id="pl-disp" style="margin-top:6px"></ul>
-    </div>
-    <div class="card" id="ad-ute" style="margin-top:12px">
-      <h2>Utenti e permessi</h2>
-      <div style="font-size:14px;color:var(--muted)">Ogni pilota entra con nome e matricola. Qui decidi la matricola, cosa può vedere e se bloccarlo: tocca un nome per aprirlo.</div>
-      <div id="ad-perm"></div>
-      <div class="row"><button class="btn sec" onclick="nuovoPilota()">Aggiungi pilota</button></div>
-    </div>
-    <div class="card" id="ad-op" style="margin-top:12px">
-      <h2>Dati dell'operatore</h2>
+      <div id="pl-disp" style="margin-top:6px"></div>
+    </div></details>
+    <details class="imp-d" id="ad-op"><summary><span class="imp-ic"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 10h8M8 14h5"/></svg></span><span class="imp-t">Dati dell’operatore</span><span class="st" id="st-op"></span><svg class="imp-ch" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></summary><div class="imp-c">
       <div class="fgrid" id="ad-dati"></div>
       <div class="row" id="ad-dati-az"></div>
-    </div>
-    <div class="card" id="ad-firma" style="margin-top:12px">
-      <h2>La firma del responsabile</h2>
+    </div></details>
+    <details class="imp-d" id="ad-firma"><summary><span class="imp-ic"><svg viewBox="0 0 24 24"><path d="M3 17c3-4 5 1 8-3s4-6 7-2 3 3 3 3"/></svg></span><span class="imp-t">La firma del responsabile</span><span class="st" id="st-firma"></span><svg class="imp-ch" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></summary><div class="imp-c">
       <div id="ad-firma-c"></div>
       <div class="nota" style="margin-top:8px">Va nei documenti che prepara Quota 120, accanto alla firma del pilota. Ogni pilota firma dal suo telefono, nella sua scheda.</div>
       <div id="ad-firme-sp"></div>
-    </div>
-    <div class="card" id="ad-acc" style="margin-top:12px">
-      <h2>Accesso dell'Admin</h2>
+    </div></details>
+    <details class="imp-d" id="ad-ute"><summary><span class="imp-ic"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/></svg></span><span class="imp-t">Utenti e permessi</span><span class="st" id="st-ute"></span><svg class="imp-ch" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></summary><div class="imp-c">
+      <div style="font-size:14px;color:var(--muted)">Ogni pilota entra con nome e matricola. Qui decidi la matricola, cosa può vedere e se bloccarlo: tocca un nome per aprirlo.</div>
+      <div id="ad-perm"></div>
+      <div class="row"><button class="btn sec" onclick="nuovoPilota()">Aggiungi pilota</button></div>
+    </div></details>
+    <details class="imp-d" id="ad-avv"><summary><span class="imp-ic"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></span><span class="imp-t">Avvisi via email</span><span class="st" id="st-avv"></span><svg class="imp-ch" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></summary><div class="imp-c"><div class="nota" id="ad-avv-t"></div><div class="row"><button class="btn sec" onclick="apriAvvisi()">Apri gli avvisi</button></div></div></details>
+    <details class="imp-d" id="ad-acc"><summary><span class="imp-ic"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg></span><span class="imp-t">Codice dell’Admin</span><span class="st" id="st-acc"></span><svg class="imp-ch" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></summary><div class="imp-c">
       <div class="allegato"><div class="mark ok"><svg viewBox="0 0 24 24"><path d="M5 12l4 4 10-10"/></svg></div><div class="f"><b>Codice dell'Admin</b><br>4 cifre · serve per entrare come Admin da un telefono o computer nuovo</div><button class="btn sec mini" onclick="cambiaCodice()">Cambia</button></div>
       <div class="row"><button class="btn sec mini" onclick="esci()">Esci da questo computer</button></div>
-    </div>
+    </div></details>
+    <details class="imp-d" id="ad-stu"><summary><span class="imp-ic"><svg viewBox="0 0 24 24"><path d="M4 6h7v13H4zM13 6h7v13h-7z"/></svg></span><span class="imp-t">Studio</span><span class="st" id="st-stu"></span><svg class="imp-ch" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></summary><div class="imp-c"><div class="nota">Lezioni sul gestionale e sulle regole del volo.</div><div class="row"><button class="btn sec" onclick="apriStudio()">Apri lo Studio</button></div></div></details>
+    </div></details>
   </div>
 
   <!-- ================= SCHEDA PILOTA ================= -->
@@ -3441,7 +3462,7 @@ function entra(){
     if(j._s===403&&j.stato==='bloccato'){esci();toast('Il tuo accesso è bloccato: parla con l’Admin');return;}
     if(j._s===401||j._s===403||j.vuoto){esci();return;}
     COME=null; IO=j.io; ADM=IO.r==='adm'; document.body.classList.toggle('op',!ADM); document.body.classList.toggle('adm',ADM); document.body.classList.remove('come');
-    DISP=j.disp||[]; BLOCCHI=j.blocchi||{}; if(IO.asp) ASP=IO.asp; VER=j.ver; apply(j.data); LASTJ=MIGRATO?'':JSON.stringify(stato());MIGRATO=false;
+    DISP=j.disp||[]; BLOCCHI=j.blocchi||{}; PIN_INI=!!j.pinIniziale; if(IO.asp) ASP=IO.asp; VER=j.ver; apply(j.data); LASTJ=MIGRATO?'':JSON.stringify(stato());MIGRATO=false;
     testata(); vai('home'); salvaLocale(); setRete(true); codaCarica(); caricaArrivi(true);
     clearInterval(T_SAL); T_SAL=setInterval(controllaModifiche,1500);
     clearInterval(T_POLL); T_POLL=setInterval(aggiorna,15000);
@@ -3493,6 +3514,7 @@ function esci(){
 }
 /* salvataggio: ogni modifica parte da sola verso il server */
 function controllaModifiche(){
+  if(VISTA==='admin'&&typeof statiImp==='function') statiImp();
   if(SAVING||!IO.r||COME) return;
   const s=JSON.stringify(stato()); salvaLocale(s); if(s===LASTJ){ if(OFFLINE) disegnaRete(); return; }
   if(OFFLINE&&!navigator.onLine){ disegnaRete(); return; }
@@ -3629,18 +3651,26 @@ function nuovoTrattamento(){
 }
 function cambiaCodice(){
   modulo('Nuovo codice dell’Admin',[{k:'pin',l:'Nuovo codice (4 cifre)',req:1}],
-    {check:v=>/^\d{4}$/.test(v.pin)?'':'Servono 4 cifre',salva:v=>api('POST','/api/disp/azione',{op:'pin',pin:v.pin}).then(j=>toast(j.ok?'Codice cambiato':(j.errore||'Non riuscito')))});
+    {check:v=>/^\d{4}$/.test(v.pin)?'':'Servono 4 cifre',salva:v=>api('POST','/api/disp/azione',{op:'pin',pin:v.pin}).then(j=>{ if(j.ok){ PIN_INI=false; statiImp(); } toast(j.ok?'Codice cambiato':(j.errore||'Non riuscito')); })});
 }
 /* ---------- telefoni collegati (solo Admin) ---------- */
+let DISP_TUTTI={};
 function disegnaDisp(){
   const el=document.getElementById('pl-disp'); if(!el||!ADM) return;
-  const vis=DISP.filter(x=>x.stato==='attesa'||x.stato==='ok').sort((a,b)=>(a.stato==='attesa'?0:1)-(b.stato==='attesa'?0:1)||b.visto-a.visto);
-  el.innerHTML=vis.length?vis.map(x=>{const io=x.id===IO.id, quando=new Date(x.visto||x.at).toLocaleString('it-IT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-    return `<li style="cursor:default"><div class="ini" style="background:${x.ruolo==='adm'?'var(--accent)':'var(--f-persone)'}">${x.ruolo==='adm'?'A':iniziali(x.n)}</div>
-      <div class="main"><div class="a">${x.ruolo==='adm'?'Admin':x.n}${io?' (questo)':''}</div><div class="b">${x.stato==='attesa'?'In attesa · codice '+x.codice:'Ultimo accesso '+quando}</div></div>
-      ${x.stato==='attesa'?`<button class="btn mini" onclick="dispAz('approva','${x.id}',this)"><span class="spin"></span>Approva</button><button class="btn sec mini" onclick="dispAz('rifiuta','${x.id}',this)"><span class="spin"></span>Rifiuta</button>`
-        :(io?'':`<button class="btn sec mini" onclick="dispAz('togli','${x.id}',this)"><span class="spin"></span>Togli</button>`)}</li>`;}).join('')
-    :'<li style="cursor:default"><div class="b">Nessun telefono collegato</div></li>';
+  const quando=x=>{ const t=x.visto||x.at||0, g=Math.round((new Date(new Date().toDateString())-new Date(new Date(t).toDateString()))/864e5); return g<1?'oggi alle '+new Date(t).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}):g<2?'ieri':g<30?g+' giorni fa':'non usato da più di 30 giorni'; };
+  const icT='<svg viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/></svg>', icP='<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/></svg>';
+  const att=DISP.filter(x=>x.stato==='attesa'), ok=DISP.filter(x=>x.stato==='ok'), lim=Date.now()-30*864e5;
+  const vecchi=ok.filter(x=>x.id!==IO.id&&(x.visto||x.at||0)<lim).length;
+  const pers={}; ok.forEach(x=>{ const k=x.ruolo==='adm'?'Admin':x.n; (pers[k]=pers[k]||[]).push(x); });
+  const riga=x=>{ const io=x.id===IO.id, pc=/Windows|Mac|Linux/.test(x.dev||'');
+    return `<div class="dsp-r">${pc?icP:icT}<div class="t">${ESC(x.dev||'dispositivo')}${io?' <b>· questo</b>':''}<small>${io?'in uso ora':'ultimo accesso: '+quando(x)}</small></div>${io?'':`<button class="btn sec mini" onclick="dispAz('togli','${x.id}',this)"><span class="spin"></span>Togli</button>`}</div>`; };
+  el.innerHTML=att.map(x=>`<div class="dsp-att"><b>${ESC(x.ruolo==='adm'?'Admin':x.n)} chiede di entrare</b><div class="nota">${ESC(x.dev||'')}${x.dev?' · ':''}codice <b>${ESC(x.codice||'')}</b>: approva solo se è quello che vede sul suo telefono</div>
+      <div class="row"><button class="btn mini" onclick="dispAz('approva','${x.id}',this)"><span class="spin"></span>Approva</button><button class="btn sec mini" onclick="dispAz('rifiuta','${x.id}',this)"><span class="spin"></span>Non è lui</button></div></div>`).join('')
+    +Object.entries(pers).sort((a,b)=>(a[0]==='Admin'?0:1)-(b[0]==='Admin'?0:1)||a[0].localeCompare(b[0])).map(([n,L])=>{ L.sort((a,b)=>(b.id===IO.id)-(a.id===IO.id)||(b.visto||0)-(a.visto||0)); const tutti=DISP_TUTTI[n], vis=tutti?L:L.slice(0,2);
+      return `<div class="dsp-p"><div class="h"><span class="av">${n==='Admin'?'A':iniziali(n)}</span><b>${ESC(n)}</b><span class="nota">${pl(L.length,'dispositivo','dispositivi')}</span></div>${vis.map(riga).join('')}${L.length>2?`<a href="#" class="dsp-alt" onclick="DISP_TUTTI['${n.replace(/'/g,"\\'")}']=${tutti?0:1};disegnaDisp();return false">${tutti?'Mostra meno':'Mostra gli altri '+(L.length-2)}</a>`:''}</div>`; }).join('')
+    +(vecchi?`<div class="row"><button class="btn sec" onclick="dispAz('togliVecchi','',this)"><span class="spin"></span>Togli quelli non usati da 30 giorni (${vecchi})</button></div>`:'')
+    +(!att.length&&!ok.length?'<div class="nota">Nessun telefono collegato</div>':'');
+  statiImp();
 }
 function dispAz(op,id,b,pid){
   b.disabled=true;b.classList.add('busy');
@@ -3648,7 +3678,7 @@ function dispAz(op,id,b,pid){
     if(j.errore){toast(j.errore);return;}
     if(j.disp)DISP=j.disp; if(j.blocchi)BLOCCHI=j.blocchi;
     toast({approva:'Approvato: sul suo telefono si apre da solo',approvaTutti:'Approvati tutti: sui loro telefoni si apre da solo',rifiuta:'Rifiutato',
-      blocca:'Bloccato: è uscito subito da tutti i suoi telefoni',sblocca:'Sbloccato: al prossimo accesso chiede di nuovo l’approvazione'}[op]||'Tolto');
+      blocca:'Bloccato: è uscito subito da tutti i suoi telefoni',sblocca:'Sbloccato: al prossimo accesso chiede di nuovo l’approvazione',togliVecchi:'Tolti '+(j.n||0)+' dispositivi non usati da 30 giorni'}[op]||'Tolto: per rientrare dovrà essere approvato di nuovo');
     if(VISTA==='home') disegnaHome(); disegnaDisp(); disegnaPannello(); if(VISTA==='admin') disegnaPermAdm(pid);})
   .catch(()=>{b.disabled=false;b.classList.remove('busy');toast('Niente rete');});
 }
@@ -3912,11 +3942,23 @@ function disegnaBenvenuto(){
     <div class="card" style="margin-bottom:12px"><h2>Primi passi</h2><div class="tiles">${T.map(t=>`<button class="tile" onclick="${t.go}">
       <div class="ico" style="background:var(--accent)">${t.i}</div><div><div class="n">${t.n}</div><div class="c">${t.c}</div></div>${t.d?'<span class="dot warn"></span>':''}</button>`).join('')}</div></div>`;
 }
+let PIN_INI=false;
+function statiImp(){ if(!document.getElementById('ad-g')) return;
+  const S=(k,ok,t)=>{ const e=document.getElementById('st-'+k); if(!e) return ok; e.className='st'+(ok?' ok':' ko'); e.textContent=t; const d=e.closest('details'); if(d) d.classList.toggle('ko',!ok); return ok; };
+  const att=DISP.filter(x=>x.stato==='attesa').length;
+  const opM=[!OP.nome,!OP.codice||/x{3}/i.test(OP.codice),!OP.resp,!OP.dfReg,!OP.dfAbb,!OP.email,!OP.tel].filter(Boolean).length;
+  const av=AVVISI&&AVVISI.adm&&AVVISI.adm.email&&AVVISI.adm.on!==false;
+  const r=[S('tel',!att,att?pl(att,'da approvare','da approvare'):'a posto'),S('op',!opM,opM?pl(opM,'da completare','da completare'):'a posto'),S('firma',!!(OP.firma&&OP.firma.img),OP.firma&&OP.firma.img?'a posto':'da fare'),
+    S('ute',PILOTI.length>0,PILOTI.length?'a posto':'aggiungi un pilota'),S('avv',!!av,av?'a posto':'email da inserire'),S('acc',!PIN_INI,PIN_INI?'da cambiare':'a posto'),
+    S('stu',true,stuFatte().length+' su '+LEZIONI.length+' fatte')];
+  const n=r.filter(x=>!x).length; S('g',!n,n?n+' da sistemare':'a posto');
+  const t=document.getElementById('ad-avv-t'); if(t) t.textContent=av?'Le scadenze arrivano a '+AVVISI.adm.email+', ogni mattina alle '+(AVVISI.ora||7)+'.':'Scrivi l’email dove ricevere le scadenze (attestati, polizze, manutenzioni, abbonamento).';
+}
 function apriAdmin(sez,apri){
   if(!ADM) return;
-  disegnaDisp(); disegnaPermAdm(apri); disegnaDatiOp(false); padFirma('ad-firma-c','resp'); document.getElementById('ad-firme-sp').innerHTML=spuntaFirme();
+  disegnaDisp(); disegnaPermAdm(apri); disegnaDatiOp(false); padFirma('ad-firma-c','resp'); document.getElementById('ad-firme-sp').innerHTML=spuntaFirme(); statiImp();
   vai('admin','Impostazioni');
-  if(sez) setTimeout(()=>{const e=document.getElementById(sez); if(e) e.scrollIntoView({behavior:'smooth'});},60);
+  if(sez){ const g=document.getElementById('ad-g'); if(g) g.open=true; const e=document.getElementById(sez); if(e&&e.tagName==='DETAILS') e.open=true; setTimeout(()=>{ e&&e.scrollIntoView({behavior:'smooth',block:'start'}); },60); }
 }
 function disegnaPermAdm(apri){
   const el=document.getElementById('ad-perm');

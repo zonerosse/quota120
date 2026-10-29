@@ -446,12 +446,15 @@ export class Stato extends DurableObject {
     const now = Date.now();
     const blocchi = (await st.get("blocchi")) || {};          // id pilota -> true
     const aspetti = (await st.get("aspetti")) || {};          // nome -> A | B | C
-    const pub = () => Object.keys(disp).map(id => { const x = disp[id]; return { id, ruolo: x.ruolo, n: x.n, codice: x.codice, stato: x.stato, at: x.at, visto: x.visto, nuovo: !!x.nuovo, pid: x.pid }; });
+    const nomeDisp = ua => { ua = String(ua || ""); const so = /iPhone/.test(ua) ? "iPhone" : /iPad/.test(ua) ? "iPad" : /Android/.test(ua) ? "Android" : /Windows/.test(ua) ? "Windows" : /Macintosh|Mac OS/.test(ua) ? "Mac" : /Linux/.test(ua) ? "Linux" : "";
+      const br = /EdgA?\//.test(ua) ? "Edge" : /SamsungBrowser/.test(ua) ? "Samsung Internet" : /Firefox|FxiOS/.test(ua) ? "Firefox" : /CriOS|Chrome\//.test(ua) ? "Chrome" : /Safari\//.test(ua) ? "Safari" : "";
+      return [so, br].filter(Boolean).join(" · "); };
+    const pub = () => Object.keys(disp).map(id => { const x = disp[id]; return { id, ruolo: x.ruolo, n: x.n, codice: x.codice, stato: x.stato, at: x.at, visto: x.visto, nuovo: !!x.nuovo, pid: x.pid, dev: x.dev || "" }; });
     const leggiMain = async () => { const row = await st.get("main"); return row ? { row, d: JSON.parse(row.json) } : null; };
     const scriviMain = async (d, ver) => { await st.put("main", { json: JSON.stringify(d), ver }); };
     const nuovoAdmin = async email => {
       const id = rnd(8), k = rnd(18);
-      disp[id] = { k, ruolo: "adm", n: "Admin", pid: null, nuovo: false, codice: cod4(), stato: "ok", at: now, visto: now, app: true, via: "email", email };
+      disp[id] = { k, ruolo: "adm", n: "Admin", pid: null, nuovo: false, codice: cod4(), stato: "ok", at: now, visto: now, app: true, via: "email", email, dev: nomeDisp(request.headers.get("user-agent")) };
       await st.put("disp", disp);
       return { id, k, n: "Admin", stato: "ok", codice: disp[id].codice, asp: aspetti.Admin || ASP_BASE };
     };
@@ -502,7 +505,7 @@ export class Stato extends DurableObject {
       // le richieste rimaste in attesa dello stesso pilota si sostituiscono con la nuova
       if (ruolo === "op") for (const x of Object.values(disp)) if (x.ruolo === "op" && x.pid === pid && x.stato === "attesa") x.stato = "uscito";
       for (const [i, x] of Object.entries(disp)) if (["uscito", "rifiutato", "tolto"].includes(x.stato) && now - (x.visto || 0) > 30 * 86400000) delete disp[i];
-      disp[id] = { k, ruolo, n: ruolo === "adm" ? "Admin" : n, pid, nuovo, codice: cod4(), stato: ruolo === "adm" ? "ok" : "attesa", at: now, visto: now, app: ruolo === "adm" };
+      disp[id] = { k, ruolo, n: ruolo === "adm" ? "Admin" : n, pid, nuovo, codice: cod4(), stato: ruolo === "adm" ? "ok" : "attesa", at: now, visto: now, app: ruolo === "adm", dev: nomeDisp(request.headers.get("user-agent")) };
       await st.put("disp", disp);
       return J({ id, k, n: disp[id].n, stato: disp[id].stato, codice: disp[id].codice, asp: aspetti[disp[id].n] || ASP_BASE });
     }
@@ -554,7 +557,7 @@ export class Stato extends DurableObject {
     const me = disp[id];
     if (!me || me.k !== k) return J({ errore: "dispositivo" }, 401);
     if (me.via === "email" && now - (me.visto || 0) > GIORNI_ADMIN * 86400000) { delete disp[id]; await st.put("disp", disp); return J({ errore: "dispositivo", scaduto: true }, 401); }
-    if (now - (me.visto || 0) > 60000) { me.visto = now; await st.put("disp", disp); }
+    if (now - (me.visto || 0) > 60000 || !me.dev) { me.visto = now; if (!me.dev) me.dev = nomeDisp(request.headers.get("user-agent")); await st.put("disp", disp); }
     if (me.ruolo === "op" && me.pid == null) { const m0 = await leggiMain(), p0 = m0 && pilotaDi(m0.d, me.n); if (p0) { me.pid = p0.id; await st.put("disp", disp); } }
     if (me.ruolo === "op" && me.pid != null && blocchi[me.pid] && me.stato === "ok") { me.stato = "bloccato"; await st.put("disp", disp); }
     if (p === "/api/disp/stato") return J({ stato: me.stato, codice: me.codice, ruolo: me.ruolo, n: me.n, asp: aspetti[me.n] || ASP_BASE });
@@ -575,6 +578,11 @@ export class Stato extends DurableObject {
       if (!adm) return J({ errore: "Solo l'Admin" }, 403);
       let b; try { b = await request.json(); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
       if (b.op === "pin") { if (!/^\d{4}$/.test(b.pin || "")) return J({ errore: "Servono 4 cifre" }, 400); await st.put("pin", b.pin); return J({ ok: true }); }
+      if (b.op === "togliVecchi") {   // telefoni e computer non usati da 30 giorni (non questo)
+        const lim = Date.now() - 30 * 864e5; let n = 0;
+        for (const [k2, x] of Object.entries(disp)) if (k2 !== id && x.stato === "ok" && (x.visto || x.at || 0) < lim) { x.stato = "tolto"; n++; }
+        await st.put("disp", disp); return J({ ok: true, n, disp: pub(), blocchi });
+      }
       if (b.op === "approvaTutti") {
         for (const x of Object.values(disp)) if (x.stato === "attesa") { x.stato = "ok"; x.app = true; }
         await st.put("disp", disp); return J({ ok: true, disp: pub(), blocchi });
@@ -796,7 +804,7 @@ export class Stato extends DurableObject {
     if (p === "/api/stato") {
       const m = await leggiMain();
       if (!m) return J({ vuoto: true });
-      const { row } = m, io = { r: me.ruolo, n: me.n, id, asp: aspetti[me.n] || ASP_BASE, email: me.via === "email" ? me.email : "" }, extra = adm ? { disp: pub(), blocchi } : {};
+      const { row } = m, io = { r: me.ruolo, n: me.n, id, asp: aspetti[me.n] || ASP_BASE, email: me.via === "email" ? me.email : "" }, extra = adm ? { disp: pub(), blocchi, pinIniziale: !!OPN && !(await st.get("pin")) } : {};
       if (request.method === "GET") {
         if (adm && !/localhost|127\.0\.0\.1/.test(url.origin) && (await st.get("origine")) !== BASEURL) await st.put("origine", BASEURL);
         // l'Admin guarda il programma come lo vede un pilota (solo lettura)
