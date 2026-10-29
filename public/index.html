@@ -942,6 +942,27 @@
 .ml-lav .row{margin-top:10px}.ml-lav .row .btn{text-decoration:none}
 .ml-fatti summary{padding:11px 14px;cursor:pointer;font-weight:600;color:var(--muted);border-top:1px solid var(--line)}
 .ml-fatti .ml-lav{opacity:.8}.ml-vuoto{padding:14px;color:var(--muted);font-size:14px}
+.ms-tipi{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:10px 0}
+.ms-tipi button{border:1.5px solid var(--line);background:var(--sup,#fff);border-radius:9px;padding:8px 4px;font:600 14px inherit;font-family:inherit;color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
+.ms-tipi button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8}
+.ms-tipi button.on{border-color:var(--accent);color:var(--accent);background:var(--sup2,#f5f7f8)}
+.ms-tipi small{font-weight:500;font-size:11.5px;color:var(--muted)}
+.ms-mw{position:relative}.ms-mappa{height:340px;border-radius:10px}
+.ms-tag{position:absolute;left:8px;top:8px;z-index:500;background:rgba(255,255,255,.95);color:#1f2a36;border-radius:7px;padding:5px 8px;font-size:12.5px;max-width:70%;pointer-events:none}
+.ms-mbt{position:absolute;right:8px;bottom:8px;z-index:500;display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.ms-mbt button{background:#fff;border:1px solid var(--line);border-radius:7px;font:600 12.5px inherit;font-family:inherit;padding:5px 8px;color:var(--accent);cursor:pointer}
+.ms-pt{background:#fff;border:2.5px solid #3d5f80;border-radius:50%;font:700 9px/11px sans-serif;color:#3d5f80;text-align:center}
+.ms-pt.home{background:#132A3A;border-color:#fff;color:#fff;font-size:11px;line-height:17px}
+.ms-campi{display:grid;gap:10px}
+.ms-campi label{display:block;margin-bottom:3px}.ms-campi select{width:100%;min-width:0;max-width:100%}.ms-due>div,.ms-campi>div{min-width:0}.ms-sl input{min-width:0;width:100%}.ms-due{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ms-sl{display:flex;align-items:center;gap:10px}.ms-sl input{flex:1}.ms-sl b{min-width:52px;text-align:right}
+.ms-num{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);border-radius:10px;margin-top:12px;overflow:hidden}
+.ms-num div{padding:8px 4px;text-align:center;border-left:1px solid var(--line)}.ms-num div:nth-child(3n+1){border-left:0}.ms-num div:nth-child(n+4){border-top:1px solid var(--line)}
+.ms-num b{display:block;font-size:18px}.ms-num span{font-size:12px;color:var(--muted)}
+.ms-v{display:flex;gap:8px;align-items:flex-start;font-size:14px;margin-top:8px;border-radius:8px;padding:7px 9px}
+.ms-v.ok{background:var(--ok-bg);color:var(--ok)}.ms-v.warn{background:var(--warn-bg);color:var(--warn)}.ms-v.ko{border:1.5px solid var(--ko);color:var(--ko)}
+.ms-v svg{width:16px;height:16px;flex:none;margin-top:2px;stroke:currentColor;fill:none;stroke-width:2.4}
+.ms-az{display:grid;gap:8px;margin-top:12px}.ms-ol{padding-left:20px;font-size:14.5px}.ms-ol li{margin-bottom:8px}
 </style>
 </head>
 <body>
@@ -1570,6 +1591,35 @@
       <div class="row" id="rq-nuova"><button class="btn" type="button" onclick="nuovaRichiesta({})">Nuova richiesta</button><button class="btn sec" type="button" onclick="apriMappaZone()">Parti dalla mappa delle zone</button></div></div>
   </div>
 
+
+  <!-- ================= PIANIFICA LA MISSIONE ================= -->
+  <div id="v-missione" class="hidden">
+    <div class="card"><h2>Pianifica la missione</h2><div class="nota" id="ms-sub"></div>
+      <div class="ms-tipi" id="ms-tipi">
+        <button type="button" data-t="area" onclick="msTipo('area')"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>Area<small>rilievi, mappe</small></button>
+        <button type="button" data-t="percorso" onclick="msTipo('percorso')"><svg viewBox="0 0 24 24"><path d="M3 18l6-8 5 5 7-10"/></svg>Percorso<small>argini, linee, tetti</small></button>
+        <button type="button" data-t="punti" onclick="msTipo('punti')"><svg viewBox="0 0 24 24"><circle cx="6" cy="7" r="2"/><circle cx="17" cy="9" r="2"/><circle cx="10" cy="17" r="2"/></svg>Punti<small>foto da punti scelti</small></button></div>
+      <div class="ms-mw"><div id="ms-mappa" class="mappa ms-mappa"></div><div class="ms-tag" id="ms-tag"></div>
+        <div class="ms-mbt"><button type="button" onclick="msDecollo()">Sposta il decollo</button><button type="button" onclick="msAnnulla()">Annulla punto</button><button type="button" onclick="msRicomincia()">Ricomincia</button></div></div>
+    </div>
+    <div class="card" style="margin-top:12px"><h2>Come volare</h2>
+      <div class="ms-campi">
+        <div><label for="ms-drone">Drone</label><select id="ms-drone" onchange="msCampo('drone',this.value)"></select></div>
+        <div><label for="ms-quota">Quota sopra il punto di decollo</label><div class="ms-sl"><input type="range" id="ms-quota" min="20" max="120" step="5" value="80" oninput="msCampo('quota',this.value)"><b id="ms-quota-v">80 m</b></div><div class="nota" id="ms-lim"></div></div>
+        <div class="ms-due" id="ms-sovr"><div><label for="ms-fo">Sovrapposizione davanti</label><select id="ms-fo" onchange="msCampo('fo',this.value)"><option value="70">70 %</option><option value="75">75 %</option><option value="80">80 %</option><option value="85">85 %</option></select></div>
+          <div><label for="ms-fs">Sovrapposizione di lato</label><select id="ms-fs" onchange="msCampo('fs',this.value)"><option value="60">60 %</option><option value="65">65 %</option><option value="70">70 %</option><option value="75">75 %</option><option value="80">80 %</option></select></div></div><div class="nota" id="ms-sovr-n" style="margin-top:-4px">Per le mappe vanno bene 80 % davanti e 70 % di lato.</div>
+        <div class="ms-due"><div><label for="ms-vel">Velocità</label><select id="ms-vel" onchange="msCampo('vel',this.value)"><option value="0">Automatica</option><option value="3">3 m/s</option><option value="5">5 m/s</option><option value="8">8 m/s</option><option value="10">10 m/s</option><option value="12">12 m/s</option></select></div>
+          <div id="ms-giro-w"><label for="ms-giro">Direzione delle linee</label><select id="ms-giro" onchange="msCampo('giro',this.value==='1')"><option value="0">Lato lungo</option><option value="1">Di traverso</option></select></div>
+          <div id="ms-gimbal-w"><label for="ms-gimbal">Fotocamera</label><select id="ms-gimbal" onchange="msCampo('gimbal',this.value)"><option value="-90">Verso il basso</option><option value="-45">Inclinata (45°)</option><option value="-20">Quasi dritta (20°)</option></select></div></div>
+        <div><label for="ms-fine">Fine missione</label><select id="ms-fine" onchange="msCampo('fine',this.value)"><option value="goHome">Torna al punto di decollo</option><option value="noAction">Resta in volo sull’ultimo punto</option><option value="autoLand">Atterra sull’ultimo punto</option></select></div>
+      </div>
+      <div id="ms-ris"></div>
+      <div class="ms-az"><button class="btn" type="button" id="ms-kmz" onclick="msKmz(this)"><span class="spin"></span>Scarica per DJI Pilot 2 (KMZ)</button>
+        <button class="btn sec" type="button" onclick="msComeCaricare()">Come caricarla sul radiocomando</button>
+        <button class="btn sec" type="button" id="ms-salva" onclick="msSalva(this)"><span class="spin"></span>Salva nel lavoro</button></div>
+      <div class="nota" style="margin-top:8px">I numeri sono una stima: tempo e batterie cambiano con il vento. Il pilota resta responsabile del volo.</div>
+    </div>
+  </div>
   <!-- ================= MAPPA DELLE ZONE ================= -->
   <div id="v-zmappa" class="hidden">
     <div class="card" id="zm-c">
@@ -2673,7 +2723,7 @@ function apriLavoro(id){
   document.getElementById('lw-s').textContent= prob.length ? 'Così non si può volare: '+prob.join(' · ') : s[1]+' · '+l.data+(l.stato==='concluso'?'':' · drone e pilota in regola');
   document.getElementById('lw-azioni').innerHTML = l.stato==='concluso' ? '' :
     `<button class="btn" onclick="controlloDaLavoro(${l.id},this)"><span class="spin"></span>Fai il controllo prima del volo</button>`+
-    `<button class="btn sec" onclick="apriRapporto(LAVORI.find(x=>x.id===${l.id}).cliente,LAVORI.find(x=>x.id===${l.id}).codice)">Rapporto per il cliente</button>`+
+    `<button class="btn sec" id="lw-ms" onclick="apriMissione(${l.id})">${l.missione?'Missione pianificata':'Pianifica la missione'}</button>`+`<button class="btn sec" onclick="apriRapporto(LAVORI.find(x=>x.id===${l.id}).cliente,LAVORI.find(x=>x.id===${l.id}).codice)">Rapporto per il cliente</button>`+
     `<button class="btn sec" id="lw-ics" onclick="lavoroIcs(${l.id})">Aggiungi al calendario</button>`+
     (l.stato==='incorso'?`<button class="btn sec" onclick="lavora(this,()=>{LAVORI.find(x=>x.id===${l.id}).stato='concluso';apriLavoro(${l.id});})"><span class="spin"></span>Segna concluso</button>`:'');
   const chk='<svg viewBox="0 0 24 24">'+IC.check+'</svg>';
@@ -3971,7 +4021,7 @@ function mieiLavori(){
       <div class="ml-i">${ESC([l.luogo,d?d.nome:'drone da scegliere',l.codice?'codice '+l.codice:''].filter(Boolean).join(' · '))}</div>
       ${V.length?`<div class="ml-v ko">${KO}<span><b>Così non si vola:</b> ${ESC(V.map((x,i)=>{let t=x[0].replace(p.nome+' non può','non puoi').replace(' di '+p.nome,'').replace(' copre '+p.nome,' ti copre'); return /^[A-Z][a-z]/.test(t)&&!/^(DJI|D-Flight|ENAC)/.test(t)?t.charAt(0).toLowerCase()+t.slice(1):t;}).join('; '))}. Avvisa l’Admin: può cambiare drone o pilota.</span></div>`
         :`<div class="ml-v ok">${OK}<span>${oggiSi?'Tutto a posto: puoi fare il controllo e volare.':'Tutto a posto per ora. Il giorno del lavoro rifai il controllo.'}</span></div>`}
-      <div class="row">${oggiSi?`<button class="btn" type="button" ${V.length?'disabled':''} onclick="controlloDaLavoro(${l.id},this)"><span class="spin"></span>Fai il controllo</button>`:''}${V.length&&mail?`<a class="btn sec" href="${mail}">Avvisa l’Admin</a>`:''}${l.luogo?`<button class="btn sec" type="button" onclick="zmLavoro(${l.id})">Mappa delle zone</button>`:''}</div></div>`;};
+      <div class="row">${oggiSi?`<button class="btn" type="button" ${V.length?'disabled':''} onclick="controlloDaLavoro(${l.id},this)"><span class="spin"></span>Fai il controllo</button>`:''}${V.length&&mail?`<a class="btn sec" href="${mail}">Avvisa l’Admin</a>`:''}<button class="btn sec" type="button" onclick="apriMissione(${l.id})">${l.missione?'Missione':'Pianifica la missione'}</button>${l.luogo?`<button class="btn sec" type="button" onclick="zmLavoro(${l.id})">Mappa delle zone</button>`:''}</div></div>`;};
   return `<div class="card ml-card" id="h-miei"><h2>I miei lavori <small>${aperti.length?pl(aperti.length,'in arrivo','in arrivo'):'nessuno in arrivo'}</small></h2>
     ${aperti.map(riga).join('')||'<div class="ml-vuoto">Nessun lavoro in arrivo. Quando l’Admin te ne assegna uno, lo trovi qui.</div>'}
     ${fatti.length?`<details class="ml-fatti"><summary>Lavori fatti (${fatti.length})</summary>${fatti.map(l=>{const n=voliLavoro(l).length;return `<div class="ml-lav"><b class="t">${ESC(l.cliente)} · ${ESC(String(l.titolo||'').toLowerCase())}</b><div class="ml-i">${ESC(l.data||'')} · ${n?pl(n,'volo','voli'):'nessun volo registrato'} · concluso</div></div>`;}).join('')}</details>`:''}</div>`;
@@ -3984,6 +4034,220 @@ function zmLavoro(id){
     if(!x){ document.getElementById('zm-da').textContent='Non trovo «'+l.luogo+'»: cercalo qui sotto.'; return; }
     document.getElementById('zm-da').textContent='Aperta su: lavoro '+(l.codice||'')+' · '+l.luogo+', '+l.data;
     caricaLeaflet().then(()=>{ setTimeout(()=>{ ZM.m&&ZM.m.setView([x.latitude,x.longitude],13); zmCarica(x.latitude,x.longitude).then(()=>zmScegli(x.latitude,x.longitude,1)); },80); }); });
+}
+
+/* ---------- Pianifica la missione: area a linee, percorso o punti; calcolo di foto, tempo e batterie; zone D-Flight; file KMZ per DJI Pilot 2 ---------- */
+// fotocamera dei droni più comuni: sensore (mm), focale (mm), pixel, minuti utili per batteria, codici DJI per il file (drone, variante, fotocamera)
+const MS_CAM=[
+  [/matrice ?4 ?e|m4e/i,{sw:17.3,sh:13,f:12.29,iw:5280,ih:3956,min:35,en:99,sub:0,pl:88}],
+  [/matrice ?4 ?t|m4t/i,{sw:9.7,sh:7.3,f:6.72,iw:8064,ih:6048,min:35,en:99,sub:1,pl:89}],
+  [/mavic ?3 ?(enterprise|e\b)|m3e/i,{sw:17.3,sh:13,f:12.29,iw:5280,ih:3956,min:32,en:77,sub:0,pl:66}],
+  [/mavic ?3 ?(thermal|t\b)|m3t/i,{sw:6.4,sh:4.8,f:4.4,iw:8000,ih:6000,min:32,en:77,sub:1,pl:67}],
+  [/mavic ?3 ?(multispectral|m\b)|m3m/i,{sw:17.3,sh:13,f:12.29,iw:5280,ih:3956,min:32,en:77,sub:2,pl:68}],
+  [/m30 ?t/i,{sw:6.4,sh:4.8,f:4.5,iw:4000,ih:3000,min:30,en:67,sub:1,pl:53}],
+  [/m30/i,{sw:6.4,sh:4.8,f:4.5,iw:4000,ih:3000,min:30,en:67,sub:0,pl:52}],
+  [/agras/i,{agri:1}],
+  [/mini ?[345]/i,{sw:9.6,sh:7.2,f:6.72,iw:4032,ih:3024,min:24}],
+  [/air ?3/i,{sw:9.6,sh:7.2,f:6.72,iw:4032,ih:3024,min:34}],
+  [/mavic ?3/i,{sw:17.3,sh:13,f:12.29,iw:5280,ih:3956,min:34}],
+  [/avata|fpv/i,{sw:9.6,sh:7.2,f:6.72,iw:4000,ih:3000,min:15}],
+  [/./,{sw:13.2,sh:8.8,f:8.8,iw:5472,ih:3648,min:20}]];
+const msCam=d=>MS_CAM.find(([r])=>r.test((d&&d.nome)||''))[1];
+let MS=null;   // {lav, tipo, pts, home, quota, fo, fs, vel, giro, fine, gimbal, drone, zone, mHome}
+function apriMissione(id){
+  const l=LAVORI.find(x=>x.id===id); if(!l) return;
+  const s=l.missione||{};
+  MS={lav:id,tipo:s.tipo||'area',pts:(s.pts||[]).slice(),home:s.home||null,quota:s.quota||80,fo:s.fo||80,fs:s.fs||70,vel:s.vel||0,giro:!!s.giro,fine:s.fine||'goHome',gimbal:s.gimbal==null?-90:s.gimbal,
+    drone:s.drone||l.drone||(DRONI[0]||{}).id,zone:[],zc:null,metti:false};
+  document.getElementById('ms-sub').textContent=[String(l.titolo||''),l.luogo,l.codice?'codice '+l.codice:''].filter(Boolean).join(' · ');
+  document.getElementById('ms-drone').innerHTML=DRONI.map(d=>`<option value="${d.id}" ${d.id===MS.drone?'selected':''}>${ESC(d.nome)}</option>`).join('');
+  ['quota','fo','fs','vel','fine','gimbal'].forEach(k=>{const e=document.getElementById('ms-'+k); if(e) e.value=MS[k];});
+  vai('missione',ESC(l.cliente)+' &rsaquo; Missione');
+  caricaLeaflet().then(()=>{
+    if(!MS.m){ MS.m=L.map('ms-mappa',{scrollWheelZoom:false}); MAPPE['ms-mappa']=MS.m;
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(MS.m);
+      MS.zl=L.layerGroup().addTo(MS.m); MS.lay=L.layerGroup().addTo(MS.m);
+      MS.m.on('click',e=>msTocca(e.latlng.lat,e.latlng.lng)); }
+    else { MS.m=MAPPE['ms-mappa']; MS.zl=MS.zl||L.layerGroup().addTo(MS.m); MS.lay=MS.lay||L.layerGroup().addTo(MS.m); MS.m.off('click'); MS.m.on('click',e=>msTocca(e.latlng.lat,e.latlng.lng)); }
+    setTimeout(()=>MS.m.invalidateSize(),60);
+    if(MS.pts.length){ MS.m.fitBounds(L.latLngBounds(MS.pts.concat(MS.home?[MS.home]:[])).pad(.25)); msZone(); }
+    else { MS.m.setView([44.75,11.9],12); if(l.luogo) zmGeo(String(l.luogo).replace(/\s*\(.*\)/,'')).then(x=>{ if(x&&MS&&MS.lav===id&&!MS.pts.length){ MS.m.setView([x.latitude,x.longitude],16); } }); }
+    msDisegna();
+  }).catch(()=>{document.getElementById('ms-ris').innerHTML='<div class="nota" style="padding:12px">Serve la rete per aprire la mappa.</div>';});
+  msTipo(MS.tipo,1);
+}
+function msTipo(t,quiet){
+  if(!quiet&&MS.pts.length&&t!==MS.tipo) MS.pts=[];
+  MS.tipo=t; document.querySelectorAll('#ms-tipi button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+  document.getElementById('ms-sovr').style.display=document.getElementById('ms-sovr-n').style.display=t==='area'?'':'none';
+  document.getElementById('ms-gimbal-w').style.display=t==='area'?'none':'';
+  document.getElementById('ms-giro-w').style.display=t==='area'?'':'none';
+  const pronto=MS.pts.length>=(t==='area'?3:t==='percorso'?2:1);
+  document.getElementById('ms-tag').textContent=MS.metti?'Tocca la mappa dove metti il drone per il decollo.':pronto?(t==='area'?'Trascina un angolo per spostarlo; tocca la mappa per aggiungerne uno.':'Trascina un punto per spostarlo; tocca la mappa per aggiungerne uno.'):
+    t==='area'?'Tocca la mappa per mettere gli angoli dell’area (almeno 3). Trascina un angolo per spostarlo.':t==='percorso'?'Tocca la mappa lungo il percorso, nell’ordine (almeno 2 punti). Trascina un punto per spostarlo.':'Tocca la mappa nei punti dove fare le foto. Trascina un punto per spostarlo.';
+  if(!quiet) msDisegna();
+}
+function msTocca(lat,lon){
+  if(MS.metti){ MS.home=[lat,lon]; MS.metti=false; msTipo(MS.tipo,1); msDisegna(); return; }
+  MS.pts.push([lat,lon]); if(MS.pts.length===1) msZone(); msTipo(MS.tipo,1); msDisegna();
+}
+function msAnnulla(){ MS.pts.pop(); msTipo(MS.tipo,1); msDisegna(); }
+function msRicomincia(){ MS.pts=[]; MS.home=null; msTipo(MS.tipo,1); msDisegna(); }
+function msDecollo(){ MS.metti=true; msTipo(MS.tipo,1); }
+function msCampo(k,v){ MS[k]=k==='fine'?v:k==='giro'?!!v:+v; if(k==='drone'){ const c=msCam(DRONI.find(d=>d.id===MS.drone)); } msDisegna(); }
+// zone D-Flight intorno all'area (dal file mensile, come la mappa delle zone)
+function msZone(){
+  if(!ZONEINFO||!MS.pts.length) return;
+  const c=MS.pts[0]; if(MS.zc&&kmDa(MS.zc,c)<20) return;
+  MS.zc=c; api('GET','/api/zone/area?lat='+c[0]+'&lon='+c[1]).then(j=>{ MS.zone=Array.isArray(j.zone)?j.zone:[]; MS.zl.clearLayers();
+    MS.zone.forEach(z=>{ if(!zl_attivaOra(z)) return; const t=zmTipo(z), st={color:ZM_COL[t],weight:1.5,fillColor:ZM_COL[t],fillOpacity:.12,dashArray:(+z.lo||0)>0?'6 5':null,interactive:false};
+      (z.g||[]).forEach(g=>{ (g.t==='c'?L.circle(g.c,Object.assign({radius:g.r},st)):L.polygon(g.c,st)).addTo(MS.zl); }); });
+    msDisegna(); }).catch(()=>{});
+}
+// metri locali intorno a un punto
+function msProj(o){ const k=111320, kc=k*Math.cos(o[0]*Math.PI/180); return {a:p=>[(p[1]-o[1])*kc,(p[0]-o[0])*k], b:q=>[o[0]+q[1]/k,o[1]+q[0]/kc]}; }
+function msCalcola(){
+  const d=DRONI.find(x=>x.id===MS.drone), c=msCam(d), P=MS.pts, H=MS.quota, out={wp:[],foto:0,linee:0,area:0,lung:0,dist:0,c,d};
+  if(c.agri) return Object.assign(out,{agri:1});
+  const gsd=c.sw*H*100/(c.f*c.iw), fw=c.sw*H/c.f, fh=c.sh*H/c.f; out.gsd=gsd;
+  if(!P.length) return out;
+  const pr=msProj(P[0]), Q=P.map(pr.a), home=MS.home||P[0], hq=pr.a(home);
+  if(MS.tipo==='area'){
+    if(P.length<3) return out;
+    let a=0; for(let i=0;i<Q.length;i++){const [x1,y1]=Q[i],[x2,y2]=Q[(i+1)%Q.length]; a+=x1*y2-x2*y1;} out.area=Math.abs(a)/2;
+    // le linee vanno lungo il lato più lungo (o di traverso, se scelto)
+    let best=0,ang=0; for(let i=0;i<Q.length;i++){const [x1,y1]=Q[i],[x2,y2]=Q[(i+1)%Q.length],l=Math.hypot(x2-x1,y2-y1); if(l>best){best=l;ang=Math.atan2(y2-y1,x2-x1);}}
+    if(MS.giro) ang+=Math.PI/2;
+    const ca=Math.cos(-ang), sa=Math.sin(-ang), rot=([x,y])=>[x*ca-y*sa,x*sa+y*ca], unrot=([x,y])=>[x*Math.cos(ang)-y*Math.sin(ang),x*Math.sin(ang)+y*Math.cos(ang)];
+    const R=Q.map(rot), ys=R.map(p=>p[1]), y0=Math.min(...ys), y1=Math.max(...ys), passo=fw*(1-MS.fs/100);
+    const n=Math.ceil((y1-y0)/passo)+1, seg=[];
+    for(let i=0;i<=n;i++){ const y=Math.min(y1-0.01,y0+passo*0.5+i*passo); if(y>y1) break; const xs=[];
+      for(let k=0;k<R.length;k++){const [ax,ay]=R[k],[bx,by]=R[(k+1)%R.length]; if((ay<=y&&by>y)||(by<=y&&ay>y)) xs.push(ax+(y-ay)*(bx-ax)/(by-ay));}
+      xs.sort((a,b)=>a-b); if(xs.length>=2){ const s=[[xs[0],y],[xs[xs.length-1],y]]; if(seg.length%2) s.reverse(); seg.push(s); } }
+    out.linee=seg.length; seg.forEach(s=>{ out.wp.push(unrot(s[0]),unrot(s[1])); out.lung+=Math.abs(s[1][0]-s[0][0]); });
+    out.passoFoto=Math.max(1,fh*(1-MS.fo/100)); out.foto=Math.round(out.lung/out.passoFoto)+out.linee;
+  } else {
+    out.wp=Q.slice(); out.linee=MS.tipo==='percorso'?Math.max(0,Q.length-1):0;
+    for(let i=1;i<Q.length;i++) out.lung+=Math.hypot(Q[i][0]-Q[i-1][0],Q[i][1]-Q[i-1][1]);
+    if(MS.tipo==='percorso'){ out.passoFoto=Math.max(1,fh*0.3); out.foto=Q.length>1?Math.round(out.lung/out.passoFoto)+1:0; } else out.foto=Q.length;
+  }
+  if(!out.wp.length) return out;
+  // velocità: una foto ogni 2 secondi almeno, mai oltre 12 m/s
+  out.vel=MS.vel||Math.max(2,Math.min(12,Math.floor((out.passoFoto||10)/2)));
+  let tot=Math.hypot(out.wp[0][0]-hq[0],out.wp[0][1]-hq[1]); for(let i=1;i<out.wp.length;i++) tot+=Math.hypot(out.wp[i][0]-out.wp[i-1][0],out.wp[i][1]-out.wp[i-1][1]);
+  if(MS.fine==='goHome') tot+=Math.hypot(out.wp[out.wp.length-1][0]-hq[0],out.wp[out.wp.length-1][1]-hq[1]);
+  out.tot=tot; out.sec=tot/out.vel+out.wp.length*4+H/4*2+(MS.tipo==='punti'?out.wp.length*3:0);
+  out.batt=Math.max(1,Math.ceil(out.sec/60/c.min));
+  out.dist=Math.max(...out.wp.map(q=>Math.hypot(q[0]-hq[0],q[1]-hq[1])),...Q.map(q=>Math.hypot(q[0]-hq[0],q[1]-hq[1])));
+  out.ll=out.wp.map(pr.b); out.home=home;
+  // zone: si controllano angoli, punti di volo e il decollo
+  if(MS.zone.length){ let liv='ok',max=120; const nomi=new Set();
+    out.ll.concat(P,[home]).forEach(q=>{ const r=zl_controllaZone(MS.zone,q[0],q[1]); max=Math.min(max,r.max); if(r.liv==='ko'||(r.liv==='warn'&&liv==='ok')) liv=r.liv; r.dentro.forEach(z=>{ if(z.r!=='N'&&(+z.lo||0)<120) nomi.add(z.n); }); });
+    out.z={liv,max,nomi:[...nomi]}; }
+  return out;
+}
+const msNum=(n,d)=>Number(n).toLocaleString('it-IT',{maximumFractionDigits:d||0});
+function msDisegna(){
+  if(!MS) return;
+  const R=msCalcola(); MS.R=R;
+  if(MS.lay){ MS.lay.clearLayers();
+    const ic=(cl,t)=>L.divIcon({className:'ms-pt '+cl,html:t||'',iconSize:cl==='home'?[22,22]:[16,16]});
+    if(MS.tipo==='area'&&MS.pts.length>=2) L.polygon(MS.pts,{color:'#3d5f80',weight:2.5,fillOpacity:.15,interactive:false}).addTo(MS.lay);
+    if(R.ll&&R.ll.length>1) L.polyline([R.home].concat(R.ll).concat(MS.fine==='goHome'?[R.home]:[]),{color:'#132A3A',weight:2,interactive:false,dashArray:MS.tipo==='punti'?'4 6':null}).addTo(MS.lay);
+    MS.pts.forEach((p,i)=>{ const m=L.marker(p,{icon:ic('',MS.tipo==='area'?'':String(i+1)),draggable:true}).addTo(MS.lay);
+      m.on('dragend',e=>{const q=e.target.getLatLng(); MS.pts[i]=[q.lat,q.lng]; msDisegna();}); });
+    const h=MS.home||MS.pts[0]; if(h){ const m=L.marker(h,{icon:ic('home','H'),draggable:true,zIndexOffset:500}).addTo(MS.lay); m.on('dragend',e=>{const q=e.target.getLatLng(); MS.home=[q.lat,q.lng]; msDisegna();}); }
+  }
+  // quota: il massimo dipende dalle zone
+  const max=R.z?R.z.max:120, qe=document.getElementById('ms-quota');
+  qe.max=Math.max(20,max); if(MS.quota>max&&max>=20){ MS.quota=max; qe.value=max; return msDisegna(); }
+  document.getElementById('ms-quota-v').textContent=MS.quota+' m';
+  document.getElementById('ms-lim').innerHTML=!ZONEINFO?'<span style="color:var(--warn)">Il file delle zone D-Flight non è caricato: il limite delle zone non si può calcolare.</span>'
+    :!MS.pts.length?'Il limite delle zone si calcola quando metti i punti.':max<120?`<span style="color:var(--warn)">Qui si arriva al massimo a ${max} m: c’è una zona D-Flight che parte da ${max} m.</span>`:'Qui puoi arrivare a 120 m.';
+  const giu=t=>`<div class="ms-v warn">${svg('esc')}<span>${t}</span></div>`, su=t=>`<div class="ms-v ok">${svg('check')}<span>${t}</span></div>`, no=t=>`<div class="ms-v ko">${svg('x')}<span>${t}</span></div>`;
+  let V='';
+  if(R.agri) V=giu('Gli Agras si pianificano nella loro app (DJI Agras). Per i trattamenti usa Campi e Trattamenti.');
+  else if(!R.ll){ V=`<div class="nota" style="padding:4px 2px">${MS.tipo==='area'?'Metti almeno 3 angoli dell’area.':MS.tipo==='percorso'?'Metti almeno 2 punti del percorso.':'Metti almeno un punto.'}</div>`; }
+  else {
+    if(!R.z) V+=giu(ZONEINFO?'Sto leggendo le zone D-Flight…':'Zone D-Flight non controllate: manca il file delle zone. Guardale su D-Flight.');
+    else if(R.z.liv==='ko') V+=no('Il volo entra in una zona D-Flight dove serve un permesso o è vietato: '+ESC(R.z.nomi.slice(0,3).join(', '))+'. Sposta l’area o chiedi il permesso.');
+    else if(R.z.liv==='warn') V+=giu('Il volo tocca zone D-Flight con condizioni: '+ESC(R.z.nomi.slice(0,3).join(', '))+'. Leggile nella mappa delle zone.');
+    else V+=su('Zone D-Flight a posto: tutto il volo è fuori dalle zone limitate. Il giorno del volo rifai il controllo prima del volo.');
+    V+=R.dist>500?no(`Il punto più lontano è a ${msNum(R.dist)} m dal decollo: troppo per il volo a vista. Dividi la missione o sposta il decollo.`)
+      :R.dist>250?giu(`Il punto più lontano è a ${msNum(R.dist)} m dal decollo: restaci con lo sguardo (volo a vista).`):su(`Il punto più lontano è a ${msNum(R.dist)} m dal decollo.`);
+    if(R.batt>1) V+=giu(`Servono ${R.batt} batterie: a ogni cambio, in DJI Pilot 2 la missione riprende dal punto dove si è fermata.`);
+    if(!R.c.en) V+=giu('Il file KMZ funziona con DJI Pilot 2 (Mavic 3 Enterprise, Matrice 4, M30). Con questo drone usa i numeri qui sopra e ridisegna il percorso nell’app del drone.');
+  }
+  const T=R.sec?Math.round(R.sec/60):0;
+  document.getElementById('ms-ris').innerHTML=R.agri?'':`<div class="ms-num">
+      ${MS.tipo==='area'?`<div><b>${R.area?msNum(R.area/1e4,1)+' ha':'–'}</b><span>area</span></div><div><b>${R.linee||'–'}</b><span>linee di volo</span></div>`
+        :`<div><b>${R.lung?msNum(R.lung)+' m':'–'}</b><span>${MS.tipo==='percorso'?'percorso':'tra i punti'}</span></div><div><b>${MS.pts.length||'–'}</b><span>punti</span></div>`}
+      <div><b>${R.foto||'–'}</b><span>foto</span></div>
+      <div><b>${T?(T<1?'1':T)+' min':'–'}</b><span>di volo</span></div><div><b>${R.batt||'–'}</b><span>${R.batt===1?'batteria':'batterie'}</span></div>
+      <div><b>${R.gsd?msNum(R.gsd,1)+' cm':'–'}</b><span>per pixel</span></div></div>${V}`;
+  document.getElementById('ms-kmz').disabled=!R.ll||!R.c.en||(R.z&&R.z.liv==='ko');
+  document.getElementById('ms-kmz').title=!R.c.en?'Questo drone non usa DJI Pilot 2':'';
+}
+function msSalva(b){
+  lavora(b,()=>{ const l=LAVORI.find(x=>x.id===MS.lav); if(!l) return;
+    l.missione={tipo:MS.tipo,pts:MS.pts.map(p=>[+p[0].toFixed(7),+p[1].toFixed(7)]),home:MS.home,quota:MS.quota,fo:MS.fo,fs:MS.fs,vel:MS.vel,giro:MS.giro,fine:MS.fine,gimbal:MS.gimbal,drone:MS.drone,il:oggi()};
+    controllaModifiche(); toast('Missione salvata nel lavoro'); });
+}
+/* file KMZ (formato WPML di DJI): wpmz/template.kml e wpmz/waylines.wpml in uno zip */
+function msKml(R,wayline){
+  const d=R.d, c=R.c, ms=Date.now(), H=MS.quota, N=R.ll.length;
+  const az=(id,f,par)=>`<wpml:action><wpml:actionId>${id}</wpml:actionId><wpml:actionActuatorFunc>${f}</wpml:actionActuatorFunc><wpml:actionActuatorFuncParam>${par}</wpml:actionActuatorFuncParam></wpml:action>`;
+  const gimb=a=>az(0,'gimbalRotate',`<wpml:gimbalHeadingYawBase>north</wpml:gimbalHeadingYawBase><wpml:gimbalRotateMode>absoluteAngle</wpml:gimbalRotateMode><wpml:gimbalPitchRotateEnable>1</wpml:gimbalPitchRotateEnable><wpml:gimbalPitchRotateAngle>${a}</wpml:gimbalPitchRotateAngle><wpml:gimbalRollRotateEnable>0</wpml:gimbalRollRotateEnable><wpml:gimbalRollRotateAngle>0</wpml:gimbalRollRotateAngle><wpml:gimbalYawRotateEnable>0</wpml:gimbalYawRotateEnable><wpml:gimbalYawRotateAngle>0</wpml:gimbalYawRotateAngle><wpml:gimbalRotateTimeEnable>0</wpml:gimbalRotateTimeEnable><wpml:gimbalRotateTime>0</wpml:gimbalRotateTime><wpml:payloadPositionIndex>0</wpml:payloadPositionIndex>`);
+  const foto=id=>az(id,'takePhoto','<wpml:payloadPositionIndex>0</wpml:payloadPositionIndex><wpml:useGlobalPayloadLensIndex>0</wpml:useGlobalPayloadLensIndex>');
+  const gruppo=(gid,da,a,trig,par,azioni)=>`<wpml:actionGroup><wpml:actionGroupId>${gid}</wpml:actionGroupId><wpml:actionGroupStartIndex>${da}</wpml:actionGroupStartIndex><wpml:actionGroupEndIndex>${a}</wpml:actionGroupEndIndex><wpml:actionGroupMode>sequence</wpml:actionGroupMode><wpml:actionTrigger><wpml:actionTriggerType>${trig}</wpml:actionTriggerType>${par!=null?`<wpml:actionTriggerParam>${par}</wpml:actionTriggerParam>`:''}</wpml:actionTrigger>${azioni}</wpml:actionGroup>`;
+  const pitch=MS.tipo==='area'?-90:MS.gimbal;
+  let gid=0;
+  const pm=R.ll.map((p,i)=>{
+    let g='';
+    if(i===0){ g+=gruppo(gid++,0,0,'reachPoint',null,gimb(pitch)); if(MS.tipo!=='punti') g+=gruppo(gid++,0,N-1,'multipleDistance',+R.passoFoto.toFixed(1),foto(0)); }
+    if(MS.tipo==='punti') g+=gruppo(gid++,i,i,'reachPoint',null,foto(0));
+    return `<Placemark><Point><coordinates>${p[1].toFixed(7)},${p[0].toFixed(7)}</coordinates></Point><wpml:index>${i}</wpml:index>`+
+      (wayline?`<wpml:executeHeight>${H}</wpml:executeHeight><wpml:waypointSpeed>${R.vel}</wpml:waypointSpeed><wpml:waypointHeadingParam><wpml:waypointHeadingMode>followWayline</wpml:waypointHeadingMode></wpml:waypointHeadingParam><wpml:waypointTurnParam><wpml:waypointTurnMode>toPointAndStopWithDiscontinuityCurvature</wpml:waypointTurnMode><wpml:waypointTurnDampingDist>0</wpml:waypointTurnDampingDist></wpml:waypointTurnParam><wpml:useStraightLine>1</wpml:useStraightLine>`
+        :`<wpml:ellipsoidHeight>${H}</wpml:ellipsoidHeight><wpml:height>${H}</wpml:height><wpml:useGlobalHeight>1</wpml:useGlobalHeight><wpml:useGlobalSpeed>1</wpml:useGlobalSpeed><wpml:useGlobalHeadingParam>1</wpml:useGlobalHeadingParam><wpml:useGlobalTurnParam>1</wpml:useGlobalTurnParam><wpml:useStraightLine>1</wpml:useStraightLine>`)+g+`</Placemark>`;}).join('\n');
+  const conf=`<wpml:missionConfig><wpml:flyToWaylineMode>safely</wpml:flyToWaylineMode><wpml:finishAction>${MS.fine}</wpml:finishAction><wpml:exitOnRCLost>executeLostAction</wpml:exitOnRCLost><wpml:executeRCLostAction>goBack</wpml:executeRCLostAction><wpml:takeOffSecurityHeight>20</wpml:takeOffSecurityHeight><wpml:globalTransitionalSpeed>${Math.max(R.vel,8)}</wpml:globalTransitionalSpeed><wpml:droneInfo><wpml:droneEnumValue>${c.en}</wpml:droneEnumValue><wpml:droneSubEnumValue>${c.sub}</wpml:droneSubEnumValue></wpml:droneInfo><wpml:payloadInfo><wpml:payloadEnumValue>${c.pl}</wpml:payloadEnumValue><wpml:payloadPositionIndex>0</wpml:payloadPositionIndex></wpml:payloadInfo></wpml:missionConfig>`;
+  const folder=wayline?`<Folder><wpml:templateId>0</wpml:templateId><wpml:executeHeightMode>relativeToStartPoint</wpml:executeHeightMode><wpml:waylineId>0</wpml:waylineId><wpml:distance>${Math.round(R.tot)}</wpml:distance><wpml:duration>${Math.round(R.sec)}</wpml:duration><wpml:autoFlightSpeed>${R.vel}</wpml:autoFlightSpeed>\n${pm}\n</Folder>`
+    :`<Folder><wpml:templateType>waypoint</wpml:templateType><wpml:templateId>0</wpml:templateId><wpml:waylineCoordinateSysParam><wpml:coordinateMode>WGS84</wpml:coordinateMode><wpml:heightMode>relativeToStartPoint</wpml:heightMode></wpml:waylineCoordinateSysParam><wpml:autoFlightSpeed>${R.vel}</wpml:autoFlightSpeed><wpml:globalHeight>${H}</wpml:globalHeight><wpml:caliFlightEnable>0</wpml:caliFlightEnable><wpml:gimbalPitchMode>manual</wpml:gimbalPitchMode><wpml:globalWaypointHeadingParam><wpml:waypointHeadingMode>followWayline</wpml:waypointHeadingMode><wpml:waypointHeadingAngle>0</wpml:waypointHeadingAngle><wpml:waypointPoiPoint>0.000000,0.000000,0.000000</wpml:waypointPoiPoint><wpml:waypointHeadingPathMode>followBadArc</wpml:waypointHeadingPathMode></wpml:globalWaypointHeadingParam><wpml:globalWaypointTurnMode>toPointAndStopWithDiscontinuityCurvature</wpml:globalWaypointTurnMode><wpml:globalUseStraightLine>1</wpml:globalUseStraightLine>\n${pm}\n</Folder>`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:wpml="http://www.dji.com/wpmz/1.0.2">\n<Document>${wayline?'':`<wpml:author>Quota 120</wpml:author><wpml:createTime>${ms}</wpml:createTime><wpml:updateTime>${ms}</wpml:updateTime>`}\n${conf}\n${folder}\n</Document>\n</kml>\n`;
+}
+// zip senza compressione (basta per il KMZ)
+function msZip(files){
+  const T=msZip.T||(msZip.T=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0;}return t;})());
+  const crc=u=>{let c=0xFFFFFFFF;for(let i=0;i<u.length;i++)c=T[(c^u[i])&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0;};
+  const enc=new TextEncoder(), parti=[], cd=[]; let off=0;
+  const le=(n,b)=>{const a=new Uint8Array(b);for(let i=0;i<b;i++)a[i]=(n>>>(8*i))&255;return a;};
+  const cat=a=>{const n=a.reduce((s,x)=>s+x.length,0),o=new Uint8Array(n);let p=0;a.forEach(x=>{o.set(x,p);p+=x.length;});return o;};
+  for(const [nome,testo] of files){
+    const nb=enc.encode(nome), db=enc.encode(testo), c=crc(db), z=le(0,2);
+    const h=cat([le(0x04034b50,4),le(20,2),z,z,z,le(0x21,2),le(c,4),le(db.length,4),le(db.length,4),le(nb.length,2),z,nb]);
+    cd.push(cat([le(0x02014b50,4),le(20,2),le(20,2),z,z,z,le(0x21,2),le(c,4),le(db.length,4),le(db.length,4),le(nb.length,2),z,z,z,z,le(0,4),le(off,4),nb]));
+    parti.push(h,db); off+=h.length+db.length;
+  }
+  const c=cat(cd); return cat(parti.concat([c,cat([le(0x06054b50,4),le(0,2),le(0,2),le(files.length,2),le(files.length,2),le(c.length,4),le(off,4),le(0,2)])]));
+}
+function msKmz(b){
+  const R=MS.R; if(!R||!R.ll||!R.c.en) return;
+  lavora(b,()=>{ const l=LAVORI.find(x=>x.id===MS.lav)||{};
+    const z=msZip([['wpmz/template.kml',msKml(R,0)],['wpmz/waylines.wpml',msKml(R,1)]]);
+    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([z],{type:'application/vnd.google-earth.kmz'}));
+    a.download='Quota120-'+String(l.codice||l.cliente||'missione').replace(/[^A-Za-z0-9-]+/g,'-')+'.kmz'; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},2000);
+    toast('File scaricato: ora caricalo in DJI Pilot 2'); });
+}
+function msComeCaricare(){
+  const ve=document.createElement('div'); ve.className='velo';
+  ve.innerHTML=`<div class="card"><h2>Come caricarla sul radiocomando</h2><ol class="ms-ol">
+    <li><b>Porta il file sul radiocomando.</b> Il radiocomando DJI (RC Plus, RC Pro Enterprise) ha internet: apri Quota 120 nel suo browser, apri il lavoro e tocca «Scarica per DJI Pilot 2». In alternativa copia il file con il cavo USB nella cartella Download.</li>
+    <li><b>Apri DJI Pilot 2</b> e tocca <b>Percorsi</b> (Flight Route).</li>
+    <li><b>Tocca l’icona di importazione</b> in alto a destra e scegli il file <b>Quota120-…kmz</b>.</li>
+    <li><b>Controlla il percorso</b> sulla mappa: quota, punti e fine missione.</li>
+    <li>Fai il <b>controllo prima del volo</b> in Quota 120, decolla e avvia la missione dal tasto del percorso.</li></ol>
+    <div class="nota">Durante la missione resta pronto a riprendere i comandi: il pilota resta responsabile del volo.</div>
+    <div class="row"><button class="btn" type="button">Ho capito</button></div></div>`;
+  document.body.appendChild(ve); ve.querySelector('.btn').onclick=()=>ve.remove(); ve.onclick=e=>{if(e.target===ve) ve.remove();};
 }
 
 function homeB(todo){

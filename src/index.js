@@ -148,7 +148,7 @@ function vista(d, n) {
   if (P.clienti && P.prezzi) v.CLIDATI = d.CLIDATI;
   if (P.clienti) { v.CLIENTI = d.CLIENTI; v.LAVORI = (d.LAVORI || []).map(l => P.prezzi ? l : Object.assign({}, l, { importo: null })); }
   // i lavori assegnati a lui li vede sempre (senza prezzi né fatture), anche senza il permesso «clienti»
-  if (!P.clienti && me) v.LAVORI = (d.LAVORI || []).filter(l => l.pilota === me.id).map(l => ({ id: l.id, codice: l.codice, cliente: l.cliente, titolo: l.titolo, tipo: l.tipo, luogo: l.luogo, data: l.data, drone: l.drone, pilota: l.pilota, stato: l.stato, importo: null }));
+  if (!P.clienti && me) v.LAVORI = (d.LAVORI || []).filter(l => l.pilota === me.id).map(l => ({ id: l.id, codice: l.codice, cliente: l.cliente, titolo: l.titolo, tipo: l.tipo, luogo: l.luogo, data: l.data, drone: l.drone, pilota: l.pilota, stato: l.stato, missione: l.missione, importo: null }));
   if (P.prezzi) v.PREV = d.PREV;
   if (P.enac) { v.AUT_ENAC = d.AUT_ENAC; v.DOMANDA = d.DOMANDA; v.ASSIC = d.ASSIC; }
   if (P.agri) { v.CAMPI = d.CAMPI; v.TRATT = d.TRATT; if (!v.CLIENTI) v.CLIENTI = d.CLIENTI; }
@@ -168,6 +168,14 @@ function docVisibile(d, doc, n) {
   return !!P.enac;
 }
 // quello che manda l'operatore n: si prendono solo i suoi voli e le sue verifiche delle zone, ripuliti
+function pulisciMissione(x) {
+  if (!x || typeof x !== "object") return null;
+  const pt = a => Array.isArray(a) && a.length === 2 && isFinite(+a[0]) && isFinite(+a[1]) && Math.abs(+a[0]) <= 90 && Math.abs(+a[1]) <= 180 ? [+(+a[0]).toFixed(7), +(+a[1]).toFixed(7)] : null;
+  const pts = (Array.isArray(x.pts) ? x.pts : []).slice(0, 200).map(pt).filter(Boolean);
+  const num = (v, a, b, def) => { v = +v; return isFinite(v) ? Math.max(a, Math.min(b, v)) : def; };
+  return { tipo: ["area", "percorso", "punti"].includes(x.tipo) ? x.tipo : "area", pts, home: pt(x.home), quota: num(x.quota, 10, 120, 80), fo: num(x.fo, 50, 90, 80), fs: num(x.fs, 50, 90, 70),
+    vel: num(x.vel, 0, 15, 0), giro: !!x.giro, fine: ["goHome", "noAction", "autoLand"].includes(x.fine) ? x.fine : "goHome", gimbal: num(x.gimbal, -90, 0, -90), drone: +x.drone || null, il: String(x.il || "").slice(0, 10) };
+}
 function unisci(full, m, n) {
   const d = JSON.parse(JSON.stringify(full));
   const vecchi = new Map((d.VOLI || []).map(v => [String(v.id), v]));
@@ -225,6 +233,12 @@ function unisci(full, m, n) {
       if (x.man && typeof x.man === "object") sc.man = Object.assign(sc.man || {}, { perc: Math.max(0, Math.min(100, +x.man.perc || 0)), liv: ["ok", "warn", "ko"].includes(x.man.liv) ? x.man.liv : (sc.man || {}).liv, mancano: esc(x.man.mancano, 40), prox: esc(x.man.prox, 120) });
       const md = (m.DRONI || []).find(y => y && y.id === dr.id); if (md && ["ok", "warn", "ko"].includes(md.manut)) dr.manut = md.manut;
     }
+  }
+  // missione pianificata: il pilota la salva nei lavori assegnati a lui (o in tutti, con il permesso «clienti»)
+  for (const x of (m.LAVORI || []).slice(0, 500)) {
+    if (!x || !x.missione) continue;
+    const l = (d.LAVORI || []).find(y => y.id === x.id); if (!l || !(permDi(d, n).clienti || (me && l.pilota === me.id))) continue;
+    const ms = pulisciMissione(x.missione); if (ms) { ms.da = n; l.missione = ms; }
   }
   // valutazioni del rischio: il pilota aggiunge o cambia solo le sue
   const rv = new Map((d.RISCHI || []).map(r => [r.id, r]));
