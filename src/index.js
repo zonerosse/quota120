@@ -132,7 +132,7 @@ const ASP_BASE = "B";                           // di base: Plancia
 function vista(d, n) {
   const P = permDi(d, n), me = pilotaDi(d, n), v = {};
   // sempre: i droni (servono al controllo prima del volo), lui stesso, l'operatore, i suoi voli e i suoi permessi
-  v.OP = d.OP; v.MATR = d.MATR;
+  v.OP = Object.assign({}, d.OP, { firma: undefined }); v.MATR = d.MATR;
   v.DRONI = d.DRONI;
   v.ASSIC = { scad: (d.ASSIC || {}).scad, ok: (d.ASSIC || {}).ok };
   v.AUT_ENAC = { agricola: !!(d.AUT_ENAC || {}).agricola };
@@ -199,6 +199,12 @@ function unisci(full, m, n) {
       if (o && o.ver && o.scad === q.scad && o.num === q.num) q.ver = o.ver;
       sp.polizza = q;
     } else if (o) delete sp.polizza;
+  }
+  // la firma del pilota: la mette solo lui, dal suo telefono (immagine PNG piccola)
+  if (me && m.SCHEDEP) {
+    const f = ((m.SCHEDEP[me.id] || m.SCHEDEP[String(me.id)] || {}).firma) || null;
+    const sp = (d.SCHEDEP = d.SCHEDEP || {})[me.id] = d.SCHEDEP[me.id] || { ruolo: "Pilota", ore: "0 h", voli: 0, ore90: "0 h", inc: 0, att: {} };
+    if (f && typeof f.img === "string" && /^data:image\/png;base64,[A-Za-z0-9+\/=]+$/.test(f.img) && f.img.length <= 80000) sp.firma = { img: f.img, il: DATA(f.il) || oggi() };
   }
   // valutazioni del rischio: il pilota aggiunge o cambia solo le sue
   const rv = new Map((d.RISCHI || []).map(r => [r.id, r]));
