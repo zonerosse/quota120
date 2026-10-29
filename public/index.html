@@ -845,7 +845,7 @@
   .ha-rg .t{flex:1;min-width:0}.ha-rg b{display:block}.ha-rg small{color:var(--muted);font-size:13px}.ha-piu{padding:8px 16px;border-top:1px solid #edf0f2}
   .ha-volo{display:flex;gap:14px;align-items:center;width:100%;background:#fff;border:1px solid var(--line);border-left:6px solid #E8C15A;border-radius:12px;padding:11px 16px;margin-top:12px;text-align:left;font:inherit;color:inherit;cursor:pointer}
   .ha-volo .ic{width:42px;height:42px;border-radius:10px;background:#132A3A;display:flex;align-items:center;justify-content:center;flex:none}.ha-volo .ic svg{width:24px;height:24px;stroke:#fff;fill:none;stroke-width:1.8}
-  .ha-volo .t{flex:1}.ha-volo b{font:700 17px "Barlow Semi Condensed","Barlow",sans-serif;display:block}.ha-volo small{color:var(--muted);font-size:13.5px}
+  .ha-volo .t{flex:1}.ha-zm{border-left-color:var(--accent)}.ha-zm .ic{background:var(--accent)}.ha-volo b{font:700 17px "Barlow Semi Condensed","Barlow",sans-serif;display:block}.ha-volo small{color:var(--muted);font-size:13.5px}
   details.ha-sez{background:var(--card);border:1px solid var(--line);border-radius:10px;margin-top:10px}
   details.ha-sez>summary{list-style:none;display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer}details.ha-sez>summary::-webkit-details-marker{display:none}
   .ha-sez .ico{width:36px;height:36px;border-radius:9px;background:var(--fc);display:flex;align-items:center;justify-content:center;flex:none}
@@ -860,7 +860,13 @@
   .ha-v b{display:block;font-size:15px}.ha-v small{color:var(--muted);font-size:12.5px}.ha-v .d{position:absolute;top:7px;right:7px;width:9px;height:9px;border-radius:50%}.ha-v .d.ko{background:var(--ko)}.ha-v .d.warn{background:var(--warn)}
   .ha-ctrl{padding:4px 14px 14px;border-top:1px solid var(--line);margin-top:4px}.ha-leg{font-size:13px;color:var(--muted);margin:12px 0}
   body.adm:not(.come) #v-home .guida-volo,body.adm:not(.come) #v-home > .card.pannello,body.adm:not(.come) #admbtn,body.adm:not(.come) #asp-btn,body.adm #ad-tiles,body.adm #v-admin > .card.pannello{display:none!important}
-  .zm-cerca{display:flex;gap:8px;flex-wrap:wrap}.zm-cerca input{flex:1;min-width:180px}
+  .zm-cerca{display:flex;gap:8px;flex-wrap:wrap}.zm-acw{position:relative;flex:1;min-width:180px}.zm-acw input{width:100%}
+  .zm-acl{position:absolute;left:0;right:0;top:100%;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 20px rgba(19,42,58,.15);z-index:1200;display:none;margin-top:2px;overflow:hidden}
+  .zm-acl div{padding:10px 12px;cursor:pointer;border-top:1px solid #edf0f2}.zm-acl div:first-child{border-top:0}.zm-acl div:hover{background:#eef3f8}.zm-acl small{color:var(--muted)}
+  .zm-mw{position:relative}.zm-ov{position:absolute;left:10px;right:10px;top:16px;z-index:900;display:none;align-items:center;gap:10px;border-radius:10px;padding:9px 12px;color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+  .zm-ov.ok{background:var(--ok)}.zm-ov.warn{background:var(--warn)}.zm-ov.ko{background:var(--ko)}.zm-ov b{font-size:16px;line-height:1.2}
+  .zm-ov button{margin-left:auto;background:#fff;color:#1f2a36;border:0;border-radius:7px;padding:6px 10px;font:600 13.5px "Barlow",sans-serif;cursor:pointer;white-space:nowrap}
+  .zm-mw .leaflet-top.leaflet-left{top:64px}
   .zm-mappa{height:420px;margin-top:10px}@media(max-width:600px){.zm-mappa{height:340px}}
   .zm-ver{display:flex;gap:12px;align-items:center;border-radius:10px;padding:12px 14px;color:#fff}.zm-ver.ok{background:var(--ok)}.zm-ver.warn{background:var(--warn)}.zm-ver.ko{background:var(--ko)}
   .zm-ver b{font-size:18px;display:block}.zm-ver span{font-size:14px}.zm-ver svg{width:30px;height:30px;stroke:#fff;fill:none;stroke-width:2.2;flex:none}
@@ -1556,10 +1562,11 @@
   <div id="v-zmappa" class="hidden">
     <div class="card" id="zm-c">
       <h2>Mappa delle zone di volo</h2>
-      <div class="zm-cerca"><input id="zm-q" placeholder="Cerca un paese o un indirizzo (es. Ostellato)" onkeydown="if(event.key==='Enter')zmCerca(document.getElementById('zm-cerca'))">
+      <div class="zm-cerca"><div class="zm-acw"><input id="zm-q" type="text" placeholder="Scrivi il paese (es. Lagosanto)" autocomplete="off" oninput="zmSuggerisci()" onkeydown="if(event.key==='Enter')zmCerca(document.getElementById('zm-cerca'))"><div class="zm-acl" id="zm-acl"></div></div>
         <button class="btn" id="zm-cerca" type="button" onclick="zmCerca(this)"><span class="spin"></span>Cerca</button>
         <button class="btn sec" id="zm-qui" type="button" onclick="zmQui(this)"><span class="spin"></span>Dove sono ora</button></div>
-      <div id="zm-mappa" class="mappa zm-mappa"></div>
+      <div class="zm-mw"><div id="zm-mappa" class="mappa zm-mappa"></div><div class="zm-ov" id="zm-ov"></div></div>
+      <div class="nota" id="zm-da" style="margin-top:6px"></div>
       <div class="nota" id="zm-info" style="margin-top:6px"></div>
     </div>
     <div class="card" id="zm-esito-c" style="margin-top:12px"><h2>In questo punto</h2><div id="zm-esito"></div></div>
@@ -3925,6 +3932,7 @@ function homeAdm(todo){
     <div class="ha-daf"><h2>Da fare ${righe.length?`<i>${righe.length}</i>`:''}</h2>${righe.length?vis.join(''):'<div class="ha-rg"><span class="hl ok"></span><div class="t"><b>Niente da fare</b><small>tutto in regola</small></div></div>'}
       ${righe.length>6?`<div class="ha-piu"><button class="btn sec mini" type="button" onclick="hadmToggle('_daf',${tutte?0:1});disegnaHome()">${tutte?'Mostra meno':'Mostra tutte ('+righe.length+')'}</button></div>`:''}</div>
     <button type="button" class="ha-volo" id="h-guidavolo" onclick="guidaVolo()"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8 8l8 8M16 8l-8 8"/></svg></span><span class="t"><b>Guidami in un volo</b><small>Tutte le operazioni in ordine, dalle zone D-Flight alla chiusura</small></span><span class="btn mini">Inizia</span></button>
+    <button type="button" class="ha-volo ha-zm" id="ha-zmappa" onclick="apriMappaZone()"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="10" r="3"/><path d="M12 21s-7-6.5-7-11a7 7 0 0114 0c0 4.5-7 11-7 11z"/></svg></span><span class="t"><b>Mappa delle zone</b><small>Dove e fino a che quota si vola, e a chi chiedere il permesso</small></span><span class="btn mini">Apri</span></button>
     ${sez}
     <div class="ha-leg">Barretta o pallino <b style="color:var(--ko)">rosso</b>: da fare subito · <b style="color:var(--warn)">giallo</b>: presto · niente: tutto a posto. Le sezioni restano chiuse finché non le apri.</div>
     ${segnHome()}`;
@@ -6275,11 +6283,16 @@ const zmTipo=z=>z.r==='N'||(+z.lo||0)>=120?'N':(z.r==='P'||z.r==='A'?z.r:'C');
 const zmData=x=>{const d=x&&new Date(x); return d&&!isNaN(d)?fmtData(d):'';};
 function apriMappaZone(lat,lon,da){
   ZM.da=da||'';
-  vai('zmappa',(da==='ctrl'?'Controllo prima del volo':'Regole e agricoltura &rsaquo; D-Flight')+' &rsaquo; Mappa delle zone');
+  vai('zmappa',(da==='ctrl'?'Controllo prima del volo &rsaquo; ':VISTA==='dflight'?'D-Flight &rsaquo; ':'')+'Mappa delle zone');
   document.getElementById('back').onclick=()=>da==='ctrl'?vai('controllo','Controllo prima del volo'):apriDflight();
   document.getElementById('zm-info').innerHTML=ZONEINFO?'Zone dal file D-Flight del '+ZONEINFO.data+' ('+ZONEINFO.n.toLocaleString('it-IT')+' zone).':
     '<b style="color:var(--warn)">Il file delle zone non è ancora caricato</b>: la mappa è vuota.'+(ADM?' Caricalo da Pannello Admin › Zone di volo.':' Chiedi all’Admin di caricarlo.');
-  if(lat==null&&ZVERD&&ZVERD.pos){lat=ZVERD.pos.lat;lon=ZVERD.pos.lon;}
+  let dove='';
+  if(lat==null&&ZVERD&&ZVERD.pos){lat=ZVERD.pos.lat;lon=ZVERD.pos.lon;dove=ZVERD.pos.nome||'punto del controllo';}
+  if(lat==null){ try{ const u=JSON.parse(localStorage.getItem('q120ZmUltimo')||'null'); if(u&&isFinite(u.lat)){lat=u.lat;lon=u.lon;dove=u.n+' (ultimo luogo cercato)';} }catch(e){} }
+  if(lat!=null) document.getElementById('zm-da').textContent=dove?'Aperta su: '+dove:'';
+  else { const o=new Date(new Date().toDateString()), l=LAVORI.filter(x=>x.stato!=='concluso'&&x.luogo&&dt(x.data)&&dt(x.data)>=o).sort((a,b)=>dt(a.data)-dt(b.data))[0];
+    if(l){ zmGeo(String(l.luogo).replace(/\s*\(.*\)/,'')).then(x=>{ if(!x||VISTA!=='zmappa') return; document.getElementById('zm-da').textContent='Aperta su: lavoro '+(l.codice||'')+' · '+l.luogo+', '+l.data; ZM.m&&ZM.m.setView([x.latitude,x.longitude],13); zmCarica(x.latitude,x.longitude).then(()=>zmScegli(x.latitude,x.longitude,1)); }); } }
   caricaLeaflet().then(()=>{
     if(!ZM.m){ ZM.m=L.map('zm-mappa',{scrollWheelZoom:false}); MAPPE['zm-mappa']=ZM.m;
       L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(ZM.m);
@@ -6327,13 +6340,21 @@ function zmScegli(lat,lon,quiet){
   });
   if(r.vicino.length) h+=`<div class="hcap" style="margin-top:12px">Vicino, entro 1 km</div>`+r.vicino.slice(0,5).map(z=>`<div class="nota" style="margin-top:4px"><i class="zm-q" style="background:${ZM_COL[zmTipo(z)]}"></i> <b>${ESC(z.n)}</b> · ${ZM_TIPO[zmTipo(z)].toLowerCase()} · a ${z.dist} m verso ${z.verso}</div>`).join('');
   document.getElementById('zm-esito').innerHTML=h;
-  if(!quiet&&innerWidth<700&&!GD.g) setTimeout(()=>document.getElementById('zm-esito-c').scrollIntoView({behavior:'smooth',block:'start'}),80);
+  { const ov=document.getElementById('zm-ov'); if(ov){ ov.className='zm-ov '+(ZONEINFO?r.liv:'warn'); ov.style.display='flex'; ov.innerHTML=`<b>${tit}</b><button type="button" onclick="document.getElementById('zm-esito-c').scrollIntoView({behavior:'smooth',block:'start'})">Dettagli</button>`; } }
 }
+function zmGeo(q,n){ return fetch('https://geocoding-api.open-meteo.com/v1/search?count='+(n||1)+'&language=it&country=IT&name='+encodeURIComponent(q)).then(r=>r.json()).then(j=>n?(j.results||[]):(j.results||[])[0]).catch(()=>null); }
+function zmUltimo(lat,lon,n){ try{ localStorage.setItem('q120ZmUltimo',JSON.stringify({lat,lon,n})); }catch(e){} const d=document.getElementById('zm-da'); if(d) d.textContent='Aperta su: '+n+' · la prossima volta riparte da qui'; }
+let ZM_ACT=null;
+function zmSuggerisci(){ clearTimeout(ZM_ACT); const q=document.getElementById('zm-q').value.trim(), L2=document.getElementById('zm-acl'); if(q.length<2){L2.style.display='none';return;}
+  ZM_ACT=setTimeout(()=>zmGeo(q,5).then(R=>{ if(!R||!R.length){L2.style.display='none';return;} ZM.sug=R;
+    L2.innerHTML=R.map((x,i)=>`<div onclick="zmVaiA(${i})"><b>${ESC(x.name)}</b> <small>${ESC([x.admin3,x.admin2,x.admin1].filter(Boolean).join(', '))}</small></div>`).join(''); L2.style.display='block'; }),250); }
+function zmVaiA(i){ const x=(ZM.sug||[])[i]; if(!x) return; document.getElementById('zm-acl').style.display='none'; document.getElementById('zm-q').value=x.name;
+  ZM.m.setView([x.latitude,x.longitude],13); zmCarica(x.latitude,x.longitude).then(()=>zmScegli(x.latitude,x.longitude)); zmUltimo(x.latitude,x.longitude,x.name); }
 function zmCerca(b){ const q=document.getElementById('zm-q').value.trim(); if(!q){toast('Scrivi un paese o un indirizzo');return;}
   b.disabled=true; b.classList.add('busy'); const fine=()=>{b.disabled=false;b.classList.remove('busy');};
   fetch('https://geocoding-api.open-meteo.com/v1/search?count=1&language=it&country=IT&name='+encodeURIComponent(q)).then(r=>r.json()).then(j=>{ fine();
     const x=(j.results||[])[0]; if(!x){toast('Non trovo questo luogo: prova con il nome del paese');return;}
-    ZM.m.setView([x.latitude,x.longitude],13); zmCarica(x.latitude,x.longitude).then(()=>zmScegli(x.latitude,x.longitude)); }).catch(()=>{fine();toast('Serve la rete per cercare un luogo');}); }
+    document.getElementById('zm-acl').style.display='none'; ZM.m.setView([x.latitude,x.longitude],13); zmCarica(x.latitude,x.longitude).then(()=>zmScegli(x.latitude,x.longitude)); zmUltimo(x.latitude,x.longitude,x.name||q); }).catch(()=>{fine();toast('Serve la rete per cercare un luogo');}); }
 function zmQui(b){ if(!navigator.geolocation){toast('Questo telefono non dà la posizione');return;}
   b.disabled=true; b.classList.add('busy'); const fine=()=>{b.disabled=false;b.classList.remove('busy');};
   navigator.geolocation.getCurrentPosition(p=>{fine(); const la=p.coords.latitude, lo=p.coords.longitude; ZM.m.setView([la,lo],14); zmCarica(la,lo).then(()=>zmScegli(la,lo));},
