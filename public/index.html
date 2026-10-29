@@ -744,6 +744,8 @@
 .cal-mese .chip.l{background:var(--accent)}.cal-mese .chip.c{background:var(--ok)}.cal-mese .chip.w{background:var(--warn)}.cal-mese .chip.s{background:#7A8791}
 @media (max-width:600px){.cal-mese .d{min-height:54px}.cal-mese .chip{font-size:0;height:6px;padding:0}}
 .cal-leg{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:8px}.cal-leg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+.guida-volo{display:flex;gap:12px;align-items:center;width:100%;border:1px solid var(--accent);border-radius:10px;background:#fff;padding:11px 14px;margin:0 0 12px;text-align:left;font:inherit;color:var(--ink);cursor:pointer}
+.guida-volo svg{width:30px;height:30px;stroke:var(--accent);fill:none;stroke-width:1.7;flex:none}.guida-volo b{display:block;font-size:16px}.guida-volo small{display:block;color:var(--muted);font-size:13.5px}.guida-volo .go{margin-left:auto;color:var(--accent);font-weight:700;font-size:22px}
 .df-hub{display:grid;gap:8px}.df-b{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--bordo);border-radius:10px;padding:12px 14px;background:#fff;text-align:left;font:inherit;color:var(--ink);cursor:pointer;width:100%}
 .df-b .ic{width:36px;height:36px;border-radius:8px;background:var(--accent);flex:none;display:flex;align-items:center;justify-content:center}.df-b .ic svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:1.8}
 .df-b b{display:block;font-size:16px}.df-b small{display:block;color:var(--muted);font-size:14px;line-height:1.35;margin-top:2px}.df-b .go{margin-left:auto;align-self:center;color:var(--accent);font-weight:700;font-size:22px}
@@ -886,6 +888,7 @@
 
   <!-- ================= HOME ================= -->
   <div id="v-home">
+    <button type="button" class="guida-volo" id="h-guidavolo" onclick="guidaVolo()"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8 8l3 3M16 8l-3 3M8 16l3-3M16 16l-3-3"/></svg><span><b>Guidami in un volo</b><small>Tutte le operazioni in ordine, dalle zone D-Flight alla chiusura</small></span><span class="go">›</span></button>
     <div class="card pannello solo-adm">
       <div class="tit"><svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg> Pannello Admin</div>
       <div class="sub">Lo vedi solo tu: qui ci sono i comandi riservati all'Admin.</div>
@@ -1675,7 +1678,7 @@ function disegnaHome(){
   { const o=new Date(); o.setHours(0,0,0,0); const n=LAVORI.filter(l=>l.stato!=='concluso'&&dt(l.data)&&dt(l.data)>=o&&dt(l.data)-o<=7*864e5).length; TILES.attivita[4].c=n?pl(n,'lavoro','lavori')+' in 7 giorni':'lavori e scadenze'; }
   const todo=calcolaTodo();
   const tieni=['h-data','h-cod','h-luogo'].map(i=>(document.getElementById(i)||{}).value), trov=LAVTROVATO;
-  document.getElementById('h-asp').innerHTML=ASP==='A'?homeA(todo):ASP==='C'?homeC(todo):homeB(todo);
+  document.getElementById('h-asp').innerHTML=(ASP==='A'?homeA(todo):ASP==='C'?homeC(todo):homeB(todo));
   riempiSelect(vd,vp);
   ['h-data','h-cod','h-luogo'].forEach((i,k)=>{const e=document.getElementById(i); if(e&&tieni[k]) e.value=tieni[k];});
   if(tieni[1]) cercaCodice(); LAVTROVATO=trov; disegnaMeteo();
@@ -2247,9 +2250,9 @@ function apriEnac(){
 
   const chk='<svg viewBox="0 0 24 24">'+IC.check+'</svg>';
   document.getElementById('en-op').innerHTML=[
-    ...(OP.codice&&!/x{3}/i.test(OP.codice)?[['Codice operatore',ESC(OP.codice),true]]:[]),...(OP.dfAbb?[['Abbonamento D-Flight','Scade il '+OP.dfAbb,livData(OP.dfAbb)==='ok']]:[]),
+    ['Codice operatore',OP.codice&&!/x{3}/i.test(OP.codice)?ESC(OP.codice):'da inserire',!!(OP.codice&&!/x{3}/i.test(OP.codice))],['Abbonamento D-Flight',OP.dfAbb?'Scade il '+OP.dfAbb:'da inserire',!!OP.dfAbb&&livData(OP.dfAbb)==='ok'],
     ['Assicurazione RC',ASSIC.scad?'Scade il '+ASSIC.scad:'da inserire',!!ASSIC.scad],['Categorie','Open'+(ok?' e Specific (agricola)':''),true],['Responsabile',(OP.resp||'—')+' (Admin)',true]
-  ].map(x=>`<div class="fld"><div class="k">${x[2]?chk:''}${x[0]}</div><div class="v" style="${x[2]?'':'color:var(--warn)'}">${x[1]}</div></div>`).join('');
+  ].map(x=>`<div class="fld"><div class="k">${x[2]?chk:''}${x[0]}</div><div class="v" style="${x[2]?'':'color:var(--ko)'}">${x[1]}</div></div>`).join('');
 
   let aut;
   if(ok) aut=`<div class="allegato"><div class="mark ok">${svg('check')}</div><div class="f"><b>Autorizzazione operativa agricola</b><br>AltMoC IT-UAS-2026-002</div><button class="btn sec mini vedi" onclick="${AUT_ENAC.doc?`apriFile('${AUT_ENAC.doc}')`:`toast('Autorizzazione di esempio: nella prova non c\u2019è il file')`}">Vedi</button></div>`;
@@ -2391,7 +2394,7 @@ function apriLavoro(id){
 }
 function controlloDaLavoro(id,b){
   const l=LAVORI.find(x=>x.id===id);
-  lavora(b,()=>{ dSel=DRONI.find(x=>x.id===l.drone); pSel=PILOTI.find(x=>x.id===l.pilota); zoneOk=false; checklistOk=false;
+  lavora(b,()=>{ dSel=DRONI.find(x=>x.id===l.drone); pSel=PILOTI.find(x=>x.id===l.pilota); zoneOk=false; checklistOk=false; CKRES=''; NOTAM={}; CTRLINFO={data:dt(l.data)?l.data:oggi(),luogo:l.luogo,cliente:l.cliente+': '+String(l.titolo||'').toLowerCase(),codice:l.codice||''};
     disegnaControllo(); vai('controllo','Persone e attività &rsaquo; Clienti e lavori &rsaquo; '+l.cliente+' &rsaquo; Controllo prima del volo');
     document.getElementById('back').onclick=()=>apriLavoro(id); });
 }
@@ -2529,12 +2532,11 @@ let ZONE=[
 ];
 function apriDflight(){
   const qrOk=DRONI.filter(d=>d.qr).length, zg=ZONEINFO?giorni(ZONEINFO.scade||''):null, abb=OP.dfAbb?livData(OP.dfAbb):'ko', cod=OP.codice&&!/x{3}/i.test(OP.codice);
-  // codice operatore e abbonamento sono facoltativi: contano solo se inseriti
-  const prob=[OP.dfAbb&&abb!=='ok'&&'abbonamento '+(abb==='ko'?'scaduto':'in scadenza'),qrOk<DRONI.length&&pl(DRONI.length-qrOk,'drone','droni')+' senza QR',!ZONEINFO&&'file delle zone da caricare'].filter(Boolean);
-  const liv=(OP.dfAbb&&abb==='ko')||qrOk<DRONI.length?'ko':prob.length?'warn':'ok';
+  const prob=[!cod&&'codice operatore da inserire',abb!=='ok'&&(OP.dfAbb?'abbonamento '+(abb==='ko'?'scaduto':'in scadenza'):'abbonamento da inserire'),qrOk<DRONI.length&&pl(DRONI.length-qrOk,'drone','droni')+' senza QR',!ZONEINFO&&'file delle zone da caricare'].filter(Boolean);
+  const liv=!cod||abb==='ko'||qrOk<DRONI.length?'ko':prob.length?'warn':'ok';
   document.getElementById('df-light').className='light '+liv;
   document.getElementById('df-t').textContent=liv==='ok'?'D-Flight in regola':'D-Flight: qualcosa da sistemare';
-  document.getElementById('df-s').textContent=prob.length?prob.join(' · '):'QR su tutti i droni'+(ZONEINFO?', zone aggiornate al '+ZONEINFO.data:'')+(OP.dfAbb?', abbonamento attivo':'');
+  document.getElementById('df-s').textContent=prob.length?prob.join(' · '):'Operatore registrato, abbonamento attivo, QR su tutti i droni'+(ZONEINFO?', zone aggiornate al '+ZONEINFO.data:'');
   const IC2={mappa:'<path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/>',prof:'<circle cx="12" cy="8" r="3.5"/><path d="M5 20c1-4 4-6 7-6s6 2 7 6"/>',qr:'<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 8h3v3H8zM13 13h3v3h-3zM13 8h3M8 13v3"/>'};
   const B=(k,t,d)=>`<button type="button" class="df-b" id="df-b-${k}" onclick="window.open(DFLIGHT_MAPPA,'_blank')"><span class="ic"><svg viewBox="0 0 24 24">${IC2[k]}</svg></span><span><b>${t}</b><small>${d}</small></span><span class="go">›</span></button>`;
   document.getElementById('df-hub').innerHTML=B('mappa','Mappa: zone e avvisi del giorno','Prima di ogni volo. Una volta entrato, cerca il paese in alto.')+
@@ -2542,8 +2544,8 @@ function apriDflight(){
     B('qr','Droni e QR','Per un drone nuovo: «Associa un UAS», poi scarica il suo QR da attaccare sul drone.')+
     `<div class="df-tip"><b>Entra una volta sola.</b> D-Flight chiede il suo account (gratis). La prima volta, quando il telefono chiede di salvare la password, tocca <b>Salva</b>: le volte dopo entri con un tocco.</div>`;
   const chk='<svg viewBox="0 0 24 24">'+IC.check+'</svg>';
-  document.getElementById('df-op').innerHTML=[['Codice operatore',cod?OP.codice:'non inserito (facoltativo)',cod,!cod],['Registrato il',OP.dfReg||'—',!!OP.dfReg,!OP.dfReg],['Abbonamento',OP.dfAbb?'fino al '+OP.dfAbb:'non inserito (facoltativo)',OP.dfAbb&&abb==='ok',!OP.dfAbb],['QR sui droni',qrOk+' su '+DRONI.length,qrOk===DRONI.length],['File delle zone',ZONEINFO?'del '+ZONEINFO.data+(zg!=null&&zg<=7?' · da aggiornare':''):'da caricare',!!ZONEINFO&&!(zg!=null&&zg<=7)]]
-    .map(x=>`<div class="fld"><div class="k">${x[2]?chk:''}${x[0]}</div><div class="v" style="${x[2]?'':x[3]?'color:var(--muted);font-weight:500':'color:var(--warn)'}">${ESC(x[1])}</div></div>`).join('')+(ADM?`<div class="row" style="grid-column:1/-1"><button class="btn sec mini" onclick="apriAdmin('ad-op')">Cambia i dati</button></div>`:'');
+  document.getElementById('df-op').innerHTML=[['Codice operatore',cod?OP.codice:'da inserire',cod],['Registrato il',OP.dfReg||'—',!!OP.dfReg,!OP.dfReg],['Abbonamento',OP.dfAbb?'fino al '+OP.dfAbb:'da inserire',abb==='ok'],['QR sui droni',qrOk+' su '+DRONI.length,qrOk===DRONI.length],['File delle zone',ZONEINFO?'del '+ZONEINFO.data+(zg!=null&&zg<=7?' · da aggiornare':''):'da caricare',!!ZONEINFO&&!(zg!=null&&zg<=7)]]
+    .map(x=>`<div class="fld"><div class="k">${x[2]?chk:''}${x[0]}</div><div class="v" style="${x[2]?'':x[3]?'color:var(--muted);font-weight:500':'color:var(--ko)'}">${ESC(x[1])}</div></div>`).join('')+(ADM?`<div class="row" style="grid-column:1/-1"><button class="btn sec mini" onclick="apriAdmin('ad-op')">Cambia i dati</button></div>`:'');
   document.getElementById('df-qr').innerHTML=DRONI.filter(d=>!d.qr).map(d=>`<div class="allegato"><div class="mark warn">${svg('esc')}</div><div class="f"><b>${ESC(d.nome)}</b><br>QR da applicare</div><button class="btn sec mini" onclick="apriDrone(${d.id},'droni')">Scheda</button></div>`).join('');
   document.getElementById('df-notam').innerHTML=`<div style="font-size:15px">Si vedono sulla <b>mappa D-Flight</b>: nel controllo prima del volo il pilota la apre e segna cosa ha trovato. Come controllo in più c’è anche una mappa non ufficiale, senza account e in inglese.</div>
     <details class="nt-cosa" style="margin-top:8px"><summary>Cosa sono i NOTAM</summary>${SPIEGA_NT}</details>
@@ -4228,6 +4230,10 @@ const GUIDES={
    {t:'Tocca «Apri la mappa D-Flight»',p:'Entra con il tuo account D-Flight e cerca il punto del volo.',w:'Le mappe si vedono solo con l’account: la prima volta, se il telefono propone di salvare la password, tocca «Salva».',el:()=>gdVis('#df-mappa'),nx:1},
    {t:'Controllo in più (facoltativo)',p:'La scritta piccola sotto apre una mappa degli avvisi senza account, in inglese.',w:'Non è ufficiale: serve solo come aiuto in più.',el:()=>gdVis('#nt-mappa'),nx:1,opt:1},
    {t:'Segna cosa hai trovato',p:'«Guardato: tutto a posto», oppure «C’è un avviso» e scrivi cosa dice.',w:'Se un avviso chiude l’area e scegli «Non volo oggi», il semaforo diventa rosso.',el:()=>gdVis('#nt-no'),ok:()=>!!NOTAM.stato}]},
+ unvolo:{n:'Un volo, dall’inizio alla fine',r:'tutti',base:()=>0,done:()=>false,
+  why:{h:'Un volo completo, in ordine',p:'Ti accompagna in tutte le operazioni di un volo, una dopo l’altra: le zone D-Flight aggiornate, il lavoro e la valutazione del rischio, il controllo prima del volo con la mappa D-Flight e la check list, il volo, il file DJI che arriva nel registro, e la chiusura con il rapporto per il cliente.',uses:['La prima volta che fai un volo con Quota 120','Per insegnarlo a un pilota nuovo','Per non dimenticare niente'],tm:'Si segue sul posto, passo dopo passo: ogni passo dice anche perché.'},
+  end:'Volo completo. Nel registro ci sono controllo, D-Flight, check list, dati del file DJI e mappa del volo: tutto pronto per il PDF del registro e per il rapporto al cliente.',
+  get S(){ return VOLO_S||(VOLO_S=passiVolo()); }},
  calendario:{n:'Calendario',r:'tutti',base:()=>0,done:()=>false,
   why:{h:'Tutti i lavori e le scadenze in un colpo d’occhio',p:'Il calendario mette insieme i lavori e le scadenze (attestati, assicurazione, pagamenti) e controlla da solo i giorni: stesso pilota o drone su due lavori, attestato scaduto il giorno del lavoro, vento previsto troppo forte.',uses:['Niente lavori sovrapposti','Ti accorgi prima di un attestato in scadenza','Con un tocco i lavori finiscono nel calendario del telefono'],tm:'Ci vuole 1 minuto.'},
   end:'Pronto. Se metti il calendario sul telefono, i lavori nuovi e i cambi di data ci arrivano da soli.',
@@ -4278,7 +4284,7 @@ const GUIDES={
    {t:'Tocca il sole',p:'L’ultimo tasto in alto: contrasto massimo per lo schermo al sole.',w:'Si toglie toccandolo di nuovo.',el:()=>gdVis('#sole-btn'),nx:1}]}
 };
 // guide per pagina
-const GD_SEC=[['home','Home',['controllo','segnala','doc','senzarete','aspetto','vistaop']],['segnala','Segnala un problema',['segnala']],['segnesito','Segnala un problema',['segnala']],['segnalazioni','Segnalazioni',['segngest']],['admin','Pannello Admin',['studio','segngest','ckedit','dati','codice','pilota','telefono','permessi','drone','zone','avvisi','vistaop']],
+const GD_SEC=[['home','Home',['unvolo','controllo','segnala','doc','senzarete','aspetto','vistaop']],['segnala','Segnala un problema',['segnala']],['segnesito','Segnala un problema',['segnala']],['segnalazioni','Segnalazioni',['segngest']],['admin','Pannello Admin',['studio','segngest','ckedit','dati','codice','pilota','telefono','permessi','drone','zone','avvisi','vistaop']],
   ['zone','Zone di volo',['zone']],['studio','Studio Gestionale',['studio']],['avvisi','Avvisi via email',['avvisi']],['controllo','Controllo prima del volo',['controllo','notam','ckvola']],['notam','NOTAM',['notam']],['checklist','Check list',['ckvola']],['check','Checklist',['ckedit']],['checked','Checklist',['ckedit']],
   ['voli','Registro voli',['arrivi','invio','dji','foto','mano','registro','senzarete','elimina']],['invio','Invio automatico dei voli',['invio']],['volo','Scheda del volo',['elimina','mano']],['importa','Registro voli',['dji']],['fotovolo','Registro voli',['foto']],
   ['lavori','Clienti e lavori',['rischio','pratica','rapporto']],['lavoro','Clienti e lavori',['rischio','pratica','rapporto']],['rischio','Valutazione del rischio',['rischio']],['calendario','Calendario',['calendario']],['caltel','Calendario',['calendario']],['rischi','Valutazioni del rischio',['rischi','rischio']],['fattura','Dati per la fattura',['pratica']],['preventivi','Preventivi',['prev','pratica']],['preventivo','Preventivi',['prev','pratica']],['documenti','Documenti',['doc']],['droni','Droni',['droni']],['drone','Droni',['droni','batttrend']],['piloti','Piloti',['piloti','pilota']],['pilota','Piloti',['piloti']],['batterie','Batterie',['batttrend','batterie']],['manut','Manutenzioni',['manut']],['invent','Inventario',['invent']],['enac','Autorizzazioni ENAC',['enac']],['domanda','Autorizzazioni ENAC',['enac']],['dflight','D-Flight',['dflight']],['campi','Campi',['campi']],['campo','Campi',['campi']],['tratt','Trattamenti',['tratt']],['trattamento','Trattamenti',['tratt']],['rapporto','Rapporto per il cliente',['rapporto']]];
@@ -4300,7 +4306,43 @@ function gdAll(){
     <div class="row"><button class="btn sec" onclick="gdChiudiSheet()">Chiudi</button></div>`);
 }
 function gdEls(){ if(document.getElementById('gdHole')) return; [['gdDim','gd-dim'],['gdIntro','gd-intro'],['gdHole','gd-hole'],['gdTip','gd-tip']].forEach(([id,c])=>{const e=document.createElement('div');e.id=id;e.className=c;document.body.appendChild(e);}); }
+let VOLO_S=null;
+function guidaVolo(){ VOLO_S=null; gdStart('unvolo'); }
+function passiVolo(){
+  const S=[], zg=ZONEINFO&&ZONEINFO.scade?giorni(ZONEINFO.scade):null, zoneDaFare=!ZONEINFO||(zg!=null&&zg<=7);
+  const home={t:'Vai alla Home',p:'Tocca «Home» in alto o nella barra in basso.',w:'Ogni parte di Quota 120 parte dalla Home.',el:()=>gdVis('#tb-home')||gdVis('#nb-home'),ok:()=>VISTA==='home'};
+  if(ADM){
+    if(zoneDaFare) S.push(
+      {t:'Prima del volo · le zone D-Flight',p:ZONEINFO?'Il file delle zone è del '+ZONEINFO.data+' e sta per scadere: va aggiornato. Tocca «Pannello Admin».':'Il file ufficiale delle zone non è ancora caricato. Tocca «Pannello Admin».',w:'Con il file delle zone, nel controllo prima del volo Quota 120 dice da solo se nel punto si può volare e fino a che altezza.',el:()=>gdVis('#admbtn'),ok:()=>VISTA==='admin'||VISTA==='zone'},
+      P_TILE('Zone di volo',()=>VISTA==='zone','Qui si carica il file ufficiale di D-Flight.'),
+      {t:'Scarica il file da D-Flight',p:'Tocca «Apri D-Flight», entra con il tuo account, nel profilo dell’operatore tocca «Download UAS Zone Geo» e salva il file.',w:'È il file ufficiale con tutte le zone d’Italia: vale circa un mese.',el:()=>gdTesto('#v-zone button','D-Flight'),nx:1},
+      {t:'Carica il file in Quota 120',p:'Tocca «Carica il file delle zone» e scegli il file appena scaricato.',w:'Da adesso le zone si controllano da sole, anche senza rete nella zona del volo.',el:()=>gdVis('#zn-btn'),nx:1});
+    S.push(
+      {t:'Il lavoro · apri «Clienti e lavori»',p:'Dalla Home, il riquadro «Clienti e lavori».',w:'Il volo si collega al lavoro: così finisce nel rapporto e nella fattura del cliente.',el:()=>gdTesto('#v-home .tile, #v-home li, #v-home button','Clienti e lavori'),ok:()=>VISTA==='lavori'||VISTA==='lavoro'},
+      {t:'Tocca il lavoro di oggi',p:'Controlla data, pilota e drone.',w:'Il calendario ti avvisa se pilota o drone sono già impegnati quel giorno.',el:()=>gdVis('#v-lavori li[onclick]'),ok:()=>VISTA==='lavoro'},
+      {t:'La valutazione del rischio del luogo',p:'Se manca, tocca «Fai la valutazione del rischio» (2 minuti); se c’è già, vai avanti.',w:'Si fa una volta per luogo: le misure scelte te le ricorda il controllo prima del volo.',el:()=>gdVis('#lw-rischio'),nx:1},
+      {t:'Tocca «Fai il controllo prima del volo»',p:'In alto nella scheda del lavoro.',w:'Il controllo prende già drone, pilota e luogo del lavoro.',el:()=>gdTesto('#lw-azioni button','controllo prima del volo'),ok:()=>VISTA==='controllo'});
+  } else S.push(home,
+      {t:'Il giorno del volo · scegli drone e pilota',p:'Nel riquadro del controllo prima del volo, in Home. Se l’azienda ti ha dato il codice lavoro, scrivilo.',w:'Con il codice lavoro il volo finisce da solo nel lavoro giusto.',el:()=>gdVis('#h-drone'),ok:()=>VISTA==='controllo'||!!((document.getElementById('h-drone')||{}).value&&(!gdVis('#h-pilota')||(document.getElementById('h-pilota')||{}).value))},
+      {t:'Tocca «Dove sono ora»',p:'Il telefono dà la posizione: arrivano meteo e zone di quel punto.',w:'Il vento viene confrontato con il limite del tuo drone.',el:()=>gdTesto('#v-home button','Dove sono ora'),nx:1,opt:1},
+      {t:'Tocca «Inizia il controllo»',p:'In fondo al riquadro.',w:'Quota 120 controlla da solo attestati, assicurazione, drone, batterie, meteo e zone.',el:()=>gdVis('#h-btn'),ok:()=>VISTA==='controllo'});
+  S.push(
+    {t:'Sul posto · leggi le verifiche',p:'Ogni riga ha il suo esito. Quelle con un tasto vanno fatte adesso, sul posto.',w:'Una riga rossa senza tasto vuol dire che oggi non si vola.',el:()=>gdVis('#checks'),nx:1},
+    {t:'D-Flight: apri la mappa e segna',p:'«Apri la mappa D-Flight», guarda il punto del volo, poi «Guardato: tutto a posto» oppure «C’è un avviso».',w:'Le zone le sa già Quota 120; gli avvisi del giorno (NOTAM) si vedono solo sulla mappa D-Flight.',el:()=>gdVis('.df-box'),ok:()=>!!NOTAM.stato},
+    {t:'La check list',p:'Tocca «Spunta check list» e spunta le voci davanti al drone.',w:'Le voci obbligatorie vanno spuntate tutte: è la prova che il drone è pronto.',el:()=>gdTesto('#checks button','check list'),ok:()=>checklistOk,opt:1},
+    {t:'Il semaforo',p:'Verde: si vola. Arancione: si vola con attenzione. Rosso: oggi no.',w:'Se è rosso, sotto c’è scritto perché.',el:()=>gdVis('#c-light'),nx:1},
+    {t:'Tocca «Salva e apri il registro volo»',get p(){ return gdVis('#c-btn')?'In fondo alla pagina.':'Il semaforo è rosso: il tasto per salvare non c’è. Leggi la riga rossa, risolvi il problema (o cambia drone o pilota) e rifai il controllo: la guida riparte da qui.'; },w:'Il controllo resta scritto nel registro, con ora, meteo, D-Flight e check list.',el:()=>gdVis('#c-btn'),ok:()=>VISTA==='voli'},
+    {t:'Adesso si vola',p:'Il volo è nel registro «in attesa»: si completa da solo quando arriva il file DJI.',w:'Durata, quota, percorso e batteria li scrive il file DJI: non serve scriverli a mano.',el:()=>gdVis('#vlist'),nx:1},
+    {t:'Dopo il volo · chiudi DJI Fly',p:'Se l’invio automatico è pronto, chiudendo DJI Fly il volo arriva da solo. Se non l’hai ancora preparato, tocca «Invio automatico dei voli».',w:'Si prepara una volta sola: poi non devi più caricare niente a mano.',el:()=>gdVis('#vl-invio'),nx:1},
+    {t:'Oppure carica il file a mano',p:'«Carica registri DJI» e scegli il volo (iPhone: Sul mio iPhone › DJI Fly › FlightRecords).',w:'Il volo «in attesa» si completa con i dati del file: ore del drone, cicli della batteria e mappa si aggiornano da soli.',el:()=>gdTesto('#v-voli button','Carica registri DJI'),nx:1,opt:1});
+  if(ADM) S.push(
+    {t:'Chiusura · torna al lavoro',p:'Home › «Clienti e lavori» › il lavoro.',w:'Dal lavoro chiudi tutto: rapporto per il cliente, poi la pratica fino alla fattura.',el:()=>gdTesto('#v-home .tile, #v-home li, #v-home button','Clienti e lavori')||gdVis('#tb-home'),ok:()=>VISTA==='lavoro'},
+    {t:'«Rapporto per il cliente»',p:'Il PDF con voli, mappe, ore e controlli: si manda al cliente.',w:'È la prova del lavoro fatto, con i dati del file DJI.',el:()=>gdTesto('#lw-azioni button','Rapporto'),nx:1},
+    {t:'«Segna concluso»',p:'Quando hai finito tutti i voli del lavoro.',w:'Il lavoro passa tra i conclusi e nella pratica parte la fattura.',el:()=>gdTesto('#lw-azioni button','concluso'),nx:1,opt:1});
+  return S;
+}
 function gdStart(k){
+  if(k==='unvolo') VOLO_S=null;
   const G=GUIDES[k]; if(!G) return; gdChiudiSheet(); gdStop(); gdEls();
   Object.assign(GD,{g:k,i:-2,tocc:[],nx:new Set,vv:false,cm:false,base:G.base()});
   const I=document.getElementById('gdIntro');
