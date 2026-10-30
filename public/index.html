@@ -1105,6 +1105,16 @@ body.scuro .nav{background:transparent;border-color:#1F3241}
 .ha-daf .dch{width:16px;height:16px;stroke:var(--muted);fill:none;stroke-width:2;transition:transform .15s;flex:none}
 .ha-daf[open]>summary .dch{transform:rotate(90deg)}
 .ha-daf>summary+.ha-rg{border-top:1px solid #edf0f2}
+.q2-az.via{background:#fff;color:var(--accent);border:1.5px solid var(--accent)}
+.in-l{display:block;font-size:13px;color:var(--muted);margin:10px 0 3px}
+.gd-velo select,.gd-velo input[type=text],.gd-velo input[type=number]{width:100%}
+.in-2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.in-sc{border:1.5px solid var(--line);border-radius:10px;padding:12px;text-align:left;background:#fff;font-family:inherit;cursor:pointer;color:var(--ink)}
+.in-sc b{display:block;font-size:15.5px}.in-sc small{display:block;color:var(--muted);font-size:13px}.in-sc.ko{border-color:var(--ko)}.in-sc.ko b{color:var(--ko)}
+.in-sc .spin{display:none}.in-sc.busy .spin{display:inline-block}
+.in-letto{background:var(--ok-bg);border-radius:10px;padding:10px;margin-top:10px}
+.in-p{display:flex;align-items:center;gap:8px;padding:9px 0;border-top:1px solid var(--line)}.in-p b{flex:1}
+.in-v{padding:9px 0;border-top:1px solid var(--line)}.in-3{display:grid;grid-template-columns:1.2fr 1.2fr .7fr;gap:6px;margin-top:5px}
 </style>
 </head>
 <body>
@@ -2500,7 +2510,7 @@ const chev='<svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
 function statoDrone(d){
   const s=SCHEDE[d.id], b=BATT.filter(x=>x.drone===d.id);
   if(d.cat==='specific' && !AUT_ENAC.agricola) return 'ko';
-  if(s.man.liv!=='ok' || b.some(x=>x.stato!=='ok') || !s.doc.fattura || !d.qr) return 'warn';
+  if(s.man.liv!=='ok' || b.some(x=>bGuarda(x)) || !s.doc.fattura || !d.qr) return 'warn';
   return 'ok';
 }
 function apriDroni(){
@@ -2580,7 +2590,7 @@ function apriDrone(id, da, apriBatt){
   const motivi=[];
   if(d.cat==='specific' && !AUT_ENAC.agricola) motivi.push('manca l\u2019autorizzazione ENAC');
   if(s.man.liv!=='ok') motivi.push('manutenzione tra '+s.man.mancano);
-  BATT.filter(x=>x.drone===id && x.stato!=='ok').forEach(x=>motivi.push(x.nome.toLowerCase()+' da controllare'));
+  BATT.filter(x=>x.drone===id && bGuarda(x)).forEach(x=>motivi.push(x.nome.toLowerCase()+' da controllare'));
   if(!d.qr) motivi.push('manca il QR di D-Flight'); if(!s.doc.fattura) motivi.push('manca la fattura di acquisto');
   document.getElementById('dr-s').textContent=motivi.length?motivi.join(' · '):'Documenti, manutenzione e batterie in regola';
 
@@ -3283,34 +3293,34 @@ function ricalcola(){
     const s=SCHEDE[d.id];
     if(s&&s.man) d.manut=s.man.liv==='ok'?'ok':'scade';
     if(s&&s.doc) d.qr=!!s.doc.qr;
-    if(s) d.batt=BATT.filter(x=>x.drone===d.id).some(x=>x.stato!=='ok')?'warn':'ok';
+    if(s) d.batt=BATT.filter(x=>x.drone===d.id).some(x=>bGuarda(x))?'warn':'ok';
   }
 }
 
 /* ---------- cose da sistemare: calcolate dai dati veri ---------- */
 let TODOGO=[];
 function calcolaTodo(){
-  const L=[], add=(liv,t,w,go)=>L.push({liv,t,w,go});
+  const L=[], add=(liv,t,w,go,inl)=>L.push({liv,t,w,go,inl});
   const spec=DRONI.filter(d=>d.cat==='specific');
   if(spec.length&&!AUT_ENAC.agricola) add('ko','Autorizzazione ENAC agricola mancante ('+spec.map(d=>d.nome.replace('DJI ','')).join(', ')+')',
     DOMANDA&&DOMANDA.stato==='inviata'?'domanda inviata':'da richiedere',puoVedere('Autorizzazioni ENAC')?()=>apriEnac():null);
   { const sm=DRONI.filter(ckManca); if(ADM&&sm.length) add('warn','Check list del manuale da caricare ('+sm.map(d=>d.nome.replace('DJI ','')).join(', ')+')','categoria specifica: vale quella del vostro manuale delle operazioni',()=>apriCheck()); }
   for(const p of PILOTI){
     const s=SCHEDEP[p.id]; if(!s) continue;
-    if(!Object.keys(s.att||{}).length) add('warn','Nessun attestato inserito per '+p.nome,'da caricare',()=>apriPilota(p.id));
+    if(!Object.keys(s.att||{}).length) add('warn','Nessun attestato inserito per '+p.nome,'da caricare',()=>apriPilota(p.id),()=>inDoc({k:'pilota',id:p.id,voce:'A1-A3'},'L’attestato di '+p.nome,'Fotografa l’attestato'));
     for(const [k,a] of Object.entries(s.att||{})){ if(!a.scad) continue; const lv=livData(a.scad);
-      if(lv!=='ok') add(lv,(ATTNOMI[k]||k)+' di '+p.nome,(lv==='ko'?'scaduto il ':'scade il ')+a.scad,()=>apriPilota(p.id)); }
+      if(lv!=='ok') add(lv,(ATTNOMI[k]||k)+' di '+p.nome,(lv==='ko'?'scaduto il ':'scade il ')+a.scad,()=>apriPilota(p.id),()=>inDoc({k:'pilota',id:p.id,voce:k},'Il nuovo '+(ATTNOMI[k]||k).replace('Attestato','attestato')+' di '+p.nome,'Fotografa l’attestato rinnovato')); }
   }
   for(const d of DRONI){
     const s=SCHEDE[d.id];
-    if(s&&s.man&&s.man.liv!=='ok') add('warn','Manutenzione '+d.nome,'tra '+s.man.mancano+' di volo',()=>apriManut(d.id));
+    if(s&&s.man&&s.man.liv!=='ok') add('warn','Manutenzione '+d.nome,'tra '+s.man.mancano+' di volo',()=>apriManut(d.id),()=>inMan(d.id));
     for(const b of BATT.filter(x=>x.drone===d.id)){ const t=trendBatt(VOLI,b.id);
       if(t.liv==='warn') add('warn',b.nome+' del '+d.nome.replace('DJI ','')+': celle in peggioramento','al limite tra circa '+pl(t.mancano,'volo','voli'),()=>apriDrone(d.id,'batterie',b.id));
       else if(t.liv==='ko'&&b.stato==='ok') add('ko',b.nome+' del '+d.nome.replace('DJI ','')+': celle squilibrate','differenza '+V2(t.ult)+' V',()=>apriDrone(d.id,'batterie',b.id)); }
-    if(!d.qr) add('ko','QR D-Flight da applicare: '+d.nome,'manca',puoVedere('Droni')?()=>apriDrone(d.id,'droni'):null);
+    if(!d.qr) add('ko','QR D-Flight da applicare: '+d.nome,'manca',puoVedere('Droni')?()=>apriDrone(d.id,'droni'):null,()=>inDoc({k:'drone',id:d.id,voce:'qr'},'Il QR di D-Flight del '+d.nome,'Fotografa l’adesivo QR attaccato sul drone (lo scarichi da D-Flight › Droni e QR)'));
   }
-  BATT.filter(b=>b.stato!=='ok').forEach(b=>{const d=DRONI.find(x=>x.id===b.drone);
-    add('warn',b.nome+' del '+(d?d.nome.replace('DJI ',''):'drone')+': da controllare',b.cicli+' cicli',()=>apriDrone(b.drone,'batterie',b.id));});
+  BATT.filter(bGuarda).forEach(b=>{const d=DRONI.find(x=>x.id===b.drone);
+    add('warn',b.nome+' del '+(d?d.nome.replace('DJI ',''):'drone')+': da controllare',b.cicli+' cicli',()=>apriDrone(b.drone,'batterie',b.id),()=>inBatt(b.id));});
   for(const p of PILOTI){const q=polP(p); if(!q||!q.scad) continue; const lv=livData(q.scad);
     if(lv!=='ok'&&!rcVale(ASSIC.scad,new Date(new Date().toDateString()))) add(lv,'Polizza RC personale di '+p.nome,(lv==='ko'?'scaduta il ':'scade il ')+q.scad,()=>apriPilota(p.id));
     else if(ADM&&q.doc&&!q.ver) add('warn','Polizza personale di '+p.nome+' da verificare','apri la quietanza',()=>apriPilota(p.id));}
@@ -3318,19 +3328,19 @@ function calcolaTodo(){
   if(ADM){ if(!CODOK()) add('ko','Codice operatore D-Flight','manca: va su tutti i moduli (comincia con ITA-)',()=>q2Campo('codice'));
     if(!OP.email) add('warn','Email dell’azienda','manca: senza non arrivano gli avvisi',()=>q2Campo('email'));
     if(!OP.resp) add('warn','Responsabile dei voli','manca: va sui moduli per ENAC',()=>q2Campo('resp')); }
-  if(ADM){ if(!(OP.firma&&OP.firma.img)) add('warn','Manca la firma del responsabile','firmi una volta, con il dito o con il mouse',()=>apriAdmin('ad-firma'));
-    const sf=PILOTI.filter(p=>!(SCHEDEP[p.id]||{}).firma); if(sf.length) add('warn',pl(sf.length,'pilota senza firma','piloti senza firma'),sf.slice(0,3).map(p=>p.nome).join(', ')+(sf.length>3?'…':'')+' · la fanno dal loro telefono',()=>apriPilota(sf[0].id)); }
+  if(ADM){ if(!(OP.firma&&OP.firma.img)) add('warn','Manca la firma del responsabile','firmi una volta, con il dito o con il mouse',()=>apriAdmin('ad-firma'),()=>inFirma());
+    const sf=PILOTI.filter(p=>!(SCHEDEP[p.id]||{}).firma); if(sf.length) add('warn',pl(sf.length,'pilota senza firma','piloti senza firma'),sf.slice(0,3).map(p=>p.nome).join(', ')+(sf.length>3?'…':'')+' · la fanno dal loro telefono',()=>apriPilota(sf[0].id),()=>inRicorda(sf.map(p=>p.id))); }
   if(ADM) for(const q of RICH.filter(x=>x.stato==='bozza')){ const e=rqEntro(q); const g=e?Math.ceil((e-new Date(new Date().toDateString()))/864e5):null;
     add(g!=null&&g<0?'ko':'warn','Richiesta di permesso da mandare: '+(q.zona?q.zona.n:q.luogo||'senza luogo'),e?(g<0?'il termine era il ':'entro il ')+fmtData(e):'per il volo del '+(q.data||'—'),()=>apriRichiesta(q.id)); }
-  if(ASSIC.scad){const lv=livData(ASSIC.scad); if(lv!=='ok') add(lv,'Polizza RC aziendale',(lv==='ko'?'scaduta il ':'scade il ')+ASSIC.scad,puoVedere('Autorizzazioni ENAC')?()=>apriEnac():null);}
-  else if(PILOTI.some(p=>!rcDi(p).ok)) add('ko','Assicurazione RC non inserita','carica la polizza aziendale, o quella personale di ogni pilota',()=>apriDocumenti());
-  if(OP.dfAbb){const g=giorni(OP.dfAbb); if(g<60) add(g<0?'ko':'warn','Abbonamento D-Flight Base (7 € all’anno)',(g<0?'scaduto il ':'scade il ')+OP.dfAbb+' · da rinnovare su d-flight.it: serve per la registrazione dell’operatore e i QR dei droni',puoVedere('D-Flight')?()=>apriDflight():null);}
-  else if(ADM) add('warn','Abbonamento D-Flight Base da attivare (7 € all’anno)','lo paga l’operatore su d-flight.it: serve per la registrazione dell’operatore e i QR dei droni; poi scrivi la scadenza in Dati dell’operatore',()=>apriDflight());
+  if(ASSIC.scad){const lv=livData(ASSIC.scad); if(lv!=='ok') add(lv,'Polizza RC aziendale',(lv==='ko'?'scaduta il ':'scade il ')+ASSIC.scad,puoVedere('Autorizzazioni ENAC')?()=>apriEnac():null,()=>inDoc({k:'operatore',voce:'assicurazione'},'La nuova polizza RC','Fotografa la quietanza o scegli il PDF'));}
+  else if(PILOTI.some(p=>!rcDi(p).ok)) add('ko','Assicurazione RC non inserita','carica la polizza aziendale, o quella personale di ogni pilota',()=>apriDocumenti(),()=>inDoc({k:'operatore',voce:'assicurazione'},'La polizza RC aziendale','Fotografa la quietanza o scegli il PDF'));
+  if(OP.dfAbb){const g=giorni(OP.dfAbb); if(g<60) add(g<0?'ko':'warn','Abbonamento D-Flight Base (7 € all’anno)',(g<0?'scaduto il ':'scade il ')+OP.dfAbb+' · da rinnovare su d-flight.it: serve per la registrazione dell’operatore e i QR dei droni',puoVedere('D-Flight')?()=>apriDflight():null,()=>inAbb());}
+  else if(ADM) add('warn','Abbonamento D-Flight Base da attivare (7 € all’anno)','lo paga l’operatore su d-flight.it: serve per la registrazione dell’operatore e i QR dei droni; poi scrivi la scadenza in Dati dell’operatore',()=>apriDflight(),()=>inAbb());
   const tr=TRATT.filter(t=>t.stato!=='ok').length; if(tr) add('warn',pl(tr,'trattamento da annotare','trattamenti da annotare')+' nel quaderno','entro 30 giorni',()=>apriTratt());
-  const vd=VOLI.filter(v=>v.stato!=='completo'&&(ADM||v.pilota===IO.n)).length; if(vd) add('warn',pl(vd,'volo da completare','voli da completare'),'registro voli',()=>apriVoli());
+  const vd=VOLI.filter(v=>v.stato!=='completo'&&(ADM||v.pilota===IO.n)).length; if(vd) add('warn',pl(vd,'volo da completare','voli da completare'),'registro voli',()=>apriVoli(),ADM?()=>inVoli():null);
   if(!L.length) add('ok','Tutto in regola','');
   const ord={ko:0,warn:1,ok:2}; L.sort((a,b)=>ord[a.liv]-ord[b.liv]);
-  TODOGO=L.map(x=>x.go||(()=>{})); L.forEach(x=>x.go=!!x.go); return L;
+  TODOGO=L.map(x=>x.go||(()=>{})); TODOIN=L.map(x=>ADM&&!COME?x.inl||null:null); L.forEach(x=>{x.go=!!x.go; x.inl=!!x.inl;}); return L;
 }
 /* ---------- cosa può vedere chi è entrato ---------- */
 const PERM_RIQ={'Droni':'flotta','Batterie':'flotta','Manutenzioni':'flotta','Inventario':'flotta','Clienti e lavori':'clienti','Preventivi':'prezzi',
@@ -3339,7 +3349,7 @@ function permIo(){const p=PILOTI.find(x=>x.nome===IO.n);return p?(PERM[p.id]||{}
 function puoVedere(nome){if(ADM)return true;const k=PERM_RIQ[nome];return !k||!!permIo()[k];}
 function contaRiquadri(){
   TILES.flotta[0].c=pl(DRONI.length,'drone','droni');
-  TILES.flotta[1].c=pl(BATT.length,'batteria','batterie'); TILES.flotta[1].d=BATT.some(b=>b.stato!=='ok')?'warn':'';
+  TILES.flotta[1].c=pl(BATT.length,'batteria','batterie'); TILES.flotta[1].d=BATT.some(b=>bGuarda(b))?'warn':'';
   TILES.flotta[0].d=DRONI.some(d=>SCHEDE[d.id]&&SCHEDE[d.id].man&&statoDrone(d)!=='ok')?(DRONI.some(d=>SCHEDE[d.id]&&statoDrone(d)==='ko')?'ko':'warn'):'';
   TILES.attivita[0].c=pl(PILOTI.length,'pilota','piloti'); TILES.attivita[0].d=PILOTI.some(p=>statoPilota(p)!=='ok')?'warn':'';
   TILES.attivita[1].c=pl(VOLI.length,'volo','voli'); TILES.attivita[1].d=VOLI.some(v=>v.stato!=='completo'&&(ADM||v.pilota===IO.n))?'warn':'';
@@ -4236,7 +4246,7 @@ function homeAdm(todo){
   const o=new Date(), att=DISP.filter(x=>x.stato==='attesa');
   const fr='<svg class="q2-fr" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>';
   const righe=att.map(x=>`<div class="q2-dr"><span class="p ko"></span><div class="t"><b>Telefono da approvare: ${ESC(x.n)}</b><small>codice ${ESC(x.codice||'')} · approva solo se è quello che vede sul suo telefono</small></div><button class="q2-az" type="button" onclick="dispAz('approva','${x.id}',this)"><span class="spin"></span>Approva</button></div>`)
-    .concat(todo.map((x,i)=>[x,i]).filter(([x])=>x.liv==='ko'||x.liv==='warn').map(([x,i])=>`<div class="q2-dr"><span class="p ${x.liv}"></span><div class="t"><b>${x.t}</b><small>${x.w||''}</small></div>${x.go?`<button class="q2-az" type="button" onclick="TODOGO[${i}]()">${todoAz(x.t)}</button>`:''}</div>`));
+    .concat(todo.map((x,i)=>[x,i]).filter(([x])=>x.liv==='ko'||x.liv==='warn').map(([x,i])=>`<div class="q2-dr"><span class="p ${x.liv}"></span><div class="t"><b>${x.t}</b><small>${x.w||''}</small></div>${x.go||x.inl?`<button class="q2-az ${x.inl||/^(Codice operatore|Responsabile|Email dell)/.test(x.t)?'':'via'}" type="button" onclick="todoFai(${i},this)">${todoAz(x.t)}</button>`:''}</div>`));
   const tutte=HADM_APERTE.has('_daf'), N=5;
   const daf=righe.length?righe.map((r,i)=>!tutte&&i>=N?'':r).join(''):'<div class="q2-dr"><span class="p ok"></span><div class="t"><b>Tutto in regola</b><small>niente da sistemare</small></div></div>';
   const tiles=Q2_TILES.map(t=>{ const st=q2Stato(t); if(!st) return '';
@@ -5665,9 +5675,83 @@ function q2SalvaCampo(k,b){ const v=document.getElementById('q2-f').value.trim()
   if(k==='codice'&&v&&!/^ITA/i.test(v)){ toast('Il codice D-Flight comincia con ITA-'); return; }
   lavora(b,()=>{ OP[k]=k==='codice'?v.replace(/^ita-?/i,'ITA-'):v; testata(); gdChiudiSheet(); toast(Q2_OP[k][0]+': salvato');
     if(VISTA==='home') disegnaHome(); else if(VISTA==='dflight') apriDflight(); else if(VISTA==='hub') apriHub(HUB_K); else if(VISTA==='admin'&&typeof disegnaDatiOp==='function') disegnaDatiOp(false); }); }
+
+/* ---------- «Da sistemare»: le righe si sistemano lì, in un riquadro, senza cambiare pagina ---------- */
+let TODOIN=[];
+const bGuarda=b=>b.stato!=='ok'&&b.stato!=='fuori';
+function todoFai(i,b){ const f=TODOIN[i]; if(f) f(b); else TODOGO[i](); }
+function inFine(msg){ gdChiudiSheet(); controllaModifiche(); toast(msg); if(VISTA==='home') disegnaHome(); }
+function inMan(did){ const d=DRONI.find(x=>x.id===did)||{}, s=SCHEDE[did]||{}, L=INTERVENTI[did]||INTERV_BASE;
+  gdSheet(`<h2>Manutenzione fatta</h2><p class="gd-sub">${ESC(d.nome||'')} · ${ESC(s.ore||'')} di volo</p>
+    <label class="in-l">Cosa hai fatto</label><select id="in-tipo">${L.map(t=>`<option>${ESC(t)}</option>`).join('')}</select>
+    <label class="in-l">Chi l’ha fatto</label><select id="in-chi"><option>Noi</option><option>Centro assistenza</option></select>
+    <label class="in-l">Note (se servono)</label><input type="text" id="in-note" placeholder="es. cambiate 4 eliche">
+    <p class="gd-sub" style="margin-top:8px">Se è la manutenzione in scadenza, il conto delle ore riparte da zero.</p>
+    <div class="row"><button class="btn" onclick="lavora(this,()=>{registraManut(${did},document.getElementById('in-tipo').value,document.getElementById('in-chi').value,document.getElementById('in-note').value.trim());inFine('Manutenzione registrata');})"><span class="spin"></span>Salva</button><button class="btn sec" onclick="gdChiudiSheet()">Annulla</button></div>`); }
+function registraManut(id,tipo,chi,note){ const s=SCHEDE[id], d=DRONI.find(x=>x.id===id); if(!s) return;
+  s.storia=s.storia||[]; s.storia.unshift([oggi(), tipo+(chi==='Noi'?'':' ('+chi.toLowerCase()+')')+(note?' · '+note:'')]);
+  if(s.man&&tipo===(INTERVENTI[id]||INTERV_BASE)[0]){ s.man.perc=0; s.man.liv='ok'; s.man.mancano=id===3?'10 ore':'50 ore'; if(d) d.manut='ok';
+    if(id===2) s.man.prox='Controllo motori ed eliche a 170 ore'; if(id===1) s.man.prox='Controllo generale a 100 ore'; } }
+function inBatt(bid){ const b=BATT.find(x=>x.id===bid)||{}, d=DRONI.find(x=>x.id===b.drone)||{};
+  gdSheet(`<h2>Controlla la batteria</h2><p class="gd-sub">${ESC(b.nome||'')} del ${ESC((d.nome||'').replace('DJI ',''))} · ${b.cicli||0} cicli${b.nota?'<br>'+ESC(b.nota):''}</p>
+    <p class="gd-sub">Guardala: gonfia, calda in modo strano, scocca rotta? Poi scegli.</p>
+    <div class="in-2"><button class="in-sc" onclick="lavora(this,()=>{const b=BATT.find(x=>x.id==='${bid}');b.stato='ok';delete b.nota;inFine('Batteria segnata: va bene');})"><span class="spin"></span><b>Va bene</b><small>si continua a usare</small></button>
+      <button class="in-sc ko" onclick="lavora(this,()=>{const b=BATT.find(x=>x.id==='${bid}');b.stato='fuori';b.nota='Fuori uso dal '+oggi();inFine('Batteria fuori uso: non si usa più');})"><span class="spin"></span><b>Fuori uso</b><small>gonfia o danneggiata</small></button></div>
+    <div class="row"><button class="btn sec" onclick="gdChiudiSheet()">Annulla</button></div>`); }
+let INDOC=null;
+function inDoc(dest,tit,sub){ INDOC={dest,id:null};
+  gdSheet(`<h2>${ESC(tit)}</h2><p class="gd-sub">${ESC(sub)}: Quota 120 legge i dati.</p>
+    <div class="in-2" id="in-src"><button class="in-sc" onclick="inDocScegli('foto')"><b>Fai una foto</b><small>con il telefono</small></button><button class="in-sc" onclick="inDocScegli('file')"><b>Scegli un file</b><small>PDF o immagine</small></button></div>
+    <div class="prog" id="in-prog" style="display:none"><span class="spin"></span><span id="in-prog-t"></span></div><div id="in-letto"></div>
+    <div class="row" id="in-az"><button class="btn sec" onclick="gdChiudiSheet()">Annulla</button></div>`); }
+function inDocScegli(tipo){ const i=document.createElement('input'); i.type='file'; i.accept=tipo==='foto'?'image/*':'application/pdf,image/*'; if(tipo==='foto') i.setAttribute('capture','environment'); i.onchange=()=>inDocCarica(i.files[0]); i.click(); }
+function inDocCarica(f){ if(!f) return; if(f.size>10*1024*1024){toast('Il file supera i 10 MB');return;}
+  const pr=document.getElementById('in-prog'), pt=document.getElementById('in-prog-t'); document.getElementById('in-src').style.display='none'; pr.style.display='flex'; pt.textContent='Carico il file…';
+  rimpicciolisci(f).then(x=>fetch('/api/doc',{method:'POST',headers:{'content-type':x.mime==='image/heif'?'image/heic':x.mime,'x-disp':ME.id+':'+ME.k,'x-nome':encodeURIComponent(f.name||'documento')},body:x.blob}).then(r=>r.json()))
+  .then(j=>{ if(j.errore){ pr.style.display='none'; toast(j.errore); document.getElementById('in-src').style.display=''; return; } INDOC.id=j.id; pt.textContent='Leggo il documento (può volerci mezzo minuto)…';
+    return api('POST','/api/doc/leggi',{id:j.id}).then(k=>{ pr.style.display='none'; inDocLetto(k.letto||null); }); })
+  .catch(()=>{ pr.style.display='none'; document.getElementById('in-src').style.display=''; toast('Caricamento non riuscito: controlla la rete'); }); }
+function inDocLetto(L){ const D=L||{tipo:'',dati:{},categorie:{}}, dat=D.dati||{}; INDOC.cat=D.categorie||{};
+  const v=VOCI[INDOC.dest.k].find(x=>x[0]===INDOC.dest.voce);
+  document.getElementById('in-letto').innerHTML=`<div class="in-letto">${L?'<b>Ho letto:</b>':'<b>Non sono riuscito a leggerlo da solo: scrivi tu i dati.</b>'}
+    <label class="in-l">Che documento è</label><input type="text" id="in-tipo" value="${ESC(D.tipo||(v?v[1]:''))}">
+    <label class="in-l">Numero</label><input type="text" id="in-num" value="${ESC(dat.numero||'')}">
+    <label class="in-l">Scadenza</label><input type="text" id="in-sca" value="${ESC(dat.scadenza||'')}" placeholder="gg/mm/aaaa"></div>
+    <p class="gd-sub" style="margin-top:6px">Se un dato è sbagliato, correggilo. Va in: <b>${ESC(v?v[1]:'')}</b>.</p>`;
+  document.getElementById('in-az').innerHTML=`<button class="btn" onclick="inDocConferma(this)"><span class="spin"></span>Conferma</button><button class="btn sec" onclick="gdChiudiSheet()">Annulla</button>`; }
+function inDocConferma(b){ const g=id=>document.getElementById(id).value.trim(), dati={numero:g('in-num'),rilascio:'',scadenza:g('in-sca')};
+  if(!g('in-tipo')){toast('Scrivi che documento è');return;} if(dati.scadenza&&!dt(dati.scadenza)){toast('La data va scritta come gg/mm/aaaa');return;}
+  b.disabled=true; b.classList.add('busy'); controllaModifiche();
+  api('POST','/api/doc/conferma',{id:INDOC.id,tipo:g('in-tipo'),dest:INDOC.dest,categorie:INDOC.cat||{},dati}).then(j=>{
+    if(j.errore){ b.disabled=false; b.classList.remove('busy'); toast(j.errore); return; }
+    return ricarica().then(()=>{ gdChiudiSheet(); toast('Documento salvato nella scheda giusta'); if(VISTA==='home') disegnaHome(); }); })
+  .catch(()=>{ b.disabled=false; b.classList.remove('busy'); toast('Non riuscito: controlla la rete'); }); }
+function inFirma(){ const prima=OP.firma;
+  gdSheet(`<h2>La tua firma</h2><p class="gd-sub">Con il dito (o con il mouse): va da sola su moduli, valutazioni del rischio e rapporti.</p><div id="in-firma"></div><div class="row"><button class="btn sec" onclick="gdChiudiSheet()">Chiudi</button></div>`);
+  padFirma('in-firma','resp'); const t=setInterval(()=>{ if(!document.getElementById('in-firma')){ clearInterval(t); return; } if(OP.firma!==prima&&OP.firma&&OP.firma.img){ clearInterval(t); inFine('Firma salvata'); } },400); }
+function inRicorda(ids){ const P=ids.map(id=>PILOTI.find(p=>p.id===id)).filter(Boolean);
+  const msg=n=>encodeURIComponent('Ciao '+n.split(' ')[0]+', apri Quota 120 e fai la tua firma: Account › La tua firma. Si fa una volta sola, con il dito. Grazie!');
+  gdSheet(`<h2>Ricorda la firma ai piloti</h2><p class="gd-sub">Ognuno firma dal suo telefono: Account › La tua firma. Mandagli il promemoria: la riga sparisce quando firmano.</p>
+    ${P.map(p=>{ const tel=String((SCHEDEP[p.id]||{}).tel||'').replace(/\D/g,''); return `<div class="in-p"><b>${ESC(p.nome)}</b><a class="btn sec mini" target="_blank" rel="noopener" href="https://wa.me/${tel?(tel.length<=10?'39'+tel:tel):''}?text=${msg(p.nome)}">WhatsApp</a></div>`; }).join('')}
+    <div class="row"><button class="btn sec" onclick="gdChiudiSheet()">Chiudi</button></div>`); }
+function inVoli(){ const V=VOLI.filter(v=>v.stato!=='completo').slice(0,8);
+  gdSheet(`<h2>Completa i voli</h2><p class="gd-sub">${pl(V.length,'volo','voli')} senza tutti i dati. Scrivi pilota, luogo e minuti: quelli completi spariscono dalla lista.</p>
+    ${V.map(v=>`<div class="in-v"><b>${ESC(v.data)} ${ESC(v.ora||'')} · ${ESC(String(v.drone||'').replace('DJI ',''))}</b><div class="in-3">
+      <select data-v="${v.id}" data-k="pilota">${PILOTI.map(p=>`<option ${p.nome===v.pilota?'selected':''}>${ESC(p.nome)}</option>`).join('')}</select>
+      <input type="text" data-v="${v.id}" data-k="luogo" value="${ESC(v.luogo&&v.luogo!=='—'?v.luogo:'')}" placeholder="Luogo">
+      <input type="number" data-v="${v.id}" data-k="min" value="${+v.min||''}" placeholder="Minuti" inputmode="numeric"></div></div>`).join('')}
+    <div class="row"><button class="btn" onclick="lavora(this,inVoliSalva)"><span class="spin"></span>Salva</button><button class="btn sec" onclick="gdChiudiSheet()">Annulla</button></div>`); }
+function inVoliSalva(){ let n=0; document.querySelectorAll('.gd-velo [data-v]').forEach(e=>{ const v=VOLI.find(x=>String(x.id)===e.dataset.v); if(!v) return; const k=e.dataset.k, x=e.value.trim(); if(k==='min') v.min=Math.max(0,+x||0); else if(x) v[k]=x; });
+  document.querySelectorAll('.gd-velo select[data-k="pilota"]').forEach(e=>{ const v=VOLI.find(x=>String(x.id)===e.dataset.v); if(v&&v.pilota&&v.luogo&&v.luogo!=='—'&&+v.min>0){ v.stato='completo'; n++; } });
+  inFine(n?pl(n,'volo completato','voli completati'):'Salvato: mancano ancora dei dati'); }
+function inAbb(){ gdSheet(`<h2>Rinnova l’abbonamento D-Flight</h2><p class="gd-sub">Base, 7 € all’anno: si rinnova sul sito D-Flight, nel tuo profilo.</p>
+    <div class="row" style="margin-top:4px"><button class="btn sec" onclick="window.open(DFLIGHT_MAPPA,'_blank')">Apri D-Flight</button></div>
+    <label class="in-l">Dopo il rinnovo, scrivi la nuova scadenza</label><input type="text" id="in-abb" placeholder="gg/mm/aaaa" value="${ESC(OP.dfAbb||'')}">
+    <div class="row"><button class="btn" onclick="const v=document.getElementById('in-abb').value.trim();if(!dt(v)){toast('La data va scritta come gg/mm/aaaa');return;}lavora(this,()=>{OP.dfAbb=v;testata();inFine('Nuova scadenza salvata: ti avviso prima');})"><span class="spin"></span>Salva</button><button class="btn sec" onclick="gdChiudiSheet()">Annulla</button></div>`); }
+
 /* tasto della riga «Da sistemare»: dice cosa fa */
 function todoAz(t){ const r=[[/^Codice operatore|^Responsabile|^Email dell/,'Scrivi'],[/^Abbonamento D-Flight/,'Rinnova'],[/Autorizzazione ENAC/,'Prepara'],[/Check list|QR D-Flight|Polizza|attestato|Attestato|A1-A3|A2 |STS|file delle zone/i,'Carica'],
-  [/^Manutenzione/,'Segna fatta'],[/Batteria|celle|batteria/,'Controlla'],[/firma del responsabile|Manca la tua firma/,'Firma'],[/Richiesta di permesso/,'Manda'],[/trattament|volo da completare|voli da completare/,'Completa']];
+  [/^Manutenzione/,'Segna fatta'],[/Batteria|celle|batteria/,'Controlla'],[/firma del responsabile|Manca la tua firma/,'Firma'],[/Richiesta di permesso/,'Manda'],[/piloti? senza firma/,'Ricorda'],[/trattament|volo da completare|voli da completare/,'Completa']];
   for(const [re,l] of r) if(re.test(t)) return l; return 'Apri'; }
 /* ricerca «Cosa vuoi fare?» */
 function q2Indice(){ const L=[];
