@@ -837,6 +837,16 @@
   .ha-barra .sc{width:44px;height:44px;border-radius:11px;background:#E8C15A;display:flex;align-items:center;justify-content:center;flex:none}.ha-barra .sc svg{width:25px;height:25px;stroke:#132A3A;fill:none;stroke-width:2.2;stroke-linejoin:round}
   .ha-barra b{display:block;font:700 22px "Barlow Semi Condensed","Barlow",sans-serif;line-height:1.1}.ha-barra span{color:#c9d5de;font-size:14px}
   .ha-barra .g{margin-left:auto;background:#E8C15A;color:#132A3A;border:0;border-radius:8px;padding:9px 14px;font:700 14.5px "Barlow",sans-serif;cursor:pointer}
+  .ha-barra .g{display:inline-flex;gap:6px;align-items:center}.ha-barra .g svg{width:18px;height:18px;stroke:#132A3A;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .pp-sottile{display:flex;gap:12px;align-items:center;width:100%;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:12px 0;text-align:left;cursor:pointer;font:inherit;color:inherit}
+  .pp-sottile .pp-bar{flex:none;width:64px;margin:0}.pp-sottile .t{flex:1;font-size:14.5px}.pp-sottile .chev{width:18px;height:18px;stroke:var(--muted);fill:none;stroke-width:2}
+  .ha-menu-velo{position:fixed;inset:0;background:rgba(10,20,30,.3);z-index:900}
+  .ha-menu{position:fixed;left:16px;right:16px;max-width:440px;margin-left:auto;background:#fff;color:var(--ink,#14202b);border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.25);z-index:901;overflow:hidden}
+  .ha-menu .hm-cap{padding:10px 14px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);background:#f4f7f9}
+  .ha-menu button{display:flex;gap:12px;align-items:flex-start;width:100%;background:none;border:0;border-top:1px solid #edf1f4;padding:12px 14px;text-align:left;cursor:pointer;font:inherit;color:inherit}
+  .ha-menu button:hover{background:#f2f6f9}.ha-menu .ico{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex:none}
+  .ha-menu .ico svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .ha-menu b{display:block;font-size:15px}.ha-menu small{display:block;font-size:13px;color:var(--muted);margin-top:1px}
   @media(max-width:520px){.ha-barra b{font-size:18px}.ha-barra .g{padding:8px 10px}.ha-barra{gap:10px;padding:14px 12px 12px}}
   .ha-daf{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
   .ha-daf h2{margin:0;padding:11px 16px;font-size:17px;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center;text-transform:none;letter-spacing:0;color:var(--text)}
@@ -4177,11 +4187,10 @@ function homeAdm(todo){
       ${ctrl?`<div class="ha-ctrl" id="ha-ctrl"><div class="hcap">Controllo prima del volo</div><div class="nota" style="margin-bottom:6px">Di solito lo fa il pilota sul posto, dal suo telefono. Qui puoi provarlo in anticipo per un lavoro.</div>
         <div class="hsel">${selDrone()}${selPilota()}</div>${campiLavoro()}<button class="btn" id="h-btn" onclick="avviaControllo(this)"><span class="spin"></span>Inizia il controllo</button></div>`:''}
     </details>`;}).join('');
-  return `<div class="ha-barra"><span class="sc"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg></span><div><b>Quota 120 · Home dell’Admin</b><span>${GIORNI[o.getDay()].toLowerCase()} ${o.getDate()} ${MESI_L[o.getMonth()]} · qui vedi e gestisci tutto</span></div><button class="g" type="button" id="ha-guidami" onclick="gdRiprendi()">Guidami</button></div>
-    ${ppCard()}
+  return `<div class="ha-barra"><span class="sc"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg></span><div><b>Quota 120 · Home dell’Admin</b><span>${GIORNI[o.getDay()].toLowerCase()} ${o.getDate()} ${MESI_L[o.getMonth()]} · qui vedi e gestisci tutto</span></div><button class="g" type="button" id="ha-aiuto" onclick="haAiuto(this)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14M12 17.5h.01"/></svg>Aiuto</button></div>
+    ${ppBarra()}
     <details class="ha-daf ${righe.length?'ko':'ok'}" id="ha-daf" ${HADM_APERTE.has('_dafo')?'open':''} ontoggle="window.hadmToggle&&hadmToggle('_dafo',this.open)"><summary><span class="dic"><svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg></span><span class="dtt"><b>Da fare</b><small>scadenze e cose da sistemare</small></span><span class="st ${righe.length?'ko':'ok'}">${righe.length?righe.length+' da fare':'tutto a posto'}</span><svg class="dch" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></summary>
       ${righe.length?righe.join(''):'<div class="ha-rg"><span class="hl ok"></span><div class="t"><b>Niente da fare</b><small>tutto in regola</small></div></div>'}</details>
-    <button type="button" class="ha-volo" id="h-guidavolo" onclick="guidaVolo()"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8 8l8 8M16 8l-8 8"/></svg></span><span class="t"><b>Guidami in un volo</b><small>Tutte le operazioni in ordine, dalle zone D-Flight alla chiusura</small></span><span class="btn mini">Inizia</span></button>
     <button type="button" class="ha-volo ha-zm" id="ha-zmappa" onclick="apriMappaZone()"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="10" r="3"/><path d="M12 21s-7-6.5-7-11a7 7 0 0114 0c0 4.5-7 11-7 11z"/></svg></span><span class="t"><b>Mappa delle zone</b><small>Dove e fino a che quota si vola, e a chi chiedere il permesso</small></span><span class="btn mini">Apri</span></button>
     ${sez}
     <div class="ha-leg">Barretta o pallino <b style="color:var(--ko)">rosso</b>: da fare subito · <b style="color:var(--warn)">giallo</b>: presto · niente: tutto a posto. Le sezioni restano chiuse finché non le apri.</div>
@@ -5550,6 +5559,32 @@ function gdAll(){
     <div class="row"><button class="btn sec" onclick="gdChiudiSheet()">Chiudi</button></div>`);
 }
 function gdEls(){ if(document.getElementById('gdHole')) return; [['gdDim','gd-dim'],['gdIntro','gd-intro'],['gdHole','gd-hole'],['gdTip','gd-tip']].forEach(([id,c])=>{const e=document.createElement('div');e.id=id;e.className=c;document.body.appendChild(e);}); }
+
+/* ---------- Home dell'Admin: tasto «Aiuto» (un solo ingresso per tutte le guide) e barra sottile dei Primi passi ---------- */
+function ppStato(){ const L=ppLista(), F=L.map(x=>{try{return x.ok();}catch(e){return false;}}); return {L,F,n:F.filter(Boolean).length,i:F.indexOf(false)}; }
+function ppBarra(){ const {L,n,i}=ppStato(); if(!L.length||i<0) return '';
+  return `<button type="button" class="pp-sottile" id="h-pp" onclick="ppFai(${i})"><span class="pp-bar"><i style="width:${Math.round(n/L.length*100)}%"></i></span><span class="t"><b>Primi passi ${n}/${L.length}</b> · prossimo: ${ESC(L[i].t)}</span><svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>`; }
+function ppElenco(){ const {L,F,n}=ppStato();
+  gdSheet(`<h2>Prepara l’azienda</h2><div class="nota" style="margin-bottom:8px">${n===L.length?'Tutto fatto: '+n+' su '+L.length+'. Puoi rifare un passo quando vuoi.':n+' su '+L.length+' fatti'}</div>${L.map((x,j)=>`<div class="pp-r ${F[j]?'fatto':''}"><span class="pp-n">${F[j]?'✓':j+1}</span><div class="t"><b>${ESC(x.t)}</b><small>${ESC(x.w)}</small></div><button class="btn mini sec" type="button" onclick="ppFai(${j})">${F[j]?'Rivedi':'Fallo ora'}</button></div>`).join('')}<div class="row"><button class="btn sec" onclick="gdChiudiSheet()">Chiudi</button></div>`); }
+function haAiutoChiudi(){ document.querySelectorAll('.ha-menu,.ha-menu-velo').forEach(e=>e.remove()); }
+function haAiuto(b){ if(document.querySelector('.ha-menu')) return haAiutoChiudi();
+  const {L,n,i}=ppStato(), ppTxt=i<0?'Tutto fatto: '+n+' su '+L.length+'. Puoi rivederli quando vuoi':'I primi passi per essere in regola: '+n+' su '+L.length+' fatti';
+  const V=[['--ok','<path d="M5 21V4h11l-2 4 2 4H5"/>','Prepara l’azienda',ppTxt,i<0?'ppElenco()':`ppFai(${i})`],
+    ['--f-flotta','<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8 8l8 8M16 8l-8 8"/>','Guidami in un volo','Tutte le operazioni di un volo, una dopo l’altra, dalle zone D-Flight alla chiusura','guidaVolo()'],
+    ['--accent','<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14M12 17.5h.01"/>','Guida di questa pagina','Ti mostra a cosa serve ogni riquadro della Home','gdStart(\'homeadm\');gdGo()'],
+    ['--muted','<path d="M4 5h11a3 3 0 013 3v11H7a3 3 0 01-3-3z"/><path d="M8 9h6M8 13h6"/>','Le parole del drone','D-Flight, ENAC, NOTAM e le altre sigle spiegate','apriParole()']];
+  const velo=document.createElement('div'); velo.className='ha-menu-velo'; velo.onclick=haAiutoChiudi; document.body.appendChild(velo);
+  const m=document.createElement('div'); m.className='ha-menu'; m.innerHTML='<div class="hm-cap">Cosa ti serve?</div>'+V.map(([c,ic,t,d,go])=>`<button type="button" onclick="haAiutoChiudi();${go}"><span class="ico" style="background:var(${c})"><svg viewBox="0 0 24 24">${ic}</svg></span><span><b>${t}</b><small>${d}</small></span></button>`).join('');
+  const r=b.getBoundingClientRect(); m.style.top=(r.bottom+8)+'px'; m.style.right=Math.max(16,innerWidth-r.right)+'px'; document.body.appendChild(m); }
+window.addEventListener('scroll',()=>{ if(document.querySelector('.ha-menu')) haAiutoChiudi(); },{passive:true});
+GUIDES.homeadm={n:'La Home dell’Admin, riquadro per riquadro',r:'adm',base:()=>0,done:()=>false,
+  why:{h:'La Home dell’Admin',p:'Ti mostro a cosa serve ogni riquadro della Home. Non devi toccare niente: leggi e premi «Avanti».',uses:['Home dell’Admin'],tm:''},
+  end:'Hai visto tutta la Home. Quando ti serve aiuto, tocca «Aiuto» in alto.',
+  S:[GV('Aiuto','Il tasto da cui partono tutte le guide: i primi passi, la guida di un volo, questa guida e le parole del drone.','così c’è un solo posto dove cercare aiuto.','ogni volta che non sai cosa fare.',()=>gdVis('#ha-aiuto')),
+   GV('Primi passi','La barra dice quanti passi hai fatto per mettere in regola l’azienda. Toccala e riparti dal passo che manca.','sparisce da sola quando hai finito tutti i passi.','finché non arriva in fondo.',()=>gdVis('#h-pp'),1),
+   GV('Da fare','Scadenze e cose da sistemare, le più urgenti in alto. Rosso: subito. Verde: tutto a posto.','ti dice in un colpo d’occhio se la giornata parte bene.','ogni mattina.',()=>gdVis('#ha-daf')),
+   GV('Mappa delle zone','Tocchi un punto: ti dice se lì si vola, fino a che quota e a chi chiedere il permesso.','le zone cambiano anche di pochi metri.','prima di accettare un lavoro.',()=>gdVis('#ha-zmappa')),
+   GV('Le sezioni','Lavoro, Flotta, Persone, Regole e sicurezza, Impostazioni. Restano chiuse finché non le apri; un’etichetta rossa o gialla dice dove c’è qualcosa da sistemare.','così la Home resta corta e ordinata.','quando ti serve una di quelle cose.',()=>gdVis('#ha-lav'))]};
 let VOLO_S=null;
 function guidaVolo(){ VOLO_S=null; gdStart('unvolo'); }
 function passiVolo(){
