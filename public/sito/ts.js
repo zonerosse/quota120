@@ -1,7 +1,7 @@
 /* Protezione anti-robot di Cloudflare (Turnstile) sui moduli che mandano un codice via email.
    Mette il riquadro dentro ogni .ts-box; tsToken() dà il gettone da mandare, tsReset() lo rinnova. */
 (function () {
-  var CHIAVE = "__SITEKEY__", ids = [], tok = "";
+  var CHIAVE = "0x4AAAAAAFs7lEvD1YfuzrX1", ids = [], tok = "";
   window.tsToken = function () { return tok; };
   window.tsReset = function () { tok = ""; try { ids.forEach(function (i) { turnstile.reset(i); }); } catch (e) {} };
   window.tsPronto = function () {
