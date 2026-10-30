@@ -1,10 +1,10 @@
 name: Video dei videocorsi
-# Ogni ora chiede al programma se ci sono lezioni con le scene cambiate e rifà solo quei video.
+# Una volta al giorno chiede al programma se ci sono lezioni con le scene cambiate e rifà solo quei video.
 # Si presenta con il gettone firmato da GitHub (OIDC): nessuna chiave da conservare.
 on:
   workflow_dispatch:
   schedule:
-    - cron: "17 * * * *"
+    - cron: "17 3 * * *"
 permissions:
   contents: write
   id-token: write
