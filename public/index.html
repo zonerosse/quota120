@@ -1044,6 +1044,15 @@ body.scuro .nav{background:transparent;border-color:#1F3241}
 .par-leg td:first-child{width:110px;font-weight:700}.par-leg a{color:var(--accent);text-decoration:none;border-bottom:1.5px dotted var(--accent)}
 .par-leg tr.gr td{font-weight:700;color:var(--muted);border-top:0;padding-top:14px;font-size:13.5px}
 .par-es{background:var(--sup2,#f3f6f8);border-radius:8px;padding:8px 10px;font-size:14.5px}
+.ha-daf{border-left:6px solid var(--ko)!important}.ha-daf.ok{border-left-color:var(--ok)!important}
+.ha-daf>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer}
+.ha-daf>summary::-webkit-details-marker{display:none}
+.ha-daf .dic{width:34px;height:34px;border-radius:8px;background:var(--ko);display:flex;align-items:center;justify-content:center;flex:none}.ha-daf.ok .dic{background:var(--ok)}
+.ha-daf .dic svg{width:19px;height:19px;stroke:#fff;fill:none;stroke-width:2}
+.ha-daf .dtt{flex:1;min-width:0}.ha-daf .dtt b{display:block;font-size:18px}.ha-daf .dtt small{color:var(--muted);font-size:13px}
+.ha-daf .dch{width:16px;height:16px;stroke:var(--muted);fill:none;stroke-width:2;transition:transform .15s;flex:none}
+.ha-daf[open]>summary .dch{transform:rotate(90deg)}
+.ha-daf>summary+.ha-rg{border-top:1px solid #edf0f2}
 </style>
 </head>
 <body>
@@ -4170,8 +4179,8 @@ function homeAdm(todo){
     </details>`;}).join('');
   return `<div class="ha-barra"><span class="sc"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg></span><div><b>Quota 120 · Home dell’Admin</b><span>${GIORNI[o.getDay()].toLowerCase()} ${o.getDate()} ${MESI_L[o.getMonth()]} · qui vedi e gestisci tutto</span></div><button class="g" type="button" id="ha-guidami" onclick="gdRiprendi()">Guidami</button></div>
     ${ppCard()}
-    <div class="ha-daf"><h2>Da fare ${righe.length?`<i>${righe.length}</i>`:''}</h2>${righe.length?vis.join(''):'<div class="ha-rg"><span class="hl ok"></span><div class="t"><b>Niente da fare</b><small>tutto in regola</small></div></div>'}
-      ${righe.length>6?`<div class="ha-piu"><button class="btn sec mini" type="button" onclick="hadmToggle('_daf',${tutte?0:1});disegnaHome()">${tutte?'Mostra meno':'Mostra tutte ('+righe.length+')'}</button></div>`:''}</div>
+    <details class="ha-daf ${righe.length?'ko':'ok'}" id="ha-daf" ${HADM_APERTE.has('_dafo')?'open':''} ontoggle="window.hadmToggle&&hadmToggle('_dafo',this.open)"><summary><span class="dic"><svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg></span><span class="dtt"><b>Da fare</b><small>scadenze e cose da sistemare</small></span><span class="st ${righe.length?'ko':'ok'}">${righe.length?righe.length+' da fare':'tutto a posto'}</span><svg class="dch" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></summary>
+      ${righe.length?righe.join(''):'<div class="ha-rg"><span class="hl ok"></span><div class="t"><b>Niente da fare</b><small>tutto in regola</small></div></div>'}</details>
     <button type="button" class="ha-volo" id="h-guidavolo" onclick="guidaVolo()"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8 8l8 8M16 8l-8 8"/></svg></span><span class="t"><b>Guidami in un volo</b><small>Tutte le operazioni in ordine, dalle zone D-Flight alla chiusura</small></span><span class="btn mini">Inizia</span></button>
     <button type="button" class="ha-volo ha-zm" id="ha-zmappa" onclick="apriMappaZone()"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="10" r="3"/><path d="M12 21s-7-6.5-7-11a7 7 0 0114 0c0 4.5-7 11-7 11z"/></svg></span><span class="t"><b>Mappa delle zone</b><small>Dove e fino a che quota si vola, e a chi chiedere il permesso</small></span><span class="btn mini">Apri</span></button>
     ${sez}
