@@ -38,10 +38,16 @@ voluti = {x['file'] for x in elenco}
 # via i video vecchi (scene cambiate o lezione tolta)
 for f in os.listdir(OUT):
     b, ext = os.path.splitext(f)
-    if ext in ('.mp4', '.jpg', '.vtt') and b not in voluti: os.remove(os.path.join(OUT, f)); print('tolto', f)
+    if ext in ('.mp4', '.jpg', '.vtt', '.m4a') and b not in voluti: os.remove(os.path.join(OUT, f)); print('tolto', f)
 mancano = [x for x in elenco if not (os.path.exists(f"{OUT}/{x['file']}.mp4") and os.path.exists(f"{OUT}/{x['file']}.vtt"))]
-if '--conta' in sys.argv: print(len(mancano)); sys.exit(0)
-if not mancano: print('niente da fare'); sys.exit(0)
+senza_voce = lambda: [x for x in elenco if os.path.exists(f"{OUT}/{x['file']}.mp4") and not os.path.exists(f"{OUT}/{x['file']}.m4a")]
+if '--conta' in sys.argv: print(len(mancano) + len(senza_voce())); sys.exit(0)
+def solo_voce():
+    # la sola voce della lezione, per ascoltarla in auto: si copia l'audio del video, senza ricodificarlo
+    for x in senza_voce():
+        subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', f"{OUT}/{x['file']}.mp4", '-vn', '-c:a', 'copy', '-movflags', '+faststart', f"{OUT}/{x['file']}.m4a"], check=True)
+        print('voce', x['file'])
+if not mancano: solo_voce(); print('video: niente da fare'); sys.exit(0)
 from playwright.sync_api import sync_playwright
 with sync_playwright() as pw:
     br = pw.chromium.launch(); pg = br.new_page(viewport={'width': 1280, 'height': 720})
@@ -69,3 +75,4 @@ with sync_playwright() as pw:
         subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', f"{TMP}/{nome}-0.png", '-vf', 'scale=960:-1', '-q:v', '4', f"{OUT}/{nome}.jpg"], check=True)
         print('fatto', nome)
     br.close()
+solo_voce()
