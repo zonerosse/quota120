@@ -1,7 +1,7 @@
 // Quota 120 senza rete: il programma (pagina, mappe, PDF, lettore DJI) resta sul telefono.
 // I dati non passano di qui: /api/ va sempre in rete; i dati per lavorare senza rete li tiene la pagina.
-const C = 'q120-v2';
-const BASE = ['/', '/manifest.webmanifest', '/icon.svg', '/icon-180.png', '/icon-192.png',
+const C = 'q120-v3';
+const BASE = ['/', '/manifest.webmanifest', '/icon.svg', '/fonts/barlow.css', '/icon-180.png', '/icon-192.png',
   '/leaflet/leaflet.js', '/leaflet/leaflet.css', '/lib/jspdf.umd.min.js', '/lib/html2canvas.min.js', '/dji/dji_log_parser_js.mjs'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(C).then(c => Promise.all(BASE.map(u => c.add(u).catch(() => {})))).then(() => self.skipWaiting()));
@@ -26,10 +26,6 @@ self.addEventListener('fetch', e => {
       return m || f;
     })));
     return;
-  }
-  // caratteri di Google: salvati alla prima volta
-  if (/fonts\.(googleapis|gstatic)\.com$/.test(u.hostname)) {
-    e.respondWith(caches.open(C).then(c => c.match(r).then(m => m || fetch(r).then(x => { c.put(r, x.clone()); return x; }))));
   }
 });
 
