@@ -1232,7 +1232,17 @@ export default {
       if (p === "/privacy" || p === "/privacy.html" || p === "/condizioni" || p === "/condizioni.html") return Response.redirect("https://quota120.com/" + p.replace(/^\/|\.html$/g, "") + "/" + url.search, 301);
       if (LEG[p]) {
         const ra = await env.ASSETS.fetch(new Request(new URL(LEG[p], url), request));
-        const t = (await ra.text()).replace('<meta name="robots" content="noindex">', '<link rel="canonical" href="https://quota120.com' + p + '">');
+        const priv = p === "/privacy/", u = "https://quota120.com" + p;
+        const tit = priv ? "Informativa sulla privacy e cookie · Quota 120" : "Condizioni d'uso · Quota 120";
+        const des = priv ? "Quali dati raccolgono Quota 120 e il sito quota120.com, perché, dove finiscono, quali cookie tecnici usano e quali diritti hai secondo il GDPR."
+          : "Le condizioni d'uso di Quota 120, il gestionale per operatori di droni: cosa offre la prova gratuita, responsabilità e regole del servizio.";
+        const ld = { "@context": "https://schema.org", "@graph": [
+          { "@type": "WebPage", "@id": u + "#page", url: u, name: tit, description: des, inLanguage: "it-IT", isPartOf: { "@id": "https://quota120.com/#web" }, publisher: { "@id": "https://quota120.com/#org" }, dateModified: "2026-10-30" },
+          { "@type": "Organization", "@id": "https://quota120.com/#org", name: "Quota 120", url: "https://quota120.com/", logo: "https://quota120.com/img/logo-512.png", email: "assistenza@quota120.com" },
+          { "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "Quota 120", item: "https://quota120.com/" }, { "@type": "ListItem", position: 2, name: priv ? "Privacy" : "Condizioni d'uso", item: u }] }] };
+        const testa = '<link rel="canonical" href="' + u + '"><meta name="description" content="' + des + '"><meta property="og:type" content="website"><meta property="og:site_name" content="Quota 120"><meta property="og:locale" content="it_IT"><meta property="og:url" content="' + u + '"><meta property="og:title" content="' + tit.replace(/"/g, "&quot;") + '"><meta property="og:description" content="' + des + '"><meta property="og:image" content="https://quota120.com/img/og-home.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><script type="application/ld+json">' + JSON.stringify(ld) + '</script>';
+        const piede = '<p style="text-align:center;margin:24px 0;font-size:15px"><a href="/">Quota 120</a> · <a href="/corso-patentino-drone/">Corso patentino drone A1-A3</a> · <a href="/contatti/">Contatti</a> · <a href="' + (priv ? "/condizioni/" : "/privacy/") + '">' + (priv ? "Condizioni d'uso" : "Privacy") + '</a></p>';
+        const t = (await ra.text()).replace('<meta name="robots" content="noindex">', testa).replace("location.href='/?resta'", "location.href='/'").replace("</main>", piede + "</main>");
         return new Response(t, { status: ra.status, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-cache" } });
       }   // i caratteri sono gli stessi del programma
       if (p === "/sito" || p.startsWith("/sito/")) return Response.redirect("https://quota120.com" + (p.slice(5) || "/") + url.search, 301);
