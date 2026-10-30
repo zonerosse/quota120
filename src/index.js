@@ -240,6 +240,12 @@ function unisci(full, m, n) {
     const l = (d.LAVORI || []).find(y => y.id === x.id); if (!l || !(permDi(d, n).clienti || (me && l.pilota === me.id))) continue;
     const ms = pulisciMissione(x.missione); if (ms) { ms.da = n; l.missione = ms; }
   }
+  // confini dei campi: i piloti con il permesso «agricoltura» li possono mettere (anche camminando il bordo)
+  if (permDi(d, n).agri) for (const x of (m.CAMPI || []).slice(0, 500)) {
+    if (!x || !Array.isArray(x.geo)) continue; const c = (d.CAMPI || []).find(y => y.id === x.id); if (!c) continue;
+    const geo = x.geo.slice(0, 500).filter(p => Array.isArray(p) && isFinite(+p[0]) && isFinite(+p[1]) && Math.abs(+p[0]) <= 90 && Math.abs(+p[1]) <= 180).map(p => [+(+p[0]).toFixed(7), +(+p[1]).toFixed(7)]);
+    if (geo.length >= 3 && JSON.stringify(geo) !== JSON.stringify(c.geo || [])) { c.geo = geo; c.ha = Math.max(0, Math.min(100000, +x.ha || 0)); c.confini = true; delete c.poly; }
+  }
   // valutazioni del rischio: il pilota aggiunge o cambia solo le sue
   const rv = new Map((d.RISCHI || []).map(r => [r.id, r]));
   for (const r of (m.RISCHI || []).slice(0, 300)) {

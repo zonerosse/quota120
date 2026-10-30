@@ -1115,6 +1115,14 @@ body.scuro .nav{background:transparent;border-color:#1F3241}
 .in-letto{background:var(--ok-bg);border-radius:10px;padding:10px;margin-top:10px}
 .in-p{display:flex;align-items:center;gap:8px;padding:9px 0;border-top:1px solid var(--line)}.in-p b{flex:1}
 .in-v{padding:9px 0;border-top:1px solid var(--line)}.in-3{display:grid;grid-template-columns:1.2fr 1.2fr .7fr;gap:6px;margin-top:5px}
+.cf-mappa{height:300px;border-radius:10px;margin-top:8px}
+.cf-ris{display:flex;gap:8px;margin-top:8px}.cf-ris div{flex:1;background:var(--sup2,#f3f6f8);border-radius:9px;padding:7px;text-align:center}.cf-ris b{display:block;font-size:19px}.cf-ris span{font-size:12px;color:var(--muted)}
+.cf-modi{display:grid;gap:8px;margin-top:10px}
+.cf-m{display:flex;gap:10px;align-items:center;border:1.5px solid var(--line);border-radius:10px;padding:10px;background:var(--sup,#fff);text-align:left;font-family:inherit;cursor:pointer;color:var(--ink)}
+.cf-m .ic{width:34px;height:34px;border-radius:8px;background:var(--f-agri,#6b7a45);display:flex;align-items:center;justify-content:center;flex:none}
+.cf-m .ic svg{width:19px;height:19px;stroke:#fff;fill:none;stroke-width:1.9}.cf-m b{display:block;font-size:15.5px}.cf-m small{display:block;color:var(--muted);font-size:13px}
+.cf-m.on{border-color:var(--accent);background:var(--sup2,#eef3f7)}
+.cf-pt{background:#fff;border:3px solid #e8c15a;border-radius:50%}
 </style>
 </head>
 <body>
@@ -1963,8 +1971,16 @@ body.scuro .nav{background:transparent;border-color:#1F3241}
     <div class="grid2" style="margin-top:12px">
       <div class="card">
         <h2>Confini</h2>
-        <svg class="track" viewBox="0 0 300 150" preserveAspectRatio="none" id="ca-map"></svg>
-        <div style="font-size:12px;color:var(--muted);margin-top:6px">Nella versione vera qui c'è la mappa con i confini del campo.</div>
+        <div class="nota" id="cf-stato"></div>
+        <div id="ca-mappa" class="mappa cf-mappa"></div>
+        <div class="cf-ris"><div><b id="cf-ha">–</b><span>ettari</span></div><div><b id="cf-per">–</b><span>perimetro</span></div><div><b id="cf-np">0</b><span>punti</span></div></div>
+        <div class="cf-modi" id="cf-modi">
+          <button type="button" class="cf-m" data-m="dis" onclick="cfModo('dis')"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 18l5-12 6 9 5-7"/><circle cx="4" cy="18" r="1.5"/><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="15" r="1.5"/><circle cx="20" cy="8" r="1.5"/></svg></span><span><b>Disegna sulla mappa</b><small>tocchi gli angoli del campo sulla foto aerea</small></span></button>
+          <button type="button" class="cf-m" data-m="cam" onclick="cfModo('cam')"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><path d="M12 7v6l-3 7M12 13l3 7M8 10h8"/></svg></span><span><b>Cammina il bordo</b><small>fai il giro del campo con il telefono: segna il GPS</small></span></button>
+          <button type="button" class="cf-m" data-m="imp" onclick="cfModo('imp')"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v3h16v-3"/></svg></span><span><b>Importa un file</b><small>KML o KMZ (Google Earth, DJI Agras, SmartFarm), GeoJSON</small></span></button></div>
+        <div id="cf-lav" style="display:none"><div class="nota" id="cf-aiuto" style="margin-top:8px"></div><div class="row" id="cf-bar"></div>
+          <div class="row"><button class="btn" type="button" id="cf-salva" disabled onclick="cfSalva(this)"><span class="spin"></span>Salva i confini</button><button class="btn sec" type="button" onclick="cfAnnulla()">Annulla</button></div></div>
+        <div class="row" id="cf-dopo"></div>
       </div>
       <div class="card">
         <h2>Dati del campo</h2>
@@ -3157,12 +3173,17 @@ function apriCampo(id){
   const c=CAMPI.find(x=>x.id===id);
   document.getElementById('ca-light').className='light '+(c.confini?'ok':'warn');
   document.getElementById('ca-t').textContent=c.nome+' · '+c.cliente;
-  document.getElementById('ca-s').textContent=c.confini?'Confini presenti: il volo si può programmare':'Mancano i confini: importali da DJI SmartFarm o da un file KML';
-  document.getElementById('ca-map').innerHTML=c.confini
-    ? `<polygon points="${c.poly}" fill="rgba(107,122,69,.25)" stroke="#6b7a45" stroke-width="2" vector-effect="non-scaling-stroke"/>`
-    : `<text x="150" y="80" text-anchor="middle" font-size="12" fill="#5f6b78">Confini non ancora importati</text>`;
+  const geoOk=!!(c.geo&&c.geo.length>=3);
+  document.getElementById('ca-light').className='light '+(geoOk?'ok':'warn');
+  document.getElementById('ca-s').textContent=geoOk?'Confini presenti ('+fmtHa(c.ha)+' ha): il volo si può programmare':'Mancano i confini: senza, il volo non si può programmare';
+  document.getElementById('cf-stato').innerHTML=geoOk?'':(c.poly?'Ci sono solo i confini di esempio: rimettili in uno di questi tre modi.':'Mettili in uno di questi tre modi:');
+  if(!CF||CF.id!==c.id){ if(CF) cfStopGps(); CF=Object.assign(CF||{},{id:c.id,modo:'',pts:[]}); }
+  document.getElementById('cf-lav').style.display='none'; document.querySelectorAll('#cf-modi .cf-m').forEach(b=>b.classList.remove('on'));
+  document.getElementById('cf-modi').style.display=geoOk?'none':'';
+  document.getElementById('cf-dopo').innerHTML=geoOk?`<button class="btn sec" type="button" onclick="cfMissione(${c.id})">Pianifica il volo su questo campo</button><button class="btn sec" type="button" onclick="document.getElementById('cf-modi').style.display='';this.parentNode.innerHTML=''">Cambia i confini</button>`:'';
+  setTimeout(()=>cfMappa(c),50);
   const chk='<svg viewBox="0 0 24 24">'+IC.check+'</svg>';
-  document.getElementById('ca-dati').innerHTML=[['Azienda',c.cliente],['Comune',c.comune],['Coltura',c.coltura],['Superficie',fmtHa(c.ha)+' ettari']]
+  document.getElementById('ca-dati').innerHTML=[['Azienda',c.cliente],['Comune',c.comune],['Coltura',c.coltura],['Superficie',fmtHa(c.ha)+' ettari'+(c.geo&&c.geo.length>=3?' (dai confini)':'')]]
     .map(x=>`<div class="fld"><div class="k">${chk}${x[0]}</div><div class="v">${x[1]}</div></div>`).join('');
   const tt=TRATT.filter(t=>t.campo===id);
   document.getElementById('ca-tr').innerHTML=tt.length?tt.map(rigaTratt).join(''):'<li style="cursor:default"><div class="b">Nessun trattamento registrato su questo campo.</div></li>';
@@ -4313,10 +4334,10 @@ const MS_CAM=[
   [/./,{sw:13.2,sh:8.8,f:8.8,iw:5472,ih:3648,min:20}]];
 const msCam=d=>MS_CAM.find(([r])=>r.test((d&&d.nome)||''))[1];
 let MS=null;   // {lav, tipo, pts, home, quota, fo, fs, vel, giro, fine, gimbal, drone, zone, mHome}
-function apriMissione(id){
+function apriMissione(id,ptsCampo){
   const l=LAVORI.find(x=>x.id===id); if(!l) return;
   const s=l.missione||{};
-  MS={lav:id,tipo:s.tipo||'area',pts:(s.pts||[]).slice(),home:s.home||null,quota:s.quota||80,fo:s.fo||80,fs:s.fs||70,vel:s.vel||0,giro:!!s.giro,fine:s.fine||'goHome',gimbal:s.gimbal==null?-90:s.gimbal,
+  MS={lav:id,tipo:ptsCampo?'area':(s.tipo||'area'),pts:(ptsCampo||s.pts||[]).slice(),home:s.home||null,quota:s.quota||80,fo:s.fo||80,fs:s.fs||70,vel:s.vel||0,giro:!!s.giro,fine:s.fine||'goHome',gimbal:s.gimbal==null?-90:s.gimbal,
     drone:s.drone||l.drone||(DRONI[0]||{}).id,zone:[],zc:null,metti:false};
   document.getElementById('ms-sub').textContent=[String(l.titolo||''),l.luogo,l.codice?'codice '+l.codice:''].filter(Boolean).join(' · ');
   document.getElementById('ms-drone').innerHTML=DRONI.map(d=>`<option value="${d.id}" ${d.id===MS.drone?'selected':''}>${ESC(d.nome)}</option>`).join('');
@@ -4661,6 +4682,61 @@ function nuovoLavoro(){
       LAVORI.push({id,codice:nuovoCodiceLavoro(),cliente:v.cliente,titolo:v.titolo,tipo:v.tipo,luogo:v.luogo,data:v.data,drone:+v.drone,pilota:+v.pilota,stato:'dafare',consegna:false,pagato:false,importo:0});
       controllaModifiche(); apriLavoro(id); },'Crea il lavoro');
 }
+
+/* ---------- confini del campo: disegnati sulla mappa, camminando il bordo con il GPS, o da un file KML/KMZ/GeoJSON ---------- */
+let CF=null;   // {id, modo, pts, m, lay, watch}
+const FOTO_AEREA='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+function cfGeom(P){ if(!P||P.length<3) return {ha:0,per:0}; const o=P[0], k=111320, kc=k*Math.cos(o[0]*Math.PI/180), Q=P.map(p=>[(p[1]-o[1])*kc,(p[0]-o[0])*k]);
+  let a=0,per=0; for(let i=0;i<Q.length;i++){ const [x1,y1]=Q[i],[x2,y2]=Q[(i+1)%Q.length]; a+=x1*y2-x2*y1; per+=Math.hypot(x2-x1,y2-y1); } return {ha:Math.abs(a)/2/1e4,per}; }
+function cfMappa(c){ return caricaLeaflet().then(()=>{
+  if(!CF.m){ const foto=L.tileLayer(FOTO_AEREA,{maxZoom:19,attribution:'Foto aeree © Esri'}), strade=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});
+    CF.m=L.map('ca-mappa',{scrollWheelZoom:false}); MAPPE['ca-mappa']=CF.m; foto.addTo(CF.m); L.control.layers({'Foto aerea':foto,'Mappa':strade},null,{position:'topright'}).addTo(CF.m);
+    CF.lay=L.layerGroup().addTo(CF.m); CF.m.on('click',e=>{ if(CF.modo!=='dis') return; CF.pts.push([e.latlng.lat,e.latlng.lng]); cfDisegna(); }); }
+  setTimeout(()=>CF.m.invalidateSize(),60);
+  const G=CF.pts.length?CF.pts:(c.geo||[]);
+  if(G.length>=2) CF.m.fitBounds(L.latLngBounds(G).pad(.25)); else { CF.m.setView([44.75,11.85],14); zmGeo(String(c.comune||'').replace(/\s*\(.*\)/,'')).then(x=>{ if(x&&CF&&!CF.pts.length&&!(c.geo||[]).length) CF.m.setView([x.latitude,x.longitude],15); }); }
+  cfDisegna(); }); }
+function cfDisegna(){ if(!CF||!CF.lay) return; const c=CAMPI.find(x=>x.id===CF.id); CF.lay.clearLayers();
+  const P=CF.modo?CF.pts:(c&&c.geo)||[];
+  if(P.length>=2) L.polygon(P,{color:'#e8c15a',weight:3,fillColor:'#6b7a45',fillOpacity:.25,interactive:false}).addTo(CF.lay);
+  if(CF.modo==='dis') P.forEach((p,i)=>{ const mk=L.marker(p,{draggable:true,icon:L.divIcon({className:'cf-pt',iconSize:[16,16]})}).addTo(CF.lay); mk.on('dragend',e=>{ const q=e.target.getLatLng(); CF.pts[i]=[q.lat,q.lng]; cfDisegna(); }); });
+  if(CF.modo==='cam'&&P.length) L.circleMarker(P[P.length-1],{radius:7,color:'#fff',weight:3,fillColor:'#1D5C7C',fillOpacity:1}).addTo(CF.lay);
+  const g=cfGeom(P); document.getElementById('cf-ha').textContent=g.ha?g.ha.toFixed(2).replace('.',','):'–'; document.getElementById('cf-per').textContent=g.per?Math.round(g.per)+' m':'–'; document.getElementById('cf-np').textContent=P.length;
+  const sv=document.getElementById('cf-salva'); if(sv) sv.disabled=!CF.modo||P.length<3; }
+function cfModo(m){ const c=CAMPI.find(x=>x.id===CF.id); cfStopGps(); CF.modo=m; CF.pts=[];
+  document.querySelectorAll('#cf-modi .cf-m').forEach(b=>b.classList.toggle('on',b.dataset.m===m)); document.getElementById('cf-lav').style.display=m?'':'none';
+  const a=document.getElementById('cf-aiuto'), b=document.getElementById('cf-bar');
+  if(m==='dis'){ a.innerHTML='Tocca la mappa sugli <b>angoli del campo</b>, uno dopo l’altro. Trascina un angolo per spostarlo. Con «Foto aerea» (in alto a destra) si vedono i bordi dei campi.'; b.innerHTML='<button class="btn sec mini" type="button" onclick="CF.pts.pop();cfDisegna()">Annulla punto</button><button class="btn sec mini" type="button" onclick="CF.pts=[];cfDisegna()">Ricomincia</button>'; }
+  if(m==='cam'){ a.innerHTML='Mettiti in un angolo del campo e tocca <b>«Parto»</b>. Fai il giro tenendo il telefono in mano; alla fine tocca <b>«Fine giro»</b>. Più vai piano, più il bordo è preciso.'; b.innerHTML='<button class="btn mini" type="button" id="cf-parto" onclick="cfParto()">Parto</button><button class="btn sec mini" type="button" id="cf-fine" disabled onclick="cfStopGps();toast(\'Giro chiuso\')">Fine giro</button><span class="nota" id="cf-gps"></span>'; }
+  if(m==='imp'){ a.innerHTML='Scegli il file con i confini: <b>KML o KMZ</b> (da Google Earth, dall’app DJI Agras o da DJI SmartFarm) oppure <b>GeoJSON</b>.'; b.innerHTML='<button class="btn mini" type="button" onclick="cfFile()">Scegli il file</button>'; }
+  cfMappa(c); }
+function cfParto(){ if(!navigator.geolocation){ toast('Questo telefono non dà la posizione'); return; } document.getElementById('cf-parto').disabled=true; document.getElementById('cf-fine').disabled=false;
+  CF.watch=navigator.geolocation.watchPosition(p=>{ const q=[p.coords.latitude,p.coords.longitude], u=CF.pts[CF.pts.length-1], g=document.getElementById('cf-gps');
+    if(g) g.textContent='precisione '+Math.round(p.coords.accuracy)+' m'; if(p.coords.accuracy>25) return;
+    if(!u||kmDa(u,q)*1000>=3){ CF.pts.push(q); if(CF.pts.length===1) CF.m.setView(q,18); cfDisegna(); } },
+    ()=>{ toast('Posizione non disponibile: permetti la posizione nelle impostazioni del browser'); cfStopGps(); },{enableHighAccuracy:true,maximumAge:0,timeout:20000}); }
+function cfStopGps(){ if(CF&&CF.watch!=null){ navigator.geolocation.clearWatch(CF.watch); CF.watch=null; } const f=document.getElementById('cf-fine'); if(f) f.disabled=true; const p=document.getElementById('cf-parto'); if(p) p.disabled=false; }
+function cfFile(){ const i=document.createElement('input'); i.type='file'; i.accept='.kml,.kmz,.geojson,.json'; i.onchange=()=>cfLeggi(i.files[0]); i.click(); }
+// KMZ = zip: si cerca il primo .kml e si scompatta con il browser (DecompressionStream)
+function cfKmz(buf){ const u=new Uint8Array(buf), dv=new DataView(buf); let o=0;
+  while(o+30<u.length&&dv.getUint32(o,true)===0x04034b50){ const met=dv.getUint16(o+8,true), cs=dv.getUint32(o+18,true), nl=dv.getUint16(o+26,true), xl=dv.getUint16(o+28,true), nome=new TextDecoder().decode(u.slice(o+30,o+30+nl)), d0=o+30+nl+xl, dati=u.slice(d0,d0+cs);
+    if(/\.kml$/i.test(nome)){ if(met===0) return Promise.resolve(new TextDecoder().decode(dati)); if(met===8&&window.DecompressionStream) return new Response(new Blob([dati]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text(); return Promise.reject(); }
+    o=d0+cs; } return Promise.reject(); }
+function cfLeggi(f){ if(!f) return; const kmz=/\.kmz$/i.test(f.name);
+  (kmz?f.arrayBuffer().then(cfKmz):f.text()).then(x=>{ let pts=[];
+    if(/\.(geo)?json$/i.test(f.name)){ const g=JSON.parse(x), geo=g.features?g.features[0].geometry:(g.geometry||g); let c=geo.coordinates; if(geo.type==='MultiPolygon') c=c[0]; pts=(Array.isArray(c[0][0])?c[0]:c).map(p=>[p[1],p[0]]); }
+    else { const m=/<coordinates>([\s\S]*?)<\/coordinates>/i.exec(x); if(m) pts=m[1].trim().split(/\s+/).map(s=>s.split(',').map(Number)).filter(p=>p.length>=2&&!isNaN(p[0])&&!isNaN(p[1])).map(p=>[p[1],p[0]]); }
+    if(pts.length>2&&pts[0][0]===pts[pts.length-1][0]&&pts[0][1]===pts[pts.length-1][1]) pts.pop();
+    if(pts.length<3){ toast('Nel file non trovo il confine di un campo'); return; }
+    CF.pts=pts.map(p=>[+p[0].toFixed(7),+p[1].toFixed(7)]); cfDisegna(); CF.m.fitBounds(L.latLngBounds(CF.pts).pad(.2)); toast('Confini letti dal file'); })
+  .catch(()=>toast('Non riesco a leggere il file: prova a esportarlo come KML')); }
+function cfSalva(b){ const c=CAMPI.find(x=>x.id===CF.id), g=cfGeom(CF.pts); if(!c||CF.pts.length<3) return;
+  lavora(b,()=>{ cfStopGps(); c.geo=CF.pts.slice(0,500).map(p=>[+p[0].toFixed(7),+p[1].toFixed(7)]); c.ha=Math.round(g.ha*100)/100; c.confini=true; delete c.poly; CF.modo=''; CF.pts=[];
+    controllaModifiche(); apriCampo(c.id); toast('Confini salvati: '+fmtHa(c.ha)+' ettari'); }); }
+function cfAnnulla(){ cfStopGps(); CF.modo=''; CF.pts=[]; document.querySelectorAll('#cf-modi .cf-m').forEach(b=>b.classList.remove('on')); document.getElementById('cf-lav').style.display='none'; cfDisegna(); }
+function cfMissione(id){ const c=CAMPI.find(x=>x.id===id); const l=LAVORI.filter(x=>x.cliente===c.cliente&&x.stato!=='concluso').sort((a,b)=>(dt(a.data)||9e15)-(dt(b.data)||9e15))[0];
+  if(!l){ toast('Per pianificare il volo serve un lavoro per '+c.cliente+': crealo in Clienti e lavori'); return; }
+  apriMissione(l.id,(l.missione&&l.missione.pts&&l.missione.pts.length)?null:c.geo); }
 
 function homeB(todo){
   const o=new Date(), p=ioPilota();
