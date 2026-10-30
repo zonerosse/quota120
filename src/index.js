@@ -420,7 +420,7 @@ const EMAIL = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e || "").trim());
 const b64 = buf => { let s = ""; const u = new Uint8Array(buf); for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); };
 
 /* ---------- spazi degli operatori: ognuno il suo contenitore di dati ("op:<nome>"), più il registro delle iscrizioni ---------- */
-const RISERVATI = new Set(["api", "interno", "prova", "privacy", "condizioni", "condividi", "leaflet", "lib", "dji", "index", "admin", "www", "app", "quota120", "registro", "iscriviti", "entra", "assistenza"]);
+const RISERVATI = new Set(["api", "corso", "interno", "prova", "privacy", "condizioni", "condividi", "leaflet", "lib", "dji", "index", "admin", "www", "app", "quota120", "registro", "iscriviti", "entra", "assistenza"]);
 const SLUG_OK = s => /^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/.test(s || "") && !RISERVATI.has(s);
 const cod6 = () => String(100000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 900000));
 const GIORNI_ADMIN = 15;   // l'Admin entrato con l'email resta dentro; se non usa quel telefono per 15 giorni, rifà il codice
@@ -955,6 +955,33 @@ Stato.prototype.registro = async function (request, url, p) {
   const troppi = async (k, max, ms) => { const r = (await st.get(k)) || { n: 0, t: now }; if (now - r.t > ms) { r.n = 0; r.t = now; } r.n++; await st.put(k, r); return r.n > max; };
   const mail = b => String(b.email || "").trim().toLowerCase();
   const spazio = op => env.STATO.get(env.STATO.idFromName("op:" + op));
+  // corso A1-A3: registrazione con email e codice (cc:<email> in attesa · ce:<email> iscritto · ct:<chiave> → email)
+  if (p === "/api/registro/corso-ok") { const t = String(url.searchParams.get("t") || ""); return J({ ok: /^[a-f0-9]{40}$/.test(t) && !!(await st.get("ct:" + t)) }); }
+  if (p === "/api/registro/corso-codice" && POST) {
+    const b = await corpo(), email = mail(b);
+    if (!EMAIL(email)) return J({ errore: "L'email non sembra giusta: controllala." }, 400);
+    if (!b.ok) return J({ errore: "Per continuare spunta che hai letto le avvertenze e la privacy." }, 400);
+    if (await troppi("lim:cc:" + ip, 10, 3600000) || await troppi("lim:cce:" + email, 6, 86400000)) return J({ errore: "Troppi codici chiesti: riprova più tardi." }, 429);
+    const prima = await st.get("cc:" + email);
+    if (prima && now - prima.inviato < 60000) return J({ errore: "Ti ho appena mandato un codice: aspetta un minuto prima di chiederne un altro." }, 429);
+    const codice = cod6();
+    await st.put("cc:" + email, { codice, scad: now + 15 * 60000, tent: 0, inviato: now, novita: !!b.novita });
+    const html = `<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;color:#0F1C26;font-size:15px;line-height:1.5"><div style="border-bottom:2px solid #132A3A;padding-bottom:10px;margin-bottom:14px;font-size:20px;font-weight:bold;color:#132A3A">Quota 120 · Corso A1-A3</div>Ciao, ecco il codice per entrare nel corso per il patentino drone:<div style="font-size:32px;font-weight:bold;letter-spacing:.25em;text-align:center;margin:18px 0">${codice.slice(0, 3)} ${codice.slice(3)}</div>Vale 15 minuti. Se non sei stato tu, ignora questa email.<p style="font-size:12.5px;color:#5E6D77;margin-top:18px;border-top:1px solid #E3E8EB;padding-top:10px">Il corso non è il corso ufficiale ENAC e non lo sostituisce. Quota 120 non è collegato a ENAC, D-Flight o EASA.</p></div>`;
+    try { await mandaMail(env, email, "Il tuo codice per il corso A1-A3: " + codice, html); }
+    catch (e) { await st.delete("cc:" + email); return J({ errore: "Non sono riuscito a mandare l'email: riprova tra poco." }, 502); }
+    return J({ ok: true });
+  }
+  if (p === "/api/registro/corso-verifica" && POST) {
+    const b = await corpo(), email = mail(b), c = String(b.codice || "").replace(/\D/g, ""), a = await st.get("cc:" + email);
+    if (!a || now > a.scad) return J({ errore: "Il codice è scaduto: chiedine un altro." }, 400);
+    if (a.codice !== c) { a.tent++; if (a.tent >= 5) await st.delete("cc:" + email); else await st.put("cc:" + email, a); return J({ errore: "Il codice non è giusto: controllalo nella mail." }, 400); }
+    await st.delete("cc:" + email);
+    const t = [...crypto.getRandomValues(new Uint8Array(20))].map(x => x.toString(16).padStart(2, "0")).join("");
+    const prec = (await st.get("ce:" + email)) || { dal: now };
+    await st.put("ce:" + email, Object.assign(prec, { ultimo: now, novita: a.novita || !!prec.novita }));
+    await st.put("ct:" + t, { email, dal: now });
+    return J({ ok: true, t });
+  }
   const manda = async (email, dati) => {
     const prima = await st.get("att:" + email);
     if (prima && now - prima.inviato < 60000) return J({ errore: "Ti ho appena mandato un codice: aspetta un minuto prima di chiederne un altro" }, 429);
@@ -1037,6 +1064,21 @@ export default {
     // quota120.com è il sito; il programma sta su app.quota120.com (e su quota120.staffordshire.workers.dev)
     const host = url.hostname;
     if (host === "www.quota120.com") return Response.redirect("https://quota120.com" + p + url.search, 301);
+    const reg = () => env.STATO.get(env.STATO.idFromName("registro"));
+    // corso A1-A3: si apre solo con la registrazione (cookie q120c), solo su quota120.com
+    if (p === "/corso" || p.startsWith("/corso/")) {
+      if (host !== "quota120.com") return Response.redirect("https://quota120.com" + p, 302);
+      const t = ((request.headers.get("cookie") || "").match(/(?:^|;\s*)q120c=([a-f0-9]{40})/) || [])[1];
+      const ok = t && await reg().fetch(new Request("https://quota120.interno/api/registro/corso-ok?t=" + t)).then(r => r.json()).then(j => j.ok).catch(() => false);
+      if (!ok) return Response.redirect("https://quota120.com/corso-patentino-drone/", 302);
+      return env.ASSETS.fetch(request);
+    }
+    if (host === "quota120.com" && (p === "/api/corso/codice" || p === "/api/corso/verifica") && request.method === "POST") {
+      const r = await reg().fetch(new Request("https://quota120.interno/api/registro/corso-" + p.split("/").pop(), { method: "POST", headers: { "content-type": "application/json", "cf-connecting-ip": request.headers.get("cf-connecting-ip") || "" }, body: await request.text() }));
+      const j = await r.json().catch(() => ({}));
+      if (!j.t) return J(j, r.status);
+      return new Response(JSON.stringify({ ok: true }), { headers: { "content-type": "application/json", "cache-control": "no-store", "set-cookie": "q120c=" + j.t + "; Path=/; Max-Age=31536000; Secure; HttpOnly; SameSite=Lax" } });
+    }
     if (host === "quota120.com" || url.searchParams.get("sito") === "1" && env.POSTA_FINTA === "1") {
       if (p === "/robots.txt") return new Response("User-agent: *\nDisallow: /\n", { headers: { "content-type": "text/plain; charset=utf-8" } });
       if (p.startsWith("/api/")) return new Response("Non trovato", { status: 404 });
