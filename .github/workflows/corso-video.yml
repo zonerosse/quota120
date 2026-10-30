@@ -1,0 +1,31 @@
+name: Video del corso A1-A3
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["corso/corso_lezioni.py", "corso/genera.py"]
+permissions:
+  contents: write
+jobs:
+  video:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Programmi (voce Piper, Chromium, ffmpeg)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg fonts-dejavu >/dev/null
+          pip install -q "piper-tts==1.2.0" playwright
+          python -m playwright install --with-deps chromium >/dev/null
+          mkdir -p /tmp/voce && cd /tmp/voce
+          curl -sSL -o it_IT-paola-medium.onnx https://huggingface.co/rhasspy/piper-voices/resolve/main/it/it_IT/paola/medium/it_IT-paola-medium.onnx
+          curl -sSL -o it_IT-paola-medium.onnx.json https://huggingface.co/rhasspy/piper-voices/resolve/main/it/it_IT/paola/medium/it_IT-paola-medium.onnx.json
+      - name: Fa i video
+        run: python corso/genera.py
+      - name: Salva i video nel repository
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A public/corso/video
+          git diff --cached --quiet || (git commit -m "Corso A1-A3: video rifatti" && git pull --rebase -q && git push)

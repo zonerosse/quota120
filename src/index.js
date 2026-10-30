@@ -1059,7 +1059,7 @@ export default {
     }
     // /prova e /<spazio> aprono il programma; / è l'ingresso
     const seg = p.replace(/^\/+|\/+$/g, "");
-    if (seg && !seg.includes("/") && !seg.includes(".") && (seg === "prova" || SLUG_OK(seg.toLowerCase()))) return env.ASSETS.fetch(new Request(new URL("/", url), request));
+    if (seg && seg !== "corso" && !seg.includes("/") && !seg.includes(".") && (seg === "prova" || SLUG_OK(seg.toLowerCase()))) return env.ASSETS.fetch(new Request(new URL("/", url), request));
     return env.ASSETS.fetch(request);
   }
 };
