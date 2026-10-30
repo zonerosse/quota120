@@ -22,7 +22,7 @@
 <main><div class="kh"><section class="adm"><div class="w">
 <div id="in" class="box login"><h2>Admin del sito</h2><p>Entri con la tua email: ti mando un codice. È riservato al titolare del sito.</p>
 <form id="f1"><label for="em">Email</label><input id="em" type="email" required autocomplete="email"><button class="kbtn kbp" type="submit">Mandami il codice</button></form>
-<form id="f2" hidden><label for="cod">Codice</label><input id="cod" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code"><button class="kbtn kbp" type="submit">Entra</button></form>
+<form id="f2" hidden><label for="cod">Codice</label><input id="cod" type="text" inputmode="numeric" maxlength="12" autocomplete="one-time-code"><button class="kbtn kbp" type="submit">Entra</button></form>
 <p class="err" id="err" hidden></p></div>
 <div id="dash" hidden><h2 style="font:800 34px/1.1 var(--disp);margin:0;color:var(--ink)">Admin del sito</h2>
 <div class="tiles"><div><b id="n">0</b><span>iscritti al corso</span></div><div><b id="n30">0</b><span>negli ultimi 30 giorni</span></div><div><b id="nn">0</b><span>vogliono le novità</span></div>
@@ -46,4 +46,6 @@ $('#f1').addEventListener('submit',e=>{e.preventDefault();err('');lavora($('#f1 
 $('#f2').addEventListener('submit',e=>{e.preventDefault();err('');lavora($('#f2 button'),'Controllo…',()=>post('/api/admin/verifica',{email:$('#em').value,codice:$('#cod').value}).then(carica).catch(x=>err(x.message)))});
 $('#esci').addEventListener('click',e=>{e.preventDefault();if(SITO)fetch('/api/admin/esci',{method:'POST'}).then(()=>location.reload());else location.reload()});
 if(SITO)carica();
+
+document.getElementById('cod').addEventListener('input',e=>{const v=e.target.value.replace(/\D/g,'').slice(0,6);if(v!==e.target.value)e.target.value=v});
 </script></body></html>

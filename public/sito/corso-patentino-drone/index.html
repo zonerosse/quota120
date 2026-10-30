@@ -43,7 +43,7 @@ header .kbtn.kbp{color:#132A3A!important;background:linear-gradient(135deg,#E8C1
 <div class="sp"><input type="checkbox" id="ok1" required><label for="ok1" style="margin:0;font-weight:500">Ho letto le avvertenze qui accanto e la <a href="https://app.quota120.com/privacy.html" target="_blank">privacy</a>. L’email serve solo per farti entrare.</label></div>
 <div class="sp"><input type="checkbox" id="ok2"><label for="ok2" style="margin:0;font-weight:500">Voglio ricevere ogni tanto le novità di Quota 120 (facoltativo).</label></div>
 <button class="kbtn kbp" type="submit">Mandami il codice</button></form>
-<form id="f2" hidden><label for="cod">Il codice che ti abbiamo mandato</label><input id="cod" type="text" inputmode="numeric" maxlength="6" placeholder="6 cifre" autocomplete="one-time-code"><p id="err" style="color:#AE2F28;margin:8px 0 0" hidden>Il codice non è giusto: controllalo nella mail.</p>
+<form id="f2" hidden><label for="cod">Il codice che ti abbiamo mandato</label><input id="cod" type="text" inputmode="numeric" maxlength="12" placeholder="6 cifre" autocomplete="one-time-code"><p id="err" style="color:#AE2F28;margin:8px 0 0" hidden>Il codice non è giusto: controllalo nella mail.</p>
 <button class="kbtn kbp" type="submit">Entra nel corso</button><p style="margin-top:10px;font-size:14px">Non arriva? Guarda nella posta indesiderata.</p></form>
 <div id="f3" hidden><div class="ok">Fatto: sei dentro. Da questo telefono o computer entri direttamente, senza codice.</div><a class="kbtn kbp" href="/corso/" style="margin-top:14px">Apri il corso</a></div>
 </div></div></div></section>
@@ -56,4 +56,6 @@ async function post(u,d){const r=await fetch(u,{method:'POST',headers:{'content-
 function err(f,m){let e=f.querySelector('.e');if(!e){e=document.createElement('p');e.className='e';e.style.cssText='color:#AE2F28;margin:10px 0 0';f.appendChild(e)}e.textContent=m;e.hidden=!m}
 $('#f1').addEventListener('submit',e=>{e.preventDefault();const f=$('#f1');err(f,'');lavora(f.querySelector('button'),'Mando il codice…',()=>post('/api/corso/codice',{email:$('#em').value,ok:$('#ok1').checked,novita:$('#ok2').checked}).then(()=>{f.hidden=true;$('#f2').hidden=false;$('#cod').focus()}).catch(x=>err(f,x.message)))});
 $('#f2').addEventListener('submit',e=>{e.preventDefault();const f=$('#f2');$('#err').hidden=true;lavora(f.querySelector('button'),'Controllo…',()=>post('/api/corso/verifica',{email:$('#em').value,codice:$('#cod').value}).then(()=>{f.hidden=true;$('#f3').hidden=false}).catch(x=>{$('#err').textContent=x.message;$('#err').hidden=false}))});
+
+document.getElementById('cod').addEventListener('input',e=>{const v=e.target.value.replace(/\D/g,'').slice(0,6);if(v!==e.target.value)e.target.value=v});
 </script></body></html>
