@@ -1212,7 +1212,12 @@ export default {
     if (host === "quota120.com" || url.searchParams.get("sito") === "1" && env.POSTA_FINTA === "1") {
       if (p === "/robots.txt") return new Response("User-agent: *\nDisallow: /\n", { headers: { "content-type": "text/plain; charset=utf-8" } });
       if (p.startsWith("/api/")) return new Response("Non trovato", { status: 404 });
-      return env.ASSETS.fetch(new Request(new URL("/sito" + (p === "/" ? "/" : p), url), request));
+      // /sito resta un dettaglio interno: se gli asset rimandano (es. /admin → /admin/), l'indirizzo torna senza /sito
+      if (p === "/sito" || p.startsWith("/sito/")) return Response.redirect("https://quota120.com" + (p.slice(5) || "/") + url.search, 301);
+      const ra = await env.ASSETS.fetch(new Request(new URL("/sito" + (p === "/" ? "/" : p), url), request));
+      const loc = ra.headers.get("location");
+      if (ra.status >= 300 && ra.status < 400 && loc) { const u = new URL(loc, url); if (u.pathname.startsWith("/sito/")) return new Response(null, { status: ra.status, headers: { location: u.pathname.slice(5) + u.search } }); }
+      return ra;
     }
     const main = () => env.STATO.get(env.STATO.idFromName("main"));
     // nessuno da fuori può dire di essere uno spazio: l'intestazione la mette solo questo smistatore
