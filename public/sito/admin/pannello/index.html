@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex">
+<title>Pannello Admin · Quota 120</title>
+<link rel="icon" href="/favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&family=Barlow+Semi+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{--pagina:#E8EDF0;--notte:#132A3A;--bordo:#D3DBE0;--ink:#0F1C26;--ink3:#5E6D77;--accent:#1D5C7C;--petrolio:#1E6B6F;--ambra:#E8C15A;--ok:#17793F;--ok-bg:#E4F2EA;--warn:#A5660A;--warn-bg:#FAF0DE;--ko:#AE2F28;--ko-bg:#F8E3E1;--f-a:#4a6a8a;--f-b:#5b7f6e;--f-c:#8a7a4e;--f-d:#56616d;--sup:#fff;--riga:#E6EBEE;--campo:#fff}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--pagina:#0F1D26;--notte:#0A1720;--bordo:#2A4352;--ink:#E6EEF2;--ink3:#A9BAC5;--accent:#7FB6D6;--petrolio:#2B8589;--ok:#5CC58A;--ok-bg:#163527;--warn:#E8B15A;--warn-bg:#3A2D14;--ko:#F08A84;--ko-bg:#3A1F1E;--sup:#162A36;--riga:#22394A;--campo:#10222D;color-scheme:dark}}
+:root[data-theme="dark"]{--pagina:#0F1D26;--notte:#0A1720;--bordo:#2A4352;--ink:#E6EEF2;--ink3:#A9BAC5;--accent:#7FB6D6;--petrolio:#2B8589;--ok:#5CC58A;--ok-bg:#163527;--warn:#E8B15A;--warn-bg:#3A2D14;--ko:#F08A84;--ko-bg:#3A1F1E;--sup:#162A36;--riga:#22394A;--campo:#10222D;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;background:var(--pagina);color:var(--ink);font:500 16px/1.45 Barlow,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+header{background:var(--notte);color:#fff;display:flex;align-items:center;gap:12px;padding:10px max(16px,env(safe-area-inset-left,0px))}
+header .lg{width:32px;height:32px;flex:none}
+header b{font:700 19px/1 "Barlow Semi Condensed",sans-serif}header small{display:block;color:#9FB2BF;font-size:12.5px;font-weight:500}
+header .dx{margin-left:auto;display:flex;gap:8px}header .dx a,header .dx button{all:unset;cursor:pointer;color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:6px 12px;font-size:14px;font-weight:600}
+.w{max-width:980px;margin:0 auto;padding:0 16px 40px}
+.nav{display:flex;align-items:center;gap:10px;padding:12px 0;flex-wrap:wrap}
+.back{all:unset;cursor:pointer;background:var(--sup);border:1px solid var(--bordo);border-radius:8px;padding:7px 12px;font-weight:600;font-size:14.5px}
+.crumb{font-size:14px;color:var(--ink3)}.crumb a{color:var(--accent);cursor:pointer;text-decoration:underline}.crumb b{color:var(--ink)}
+h2.t{font:700 26px/1.1 "Barlow Semi Condensed",sans-serif;margin:6px 0 12px}
+h3.sez{margin:16px 0 8px;font-size:14px;letter-spacing:.05em;color:var(--ink3)}
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.tile{all:unset;box-sizing:border-box;cursor:pointer;background:var(--sup);border:1px solid var(--bordo);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.tile:hover{border-color:var(--accent)}.tile .q{width:38px;height:38px;border-radius:9px;display:grid;place-items:center}.tile .q svg{width:21px;height:21px;stroke:#fff;fill:none;stroke-width:1.9}
+.tile b{font:700 19px/1.15 "Barlow Semi Condensed",sans-serif}.tile small{color:var(--ink3);font-size:14px}.tile small.w{color:var(--warn);font-weight:700}
+.card{background:var(--sup);border:1px solid var(--bordo);border-radius:12px;padding:14px 16px;margin-top:12px}
+.card h3{margin:0 0 8px;font-size:14px;letter-spacing:.05em;color:var(--ink3)}
+.num{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.num div{background:var(--sup);border:1px solid var(--bordo);border-radius:12px;padding:12px 14px}.num b{display:block;font:700 30px/1.1 "Barlow Semi Condensed",sans-serif;font-variant-numeric:tabular-nums}.num span{color:var(--ink3);font-size:14px}
+.tab{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:15px}th{text-align:left;font-size:13px;color:var(--ink3);padding:7px 8px;border-bottom:2px solid var(--bordo)}td{padding:9px 8px;border-bottom:1px solid var(--riga);vertical-align:top}
+td.e{color:var(--ink3);white-space:nowrap}
+.riga{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:12px;width:100%;padding:11px 4px;border-top:1px solid var(--riga)}.riga:first-child{border-top:0}
+.riga .n{width:30px;height:30px;border-radius:8px;background:var(--petrolio);color:#fff;font-weight:700;display:grid;place-items:center;flex:none}
+.riga .m{flex:1;min-width:0}.riga .m b{display:block}.riga .m small{color:var(--ink3)}.chev{color:var(--ink3)}
+.pill{font-size:12.5px;font-weight:700;border-radius:20px;padding:2px 9px;white-space:nowrap}.pill.ok{background:var(--ok-bg);color:var(--ok)}.pill.w{background:var(--warn-bg);color:var(--warn)}.pill.ko{background:var(--ko-bg);color:var(--ko)}
+.btn{all:unset;box-sizing:border-box;cursor:pointer;background:var(--petrolio);color:#fff;font-weight:700;border-radius:9px;padding:10px 15px;font-size:15px;display:inline-flex;align-items:center;gap:8px}.btn.sec{background:var(--sup);color:var(--petrolio);border:1.5px solid var(--petrolio)}.btn.ko{background:var(--sup);color:var(--ko);border:1.5px solid var(--ko)}
+.btn[disabled]{opacity:.6;pointer-events:none}
+.btn:focus-visible,.tile:focus-visible,.riga:focus-visible,.back:focus-visible{outline:3px solid var(--ambra);outline-offset:2px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center}
+.sc{border:1px solid var(--bordo);border-radius:12px;margin-top:10px;background:var(--sup);overflow:hidden}
+.sc>summary{list-style:none;cursor:pointer;display:flex;gap:12px;align-items:center;padding:10px 12px}.sc>summary::-webkit-details-marker{display:none}
+.sc .mini{width:128px;aspect-ratio:16/9;border-radius:6px;background:#0F2230;color:#fff;padding:8px;flex:none;display:flex;flex-direction:column;justify-content:center;gap:2px;overflow:hidden}
+.sc .mini i{font-style:normal;font-size:7px;letter-spacing:.1em;color:var(--ambra);font-weight:700}.sc .mini em{font-style:normal;font:700 13px/1 "Barlow Semi Condensed",sans-serif}.sc .mini u{text-decoration:none;font-size:7px;color:#C9D6DE}
+.sc .ed{padding:4px 14px 14px;display:grid;gap:8px}
+label{font-weight:700;font-size:13.5px}input[type=text],textarea,select{width:100%;border:1.5px solid var(--bordo);border-radius:8px;padding:9px 11px;font:inherit;font-size:15px;background:var(--campo);color:var(--ink)}textarea{min-height:80px;resize:vertical}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stato{display:flex;align-items:center;gap:10px;background:var(--warn-bg);color:var(--warn);font-weight:700;border-radius:10px;padding:10px 12px;margin-top:12px}
+.stato.ok{background:var(--ok-bg);color:var(--ok)}.stato.ko{background:var(--ko-bg);color:var(--ko)}
+.spin{width:16px;height:16px;border:2.5px solid rgba(165,102,10,.3);border-top-color:var(--warn);border-radius:50%;animation:g .8s linear infinite;flex:none}@keyframes g{to{transform:rotate(360deg)}}
+.vid{width:100%;aspect-ratio:16/9;border-radius:10px;background:#0F2230;color:#C9D6DE;display:grid;place-items:center;font-size:14px}
+video.vid{display:block}
+.fine{color:var(--ink3);font-size:14.5px;margin:0}
+.dom{border:1px solid var(--bordo);border-radius:10px;padding:12px;display:grid;gap:8px;margin-top:10px}
+[hidden]{display:none!important}
+a{color:var(--accent)}
+@media(max-width:640px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.g2{grid-template-columns:1fr}.sc .mini{width:96px}td.e{white-space:normal}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+</style></head><body>
+<header><svg class="lg" viewBox="0 0 120 120" aria-hidden="true"><rect width="120" height="120" rx="26" fill="#1E6B6F"/><rect x="18" y="24" width="84" height="7" rx="3.5" fill="#E8C15A"/><g transform="translate(60 72)" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round"><path d="M-22-14l44 28M22-14l-44 28"/><circle cx="-24" cy="-16" r="9"/><circle cx="24" cy="-16" r="9"/><circle cx="-24" cy="16" r="9"/><circle cx="24" cy="16" r="9"/></g></svg>
+<span><b>Quota 120</b><small>Pannello Admin del sito</small></span>
+<span class="dx"><a href="https://app.quota120.com/" target="_blank" rel="noopener">Programma</a><button id="esci" type="button">Esci</button></span></header>
+<div class="w">
+<div class="nav"><button class="back" id="back" type="button" hidden>← Indietro</button><span class="crumb" id="crumb"></span></div>
+<div id="v"><p class="fine">Carico…</p></div>
+</div>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const data=t=>t?new Date(t).toLocaleDateString('it-IT'):'–';
+function quando(t){if(!t)return 'mai';const g=Math.floor((new Date().setHours(0,0,0,0)-new Date(t).setHours(0,0,0,0))/864e5);return g<=0?'oggi':g===1?'ieri':g+' giorni fa'}
+const giorni=t=>t?(Date.now()-t)/864e5:1e9;
+const I={drone:'<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8 8l8 8M16 8l-8 8"/>',stato:'<path d="M3 12h4l3-7 4 14 3-7h4"/>',users:'<path d="M4 20c0-3 3-5 6-5s6 2 6 5"/><circle cx="10" cy="8" r="3.5"/><path d="M16 4.5a3 3 0 0 1 0 6M18 15c2 .6 3 2 3 4"/>',play:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3z"/>',plus:'<path d="M12 5v14M5 12h14"/>',web:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>'};
+const ic=(k,c)=>`<span class="q" style="background:var(${c})"><svg viewBox="0 0 24 24">${I[k]}</svg></span>`;
+
+let P=null,ISC=null,CORSI=null;
+async function api(u,x){const r=await fetch(u,x?{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(x)}:{cache:'no-store'});
+  if(r.status===401){location.replace('/admin/');throw new Error('Entra di nuovo')}
+  const j=await r.json().catch(()=>({}));if(!r.ok||j.errore)throw new Error(j.errore||'Qualcosa non è andato: riprova.');return j}
+async function caricaP(){P=await api('/api/admin/panoramica')}
+async function caricaI(){ISC=(await api('/api/admin/iscritti')).iscritti.sort((a,b)=>b.dal-a.dal)}
+async function caricaC(){CORSI=await api('/api/admin/corsi')}
+async function salvaC(){await api('/api/admin/corsi',CORSI)}
+
+/* navigazione: una pila di schermate, come nel programma */
+let PILA=[];
+function vai(f,c,a){PILA.push([f,c,a]);mostra()}
+function indietro(){PILA.pop();mostra()}
+function mostra(){const [f,,a]=PILA[PILA.length-1];$('#back').hidden=PILA.length<2;
+  $('#crumb').innerHTML=PILA.map((x,i)=>i<PILA.length-1?`<a data-pila="${i+1}">${esc(x[1])}</a>`:`<b>${esc(x[1])}</b>`).join(' › ');
+  const v=$('#v');Promise.resolve(f(a)).then(h=>{if(typeof h==='string')v.innerHTML=h;if($('#scene')){scene();qInfo()}scrollTo(0,0)}).catch(e=>{v.innerHTML=`<div class="stato ko">${esc(e.message)}</div>`})}
+$('#back').addEventListener('click',indietro);
+$('#crumb').addEventListener('click',e=>{const a=e.target.closest('[data-pila]');if(a){PILA.length=+a.dataset.pila;mostra()}});
+$('#esci').addEventListener('click',()=>fetch('/api/admin/esci',{method:'POST'}).finally(()=>location.replace('/admin/')));
+/* i bottoni chiamano funzioni per nome: niente codice dentro l'HTML */
+const AZ={};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-az]');if(!b)return;e.preventDefault();AZ[b.dataset.az](b.dataset.x,b)});
+
+/* ---------- Home ---------- */
+async function home(){await caricaP();const o=P.operatori,s=P.stato,nuovi=o.filter(x=>giorni(x.at)<7).length;
+  const tutto=s.posta&&s.dji&&s.claude;const lez=P.corsi.reduce((n,c)=>n+c.n,0);
+  return `<h2 class="t">Pannello Admin</h2>
+  <div class="card" style="margin:0 0 4px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="pill ${tutto?'ok':'w'}">${tutto?'Tutto funziona':'Da controllare'}</span><span class="fine">${tutto?'programma, email e chiave DJI a posto':'manca qualcosa: vedi Stato del programma'} · ${o.length} ${o.length===1?'operatore iscritto':'operatori iscritti'}${nuovi?' · '+nuovi+' nuovo questa settimana':''}</span></div>
+  <h3 class="sez">IL PROGRAMMA</h3><div class="tiles">
+  <button class="tile" data-az="operatori">${ic('drone','--f-a')}<b>Operatori iscritti</b><small${nuovi?' class="w"':''}>${o.length} ${o.length===1?'operatore':'operatori'}${nuovi?' · '+nuovi+' nuovo':''}</small></button>
+  <button class="tile" data-az="stato">${ic('stato','--f-b')}<b>Stato del programma</b><small>${tutto?'tutto funziona':'da controllare'}</small></button>
+  <a class="tile" href="https://app.quota120.com/" target="_blank" rel="noopener">${ic('web','--f-d')}<b>Apri il programma</b><small>app.quota120.com</small></a></div>
+  <h3 class="sez">IL SITO E I CORSI</h3><div class="tiles">
+  <button class="tile" data-az="iscritti">${ic('users','--f-b')}<b>Iscritti al corso</b><small>${P.iscritti.n||0} iscritti · ${P.iscritti.nn||0} vogliono le novità</small></button>
+  <button class="tile" data-az="corsi">${ic('play','--f-a')}<b>Videocorsi</b><small>${P.corsi.length} ${P.corsi.length===1?'corso':'corsi'} · ${lez} lezioni</small></button>
+  <button class="tile" data-az="nuovo">${ic('plus','--f-c')}<b>Nuovo videocorso</b><small>titolo, lezioni, video</small></button>
+  <a class="tile" href="/" target="_blank">${ic('web','--f-d')}<b>Vedi il sito</b><small>quota120.com</small></a></div>`}
+AZ.operatori=()=>vai(operatori,'Operatori');AZ.stato=()=>vai(statoP,'Stato del programma');AZ.iscritti=()=>vai(iscritti,'Iscritti');AZ.corsi=()=>vai(corsi,'Videocorsi');AZ.nuovo=()=>vai(nuovo,'Nuovo corso');
+
+/* ---------- Operatori ---------- */
+async function operatori(){await caricaP();const o=[...P.operatori].sort((a,b)=>(b.at||0)-(a.at||0));
+  const sp=(x,f)=>o.reduce((n,y)=>n+(y[x]||0),0);
+  return `<h2 class="t">Operatori iscritti</h2><div class="num"><div><b>${o.length}</b><span>operatori</span></div><div><b>${sp('piloti')}</b><span>piloti</span></div><div><b>${sp('droni')}</b><span>droni</span></div></div>
+  <div class="card">${o.length?o.map((x,i)=>`<button class="riga" data-az="operatore" data-x="${esc(x.op)}"><span class="n">${esc((x.nome||x.op)[0].toUpperCase())}</span><span class="m"><b>${esc(x.nome||x.op)}</b><small>${esc(x.email||'')} · iscritto il ${data(x.at)} · ${x.piloti} ${x.piloti===1?'pilota':'piloti'} · ${x.droni} ${x.droni===1?'drone':'droni'}</small></span>${pill(x)}<span class="chev">›</span></button>`).join(''):'<p class="fine">Ancora nessun operatore iscritto.</p>'}</div>
+  <p class="fine" style="margin-top:12px">Qui vedi chi usa il programma. I dati dei loro voli, clienti e documenti restano loro: da qui non si leggono.</p>`}
+function pill(x){if(x.sospeso)return '<span class="pill ko">sospeso</span>';if(giorni(x.at)<7)return '<span class="pill ok">nuovo</span>';const g=Math.floor(giorni(x.ultimo));return g>=10?`<span class="pill w">${x.ultimo?'fermo da '+g+' giorni':'mai usato'}</span>`:''}
+AZ.operatore=op=>{const x=P.operatori.find(y=>y.op===op);if(x)vai(operatore,x.nome||x.op,op)};
+function operatore(op){const x=P.operatori.find(y=>y.op===op);
+  return `<h2 class="t">${esc(x.nome||x.op)} ${pill(x)}</h2><div class="card tab"><table>
+  <tr><td class="e">Indirizzo</td><td><a href="https://app.quota120.com/${esc(x.op)}" target="_blank" rel="noopener"><b>app.quota120.com/${esc(x.op)}</b></a></td></tr>
+  <tr><td class="e">Admin</td><td>${esc(x.adm||'–')}</td></tr><tr><td class="e">Email dell'Admin</td><td>${esc(x.email||'–')}</td></tr>
+  <tr><td class="e">Iscritto il</td><td>${data(x.at)}</td></tr><tr><td class="e">Usato l'ultima volta</td><td>${quando(x.ultimo)}</td></tr>
+  <tr><td class="e">Piloti e droni</td><td>${x.piloti} ${x.piloti===1?'pilota':'piloti'} · ${x.droni} ${x.droni===1?'drone':'droni'} · ${x.voli} voli registrati</td></tr><tr><td class="e">Telefoni collegati</td><td>${x.telefoni}</td></tr></table></div>
+  <div class="bar">${x.email?`<a class="btn sec" href="mailto:${esc(x.email)}?subject=${encodeURIComponent('Quota 120 – '+(x.nome||''))}">Scrivi all'Admin</a>`:''}<button class="btn ${x.sospeso?'sec':'ko'}" type="button" data-az="sospendi" data-x="${esc(x.op)}">${x.sospeso?'Riattiva lo spazio':'Sospendi lo spazio'}</button></div>
+  <p class="fine" style="margin-top:10px">${x.sospeso?'Lo spazio è sospeso: nessuno può usarlo finché non lo riattivi. I dati restano dove sono.':'Sospendere blocca l\'accesso a tutto lo spazio (Admin e piloti). I dati restano dove sono e si può riattivare.'}</p>`}
+AZ.sospendi=async(op,b)=>{const x=P.operatori.find(y=>y.op===op),on=!x.sospeso;
+  if(on&&!confirm('Sospendere lo spazio di '+(x.nome||op)+'? Nessuno potrà usarlo finché non lo riattivi.'))return;
+  b.disabled=true;try{await api('/api/admin/sospendi',{op,on});x.sospeso=on;mostra()}catch(e){alert(e.message);b.disabled=false}};
+
+/* ---------- Stato ---------- */
+async function statoP(){await caricaP();const s=P.stato,r=(n,ok,t,d)=>`<tr><td>${n}</td><td><span class="pill ${ok?'ok':'w'}">${t}</span></td><td class="e">${esc(d)}</td></tr>`;
+  return `<h2 class="t">Stato del programma</h2><div class="card tab"><table>
+  ${r('Programma',true,'funziona','risponde in questo momento')}
+  ${r('Email (codici e avvisi)',s.posta,s.posta?'funziona':'manca la chiave',s.posta?'mittente '+s.mittente:'manca la chiave della posta in Cloudflare')}
+  ${r('Lettura file DJI',s.dji,s.dji?'funziona':'manca la chiave',s.dji?'chiave DJI presente':'manca DJI_API_KEY in Cloudflare')}
+  ${r('Assistente',s.claude,s.claude?'funziona':'manca la chiave',s.claude?'chiave presente':'manca la chiave in Cloudflare')}
+  ${r('Video dei corsi',s.video===s.lezioni,s.video===s.lezioni?'pronti':'in preparazione',s.video+' su '+s.lezioni)}
+  </table></div><p class="fine" style="margin-top:10px">Le chiavi si mettono solo in Cloudflare, in «Variabili e segreti»: qui si vede se ci sono, non cosa contengono.</p>`}
+
+/* ---------- Iscritti ---------- */
+const tabI=L=>`<table><tr><th>Email</th><th>Iscritto il</th><th>Ultimo accesso</th><th>Novità</th></tr>${L.length?L.map(x=>`<tr><td>${esc(x.email)}</td><td>${data(x.dal)}</td><td>${data(x.ultimo)}</td><td>${x.novita?'sì':'no'}</td></tr>`).join(''):'<tr><td colspan="4">Ancora nessun iscritto.</td></tr>'}</table>`;
+async function iscritti(){await caricaI();const L=ISC;
+  return `<h2 class="t">Iscritti al corso</h2><div class="num"><div><b>${L.length}</b><span>iscritti</span></div><div><b>${L.filter(x=>giorni(x.dal)<30).length}</b><span>ultimi 30 giorni</span></div><div><b>${L.filter(x=>x.novita).length}</b><span>vogliono le novità</span></div></div>
+  <div class="card tab">${tabI(L)}</div><div class="bar"><button class="btn sec" type="button" data-az="scarica"${L.length?'':' disabled'}>Scarica l'elenco (Excel)</button></div>
+  <p class="fine" style="margin-top:10px">L'email si usa solo per il corso; per le novità solo chi ha spuntato.</p>`}
+AZ.scarica=()=>{const q=v=>'"'+String(v).replace(/"/g,'""')+'"';
+  const t='﻿'+['Email;Iscritto il;Ultimo accesso;Vuole le novità'].concat(ISC.map(x=>[x.email,data(x.dal),data(x.ultimo),x.novita?'sì':'no'].map(q).join(';'))).join('\r\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/csv;charset=utf-8'}));a.download='iscritti-corso-'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();a.remove()};
+
+/* ---------- Videocorsi ---------- */
+const nPronti=c=>(c.lezioni||[]).filter(l=>l.pronto).length;
+async function corsi(){await caricaC();
+  return `<h2 class="t">Videocorsi</h2><div class="card">${CORSI.length?CORSI.map((c,i)=>`<button class="riga" data-az="corso" data-x="${esc(c.id)}"><span class="n">${i+1}</span><span class="m"><b>${esc(c.t)}</b><small>${c.lezioni.length} lezioni · ${nPronti(c)} video pronti · ${c.vis==='piloti'?'solo piloti del programma':'iscritti al sito'}</small></span><span class="pill ${nPronti(c)===c.lezioni.length&&c.lezioni.length?'ok':'w'}">${c.lezioni.length?(nPronti(c)===c.lezioni.length?'pubblicato':'video in preparazione'):'senza lezioni'}</span><span class="chev">›</span></button>`).join(''):'<p class="fine">Nessun corso.</p>'}</div>
+  <div class="bar"><button class="btn" type="button" data-az="nuovo">+ Nuovo videocorso</button></div>`}
+const corsoDi=id=>CORSI.find(c=>c.id===id);
+AZ.corso=id=>{const c=corsoDi(id);if(c)vai(corso,c.t,id)};
+const durS=l=>{const n=(l.scene||[]).length;return n+(n===1?' scena':' scene')};
+async function corso(id){if(!CORSI)await caricaC();const c=corsoDi(id);if(!c)return '<p class="fine">Corso non trovato.</p>';
+  return `<h2 class="t">${esc(c.t)}</h2><div class="card"><h3>LEZIONI</h3>${c.lezioni.length?c.lezioni.map((l,i)=>`<button class="riga" data-az="lezione" data-x="${esc(c.id)}|${esc(l.id)}"><span class="n">${i+1}</span><span class="m"><b>${esc(l.t)}</b><small>${durS(l)} · ${(l.q||[]).length} domande</small></span><span class="pill ${l.pronto?'ok':'w'}">${l.pronto?'video pronto':(l.scene||[]).length?'video in preparazione':'senza video'}</span><span class="chev">›</span></button>`).join(''):'<p class="fine">Ancora nessuna lezione: aggiungi la prima.</p>'}</div>
+  <div class="bar"><button class="btn" type="button" data-az="nuovaLez" data-x="${esc(c.id)}">+ Aggiungi una lezione</button><a class="btn sec" href="/corso/?c=${encodeURIComponent(c.id)}" target="_blank">Vedi il corso come un iscritto</a></div>
+  <div class="card" style="display:grid;gap:10px"><h3 style="margin:0">IL CORSO</h3><div><label for="ct">Titolo</label><input type="text" id="ct" value="${esc(c.t)}"></div><div><label for="cs">Descrizione breve</label><input type="text" id="cs" value="${esc(c.s||'')}"></div>
+  <div><label>Chi lo vede</label><div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:4px"><label style="font-weight:500"><input type="radio" name="cv" value="sito"${c.vis!=='piloti'?' checked':''}> Gli iscritti al sito</label><label style="font-weight:500"><input type="radio" name="cv" value="piloti"${c.vis==='piloti'?' checked':''}> Solo i piloti del programma</label></div></div>
+  <div class="bar" style="margin-top:0"><button class="btn sec" type="button" data-az="salvaCorso" data-x="${esc(c.id)}">Salva</button><button class="btn ko" type="button" data-az="togliCorso" data-x="${esc(c.id)}">Togli il corso</button><span id="cok" class="fine"></span></div></div>`}
+AZ.salvaCorso=async(id,b)=>{const c=corsoDi(id);c.t=$('#ct').value.trim()||c.t;c.s=$('#cs').value.trim();c.vis=document.querySelector('input[name=cv]:checked').value;
+  b.disabled=true;try{await salvaC();PILA[PILA.length-1][1]=c.t;mostra()}catch(e){alert(e.message)}b.disabled=false};
+AZ.togliCorso=async(id,b)=>{const c=corsoDi(id);if(!confirm('Togliere il corso «'+c.t+'» con tutte le sue lezioni? Non si torna indietro.'))return;
+  b.disabled=true;try{CORSI=CORSI.filter(x=>x.id!==id);await salvaC();PILA.pop();mostra()}catch(e){alert(e.message);b.disabled=false}};
+const slug=t=>String(t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40);
+AZ.nuovaLez=async(id,b)=>{const c=corsoDi(id),t=prompt('Titolo della nuova lezione');if(!t||!t.trim())return;
+  let lid=(String(c.lezioni.length+1).padStart(2,'0')+'-'+slug(t)).slice(0,50);while(c.lezioni.some(l=>l.id===lid))lid+='-2';
+  const l={id:lid,t:t.trim(),s:'',leg:[],h:'',q:[],scene:[{k:'LEZIONE '+(c.lezioni.length+1),t:t.trim(),p:[],v:'Lezione '+(c.lezioni.length+1)+': '+t.trim()+'.'}]};
+  c.lezioni.push(l);b.disabled=true;try{await salvaC();await caricaC();vai(lezione,l.t,id+'|'+lid)}catch(e){c.lezioni.pop();alert(e.message);b.disabled=false}};
+
+/* ---------- Lezione: scene del video e domande ---------- */
+let LEZ=null;   // copia in modifica
+AZ.lezione=x=>{const [cid,lid]=x.split('|'),l=corsoDi(cid).lezioni.find(y=>y.id===lid);vai(lezione,l.t,x)};
+function lezione(x){const [cid,lid]=x.split('|'),c=corsoDi(cid),i=c.lezioni.findIndex(y=>y.id===lid),l=c.lezioni[i];
+  LEZ={cid,lid,t:l.t,s:l.s||'',scene:JSON.parse(JSON.stringify(l.scene||[])),q:JSON.parse(JSON.stringify(l.q||[]))};
+  return `<h2 class="t">Lezione ${i+1} · ${esc(l.t)}</h2>
+  ${l.pronto?`<video class="vid" controls preload="metadata" playsinline poster="/corso/video/${esc(l.video)}.jpg" src="/corso/video/${esc(l.video)}.mp4"></video>`:`<div class="vid">${(l.scene||[]).length?'Video in preparazione: pronto pochi minuti dopo il salvataggio':'Ancora nessun video'}</div>`}
+  <div class="card g2"><div><label for="lt">Titolo della lezione</label><input type="text" id="lt" value="${esc(l.t)}"></div><div><label for="ls">Sottotitolo</label><input type="text" id="ls" value="${esc(l.s||'')}"></div></div>
+  <div class="card"><h3>SCENE DEL VIDEO</h3><p class="fine">Ogni scena è quello che si vede e quello che dice la voce. Cambia i testi, poi «Salva e rifai il video».</p><div id="scene"></div>
+  <div class="bar"><button class="btn sec" type="button" data-az="scenaPiu">+ Aggiungi una scena</button></div></div>
+  <div class="card"><h3>DOMANDE DELLA LEZIONE</h3><p class="fine" id="qn"></p><div id="dom" hidden></div><div class="bar"><button class="btn sec" type="button" data-az="domande" id="qb">Modifica le domande</button></div></div>
+  <div class="bar"><button class="btn" type="button" id="rifai" data-az="rifai">Salva e rifai il video</button><button class="btn ko" type="button" data-az="togliLez">Togli la lezione</button></div><div id="st"></div>`}
+function scene(){const box=$('#scene');if(!box)return;box.innerHTML=LEZ.scene.map((s,i)=>`<details class="sc" data-i="${i}"${s._open?' open':''}><summary><span class="mini"><i>${esc(s.k||'')}</i><em>${esc(s.n||s.t||'')}</em><u>${esc((s.p||[])[0]||'')}</u></span><span class="m" style="flex:1;min-width:0"><b>Scena ${i+1}</b><br><small style="color:var(--ink3)">${esc((s.v||'').slice(0,80))}${(s.v||'').length>80?'…':''}</small></span><span class="chev">›</span></summary>
+  <div class="ed"><div class="g2"><div><label>Etichetta in alto</label><input type="text" data-f="k" value="${esc(s.k||'')}"></div><div><label>Titolo</label><input type="text" data-f="t" value="${esc(s.t||'')}"></div></div>
+  <div class="g2"><div><label>Numero grande (se serve, es. 120 m)</label><input type="text" data-f="n" value="${esc(s.n||'')}"></div><div></div></div>
+  <label>Punti sullo schermo (uno per riga)</label><textarea data-f="p">${esc((s.p||[]).join('\n'))}</textarea>
+  <label>Tabella (una riga per voce: nome | spiegazione)</label><textarea data-f="l" style="min-height:60px">${esc((s.l||[]).map(r=>r.join(' | ')).join('\n'))}</textarea>
+  <label>Cosa dice la voce</label><textarea data-f="v">${esc(s.v||'')}</textarea>
+  <div class="bar" style="margin-top:0"><button class="btn sec" type="button" data-az="su" data-x="${i}" aria-label="Sposta su">▲</button><button class="btn sec" type="button" data-az="giu" data-x="${i}" aria-label="Sposta giù">▼</button><button class="btn sec" type="button" data-az="togliScena" data-x="${i}">Togli</button></div></div></details>`).join('')||'<p class="fine">Nessuna scena.</p>'}
+function leggiScene(){document.querySelectorAll('#scene details.sc').forEach(d=>{const s=LEZ.scene[+d.dataset.i];s._open=d.open;
+  d.querySelectorAll('[data-f]').forEach(e=>{const f=e.dataset.f,v=e.value;
+    if(f==='p')s.p=v.split('\n').map(x=>x.trim()).filter(Boolean);
+    else if(f==='l')s.l=v.split('\n').map(x=>x.split('|').map(y=>y.trim())).filter(r=>r[0]).map(r=>[r[0],r.slice(1).join(' | ')]);
+    else s[f]=v.trim()});
+  ['n','p','l','k'].forEach(f=>{if(!s[f]||(Array.isArray(s[f])&&!s[f].length))delete s[f]})})}
+AZ.scenaPiu=()=>{leggiScene();LEZ.scene.push({k:'',t:'',v:'',_open:true});scene()};
+AZ.su=i=>{leggiScene();i=+i;if(i>0){[LEZ.scene[i-1],LEZ.scene[i]]=[LEZ.scene[i],LEZ.scene[i-1]]}scene()};
+AZ.giu=i=>{leggiScene();i=+i;if(i<LEZ.scene.length-1){[LEZ.scene[i+1],LEZ.scene[i]]=[LEZ.scene[i],LEZ.scene[i+1]]}scene()};
+AZ.togliScena=i=>{leggiScene();if(confirm('Togliere la scena '+(+i+1)+'?')){LEZ.scene.splice(+i,1);scene()}};
+function qInfo(){const e=$('#qn');if(e)e.textContent=LEZ.q.length?LEZ.q.length+(LEZ.q.length===1?' domanda':' domande')+' · usate anche nella simulazione d\'esame':'Nessuna domanda.'}
+function domande(){const box=$('#dom');box.innerHTML=LEZ.q.map((q,i)=>`<div class="dom" data-i="${i}"><label>Domanda ${i+1}</label><input type="text" data-f="d" value="${esc(q[0])}">
+  <label>Risposte (una per riga)</label><textarea data-f="o" style="min-height:70px">${esc((q[1]||[]).join('\n'))}</textarea>
+  <div class="g2"><div><label>Quella giusta è la</label><select data-f="g">${(q[1]||['','','']).map((_,j)=>`<option value="${j}"${j===q[2]?' selected':''}>${j+1}ª risposta</option>`).join('')}</select></div><div></div></div>
+  <label>Spiegazione (si vede dopo la risposta)</label><input type="text" data-f="s" value="${esc(q[3]||'')}">
+  <div class="bar" style="margin-top:0"><button class="btn sec" type="button" data-az="togliDom" data-x="${i}">Togli la domanda</button></div></div>`).join('')+`<div class="bar"><button class="btn sec" type="button" data-az="domPiu">+ Aggiungi una domanda</button></div>`;qInfo()}
+function leggiDom(){document.querySelectorAll('#dom .dom').forEach(d=>{const q=LEZ.q[+d.dataset.i],v=f=>d.querySelector(`[data-f="${f}"]`).value;
+  q[0]=v('d').trim();q[1]=v('o').split('\n').map(x=>x.trim()).filter(Boolean);q[2]=Math.min(+v('g')||0,Math.max(0,q[1].length-1));q[3]=v('s').trim()})}
+AZ.domande=(x,b)=>{const box=$('#dom');if(box.hidden){box.hidden=false;b.hidden=true;domande()}};
+AZ.domPiu=()=>{leggiDom();LEZ.q.push(['',['','',''],0,'']);domande()};
+AZ.togliDom=i=>{leggiDom();if(confirm('Togliere la domanda '+(+i+1)+'?')){LEZ.q.splice(+i,1);domande()}};
+AZ.rifai=async(x,b)=>{leggiScene();if(!$('#dom').hidden)leggiDom();
+  const bad=LEZ.q.findIndex(q=>!q[0]||q[1].length<2);if(bad>=0){alert('La domanda '+(bad+1)+' è incompleta: servono il testo e almeno 2 risposte.');return}
+  const c=corsoDi(LEZ.cid),l=c.lezioni.find(y=>y.id===LEZ.lid);
+  l.t=$('#lt').value.trim()||l.t;l.s=$('#ls').value.trim();l.scene=LEZ.scene.filter(s=>s.t||s.v||s.n||s.p).map(s=>{const y=Object.assign({},s);delete y._open;return y});l.q=LEZ.q;
+  b.disabled=true;b.innerHTML='<span class="spin" style="border-color:rgba(255,255,255,.35);border-top-color:#fff"></span>Salvo…';
+  try{const prima=l.video;await salvaC();await caricaC();const n=corsoDi(LEZ.cid).lezioni.find(y=>y.id===LEZ.lid);
+    b.disabled=false;b.textContent='Salva e rifai il video';PILA[PILA.length-1][1]=n.t;
+    if(n.pronto){$('#st').innerHTML='<div class="stato ok">Salvato. Il video non cambia: le scene sono le stesse.</div>';return}
+    $('#st').innerHTML='<div class="stato"><span class="spin"></span>Salvato. Video in preparazione: pronto tra circa 5-10 minuti. Puoi chiudere, va avanti da solo.</div>';
+    attendi(LEZ.cid,LEZ.lid)}catch(e){b.disabled=false;b.textContent='Salva e rifai il video';$('#st').innerHTML=`<div class="stato ko">${esc(e.message)}</div>`}};
+let ATT=null;
+function attendi(cid,lid){clearInterval(ATT);let n=0;ATT=setInterval(async()=>{if(++n>60)return clearInterval(ATT);
+  try{await caricaC();const l=corsoDi(cid).lezioni.find(y=>y.id===lid);if(l&&l.pronto){clearInterval(ATT);const st=$('#st');if(st&&LEZ&&LEZ.lid===lid)st.innerHTML='<div class="stato ok">Video pronto: è già nel corso. Riapri la lezione per vederlo.</div>'}}catch(e){}},30000)}
+AZ.togliLez=async(x,b)=>{const c=corsoDi(LEZ.cid),l=c.lezioni.find(y=>y.id===LEZ.lid);if(!confirm('Togliere la lezione «'+l.t+'» con il suo video e le sue domande?'))return;
+  b.disabled=true;try{c.lezioni=c.lezioni.filter(y=>y.id!==LEZ.lid);await salvaC();PILA.pop();mostra()}catch(e){alert(e.message);b.disabled=false}};
+
+/* ---------- Nuovo corso ---------- */
+async function nuovo(){if(!CORSI)await caricaC();
+  return `<h2 class="t">Nuovo videocorso</h2><div class="card" style="display:grid;gap:10px"><div><label for="nt">Titolo del corso</label><input type="text" id="nt" placeholder="es. Attestato A2: cosa c'è in più"></div>
+  <div><label for="ns">Descrizione breve</label><input type="text" id="ns" placeholder="es. Le materie dell'esame A2, con video e domande"></div>
+  <div><label>Chi lo vede</label><div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:4px"><label style="font-weight:500"><input type="radio" name="nv" value="sito" checked> Gli iscritti al sito</label><label style="font-weight:500"><input type="radio" name="nv" value="piloti"> Solo i piloti del programma</label></div></div>
+  <div class="bar"><button class="btn" type="button" data-az="crea">Crea il corso</button></div></div>
+  <div class="card"><b>Come si fa un video</b><p class="fine" style="margin-top:6px">Per ogni lezione scrivi le scene: quello che si vede e quello che dice la voce. Al «Salva», il video si fa da solo con la voce italiana e finisce nel corso.</p></div>`}
+AZ.crea=async(x,b)=>{const t=$('#nt').value.trim();if(!t){$('#nt').focus();return}
+  let id=slug(t)||'corso';while(CORSI.some(c=>c.id===id))id+='-2';
+  CORSI.push({id,t,s:$('#ns').value.trim(),vis:document.querySelector('input[name=nv]:checked').value,lezioni:[]});
+  b.disabled=true;try{await salvaC();await caricaC();PILA.pop();vai(corso,t,id)}catch(e){CORSI.pop();alert(e.message);b.disabled=false}};
+
+vai(home,'Pannello Admin');
+</script></body></html>

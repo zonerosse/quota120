@@ -1,3 +1,4 @@
+import CORSI_SEME from "./corso_seed.json";
 // Quota 120 – gestionale per operatori di droni (prova).
 // Cloudflare Worker: serve i file di «public» e le API /api/*; i dati stanno in un Durable Object (SQLite), niente database da creare.
 //
@@ -12,6 +13,30 @@
 // e con /api/doc/conferma vanno nella scheda giusta.
 import { DurableObject } from "cloudflare:workers";
 
+// impronta delle scene di una lezione: il nome del video cambia quando cambiano le scene
+async function vh(scene) { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(scene || []))); return [...new Uint8Array(b)].slice(0, 5).map(x => x.toString(16).padStart(2, "0")).join(""); }
+async function corsiConVideo(env, url, corsi, adm) {
+  const out = [];
+  for (const c of corsi) { const cc = Object.assign({}, c, { lezioni: [] });
+    for (const l of c.lezioni || []) { const h = await vh(l.scene), f = l.id + "-" + h;
+      const pronto = (l.scene || []).length ? await env.ASSETS.fetch(new Request(url.origin + "/corso/video/" + f + ".mp4", { method: "HEAD" })).then(r => r.ok).catch(() => false) : false;
+      const x = Object.assign({}, l, { video: pronto ? f : "", pronto }); if (!adm) delete x.scene; cc.lezioni.push(x); }
+    out.push(cc); }
+  return out;
+}
+// gettone OIDC di GitHub Actions: firmato da GitHub, valido solo per il repository zonerosse/quota120
+async function gettoneGithub(auth) {
+  try {
+    const t = auth.replace(/^Bearer\s+/i, ""), [h64, p64, s64] = t.split("."); if (!s64) return false;
+    const dec = x => Uint8Array.from(atob(x.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((x.length + 3) % 4)), c => c.charCodeAt(0));
+    const H = JSON.parse(new TextDecoder().decode(dec(h64))), P = JSON.parse(new TextDecoder().decode(dec(p64)));
+    if (P.iss !== "https://token.actions.githubusercontent.com" || P.aud !== "quota120" || P.repository !== "zonerosse/quota120" || !(P.exp * 1000 > Date.now())) return false;
+    const jwks = await fetch("https://token.actions.githubusercontent.com/.well-known/jwks").then(r => r.json());
+    const k = (jwks.keys || []).find(x => x.kid === H.kid); if (!k) return false;
+    const key = await crypto.subtle.importKey("jwk", k, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"]);
+    return await crypto.subtle.verify("RSASSA-PKCS1-v1_5", key, dec(s64), new TextEncoder().encode(h64 + "." + p64));
+  } catch (e) { return false; }
+}
 const J = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } });
 const rnd = n => [...crypto.getRandomValues(new Uint8Array(n))].map(b => b.toString(16).padStart(2, "0")).join("");
 const cod4 = () => String(1000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 9000));
@@ -443,9 +468,23 @@ export class Stato extends DurableObject {
     const url = new URL(request.url), st = this.ctx.storage, p = url.pathname;
     if (p.startsWith("/api/registro/")) return this.registro(request, url, p);
     if (p === "/interno/elenco") return J((await st.get("elenco")) || []);
+    if (p === "/interno/operatori") { const L = (await st.get("elenco")) || [], out = []; for (const op of L) out.push(Object.assign({ op }, (await st.get("op:" + op)) || {})); return J(out); }
+    if (p === "/interno/corsi") {
+      if (request.method === "POST") { const b = await request.json().catch(() => null); if (!Array.isArray(b)) return J({ errore: "dati" }, 400); await st.put("corsi", b); return J({ ok: true }); }
+      return J((await st.get("corsi")) || CORSI_SEME);
+    }
+    if (p === "/interno/iscritti-n") { let n = 0, n30 = 0, nn = 0; for (const [, v] of await st.list({ prefix: "ce:" })) { n++; if (Date.now() - v.dal < 30 * 864e5) n30++; if (v.novita) nn++; } return J({ n, n30, nn }); }
     const OPN = request.headers.get("x-q120-op") || "";   // "" = versione di prova (dati di esempio)
     const creato = OPN ? await st.get("creato") : null;
     if (OPN && !creato && p !== "/interno/crea") return J({ errore: "operatore" }, 404);
+    // pannello del titolare: quanto è usato lo spazio, e sospensione
+    if (p === "/interno/riepilogo") {
+      const m = await st.get("main"); let dd = {}; try { dd = m ? JSON.parse(m.json) : {}; } catch (e) {}
+      const dsp = (await st.get("disp")) || {}, vis = Object.values(dsp).map(x => x.visto || x.at || 0);
+      return J({ piloti: (dd.PILOTI || []).length, droni: (dd.DRONI || []).length, voli: (dd.VOLI || []).length, telefoni: Object.keys(dsp).length, ultimo: vis.length ? Math.max(...vis) : 0, sospeso: !!(await st.get("sospeso")) });
+    }
+    if (p === "/interno/sospendi") { const b = await request.json().catch(() => ({})); if (b.on) await st.put("sospeso", true); else await st.delete("sospeso"); return J({ ok: true }); }
+    if (OPN && p.startsWith("/api/") && await st.get("sospeso")) return J({ errore: "Questo spazio è sospeso: scrivi all'assistenza di Quota 120." }, 423);
     const BASEURL = url.origin + (OPN ? "/" + OPN : "");
     const disp = (await st.get("disp")) || {};
     const pin = (await st.get("pin")) || "1234";
@@ -1089,7 +1128,7 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url), p = url.pathname;
     // quota120.com è il sito; il programma sta su app.quota120.com (e su quota120.staffordshire.workers.dev)
-    const host = url.hostname;
+    const host = (env.POSTA_FINTA === "1" && request.headers.get("x-prova-host")) || url.hostname;   // l'intestazione vale solo nelle prove in locale
     if (host === "www.quota120.com") return Response.redirect("https://quota120.com" + p + url.search, 301);
     const reg = () => env.STATO.get(env.STATO.idFromName("registro"));
     const biscotto = n => ((request.headers.get("cookie") || "").match(new RegExp("(?:^|;\\s*)" + n + "=([a-f0-9]{40})")) || [])[1];
@@ -1103,6 +1142,25 @@ export default {
         return new Response(JSON.stringify({ ok: true }), { headers: { "content-type": "application/json", "cache-control": "no-store", "set-cookie": "q120a=" + j.t + "; Path=/; Max-Age=31536000; Secure; HttpOnly; SameSite=Lax" } });
       }
       if (az === "iscritti") return reg().fetch(new Request(I + "iscritti?t=" + (ta || "")));
+      if (!(ta && await reg().fetch(new Request(I + "ok?t=" + ta)).then(r => r.json()).then(j => j.ok).catch(() => false))) return J({ errore: "Entra di nuovo" }, 401);
+      const N = "https://quota120.interno";
+      if (az === "corsi" && request.method === "GET") return J(await corsiConVideo(env, url, await reg().fetch(new Request(N + "/interno/corsi")).then(r => r.json()), true));
+      if (az === "corsi" && request.method === "POST") {
+        const b = await request.json().catch(() => null); if (!Array.isArray(b)) return J({ errore: "dati" }, 400);
+        for (const c of b) { c.id = String(c.id || "c" + Date.now()).replace(/[^a-z0-9-]/gi, "").slice(0, 40) || "c" + Date.now(); for (const l of c.lezioni || []) { l.id = String(l.id || "").replace(/[^a-z0-9-]/gi, "").slice(0, 60) || ("l" + Date.now() + Math.floor(Math.random() * 1000)); l.scene = (l.scene || []).slice(0, 40); l.q = (l.q || []).slice(0, 40); } }
+        return reg().fetch(new Request(N + "/interno/corsi", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(b) }));
+      }
+      if (az === "panoramica") {
+        const ops = await reg().fetch(new Request(N + "/interno/operatori")).then(r => r.json()).catch(() => []);
+        for (const o of ops) Object.assign(o, await env.STATO.get(env.STATO.idFromName("op:" + o.op)).fetch(new Request(N + "/interno/riepilogo", { headers: { "x-q120-op": o.op } })).then(r => r.json()).catch(() => ({})));
+        const isc = await reg().fetch(new Request(N + "/interno/iscritti-n")).then(r => r.json()).catch(() => ({}));
+        const corsi = await corsiConVideo(env, url, await reg().fetch(new Request(N + "/interno/corsi")).then(r => r.json()), true);
+        const lez = corsi.flatMap(c => c.lezioni || []), c = n => !!(env[n] && String(env[n]).trim());
+        return J({ operatori: ops.map(o => ({ op: o.op, nome: o.nome, email: o.email, adm: o.adm, at: o.at, piloti: o.piloti || 0, droni: o.droni || 0, voli: o.voli || 0, telefoni: o.telefoni || 0, ultimo: o.ultimo || 0, sospeso: !!o.sospeso })),
+          iscritti: isc, stato: { posta: c("RESEND_API_KEY") || c("BREVO_API_KEY"), mittente: env.MITTENTE || "", dji: c("DJI_API_KEY"), claude: c("ANTHROPIC_API_KEY"), video: lez.filter(l => l.pronto).length, lezioni: lez.length }, corsi: corsi.map(x => ({ id: x.id, t: x.t, n: (x.lezioni || []).length })) });
+      }
+      if (az === "sospendi" && request.method === "POST") { const b = await request.json().catch(() => ({})); if (!SLUG_OK(b.op)) return J({ errore: "operatore" }, 400);
+        return env.STATO.get(env.STATO.idFromName("op:" + b.op)).fetch(new Request(N + "/interno/sospendi", { method: "POST", headers: { "x-q120-op": b.op }, body: JSON.stringify({ on: !!b.on }) })); }
       if (az === "esci" && request.method === "POST") { if (ta) await reg().fetch(new Request(I + "esci?t=" + ta, { method: "POST" })); return new Response('{"ok":true}', { headers: { "content-type": "application/json", "set-cookie": "q120a=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax" } }); }
       return J({ errore: "non trovato" }, 404);
     }
@@ -1114,6 +1172,22 @@ export default {
         || (ta && await reg().fetch(new Request("https://quota120.interno/api/registro/adm-ok?t=" + ta)).then(r => r.json()).then(j => j.ok).catch(() => false));
       if (!ok) return Response.redirect("https://quota120.com/corso-patentino-drone/", 302);
       return env.ASSETS.fetch(request);
+    }
+    // il corso legge i suoi contenuti (solo registrati o Admin)
+    if (p === "/api/corso/contenuti") {
+      const t = biscotto("q120c"), ta = biscotto("q120a");
+      const adm = !!(ta && await reg().fetch(new Request("https://quota120.interno/api/registro/adm-ok?t=" + ta)).then(r => r.json()).then(j => j.ok).catch(() => false));
+      const ok = adm || !!(t && await reg().fetch(new Request("https://quota120.interno/api/registro/corso-ok?t=" + t)).then(r => r.json()).then(j => j.ok).catch(() => false));
+      if (!ok) return J({ errore: "Registrati per vedere il corso" }, 401);
+      const tutti = await reg().fetch(new Request("https://quota120.interno/interno/corsi")).then(r => r.json());
+      return J(await corsiConVideo(env, url, tutti.filter(c => adm || c.vis !== "piloti"), false));
+    }
+    // GitHub Actions chiede quali video fare (con il suo gettone OIDC, niente chiavi da conservare)
+    if (p === "/api/corso/da-fare") {
+      if (!(await gettoneGithub(request.headers.get("authorization") || ""))) return J({ errore: "non autorizzato" }, 401);
+      const tutti = await reg().fetch(new Request("https://quota120.interno/interno/corsi")).then(r => r.json());
+      const out = []; for (const c of tutti) for (const l of c.lezioni || []) if ((l.scene || []).length) out.push({ file: l.id + "-" + await vh(l.scene), titolo: l.t, scene: l.scene });
+      return J(out);
     }
     if (host === "quota120.com" && (p === "/api/corso/codice" || p === "/api/corso/verifica") && request.method === "POST") {
       const r = await reg().fetch(new Request("https://quota120.interno/api/registro/corso-" + p.split("/").pop(), { method: "POST", headers: { "content-type": "application/json", "cf-connecting-ip": request.headers.get("cf-connecting-ip") || "" }, body: await request.text() }));

@@ -1,9 +1,7 @@
-"""Fa i video del corso A1-A3: per ogni scena un'immagine (Chromium) e la voce (Piper, voce italiana «paola»),
-poi ffmpeg li unisce in un mp4 per lezione. Gira su GitHub Actions (serve internet per la voce)."""
-import json, os, subprocess, sys, html, wave
-sys.path.insert(0, os.path.dirname(__file__))
-from corso_lezioni import L
-from playwright.sync_api import sync_playwright
+"""Fa i video dei videocorsi: per ogni scena un'immagine (Chromium) e la voce (Piper, voce italiana «paola»),
+poi ffmpeg li unisce in un mp4 per lezione. Legge l'elenco da fare (file JSON: [{file, titolo, scene}]),
+fa solo i video che mancano e toglie quelli vecchi. Gira su GitHub Actions."""
+import json, os, re, subprocess, sys, html, wave
 OUT = 'public/corso/video'; TMP = '/tmp/corso'; VOCE = os.environ.get('VOCE', '/tmp/voce/it_IT-paola-medium.onnx')
 os.makedirs(OUT, exist_ok=True); os.makedirs(TMP, exist_ok=True)
 CSS = """*{box-sizing:border-box}body{margin:0;width:1280px;height:720px;background:#0F2230;color:#fff;font-family:'Barlow',Arial,sans-serif;overflow:hidden;position:relative}
@@ -26,28 +24,37 @@ def scena_html(s, lez):
     if s.get('t'): c += f"<div class='t'>{e(s['t'])}</div>"
     if s.get('p'): c += '<ul>' + ''.join(f'<li>{e(x)}</li>' for x in s['p']) + '</ul>'
     if s.get('l'): c += '<table>' + ''.join(f'<tr><td>{e(a)}</td><td>{e(b)}</td></tr>' for a, b in s['l']) + '</table>'
-    return f"<!doctype html><html><head><meta charset='utf-8'>{FONT}<style>{CSS}</style></head><body><div class='b1'></div><div class='b2'></div><div class='g'></div><div class='c'>{c}</div><div class='marca'>Corso A1-A3 · {e(lez)}</div></body></html>"
+    return f"<!doctype html><html><head><meta charset='utf-8'>{FONT}<style>{CSS}</style></head><body><div class='b1'></div><div class='b2'></div><div class='g'></div><div class='c'>{c}</div><div class='marca'>{e(lez)}</div></body></html>"
 def durata(p):
     with wave.open(p) as w: return w.getnframes() / w.getframerate()
-solo = sys.argv[1:]
+OK = re.compile(r'^[A-Za-z0-9-]{3,80}$')
+elenco = [x for x in json.load(open(sys.argv[1])) if OK.match(x.get('file', '')) and x.get('scene')]
+if not elenco: sys.exit('elenco vuoto: non tocco niente')
+voluti = {x['file'] for x in elenco}
+# via i video vecchi (scene cambiate o lezione tolta)
+for f in os.listdir(OUT):
+    b, ext = os.path.splitext(f)
+    if ext in ('.mp4', '.jpg') and b not in voluti: os.remove(os.path.join(OUT, f)); print('tolto', f)
+mancano = [x for x in elenco if not os.path.exists(f"{OUT}/{x['file']}.mp4")]
+if '--conta' in sys.argv: print(len(mancano)); sys.exit(0)
+if not mancano: print('niente da fare'); sys.exit(0)
+from playwright.sync_api import sync_playwright
 with sync_playwright() as pw:
     br = pw.chromium.launch(); pg = br.new_page(viewport={'width': 1280, 'height': 720})
-    for lez in L:
-        if solo and lez['slug'] not in solo: continue
-        parti = []
+    for lez in mancano:
+        nome, parti = lez['file'], []
         for i, s in enumerate(lez['scene']):
-            img, wav, mp4 = f"{TMP}/{lez['slug']}-{i}.png", f"{TMP}/{lez['slug']}-{i}.wav", f"{TMP}/{lez['slug']}-{i}.mp4"
-            pg.set_content(scena_html(s, lez['titolo'])); pg.wait_for_timeout(600); pg.screenshot(path=img)
-            subprocess.run(['piper', '--model', VOCE, '--output_file', wav, '--length_scale', '1.05', '--sentence_silence', '0.35'], input=s['v'].encode(), check=True)
+            img, wav, mp4 = f"{TMP}/{nome}-{i}.png", f"{TMP}/{nome}-{i}.wav", f"{TMP}/{nome}-{i}.mp4"
+            pg.set_content(scena_html(s, lez.get('titolo', ''))); pg.wait_for_timeout(600); pg.screenshot(path=img)
+            testo = (s.get('v') or s.get('t') or ' ').strip() or ' '
+            subprocess.run(['piper', '--model', VOCE, '--output_file', wav, '--length_scale', '1.05', '--sentence_silence', '0.35'], input=testo.encode(), check=True)
             d = durata(wav) + 0.9
-            # leggero avvicinamento dell'immagine mentre parla la voce
             vf = f"scale=1600:-1,zoompan=z='min(zoom+0.0005,1.05)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={int(d*25)}:s=1280x720:fps=25,fade=t=in:st=0:d=0.35,fade=t=out:st={d-0.35:.2f}:d=0.35"
             subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-loop', '1', '-i', img, '-i', wav, '-vf', vf, '-af', 'apad', '-t', f'{d:.2f}',
                             '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '26', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '96k', '-ar', '44100', mp4], check=True)
             parti.append(mp4)
-        lista = f"{TMP}/{lez['slug']}.txt"; open(lista, 'w').write(''.join(f"file '{p}'\n" for p in parti))
-        subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', lista, '-c', 'copy', '-movflags', '+faststart', f"{OUT}/{lez['slug']}.mp4"], check=True)
-        # copertina = prima scena
-        subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', f"{TMP}/{lez['slug']}-0.png", '-vf', 'scale=960:-1', '-q:v', '4', f"{OUT}/{lez['slug']}.jpg"], check=True)
-        print('fatto', lez['slug'])
+        lista = f"{TMP}/{nome}.txt"; open(lista, 'w').write(''.join(f"file '{p}'\n" for p in parti))
+        subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', lista, '-c', 'copy', '-movflags', '+faststart', f"{OUT}/{nome}.mp4"], check=True)
+        subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', f"{TMP}/{nome}-0.png", '-vf', 'scale=960:-1', '-q:v', '4', f"{OUT}/{nome}.jpg"], check=True)
+        print('fatto', nome)
     br.close()

@@ -101,139 +101,14 @@ ul.punti{margin:0;padding-left:20px}ul.punti li{margin:3px 0}
 </main>
 
 <script>
-const L=[
-{t:'Sicurezza aerea',s:'le regole base della categoria aperta',v:'01-sicurezza-del-volo',
- leg:[['Categoria aperta','voli a basso rischio: niente permessi, solo regole'],['VLOS','volo a vista: il drone si vede sempre, senza binocolo'],['120 m','altezza massima dal punto più vicino del terreno'],['25 kg','peso massimo al decollo (MTOM) in categoria aperta'],['Assembramento','gruppo di persone che non riesce ad allontanarsi: non si sorvola mai'],['Persone non coinvolte','chi non partecipa al volo e non sa di dover stare attento']],
- h:`<p>La categoria aperta è fatta per i voli semplici: <b>a vista</b>, sotto i <b>120 m</b>, con droni sotto i <b>25 kg</b>, senza trasportare merci pericolose e senza lanciare oggetti.</p>
- <p>Si divide in tre sottocategorie a seconda di quanto si vola vicino alle persone.</p>
- <div class="tab"><table><tr><th>Sotto-categoria</th><th>Dove si vola</th><th>Droni</th></tr>
- <tr><td>A1</td><td>sopra persone non coinvolte (mai sopra assembramenti). Con il C1 non le sorvoli di proposito</td><td>C0, C1 (e sotto i 250 g)</td></tr>
- <tr><td>A2</td><td>vicino alle persone: almeno 30 m in orizzontale (5 m in modalità lenta)</td><td>C2, serve l'attestato A2</td></tr>
- <tr><td>A3</td><td>lontano dalle persone: almeno 150 m da case, negozi, industrie e parchi</td><td>C2, C3, C4, autocostruiti sotto i 25 kg</td></tr></table></div>
- <div class="box">Se il drone vola vicino a un ostacolo alto più di 105 m (un traliccio, un palazzo) puoi salire fino a 15 m sopra l'ostacolo, se te lo chiede chi ne è responsabile.</div>`,
- q:[['Qual è l\'altezza massima in categoria aperta?',['120 m dal punto più vicino del terreno','150 m dal punto di decollo','100 m dal livello del mare'],0,'Il limite è 120 m dalla superficie, misurati dal punto del terreno più vicino al drone.'],
-    ['Cosa vuol dire VLOS?',['Volo con il visore FPV','Volo in cui il pilota vede sempre il drone a occhio nudo','Volo oltre la vista con un osservatore'],1,'VLOS = Visual Line Of Sight: il drone si vede sempre, senza strumenti.'],
-    ['In A2, quanto devi stare lontano in orizzontale dalle persone non coinvolte?',['5 m sempre','30 m (5 m in modalità a bassa velocità)','150 m'],1,'30 m in orizzontale, che diventano 5 m se il C2 è in modalità a bassa velocità.'],
-    ['In A3 a che distanza minima voli da zone residenziali, commerciali o ricreative?',['50 m','150 m','500 m'],1,'In A3 si sta almeno a 150 m da quelle aree.'],
-    ['Si può sorvolare un assembramento di persone in categoria aperta?',['Sì, con un C0','Sì, sotto i 30 m','No, mai'],2,'Gli assembramenti non si sorvolano mai in categoria aperta.']]},
-{t:'Restrizioni dello spazio aereo',v:'02-spazio-aereo-e-zone',s:'zone geografiche, aeroporti, NOTAM',
- leg:[['Zona geografica UAS','area con regole speciali per i droni (vietata, limitata, con condizioni)'],['D-Flight','il portale italiano: mappa delle zone, registrazione operatori'],['CTR / ATZ','spazi aerei intorno agli aeroporti'],['NOTAM','avviso temporaneo per chi vola (area chiusa, evento, elicotteri)'],['AGL','altezza dal suolo'],['AMSL','altitudine sul livello del mare']],
- h:`<p>Prima di ogni volo si guarda <b>dove</b> si vola. In Italia le zone geografiche per i droni sono sulla <b>mappa D-Flight</b>: lì vedi se si vola liberamente, fino a che quota, o se serve un permesso.</p>
- <ul class="punti"><li><b>Vicino agli aeroporti</b> (CTR, ATZ) ci sono zone con limiti di quota o divieti: lì serve quasi sempre un'autorizzazione.</li>
- <li><b>Zone vietate o regolamentate</b>: carceri, basi militari, alcune città, parchi, infrastrutture.</li>
- <li><b>NOTAM</b>: avvisi del giorno che chiudono un'area per poche ore o giorni. Le zone fisse non bastano: si guardano anche quelli.</li></ul>
- <div class="box">Un aereo o un elicottero ha sempre la precedenza: se si avvicina, abbassi subito il drone e ti allontani.</div>`,
- q:[['Dove si guardano le zone di volo per droni in Italia?',['Su Google Maps','Sulla mappa del portale D-Flight','Sul sito del Comune'],1,'La mappa ufficiale delle zone geografiche UAS è su D-Flight.'],
-    ['Cos\'è un NOTAM?',['Un avviso temporaneo per chi vola','Il codice dell\'operatore','Un tipo di drone'],0,'Notice to Air Missions: avviso temporaneo, per esempio un\'area chiusa per un evento.'],
-    ['Si avvicina un elicottero mentre voli. Cosa fai?',['Continui: sei sotto i 120 m','Abbassi subito il drone e ti allontani','Sali per farti vedere'],1,'Gli aeromobili con equipaggio hanno sempre la precedenza.'],
-    ['Cosa sono CTR e ATZ?',['Classi di drone','Spazi aerei intorno agli aeroporti','Tipi di batteria'],1,'Sono le zone di controllo e di traffico intorno agli aeroporti.'],
-    ['AGL vuol dire…',['altezza sul livello del mare','altezza dal suolo','altezza dal punto di decollo'],1,'Above Ground Level: altezza dal suolo.']]},
-{t:'Regolamentazione aeronautica',v:'03-regole-e-documenti',s:'operatore, registrazione, classi, Remote ID',
- leg:[['Operatore UAS','chi è responsabile dei voli (persona o azienda)'],['Pilota remoto','chi pilota fisicamente il drone'],['Codice operatore','numero ITA-… dato da D-Flight, da mettere sul drone'],['C0…C4','classe del drone, scritta sull\'etichetta'],['Remote ID','il segnale con cui il drone dice chi è mentre vola'],['EASA / ENAC','agenzia europea / ente italiano per l\'aviazione']],
- h:`<p>Le regole sono europee (Regolamento UE 2019/947) e in Italia le applica <b>ENAC</b>. Due figure da non confondere: l'<b>operatore</b> è responsabile dei voli, il <b>pilota remoto</b> pilota. Spesso sono la stessa persona.</p>
- <div class="tab"><table><tr><th>Cosa</th><th>Quando serve</th></tr>
- <tr><td>Registrazione operatore</td><td>drone da 250 g in su, oppure con fotocamera o sensore che riprende dati personali (salvo i giocattoli)</td></tr>
- <tr><td>Codice sul drone</td><td>il codice operatore va attaccato in modo visibile (in Italia con il QR di D-Flight)</td></tr>
- <tr><td>Remote ID</td><td>sui droni C1, C2 e C3 va tenuto acceso, con il codice operatore caricato</td></tr>
- <tr><td>Attestato A1-A3</td><td>per volare con droni C1 e sopra; consigliato anche con i C0</td></tr></table></div>
- <div class="tab"><table><tr><th>Classe</th><th>Peso indicativo</th><th>Sotto-categoria</th></tr>
- <tr><td>C0</td><td>sotto 250 g</td><td>A1 (anche A3)</td></tr><tr><td>C1</td><td>sotto 900 g</td><td>A1 (anche A3)</td></tr>
- <tr><td>C2</td><td>sotto 4 kg</td><td>A2 (anche A3)</td></tr><tr><td>C3 / C4</td><td>sotto 25 kg</td><td>A3</td></tr></table></div>`,
- q:[['Chi è l\'operatore UAS?',['Chi ha costruito il drone','Chi è responsabile dei voli','Il venditore'],1,'L\'operatore è il responsabile dei voli; il pilota è chi lo pilota.'],
-    ['Quanto vale l\'attestato A1-A3?',['1 anno','5 anni','Per sempre'],1,'Il certificato vale 5 anni.'],
-    ['Un drone sotto i 250 g con fotocamera va registrato?',['No, mai','Sì: l\'operatore si registra perché la fotocamera riprende dati personali','Solo se vola sopra 50 m'],1,'La fotocamera rende obbligatoria la registrazione dell\'operatore, anche sotto i 250 g (salvo giocattoli).'],
-    ['Su quali classi va tenuto acceso il Remote ID?',['C0','C1, C2 e C3','Solo C4'],1,'Il Remote ID diretto va attivato sui C1, C2 e C3.'],
-    ['Un drone C2 in che sotto-categoria vola normalmente?',['A1','A2 (o A3)','Solo categoria specifica'],1,'Il C2 vola in A2 con l\'attestato A2, oppure in A3.'],
-    ['Quale regolamento europeo regola i voli dei droni?',['Reg. (UE) 2019/947','Codice della strada','Reg. (UE) 2016/679'],0,'Il 2019/947 regola le operazioni; il 2016/679 è il GDPR (privacy).']]},
-{t:'Limiti delle prestazioni umane',v:'04-fattore-umano',s:'stanchezza, alcol, attenzione',
- leg:[['Idoneità al volo','essere in forma: niente stanchezza, alcol, droghe, farmaci che rallentano'],['Consapevolezza situazionale','sapere sempre dove è il drone e cosa c\'è intorno'],['Osservatore','persona accanto al pilota che guarda il cielo e lo avvisa'],['Distrazione','telefono, gente che parla, fretta: la prima causa di incidenti']],
- h:`<p>La maggior parte degli incidenti dipende dal pilota, non dal drone. Prima di volare chiediti se sei in condizione di farlo.</p>
- <ul class="punti"><li><b>Niente alcol, droghe o farmaci</b> che riducono attenzione e riflessi.</li>
- <li><b>Stanchezza e stress</b>: rallentano le reazioni. Se non sei lucido, non voli.</li>
- <li><b>Vista</b>: a distanza il drone diventa un puntino; il controluce e il cielo bianco ingannano. Non allontanarti più di quanto vedi davvero.</li>
- <li><b>Un osservatore</b> può aiutarti a guardare il cielo e le persone, ma tu devi sempre poter comunicare con lui.</li></ul>
- <div class="box ko">Il volo con il visore (FPV) è possibile in categoria aperta solo con un osservatore accanto che tiene il drone a vista.</div>`,
- q:[['Hai bevuto una birra e sei stanco. Puoi volare?',['Sì, se il drone è piccolo','No: non sei idoneo al volo','Sì, sotto i 50 m'],1,'Il pilota deve essere in forma: alcol e stanchezza riducono attenzione e riflessi.'],
-    ['A cosa serve l\'osservatore?',['A pilotare al posto tuo','Ad aiutarti a guardare il drone, il cielo e le persone','A firmare il registro'],1,'L\'osservatore ti aiuta a tenere sotto controllo l\'area; deve poter comunicare con te.'],
-    ['Con il visore FPV in categoria aperta…',['si vola da soli','serve un osservatore che tiene il drone a vista','è sempre vietato'],1,'Con il visore serve un osservatore accanto che vede il drone.'],
-    ['Qual è la prima causa di incidenti?',['Il vento','Errori e distrazioni del pilota','I satelliti GPS'],1,'Il fattore umano è la causa più frequente.'],
-    ['Il drone è lontano e controluce: non sei sicuro di vederlo bene. Cosa fai?',['Continui seguendo lo schermo','Lo riavvicini finché lo vedi bene a occhio nudo','Sali di quota'],1,'In VLOS il drone deve essere sempre visibile a occhio nudo.']]},
-{t:'Procedure operative',v:'05-procedure-di-volo',s:'prima, durante e dopo',
- leg:[['Check-list','le cose da controllare prima di decollare'],['RTH','ritorno automatico al punto di decollo'],['Home point','il punto dove il drone torna con RTH'],['Follow-me','il drone ti segue da solo: max 50 m di distanza'],['Luce verde','di notte la luce verde lampeggiante deve essere accesa']],
- h:`<h3>Prima del volo</h3>
- <ul class="punti"><li>Zone e NOTAM sulla mappa D-Flight; meteo e vento.</li><li>Area di decollo libera, persone lontane, ostacoli (cavi, alberi).</li>
- <li>Drone: eliche integre, batterie cariche e senza gonfiori, firmware aggiornato, bussola a posto, <b>home point registrato</b>.</li>
- <li>Altezza RTH impostata sopra gli ostacoli della zona.</li></ul>
- <h3>Durante il volo</h3>
- <ul class="punti"><li>Il drone sempre a vista; batteria sotto controllo.</li><li>Se perdi il segnale, il drone fa RTH: per questo l'altezza di ritorno conta.</li>
- <li>Di notte: <b>luce verde lampeggiante accesa</b>.</li><li>In modalità follow-me, al massimo <b>50 m</b> da te.</li></ul>
- <h3>Dopo il volo</h3>
- <ul class="punti"><li>Controlla danni a eliche e bracci; togli le batterie.</li><li>Annota il volo e ogni problema; un incidente va segnalato.</li></ul>`,
- q:[['Prima di decollare il drone deve avere…',['l\'home point registrato','il Wi-Fi acceso','almeno 10 voli'],0,'Senza home point il ritorno automatico non sa dove tornare.'],
-    ['Perché si imposta l\'altezza di ritorno (RTH)?',['Per fare foto migliori','Perché nel ritorno automatico il drone superi alberi e ostacoli','Per risparmiare batteria'],1,'Nel ritorno automatico il drone sale a quella quota: deve essere sopra gli ostacoli.'],
-    ['Di notte cosa deve avere acceso il drone?',['Il flash della fotocamera','La luce verde lampeggiante','Niente'],1,'Di notte la luce verde lampeggiante va tenuta accesa.'],
-    ['In modalità follow-me fino a che distanza da te?',['50 m','150 m','500 m'],0,'Il follow-me in categoria aperta si usa entro 50 m dal pilota.'],
-    ['Dopo un urto in volo cosa fai?',['Riparti subito','Controlli il drone e annoti cosa è successo','Aggiorni il firmware'],1,'Controllo dei danni e annotazione; gli eventi importanti vanno segnalati.']]},
-{t:'Conoscenze generali degli UAS',v:'06-drone-e-meteo',s:'batterie, GPS, bussola, meteo',
- leg:[['LiPo','batterie al litio: si gonfiano se maltrattate'],['Cella','uno dei pezzi della batteria: devono restare bilanciate'],['GNSS / GPS','satelliti che danno la posizione'],['ATTI','modalità senza GPS: il drone deriva con il vento'],['Raffica','aumento improvviso del vento'],['Indice Kp','attività solare: alto, il GPS è meno preciso']],
- h:`<h3>Batterie</h3>
- <ul class="punti"><li>Non usare batterie gonfie o rovinate.</li><li>Se non le usi per giorni, tienile a metà carica (circa 40–60%).</li>
- <li><b>Il freddo</b> riduce la durata: in inverno tieni le batterie al caldo prima del volo e atterra prima.</li></ul>
- <h3>Posizione e bussola</h3>
- <ul class="punti"><li>Senza GPS il drone va in <b>ATTI</b>: non sta fermo e scivola con il vento. Devi pilotarlo a mano.</li>
- <li>Metallo, cemento armato e linee elettriche disturbano la bussola: decolla lontano da lì.</li></ul>
- <h3>Meteo</h3>
- <ul class="punti"><li>Il vento in quota è più forte che a terra. Controlla il limite di vento del tuo drone.</li>
- <li>Pioggia, nebbia e temperature estreme: si resta a terra, se il drone non è fatto per quello.</li></ul>`,
- q:[['Una batteria è gonfia. Cosa fai?',['La usi per un volo corto','Non la usi più e la smaltisci correttamente','La metti in frigo'],1,'Una LiPo gonfia è pericolosa: non va usata.'],
-    ['Cosa succede con il freddo alle batterie?',['Durano di più','Durano meno','Niente'],1,'Il freddo riduce la capacità: il volo dura meno.'],
-    ['Il drone perde il GPS e va in ATTI. Cosa succede?',['Resta fermo da solo','Scivola con il vento e lo piloti a mano','Atterra subito'],1,'Senza posizionamento il drone non si tiene fermo.'],
-    ['Il vento in quota rispetto a terra è…',['di solito più forte','sempre uguale','più debole'],0,'Salendo il vento aumenta: a terra sembra calmo, a 100 m può non esserlo.'],
-    ['Come conservi le batterie se non voli per una settimana?',['Cariche al 100%','A metà carica, circa 40–60%','Completamente scariche'],1,'A metà carica si rovinano di meno.']]},
-{t:'Privacy e protezione dei dati',v:'07-privacy',s:'riprese, persone e dati',
- leg:[['GDPR','Regolamento UE 2016/679 sulla protezione dei dati'],['Dato personale','un volto, una targa, una casa riconoscibile'],['Consenso','il permesso della persona ripresa'],['Minimizzazione','riprendere e tenere solo quello che serve']],
- h:`<p>Un drone con la fotocamera raccoglie <b>dati personali</b>: volti, targhe, case, giardini. Valgono le regole della privacy (GDPR).</p>
- <ul class="punti"><li>Non riprendere persone riconoscibili senza un motivo e, se serve, senza il loro <b>consenso</b>.</li>
- <li>Non guardare dentro proprietà private, finestre, giardini.</li><li>Prima di pubblicare, sfoca volti e targhe.</li>
- <li>Tieni le riprese al sicuro e solo per il tempo che servono.</li></ul>
- <div class="box">Proprio per la fotocamera, anche un drone sotto i 250 g fa registrare l'operatore.</div>`,
- q:[['Una targa ripresa dal drone è…',['un dato personale','un dato pubblico libero','niente di importante'],0,'Targhe e volti riconoscibili sono dati personali.'],
-    ['Prima di pubblicare un video con persone riconoscibili…',['non serve niente','serve il consenso o vanno rese irriconoscibili','basta citare la fonte'],1,'Serve una base legale, di solito il consenso, oppure si sfocano.'],
-    ['Quale regolamento tutela la privacy?',['Reg. (UE) 2016/679 (GDPR)','Reg. (UE) 2019/947','Codice della navigazione'],0,'Il GDPR è il 2016/679.'],
-    ['Riprendi per errore persone riconoscibili nel giardino di un vicino. Cosa fai?',['Lo pubblichi lo stesso','Cancelli le riprese o rendi irriconoscibili le persone','Lo mandi al vicino'],1,'Si tengono solo i dati che servono: il resto si cancella o si rende anonimo.'],
-    ['Perché un drone sotto i 250 g con fotocamera fa registrare l\'operatore?',['Perché è pesante','Perché può raccogliere dati personali','Non va registrato'],1,'La fotocamera può riprendere dati personali: per questo serve la registrazione.']]},
-{t:'Assicurazione',v:'08-assicurazione',s:'cosa serve in Italia',
- leg:[['RC','responsabilità civile: paga i danni a persone e cose'],['Massimale','la cifra massima che paga l\'assicurazione'],['Polizza','il contratto'],['Quietanza','la ricevuta del pagamento: dice fino a quando sei coperto']],
- h:`<p>In Italia per far volare un drone serve un'<b>assicurazione di responsabilità civile</b> (RC) verso terzi, anche per i droni piccoli. Paga i danni che il drone può fare a persone o cose.</p>
- <ul class="punti"><li>Tienila sempre valida: la data che conta è quella della <b>quietanza</b> pagata.</li>
- <li>Controlla che copra l'uso che ne fai (hobby o lavoro).</li><li>Porta con te gli estremi della polizza quando voli.</li></ul>`,
- q:[['In Italia l\'assicurazione RC per il drone…',['serve solo sopra i 4 kg','serve per volare','è facoltativa'],1,'In Italia serve un\'assicurazione RC verso terzi per far volare il drone.'],
-    ['Cosa paga l\'assicurazione RC?',['I danni al tuo drone','I danni che il drone fa ad altri','Il corso per l\'attestato'],1,'La responsabilità civile copre i danni a terzi.'],
-    ['Cosa ti dice fino a quando sei coperto?',['Il manuale del drone','La quietanza di pagamento','Il QR di D-Flight'],1,'La copertura vale per il periodo pagato, scritto sulla quietanza.'],
-    ['Cos\'è il massimale?',['Il prezzo della polizza','La cifra massima che l\'assicurazione paga','L\'altezza massima di volo'],1,'Il massimale è il limite di quanto paga l\'assicurazione per un danno.']]},
-{t:'Security',v:'09-security',s:'proteggere il drone e gli altri',
- leg:[['Security','protezione da usi illeciti, furti, attacchi'],['Safety','sicurezza del volo, evitare incidenti'],['Infrastruttura critica','centrali, aeroporti, carceri, impianti'],['Firmware','il programma interno del drone']],
- h:`<p><b>Safety</b> è non fare incidenti; <b>security</b> è evitare che il drone venga usato male o manomesso.</p>
- <ul class="punti"><li>Non volare vicino a infrastrutture critiche: centrali, aeroporti, carceri, impianti industriali.</li>
- <li>Custodisci drone e radiocomando: un drone rubato può essere usato da altri a tuo nome.</li>
- <li>Aggiorna il firmware solo dalle fonti ufficiali del costruttore.</li>
- <li>Se vedi un uso sospetto di un drone, avvisa le autorità.</li></ul>`,
- q:[['Differenza tra safety e security?',['Sono la stessa cosa','Safety = sicurezza del volo; security = protezione da usi illeciti e manomissioni','Safety riguarda solo la privacy'],1,'Safety: niente incidenti. Security: niente usi illeciti o attacchi.'],
-    ['Da dove aggiorni il firmware?',['Da un sito qualsiasi','Solo dalle fonti ufficiali del costruttore','Da un amico'],1,'Firmware non ufficiali possono togliere protezioni o essere manomessi.'],
-    ['Vicino a una centrale elettrica…',['si vola senza problemi','non si vola: è un\'infrastruttura critica','si vola solo di notte'],1,'Le infrastrutture critiche si evitano e spesso sono zone vietate.'],
-    ['Ti rubano il drone. Perché è un problema anche di security?',['Perché costa','Perché qualcuno può usarlo con il tuo codice operatore','Non è un problema'],1,'Il drone porta il tuo codice: chi lo usa può farlo a tuo nome. Va denunciato.']]}
-];
-const K='q120CorsoA1A3';
-let fatte=[];try{fatte=JSON.parse(localStorage.getItem(K)||'[]')}catch(e){}
+let L=[],CORSO=null;
+let K='q120CorsoA1A3';
+let fatte=[];
 function salva(){try{localStorage.setItem(K,JSON.stringify(fatte))}catch(e){}prog()}
 function prog(){document.getElementById('pb').style.width=Math.round(fatte.length/L.length*100)+'%';document.getElementById('pt').textContent=fatte.length+(fatte.length===1?' lezione studiata':' lezioni studiate')+' su '+L.length;
   L.forEach((l,i)=>{const s=document.getElementById('st'+i);if(s)s.textContent=fatte.includes(i)?'studiata':''})}
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
 function domanda(q,id,subito){return `<div class="q" data-id="${id}"><div class="d">${esc(q[0])}</div><div class="o">${q[1].map((o,j)=>`<button type="button" class="op" data-j="${j}">${esc(o)}</button>`).join('')}</div><div class="sp" hidden></div></div>`}
-document.getElementById('lezioni').innerHTML=L.map((l,i)=>`<details class="lez" id="lez${i}"><summary><span class="num">${i+1}</span><span class="tt"><b>${l.t}</b><small>${l.s}</small></span><span class="st" id="st${i}"></span><span class="fr">›</span></summary>
- <div class="dentro">${l.v?`<video class="vid" controls preload="none" playsinline poster="video/${l.v}.jpg" src="video/${l.v}.mp4"></video>`:`<div class="vid-no">Video in preparazione</div>`}<div class="leg"><b>LEGENDA</b><div class="tab"><table>${l.leg.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</table></div></div>${l.h}
- <h3>Vediamo se hai capito</h3>${l.q.map((q,j)=>domanda(q,i+'-'+j)).join('')}
- <div class="riga">${i<L.length-1?`<button type="button" class="btn sec" data-apri="${i+1}">Lezione ${i+2}</button>`:`<button type="button" class="btn sec" data-esame="1">Vai alla simulazione</button>`}<label class="spunta"><input type="checkbox" id="fatta${i}" ${fatte.includes(i)?'checked':''}>Studiata</label></div></div></details>`).join('');
 function qDi(id){const [i,j]=id.split('-').map(Number);return L[i].q[j]}
 // risposte nelle lezioni: correzione subito
 document.getElementById('lezioni').addEventListener('click',e=>{
@@ -245,7 +120,6 @@ document.getElementById('lezioni').addEventListener('click',e=>{
   if(e.target.closest('[data-esame]'))document.getElementById('esame').scrollIntoView({behavior:'smooth'});
 });
 document.getElementById('lezioni').addEventListener('change',e=>{const c=e.target;if(!c.id||!c.id.startsWith('fatta'))return;const i=+c.id.slice(5);fatte=fatte.filter(x=>x!==i);if(c.checked)fatte.push(i);salva()});
-prog();
 // simulazione: 40 domande a caso (tutte quelle che ci sono, se meno), correzione alla fine
 let SCELTE={},ELENCO=[],TIMER=null,FINE=0;
 function correggi(){clearInterval(TIMER);document.getElementById('eq').dataset.fine='1';let giuste=0,sbagliate=0;
@@ -270,5 +144,25 @@ document.getElementById('eq').addEventListener('click',e=>{
   const b=e.target.closest('button.op');if(b&&!document.getElementById('eq').dataset.fine){const box=b.closest('.q');box.querySelectorAll('button.op').forEach(x=>x.classList.remove('giusta'));b.classList.add('giusta');SCELTE[box.dataset.id]=+b.dataset.j;conta();return}
   if(e.target.id==='correggi')correggi();
 });
+
+// i contenuti arrivano dal programma (li cura l'Admin dal pannello)
+const hx=document.querySelector('header.top');
+function disegna(){
+  document.title=CORSO.t;document.querySelector('header.top h1').textContent=CORSO.t;
+  const a1=CORSO.id==='a1a3';document.querySelector('.esame-info').hidden=!a1;document.querySelector('main .nota').hidden=!a1;
+  if(!a1){document.querySelector('header.top .eti').textContent='VIDEOCORSO';document.querySelector('header.top p').textContent=CORSO.s||''}
+  K=a1?'q120CorsoA1A3':'q120Corso-'+CORSO.id;try{fatte=JSON.parse(localStorage.getItem(K)||'[]')}catch(e){fatte=[]}
+  const nq=L.reduce((n,l)=>n+(l.q||[]).length,0);document.getElementById('esame').previousElementSibling.hidden=document.getElementById('esame').hidden=!nq;
+  L.forEach(l=>{l.v=l.video||'';l.leg=l.leg||[];l.h=l.h||'';l.q=l.q||[];l.s=l.s||''});
+  document.getElementById('lezioni').innerHTML=L.map((l,i)=>`<details class="lez" id="lez${i}"><summary><span class="num">${i+1}</span><span class="tt"><b>${esc(l.t)}</b><small>${esc(l.s)}</small></span><span class="st" id="st${i}"></span><span class="fr">›</span></summary>
+ <div class="dentro">${l.v?`<video class="vid" controls preload="none" playsinline poster="video/${l.v}.jpg" src="video/${l.v}.mp4"></video>`:`<div class="vid-no">Video in preparazione</div>`}${l.leg.length?`<div class="leg"><b>LEGENDA</b><div class="tab"><table>${l.leg.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</table></div></div>`:''}${l.h}
+ ${l.q.length?'<h3>Vediamo se hai capito</h3>':''}${l.q.map((q,j)=>domanda(q,i+'-'+j)).join('')}
+ <div class="riga">${i<L.length-1?`<button type="button" class="btn sec" data-apri="${i+1}">Lezione ${i+2}</button>`:`<button type="button" class="btn sec" data-esame="1">Vai alla simulazione</button>`}<label class="spunta"><input type="checkbox" id="fatta${i}" ${fatte.includes(i)?'checked':''}>Studiata</label></div></div></details>`).join('');
+  prog()}
+fetch('/api/corso/contenuti',{credentials:'same-origin'}).then(r=>r.json()).then(C=>{
+  if(!Array.isArray(C)||!C.length){document.getElementById('lezioni').innerHTML='<p class="nota">Nessun corso disponibile.</p>';return}
+  const vuoi=new URLSearchParams(location.search).get('c');CORSO=C.find(c=>c.id===vuoi)||C[0];L=CORSO.lezioni||[];
+  if(C.length>1){const nav=document.createElement('div');nav.className='riga';nav.style.marginTop='12px';nav.innerHTML=C.map(c=>`<a class="btn ${c.id===CORSO.id?'':'sec'}" style="padding:7px 12px;font-size:14.5px" href="?c=${encodeURIComponent(c.id)}">${esc(c.t)}</a>`).join('');hx.querySelector('.wrap').appendChild(nav)}
+  disegna()}).catch(()=>{document.getElementById('lezioni').innerHTML='<p class="nota">Non riesco a caricare il corso. Ricarica la pagina.</p>'});
 </script>
 </body></html>

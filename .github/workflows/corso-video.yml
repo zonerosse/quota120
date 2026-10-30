@@ -1,19 +1,31 @@
-name: Video del corso A1-A3
+name: Video dei videocorsi
+# Ogni 5 minuti chiede al programma se ci sono lezioni con le scene cambiate e rifà solo quei video.
+# Si presenta con il gettone firmato da GitHub (OIDC): nessuna chiave da conservare.
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths: ["corso/corso_lezioni.py", "corso/genera.py"]
+  schedule:
+    - cron: "*/5 * * * *"
 permissions:
   contents: write
+  id-token: write
+concurrency: { group: corso-video, cancel-in-progress: false }
 jobs:
   video:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Chiede cosa c'è da fare
+        id: elenco
+        run: |
+          T=$(curl -sSf -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=quota120" | python3 -c 'import sys,json;print(json.load(sys.stdin)["value"])')
+          curl -sSf -H "Authorization: Bearer $T" https://quota120.com/api/corso/da-fare -o /tmp/da-fare.json
+          N=$(python3 corso/genera.py /tmp/da-fare.json --conta | tail -1)
+          echo "mancano $N video"; echo "n=$N" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-python@v5
+        if: steps.elenco.outputs.n != '0'
         with: { python-version: "3.11" }
       - name: Programmi (voce Piper, Chromium, ffmpeg)
+        if: steps.elenco.outputs.n != '0'
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg fonts-dejavu >/dev/null
           pip install -q "piper-tts==1.2.0" playwright
@@ -22,10 +34,11 @@ jobs:
           curl -sSL -o it_IT-paola-medium.onnx https://huggingface.co/rhasspy/piper-voices/resolve/main/it/it_IT/paola/medium/it_IT-paola-medium.onnx
           curl -sSL -o it_IT-paola-medium.onnx.json https://huggingface.co/rhasspy/piper-voices/resolve/main/it/it_IT/paola/medium/it_IT-paola-medium.onnx.json
       - name: Fa i video
-        run: python corso/genera.py
+        if: steps.elenco.outputs.n != '0'
+        run: python corso/genera.py /tmp/da-fare.json
       - name: Salva i video nel repository
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
           git add -A public/corso/video
-          git diff --cached --quiet || (git commit -m "Corso A1-A3: video rifatti" && git pull --rebase -q && git push)
+          git diff --cached --quiet || (git commit -m "Videocorsi: video aggiornati" && git pull --rebase -q && git push)
