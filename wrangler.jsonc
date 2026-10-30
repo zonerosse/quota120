@@ -10,6 +10,6 @@
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Stato"] }],
   "triggers": { "crons": ["5 * * * *"] },
   // mittente degli avvisi e indirizzo che riceve le risposte (non sono segreti); le chiavi stanno nei segreti di Cloudflare
-  "vars": { "MITTENTE": "avvisi@kennelmanager.app", "RISPOSTE": "assistenza@quota120.com", "SITO_ADMIN": "zonerosse@gmail.com" },
+  "vars": { "MITTENTE": "avvisi@quota120.com", "RISPOSTE": "assistenza@quota120.com", "SITO_ADMIN": "zonerosse@gmail.com" },
   "keep_vars": true
 }
