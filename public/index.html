@@ -5797,6 +5797,10 @@ GUIDES.homeadm={n:'La Home dell’Admin, riquadro per riquadro',r:'adm',base:()=
    GV('Tutto il resto','Dieci riquadri, sempre visibili. La scritta rossa o gialla dice dove c’è qualcosa da guardare.','ogni cosa sta in un posto solo.','quando ti serve una di quelle cose.',()=>gdVis('.q2-tiles'))]};
 let VOLO_S=null;
 function guidaVolo(){ VOLO_S=null; gdStart('unvolo'); }
+// il controllo prima del volo è già stato fatto (o è aperto): la guida non lo fa rifare
+function ctrlFatto(){ if(['controllo','checklist','segnala'].includes(VISTA)) return true; if(VISTA==='rischio'&&RK&&RK._da==='ctrl') return true;
+  const l=LAVORI.find(x=>x.id===LAVCUR), c=l&&l.codice; if(dSel&&pSel&&CTRLINFO&&(c?CTRLINFO.codice===c:true)&&CTRLINFO.data===oggi()) return true;
+  return VOLI.some(v=>v.ctrl&&v.data===oggi()&&(!c||v.codLav===c)); }
 function passiVolo(){
   const S=[], zg=ZONEINFO&&ZONEINFO.scade?giorni(ZONEINFO.scade):null, zoneDaFare=!ZONEINFO||(zg!=null&&zg<=7);
   const home={t:'Vai alla Home',p:'Tocca «Home» in alto o nella barra in basso.',w:'Ogni parte di Quota 120 parte dalla Home.',el:()=>gdVis('#tb-home')||gdVis('#nb-home'),ok:()=>VISTA==='home'};
@@ -5814,7 +5818,7 @@ function passiVolo(){
       {t:'Carica il file in Quota 120',p:'Tocca «Carica il file delle zone» e scegli il file appena scaricato.',w:'Da adesso le zone si controllano da sole, anche senza rete nella zona del volo.',el:()=>gdVis('#zn-btn'),nx:1},
       {t:'Torna al lavoro',p:'Home › «Clienti e lavori» › il lavoro.',w:'Dal lavoro parte il controllo prima del volo, con drone, pilota e luogo già scelti.',el:()=>gdTesto('#v-home .tile, #v-home li, #v-home button','Clienti e lavori')||gdVis('#tb-home'),ok:()=>VISTA==='lavoro'});
     S.push(
-      {t:'Tocca «Fai il controllo prima del volo»',p:'In alto nella scheda del lavoro.',w:'Il controllo prende già drone, pilota e luogo del lavoro.',el:()=>gdTesto('#lw-azioni button','controllo prima del volo'),ok:()=>VISTA==='controllo'});
+      {t:'Tocca «Fai il controllo prima del volo»',p:'In alto nella scheda del lavoro.',w:'Il controllo prende già drone, pilota e luogo del lavoro.',el:()=>gdTesto('#lw-azioni button','controllo prima del volo'),ok:ctrlFatto});
   } else { const io=ioPilota(), M=io?accVoci(io).filter(v=>!v.ok):[];
     if(M.length){
       const okV=k=>()=>{const p=ioPilota(); const v=p&&accVoci(p).find(x=>x.k===k); return !!(v&&v.ok);};
@@ -5828,9 +5832,9 @@ function passiVolo(){
       M.forEach(v=>{ const x=T[v.k]; if(!x) return; S.push({t:'Account · '+x[0],p:x[1],w:x[2],el:()=>VISTA==='account'?gdVis(x[3]):null,vai:()=>apriAccount(),ok:okV(v.k),nx:v.k==='inv'?1:undefined}); });
     }
     S.push(home,
-      {t:'Il giorno del volo · scegli drone e pilota',p:'Nel riquadro del controllo prima del volo, in Home. Se l’azienda ti ha dato il codice lavoro, scrivilo.',w:'Con il codice lavoro il volo finisce da solo nel lavoro giusto.',el:()=>gdVis('#h-drone'),ok:()=>VISTA==='controllo'||!!((document.getElementById('h-drone')||{}).value&&(!gdVis('#h-pilota')||(document.getElementById('h-pilota')||{}).value))},
+      {t:'Il giorno del volo · scegli drone e pilota',p:'Nel riquadro del controllo prima del volo, in Home. Se l’azienda ti ha dato il codice lavoro, scrivilo.',w:'Con il codice lavoro il volo finisce da solo nel lavoro giusto.',el:()=>gdVis('#h-drone'),ok:ctrlFatto||!!((document.getElementById('h-drone')||{}).value&&(!gdVis('#h-pilota')||(document.getElementById('h-pilota')||{}).value))},
       {t:'Tocca «Dove sono ora»',p:'Il telefono dà la posizione: arrivano meteo e zone di quel punto.',w:'Il vento viene confrontato con il limite del tuo drone.',el:()=>gdTesto('#v-home button','Dove sono ora'),nx:1,opt:1},
-      {t:'Tocca «Inizia il controllo»',p:'In fondo al riquadro.',w:'Quota 120 controlla da solo attestati, assicurazione, drone, batterie, meteo e zone.',el:()=>gdVis('#h-btn'),ok:()=>VISTA==='controllo'}); }
+      {t:'Tocca «Inizia il controllo»',p:'In fondo al riquadro.',w:'Quota 120 controlla da solo attestati, assicurazione, drone, batterie, meteo e zone.',el:()=>gdVis('#h-btn'),ok:ctrlFatto}); }
   S.push(
     {t:'Sul posto · leggi le verifiche',p:'Ogni riga ha il suo esito. Quelle con un tasto vanno fatte adesso, sul posto.',w:'Una riga rossa senza tasto vuol dire che oggi non si vola.',el:()=>gdVis('#checks'),nx:1},
     {t:'D-Flight: apri la mappa e segna',p:'«Apri la mappa D-Flight», guarda il punto del volo, poi «Guardato: tutto a posto» oppure «C’è un avviso».',w:'Le zone le sa già Quota 120; gli avvisi del giorno (NOTAM) si vedono solo sulla mappa D-Flight.',el:()=>gdVis('.df-box'),ok:()=>!!NOTAM.stato},
