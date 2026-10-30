@@ -7,11 +7,12 @@ Il sito offre anche un corso gratuito, con registrazione via email, per preparar
 ## Pagine
 - [Quota 120, gestionale per operatori di droni](https://quota120.com/): cosa fa il programma, domande frequenti, prova gratuita
 - [Corso per il patentino drone A1-A3](https://quota120.com/corso-patentino-drone/): le 9 materie, avvertenze, registrazione
+- [Contatti](https://quota120.com/contatti/): email e chi c'è dietro Quota 120
 
 ## Programma
 - [Accedi o crea il tuo spazio](https://app.quota120.com/): il programma (serve un account)
-- [Privacy e cookie](https://app.quota120.com/privacy.html)
-- [Condizioni d'uso](https://app.quota120.com/condizioni.html)
+- [Privacy e cookie](https://quota120.com/privacy/)
+- [Condizioni d'uso](https://quota120.com/condizioni/)
 
 ## Contatti
 - Email: assistenza@quota120.com

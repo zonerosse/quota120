@@ -1136,6 +1136,19 @@ export default {
     })());
   },
   async fetch(request, env) {
+    const r = await this.smista(request, env);
+    // quota120.com: intestazioni di sicurezza su tutte le risposte del sito
+    const h = (env.POSTA_FINTA === "1" && request.headers.get("x-prova-host")) || new URL(request.url).hostname;
+    if (h !== "quota120.com" || r.status === 101) return r;
+    const x = new Response(r.body, r);
+    x.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+    x.headers.set("X-Content-Type-Options", "nosniff");
+    x.headers.set("X-Frame-Options", "DENY");
+    x.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+    x.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
+    return x;
+  },
+  async smista(request, env) {
     const url = new URL(request.url), p = url.pathname;
     // quota120.com è il sito; il programma sta su app.quota120.com (e su quota120.staffordshire.workers.dev)
     const host = (env.POSTA_FINTA === "1" && request.headers.get("x-prova-host")) || url.hostname;   // l'intestazione vale solo nelle prove in locale
@@ -1213,7 +1226,11 @@ export default {
       if (p === "/robots.txt") return new Response("# quota120.com: aperto a motori di ricerca e assistenti IA; fuori solo le aree riservate\nUser-agent: *\nAllow: /\nDisallow: /admin/\nDisallow: /corso/\nDisallow: /api/\n\nSitemap: https://quota120.com/sitemap.xml\n", { headers: { "content-type": "text/plain; charset=utf-8" } });
       if (p.startsWith("/api/")) return new Response("Non trovato", { status: 404 });
       // /sito resta un dettaglio interno: se gli asset rimandano (es. /admin → /admin/), l'indirizzo torna senza /sito
-      if (p.startsWith("/fonts/")) return env.ASSETS.fetch(request);   // i caratteri sono gli stessi del programma
+      if (p.startsWith("/fonts/") || /^\/icon(-\d+\.png|\.svg)$/.test(p)) return env.ASSETS.fetch(request);   // caratteri e icone sono gli stessi del programma
+      // informativa e condizioni: le stesse pagine del programma, anche sul sito
+      const LEG = { "/privacy/": "/privacy", "/condizioni/": "/condizioni" };
+      if (p === "/privacy" || p === "/privacy.html" || p === "/condizioni" || p === "/condizioni.html") return Response.redirect("https://quota120.com/" + p.replace(/^\/|\.html$/g, "") + "/" + url.search, 301);
+      if (LEG[p]) { const ra = await env.ASSETS.fetch(new Request(new URL(LEG[p], url), request)); const r2 = new Response(ra.body, ra); r2.headers.delete("x-robots-tag"); return r2; }   // i caratteri sono gli stessi del programma
       if (p === "/sito" || p.startsWith("/sito/")) return Response.redirect("https://quota120.com" + (p.slice(5) || "/") + url.search, 301);
       const ra = await env.ASSETS.fetch(new Request(new URL("/sito" + (p === "/" ? "/" : p), url), request));
       const loc = ra.headers.get("location");
