@@ -1210,7 +1210,7 @@ export default {
       return new Response(JSON.stringify({ ok: true }), { headers: { "content-type": "application/json", "cache-control": "no-store", "set-cookie": "q120c=" + j.t + "; Path=/; Max-Age=31536000; Secure; HttpOnly; SameSite=Lax" } });
     }
     if (host === "quota120.com" || url.searchParams.get("sito") === "1" && env.POSTA_FINTA === "1") {
-      if (p === "/robots.txt") return new Response("User-agent: *\nDisallow: /\n", { headers: { "content-type": "text/plain; charset=utf-8" } });
+      if (p === "/robots.txt") return new Response("# quota120.com: aperto a motori di ricerca e assistenti IA; fuori solo le aree riservate\nUser-agent: *\nAllow: /\nDisallow: /admin/\nDisallow: /corso/\nDisallow: /api/\n\nSitemap: https://quota120.com/sitemap.xml\n", { headers: { "content-type": "text/plain; charset=utf-8" } });
       if (p.startsWith("/api/")) return new Response("Non trovato", { status: 404 });
       // /sito resta un dettaglio interno: se gli asset rimandano (es. /admin → /admin/), l'indirizzo torna senza /sito
       if (p.startsWith("/fonts/")) return env.ASSETS.fetch(request);   // i caratteri sono gli stessi del programma
@@ -1218,6 +1218,8 @@ export default {
       const ra = await env.ASSETS.fetch(new Request(new URL("/sito" + (p === "/" ? "/" : p), url), request));
       const loc = ra.headers.get("location");
       if (ra.status >= 300 && ra.status < 400 && loc) { const u = new URL(loc, url); if (u.pathname.startsWith("/sito/")) return new Response(null, { status: ra.status, headers: { location: u.pathname.slice(5) + u.search } }); }
+      // le pagine pubbliche del sito vanno su Google; Admin e corso interno restano fuori (noindex)
+      if (!p.startsWith("/admin") && ra.headers.get("x-robots-tag")) { const r2 = new Response(ra.body, ra); r2.headers.delete("x-robots-tag"); return r2; }
       return ra;
     }
     const main = () => env.STATO.get(env.STATO.idFromName("main"));
