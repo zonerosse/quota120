@@ -17,7 +17,7 @@ CSS = """*{box-sizing:border-box}body{margin:0;width:1280px;height:720px;backgro
 ul{margin:0;padding:0;list-style:none;display:grid;gap:14px}li{font-size:36px;line-height:1.25;padding-left:40px;position:relative}
 li:before{content:'';position:absolute;left:0;top:14px;width:16px;height:16px;border-radius:4px;background:#E8C15A}
 table{border-collapse:collapse;font-size:34px}td{padding:12px 22px 12px 0;border-bottom:1px solid rgba(255,255,255,.18)}td:first-child{font-weight:700;color:#E8C15A;white-space:nowrap;padding-right:40px}
-.marca{position:absolute;right:40px;bottom:30px;font-size:20px;color:rgba(255,255,255,.55);font-weight:600}"""
+.marca{position:absolute;right:80px;bottom:50px;font-size:20px;color:rgba(255,255,255,.55);font-weight:600}"""
 FONT = "<link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&family=Barlow+Semi+Condensed:wght@700&display=swap'>"
 def scena_html(s, lez):
     e = html.escape; c = ''
@@ -41,7 +41,7 @@ with sync_playwright() as pw:
             subprocess.run(['piper', '--model', VOCE, '--output_file', wav, '--length_scale', '1.05', '--sentence_silence', '0.35'], input=s['v'].encode(), check=True)
             d = durata(wav) + 0.9
             # leggero avvicinamento dell'immagine mentre parla la voce
-            vf = f"scale=1600:-1,zoompan=z='min(zoom+0.0006,1.06)':d={int(d*25)}:s=1280x720:fps=25,fade=t=in:st=0:d=0.35,fade=t=out:st={d-0.35:.2f}:d=0.35"
+            vf = f"scale=1600:-1,zoompan=z='min(zoom+0.0005,1.05)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={int(d*25)}:s=1280x720:fps=25,fade=t=in:st=0:d=0.35,fade=t=out:st={d-0.35:.2f}:d=0.35"
             subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-loop', '1', '-i', img, '-i', wav, '-vf', vf, '-af', 'apad', '-t', f'{d:.2f}',
                             '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '26', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '96k', '-ar', '44100', mp4], check=True)
             parti.append(mp4)
