@@ -6523,7 +6523,7 @@ function salvaScorciatoia(b){
 let RK=null;
 const RK_ZONE={campagna:'Campagna',periferia:'Periferia',centro:'Centro abitato',industria:'Zona industriale'};
 const RK_PERS={nessuna:'Nessuna',passaggio:'Qualcuno di passaggio',gruppi:'Gruppi di persone'};
-const RK_VIC={strada:'Strada',ferrovia:'Ferrovia',linee:'Linee elettriche',case:'Case',animali:'Animali',acqua:'Corsi d’acqua',alberi:'Alberi alti o pali'};
+const RK_VIC={nulla:'Aperta campagna (niente intorno)',strada:'Strada',ferrovia:'Ferrovia',linee:'Linee elettriche',case:'Case',animali:'Animali',acqua:'Corsi d’acqua',alberi:'Alberi alti o pali'};
 // tabella del rischio ICAO (Doc 9859): probabilità 1–5 × gravità A–E (A catastrofica … E trascurabile)
 const RK_P=['','estremamente improbabile','improbabile','remota','occasionale','frequente'];
 const RK_G={A:'catastrofica',B:'pericolosa',C:'grave',D:'lieve',E:'trascurabile'};
@@ -6602,7 +6602,7 @@ function rkAuto(){
     return Promise.all([met,zon]).then(()=>{ if(RK===r){ r.auto.quando=oggi(); disegnaRischio(); } });
   }).catch(()=>{});
 }
-function rkScegli(k,v){ const r=RK; if(k==='vic'){ r.vic=r.vic.includes(v)?r.vic.filter(x=>x!==v):r.vic.concat(v); } else r[k]=v; if(k==='drone') r.drone=+v; disegnaRischio(); }
+function rkScegli(k,v){ const r=RK; if(k==='vic'){ r.vic=r.vic.includes(v)?r.vic.filter(x=>x!==v):(v==='nulla'?['nulla']:r.vic.filter(x=>x!=='nulla').concat(v)); } else r[k]=v; if(k==='drone') r.drone=+v; disegnaRischio(); }
 function rkMis(i,j){ const m=RK.per[i].mis[j]; m.on=!m.on; disegnaRischio(); }
 function rkAvanti(){
   const r=RK;
