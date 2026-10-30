@@ -847,6 +847,48 @@
   .ha-menu button:hover{background:#f2f6f9}.ha-menu .ico{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex:none}
   .ha-menu .ico svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
   .ha-menu b{display:block;font-size:15px}.ha-menu small{display:block;font-size:13px;color:var(--muted);margin-top:1px}
+
+  /* ---------- Home dell'Admin semplice ---------- */
+  .q2-sal{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:2px 2px 0}
+  .q2-sal b{display:block;font-size:21px;line-height:1.2}.q2-sal span{font-size:14.5px;color:var(--muted)}
+  .q2-nuovo{display:inline-flex;align-items:center;gap:5px;background:var(--accent);color:#fff;border:0;border-radius:11px;padding:11px 15px;font-weight:700;font-size:16.5px;font-family:inherit;cursor:pointer;flex:none}
+  .q2-nuovo svg,.q2-cerca svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round}
+  .q2-cerca{display:flex;gap:10px;align-items:center;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:12px 13px;margin-top:12px;color:var(--muted)}
+  .q2-cerca input{border:0;outline:0;font-size:17px;flex:1;background:none;color:var(--text);min-width:0;font-family:inherit}
+  .q2-ris{display:none;background:#fff;border:1px solid var(--line);border-radius:12px;margin-top:6px;overflow:hidden}
+  .q2-ris button{display:flex;align-items:center;gap:8px;width:100%;background:none;border:0;border-top:1px solid #edf1f4;padding:12px 13px;text-align:left;font:inherit;color:inherit;cursor:pointer}
+  .q2-ris button:first-child{border-top:0}.q2-ris span{flex:1}.q2-ris b{display:block;font-size:16.5px}.q2-ris small{font-size:14px;color:var(--muted)}.q2-vuoto{padding:12px 13px;color:var(--muted)}
+  .q2-h3{display:flex;justify-content:space-between;align-items:baseline;font-size:14px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:18px 2px 7px}
+  .q2-h3 a{color:var(--accent);text-transform:none;letter-spacing:0;font-size:15.5px}
+  .q2-daf{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .q2-dr{display:flex;gap:10px;align-items:center;padding:12px;border-top:1px solid #edf1f4}.q2-dr:first-child{border-top:0}
+  .q2-dr .p{width:11px;height:11px;border-radius:50%;flex:none}.q2-dr .p.ko{background:var(--ko)}.q2-dr .p.warn{background:var(--warn)}.q2-dr .p.ok{background:var(--ok)}
+  .q2-dr .t{flex:1;min-width:0}.q2-dr b{display:block;font-size:16.5px;line-height:1.25}.q2-dr small{font-size:14px;color:var(--muted)}
+  .q2-az{flex:none;background:var(--accent);color:#fff;border:0;border-radius:9px;padding:9px 12px;font-weight:700;font-size:15px;font-family:inherit;cursor:pointer;white-space:nowrap;display:inline-flex;gap:6px;align-items:center}
+  .q2-az .spin{display:none}.q2-az.busy .spin{display:inline-block}
+  .q2-tiles{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+  @media(min-width:900px){.q2-tiles{grid-template-columns:repeat(3,minmax(0,1fr))}}
+  .q2-tile{position:relative;display:flex;flex-direction:column;gap:8px;align-items:stretch;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;text-align:left;font:inherit;color:inherit;cursor:pointer}
+  .q2-tile:hover,.q2-ri:hover{border-color:var(--accent)}
+  .q2-tile .sq,.q2-ri .sq{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:none}
+  .q2-tile .sq svg,.q2-ri .sq svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .q2-tile .tx{min-width:0}.q2-tile>.q2-fr{position:absolute;top:18px;right:10px}.q2-tile b{display:block;font-size:16.5px;line-height:1.2}.q2-tile small{display:block;font-size:14px;color:var(--muted);margin-top:2px}
+  .q2-tile small.ko,.q2-ri small.ko,.q2-v.ko{color:var(--ko);font-weight:700}.q2-tile small.warn,.q2-ri small.warn{color:var(--warn);font-weight:700}
+  .q2-fr{width:26px;height:26px;stroke:#4A5A66;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;flex:none}
+  .q2-h2{font-size:23px;margin:4px 2px 10px}
+  .q2-box{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:12px}
+  .q2-bt{padding:11px 12px 4px;font-size:13.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .q2-ri{display:flex;gap:10px;align-items:center;width:100%;min-height:58px;background:none;border:0;border-top:1px solid #edf1f4;padding:11px 12px;text-align:left;font:inherit;color:inherit;cursor:pointer}
+  .q2-box>.q2-ri:first-child,.q2-bt+.q2-ri{border-top:0}
+  .q2-ri .k{flex:1;min-width:0}.q2-ri .k b{display:block;font-size:16.5px;font-weight:600}.q2-ri .k small{font-size:14px;color:var(--muted)}
+  .q2-v{font-size:15.5px;font-weight:700;text-align:right}.q2-v.ok{color:var(--ok)}.q2-ck{width:17px;height:17px;stroke:var(--ok);fill:none;stroke-width:2.6;vertical-align:-3px;margin-right:3px}
+  .q2-in{width:100%;font-size:17px!important;padding:12px!important;margin:6px 0 12px}
+  .q2-op{display:flex;gap:10px;align-items:center;width:100%;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:8px;text-align:left;font:inherit;color:inherit;cursor:pointer}
+  .q2-op span{flex:1}.q2-op b{display:block;font-size:16.5px}.q2-op small{font-size:14px;color:var(--muted)}
+  .hbtn.q2-aiuto{display:none;background:#E8C15A;color:#132A3A;border-color:#E8C15A;font-weight:700}
+  body.adm:not(.come) .hbtn.q2-aiuto{display:inline-flex}
+  body.adm:not(.come) #htabs,body.adm:not(.come) #hsep,body.adm:not(.come) #gd-sw{display:none!important}
+  #v-hub{padding-top:2px}
   @media(max-width:520px){.ha-barra b{font-size:18px}.ha-barra .g{padding:8px 10px}.ha-barra{gap:10px;padding:14px 12px 12px}}
   .ha-daf{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
   .ha-daf h2{margin:0;padding:11px 16px;font-size:17px;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center;text-transform:none;letter-spacing:0;color:var(--text)}
@@ -1078,6 +1120,7 @@ body.scuro .nav{background:transparent;border-color:#1F3241}
   <span class="hsep" id="hsep"></span>
   <button class="hbtn gsw" id="gd-sw" style="display:none" onclick="gdToggle()" aria-label="Guida accesa o spenta"><span>Guida</span><span class="tr"></span></button>
   <button class="hbtn asp-btn" id="asp-btn" style="display:none" onclick="apriAspetto()" aria-label="Aspetto"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>Aspetto</span></button>
+  <button class="hbtn q2-aiuto" id="q2-aiuto" onclick="haAiuto(this)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14M12 17.5h.01"/></svg><span>Aiuto</span></button>
   <button class="hbtn sole-btn" id="sole-btn" aria-pressed="false" title="Modalità sole: contrasto massimo" aria-label="Modalità sole" onclick="sole(this)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg></button>
   <div class="chip" id="chip" role="button" tabindex="0" onclick="apriAccount()" title="Account"></div>
 </header>
@@ -1722,6 +1765,7 @@ body.scuro .nav{background:transparent;border-color:#1F3241}
     </div>
   </div>
   <!-- ================= LE PAROLE DEL DRONE ================= -->
+  <div id="v-hub" class="hidden"></div>
   <div id="v-parole" class="hidden">
     <div class="card"><h2>Le parole del drone</h2><div class="nota">Le sigle e le parole del volo, spiegate in parole semplici. Tocca una parola per la spiegazione completa con un esempio.</div>
       <input type="text" class="par-cerca" placeholder="Cerca una parola (es. NOTAM)" oninput="disegnaParole(this.value)">
@@ -3050,8 +3094,9 @@ function apriDflight(){
     B('qr','Droni e QR','Per un drone nuovo: «Associa un UAS», poi scarica il suo QR da attaccare sul drone.')+
     `<div class="df-tip">${DF_ENTRA()}</div>`;
   const chk='<svg viewBox="0 0 24 24">'+IC.check+'</svg>';
-  document.getElementById('df-op').innerHTML=[['Codice operatore',cod?OP.codice:'da inserire',cod],['Registrato il',OP.dfReg||'—',!!OP.dfReg,!OP.dfReg],['Abbonamento',OP.dfAbb?'fino al '+OP.dfAbb:'da inserire',abb==='ok'],['QR sui droni',qrOk+' su '+DRONI.length,qrOk===DRONI.length],['File delle zone',ZONEINFO?'del '+ZONEINFO.data+(zg!=null&&zg<=7?' · da aggiornare':''):'da caricare',!!ZONEINFO&&!(zg!=null&&zg<=7)]]
-    .map(x=>`<div class="fld"><div class="k">${x[2]?chk:''}${x[0]}</div><div class="v" style="${x[2]?'':x[3]?'color:var(--muted);font-weight:500':'color:var(--ko)'}">${ESC(x[1])}</div></div>`).join('')+(ADM?`<div class="row" style="grid-column:1/-1"><button class="btn sec mini" onclick="apriAdmin('ad-op')">Cambia i dati</button></div>`:'');
+  if(ADM&&!COME) document.getElementById('df-d-dati').open=true;
+  document.getElementById('df-op').innerHTML=(ADM&&!COME?`<div class="q2-box" style="grid-column:1/-1;margin:0 0 4px">${q2RigaOp('codice')+q2RigaOp('dfReg')+q2RigaOp('dfAbb')}</div>`:'')+(ADM&&!COME?[]:[['Codice operatore',cod?OP.codice:'da inserire',cod],['Registrato il',OP.dfReg||'—',!!OP.dfReg,!OP.dfReg],['Abbonamento',OP.dfAbb?'fino al '+OP.dfAbb:'da inserire',abb==='ok']]).concat([['QR sui droni',qrOk+' su '+DRONI.length,qrOk===DRONI.length],['File delle zone',ZONEINFO?'del '+ZONEINFO.data+(zg!=null&&zg<=7?' · da aggiornare':''):'da caricare',!!ZONEINFO&&!(zg!=null&&zg<=7)]])
+    .map(x=>`<div class="fld"><div class="k">${x[2]?chk:''}${x[0]}</div><div class="v" style="${x[2]?'':x[3]?'color:var(--muted);font-weight:500':'color:var(--ko)'}">${ESC(x[1])}</div></div>`).join('');
   document.getElementById('df-qr').innerHTML=DRONI.filter(d=>!d.qr).map(d=>`<div class="allegato"><div class="mark warn">${svg('esc')}</div><div class="f"><b>${ESC(d.nome)}</b><br>QR da applicare</div><button class="btn sec mini" onclick="apriDrone(${d.id},'droni')">Scheda</button></div>`).join('');
   document.getElementById('df-notam').innerHTML=`<div style="font-size:15px">Si vedono sulla <b>mappa D-Flight</b>: nel controllo prima del volo il pilota la apre e segna cosa ha trovato. Come controllo in più c’è anche una mappa non ufficiale, senza account e in inglese.</div>
     <details class="nt-cosa" style="margin-top:8px"><summary>Cosa sono i NOTAM</summary>${SPIEGA_NT}</details>
@@ -3270,6 +3315,9 @@ function calcolaTodo(){
     if(lv!=='ok'&&!rcVale(ASSIC.scad,new Date(new Date().toDateString()))) add(lv,'Polizza RC personale di '+p.nome,(lv==='ko'?'scaduta il ':'scade il ')+q.scad,()=>apriPilota(p.id));
     else if(ADM&&q.doc&&!q.ver) add('warn','Polizza personale di '+p.nome+' da verificare','apri la quietanza',()=>apriPilota(p.id));}
   if(!ADM&&!COME){ const io=ioPilota(); if(io&&!(SCHEDEP[io.id]||{}).firma) add('ko','Manca la tua firma','firmi una volta, con il dito: va nei documenti dei tuoi voli',()=>apriPilota(io.id)); }
+  if(ADM){ if(!CODOK()) add('ko','Codice operatore D-Flight','manca: va su tutti i moduli (comincia con ITA-)',()=>q2Campo('codice'));
+    if(!OP.email) add('warn','Email dell’azienda','manca: senza non arrivano gli avvisi',()=>q2Campo('email'));
+    if(!OP.resp) add('warn','Responsabile dei voli','manca: va sui moduli per ENAC',()=>q2Campo('resp')); }
   if(ADM){ if(!(OP.firma&&OP.firma.img)) add('warn','Manca la firma del responsabile','firmi una volta, con il dito o con il mouse',()=>apriAdmin('ad-firma'));
     const sf=PILOTI.filter(p=>!(SCHEDEP[p.id]||{}).firma); if(sf.length) add('warn',pl(sf.length,'pilota senza firma','piloti senza firma'),sf.slice(0,3).map(p=>p.nome).join(', ')+(sf.length>3?'…':'')+' · la fanno dal loro telefono',()=>apriPilota(sf[0].id)); }
   if(ADM) for(const q of RICH.filter(x=>x.stato==='bozza')){ const e=rqEntro(q); const g=e?Math.ceil((e-new Date(new Date().toDateString()))/864e5):null;
@@ -3319,13 +3367,24 @@ let NAVST=[], NAV_LOG=null, NAV_NO=false;
 const CRUMB_VAI={'Home':()=>vai('home'),'Home Admin':()=>vai('home'),'Controllo prima del volo':()=>{ if(dSel&&pSel) vai('controllo','Controllo prima del volo'); else vai('home'); },
   'Voli':()=>apriVoli(),'Registro voli':()=>apriVoli(),'Richieste di permesso':()=>apriRichieste(),'Valutazioni del rischio':()=>apriRischi(),'Checklist':()=>apriCheck(),'Segnalazioni':()=>apriSegnalazioni(),'Account':()=>apriAccount(),'Documenti':()=>apriDocumenti(),'Impostazioni':()=>{ if(ADM&&!COME) hadmApri('imp'); else vai('home'); }};
 const CRUMB_SEZ={'Lavoro':'lav','Flotta':'flotta','Persone':'persone','Regole e sicurezza':'regole'};
+Q2_HUBNOMI={'Lavori':'lavori','Permessi e sicurezza':'permessi','Agricoltura':'agri','Impostazioni':'imp'}; CRUMB_VAI['D-Flight e zone']=()=>apriDflight();
 ['Clienti e lavori','Preventivi','Calendario','Droni','Batterie','Manutenzioni','Inventario','Piloti','D-Flight','Zone e D-Flight','Autorizzazioni ENAC','Campi','Trattamenti'].forEach(n=>CRUMB_VAI[n]=()=>apriPagina(n));
-function crumbAzione(t){ if(CRUMB_SEZ[t]) return ()=>{ if(ADM&&!COME) hadmApri(CRUMB_SEZ[t]); else vai('home'); }; return CRUMB_VAI[t]||null; }
-let CRUMB_P=[];
+function crumbAzione(t){ if(Q2_HUBNOMI[t]&&ADM&&!COME) return ()=>apriHub(Q2_HUBNOMI[t]); if(CRUMB_SEZ[t]) return ()=>{ if(ADM&&!COME) hadmApri(CRUMB_SEZ[t]); else vai('home'); }; return CRUMB_VAI[t]||null; }
+let CRUMB_P=[]; var Q2_HUBNOMI;
+/* i nomi dei vecchi gruppi diventano quelli dei riquadri della Home */
+function q2Crumb(P){ const o=[];
+  for(let i=0;i<P.length;i++){ const t=P[i], n=P[i+1]||'';
+    if(t==='Flotta'){ if(n!=='Droni') o.push('Droni'); continue; }
+    if(t==='Persone'){ if(n!=='Piloti') o.push('Piloti'); continue; }
+    if(t==='Lavoro'){ if(n==='Registro voli'){ o.push('Voli'); i++; } else if(n!=='Preventivi') o.push('Lavori'); continue; }
+    if(t==='Regole e sicurezza'){ if(/^(Campi|Trattamenti)$/.test(n)) o.push('Agricoltura'); else if(!/D-Flight/.test(n)) o.push('Permessi e sicurezza'); continue; }
+    if(t==='Zone e D-Flight') { o.push('D-Flight e zone'); continue; }
+    o.push(t); }
+  return o; }
 function crumbLinks(){
   const el=document.getElementById('crumb'); if(!el) return;
   const tmp=document.createElement('div'); tmp.innerHTML=el.innerHTML;
-  const parti=tmp.textContent.split('›').map(x=>x.trim()).filter(Boolean); CRUMB_P=parti;
+  let parti=tmp.textContent.split('›').map(x=>x.trim()).filter(Boolean); if(ADM&&!COME) parti=q2Crumb(parti); CRUMB_P=parti;
   if(parti.length<2){ el.classList.remove('corto'); return; }
   const nome=t=>t==='Home Admin'?'Home':t;
   const pezzo=(t,i)=>i===parti.length-1?`<b>${ESC(t)}</b>`:crumbAzione(t)?`<a href="#" onclick="crumbVai(${i});return false">${ESC(nome(t))}</a>`:`<span>${ESC(t)}</span>`;
@@ -4175,30 +4234,23 @@ function hadmVoce(tipo,n){
 }
 function homeAdm(todo){
   const o=new Date(), att=DISP.filter(x=>x.stato==='attesa');
-  const righe=att.map(x=>`<div class="ha-rg"><span class="hl ko"></span><div class="t"><b>Telefono da approvare: ${ESC(x.n)}</b><small>codice ${ESC(x.codice||'')} · approva solo se è quello che vede sul suo telefono</small></div><button class="btn mini" type="button" onclick="dispAz('approva','${x.id}',this)"><span class="spin"></span>Approva</button></div>`)
-    .concat(todo.map((x,i)=>[x,i]).filter(([x])=>x.liv==='ko'||x.liv==='warn').sort((a,b)=>(a[0].liv==='ko'?0:1)-(b[0].liv==='ko'?0:1)).map(([x,i])=>`<div class="ha-rg"><span class="hl ${x.liv}"></span><div class="t"><b>${x.t}</b><small>${x.w||''}</small></div>${x.go?`<button class="btn sec mini" type="button" onclick="TODOGO[${i}]()">Apri</button>`:''}</div>`));
-  const tutte=HADM_APERTE.has('_daf'), vis=tutte?righe:righe.slice(0,6);
-  const sez=HADM_SEZ.map(([k,t,sub,col,ico,V])=>{
-    const voci=V.map(([tp,n])=>hadmVoce(tp,n)).filter(v=>v&&v.vis); if(!voci.length) return '';
-    const ctrl=voci.some(v=>v.ctrl);
-    return `<details class="ha-sez" id="ha-${k}" ${HADM_APERTE.has(k)?'open':''} ontoggle="window.hadmToggle&&hadmToggle('${k}',this.open)" style="--fc:var(${col})">
-      <summary><span class="ico">${'<svg viewBox="0 0 24 24">'+ico+'</svg>'}</span><span class="tt"><b>${t}</b><small>${sub}</small></span>${(()=>{const k=voci.filter(v=>v.d==='ko').length, w=voci.filter(v=>v.d==='warn').length; return k?`<span class="tag ko">${k===1?'1 da fare subito':k+' da fare subito'}</span>`:w?`<span class="tag warn">${w===1?'1 da guardare':w+' da guardare'}</span>`:'';})()}<svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></summary>
-      <div class="ha-voci">${voci.filter(v=>!v.ctrl).map(v=>`<button class="ha-v" type="button" onclick="${v.go}">${v.d?`<span class="d ${v.d}"></span>`:''}<span class="ico">${v.i}</span><span><b>${ESC(v.n)}</b><small>${ESC(v.c||'')}</small></span></button>`).join('')}</div>
-      ${ctrl?`<div class="ha-ctrl" id="ha-ctrl"><div class="hcap">Controllo prima del volo</div><div class="nota" style="margin-bottom:6px">Di solito lo fa il pilota sul posto, dal suo telefono. Qui puoi provarlo in anticipo per un lavoro.</div>
-        <div class="hsel">${selDrone()}${selPilota()}</div>${campiLavoro()}<button class="btn" id="h-btn" onclick="avviaControllo(this)"><span class="spin"></span>Inizia il controllo</button></div>`:''}
-    </details>`;}).join('');
-  return `<div class="ha-barra"><span class="sc"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg></span><div><b>Quota 120 · Home dell’Admin</b><span>${GIORNI[o.getDay()].toLowerCase()} ${o.getDate()} ${MESI_L[o.getMonth()]} · qui vedi e gestisci tutto</span></div><button class="g" type="button" id="ha-aiuto" onclick="haAiuto(this)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14M12 17.5h.01"/></svg>Aiuto</button></div>
+  const fr='<svg class="q2-fr" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>';
+  const righe=att.map(x=>`<div class="q2-dr"><span class="p ko"></span><div class="t"><b>Telefono da approvare: ${ESC(x.n)}</b><small>codice ${ESC(x.codice||'')} · approva solo se è quello che vede sul suo telefono</small></div><button class="q2-az" type="button" onclick="dispAz('approva','${x.id}',this)"><span class="spin"></span>Approva</button></div>`)
+    .concat(todo.map((x,i)=>[x,i]).filter(([x])=>x.liv==='ko'||x.liv==='warn').map(([x,i])=>`<div class="q2-dr"><span class="p ${x.liv}"></span><div class="t"><b>${x.t}</b><small>${x.w||''}</small></div>${x.go?`<button class="q2-az" type="button" onclick="TODOGO[${i}]()">${todoAz(x.t)}</button>`:''}</div>`));
+  const tutte=HADM_APERTE.has('_daf'), N=5;
+  const daf=righe.length?righe.map((r,i)=>!tutte&&i>=N?'':r).join(''):'<div class="q2-dr"><span class="p ok"></span><div class="t"><b>Tutto in regola</b><small>niente da sistemare</small></div></div>';
+  const tiles=Q2_TILES.map(t=>{ const st=q2Stato(t); if(!st) return '';
+    return `<button type="button" class="q2-tile" id="q2-${t.k}" onclick="${t.go||`apriHub('${t.k}')`}"><span class="sq" style="background:var(${t.col})"><svg viewBox="0 0 24 24">${t.i}</svg></span><span class="tx"><b>${t.n}</b><small class="${st.d}">${ESC(st.c)}</small></span>${fr}</button>`; }).join('');
+  return `<div class="q2-sal"><div><b>${ESC((OP.nome||'Quota 120').replace(/ \(dati di esempio\)/,''))}</b><span>${GIORNI[o.getDay()].toLowerCase()} ${o.getDate()} ${MESI_L[o.getMonth()]} · Admin</span></div><button type="button" class="q2-nuovo" id="q2-nuovo" onclick="q2Nuovo()"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Nuovo</button></div>
     ${ppBarra()}
-    <details class="ha-daf ${righe.length?'ko':'ok'}" id="ha-daf" ${HADM_APERTE.has('_dafo')?'open':''} ontoggle="window.hadmToggle&&hadmToggle('_dafo',this.open)"><summary><span class="dic"><svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg></span><span class="dtt"><b>Da fare</b><small>scadenze e cose da sistemare</small></span><span class="st ${righe.length?'ko':'ok'}">${righe.length?righe.length+' da fare':'tutto a posto'}</span><svg class="dch" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></summary>
-      ${righe.length?righe.join(''):'<div class="ha-rg"><span class="hl ok"></span><div class="t"><b>Niente da fare</b><small>tutto in regola</small></div></div>'}</details>
-    <button type="button" class="ha-volo ha-zm" id="ha-zmappa" onclick="apriMappaZone()"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="10" r="3"/><path d="M12 21s-7-6.5-7-11a7 7 0 0114 0c0 4.5-7 11-7 11z"/></svg></span><span class="t"><b>Mappa delle zone</b><small>Dove e fino a che quota si vola, e a chi chiedere il permesso</small></span><span class="btn mini">Apri</span></button>
-    ${sez}
-    <div class="ha-leg">Barretta o pallino <b style="color:var(--ko)">rosso</b>: da fare subito · <b style="color:var(--warn)">giallo</b>: presto · niente: tutto a posto. Le sezioni restano chiuse finché non le apri.</div>
+    <div class="q2-cerca"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="q2-q" type="search" placeholder="Cosa vuoi fare? Es. codice, polizza" oninput="q2Cerca(this.value)" autocomplete="off"></div><div class="q2-ris" id="q2-ris"></div>
+    <div class="q2-h3"><span>Da sistemare${righe.length?' · '+righe.length:''}</span>${righe.length>N?`<a href="#" onclick="hadmToggle('_daf',!HADM_APERTE.has('_daf'));disegnaHome();return false">${tutte?'Mostra meno':'Vedi tutte ('+righe.length+')'}</a>`:''}</div>
+    <div class="q2-daf" id="ha-daf">${daf}</div>
+    <div class="q2-h3"><span>Tutto il resto</span></div><div class="q2-tiles">${tiles}</div>
     ${segnHome()}`;
 }
 function hadmToggle(k,on){ if(on) HADM_APERTE.add(k); else HADM_APERTE.delete(k); }
-function hadmApri(k,ctrl){ if(VISTA!=='home') vai('home'); HADM_APERTE.add(k); const d=document.getElementById('ha-'+k); if(d) d.open=true;
-  setTimeout(()=>{ const e=document.getElementById(ctrl?'ha-ctrl':'ha-'+k); if(e) e.scrollIntoView({behavior:'smooth',block:'start'}); if(ctrl){ const s=document.getElementById('h-drone'); s&&s.focus(); } },80); }
+function hadmApri(k,ctrl){ if(ctrl) return vaiControllo(); apriHub({lav:'lavori',flotta:'droni',persone:'piloti',regole:'permessi',imp:'imp'}[k]||k); }
 
 /* ---------- «I miei lavori» nella Home del pilota: i lavori che l'Admin gli ha assegnato ---------- */
 function mieiLavori(){
@@ -5560,6 +5612,79 @@ function gdAll(){
 }
 function gdEls(){ if(document.getElementById('gdHole')) return; [['gdDim','gd-dim'],['gdIntro','gd-intro'],['gdHole','gd-hole'],['gdTip','gd-tip']].forEach(([id,c])=>{const e=document.createElement('div');e.id=id;e.className=c;document.body.appendChild(e);}); }
 
+
+/* ---------- Home dell'Admin semplice: riquadri, pagine di gruppo, campi con un tocco, ricerca, Nuovo ---------- */
+const Q2I={cal:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/>',log:'<path d="M4 19V5M4 19h16"/><path d="M8 15l3-4 3 2 5-6"/>',
+ drone:'<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8 8l8 8M16 8l-8 8"/>',
+ users:'<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><path d="M16 4.5a3.5 3.5 0 010 7M18 14c2 .8 3 2.8 3 6"/>',
+ pin:'<circle cx="12" cy="10" r="3"/><path d="M12 21s-7-6.5-7-11a7 7 0 0114 0c0 4.5-7 11-7 11z"/>',reg:'<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M12 8v5M12 16h.01"/>',
+ leaf:'<path d="M5 19c0-8 5-13 14-14 0 9-5 14-13 14"/><path d="M5 19l7-7"/>',up:'<path d="M6 3h9l3 3v15H6z"/><path d="M12 17v-6M9 13l3-3 3 3"/>',
+ euro:'<path d="M17 6a7 7 0 1 0 0 12"/><path d="M4 10h9M4 14h9"/>',gear:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>'};
+const Q2_TILES=[
+ {k:'lavori',n:'Lavori',col:'--f-attivita',i:Q2I.cal,V:[['t','Clienti e lavori'],['t','Calendario']]},
+ {k:'voli',n:'Voli',col:'--f-attivita',i:Q2I.log,V:[['t','Registro voli']],go:'apriVoli()'},
+ {k:'droni',n:'Droni',col:'--f-flotta',i:Q2I.drone,V:[['t','Droni'],['t','Batterie'],['t','Manutenzioni'],['t','Inventario'],['p','Aggiungi drone']]},
+ {k:'piloti',n:'Piloti',col:'--f-persone',i:Q2I.users,V:[['t','Piloti'],['p','Aggiungi pilota'],['p','Le firme'],['p','Telefoni collegati']]},
+ {k:'dflight',n:'D-Flight e zone',col:'--f-regole',i:Q2I.pin,V:[['x','zd']],go:'apriDflight()'},
+ {k:'permessi',n:'Permessi e sicurezza',col:'--f-regole',i:Q2I.reg,V:[['t','Autorizzazioni ENAC'],['p','Richieste di permesso'],['p','Valutazioni del rischio'],['p','Segnalazioni'],['p','Checklist']]},
+ {k:'agri',n:'Agricoltura',col:'--f-agri,#6b7a45',i:Q2I.leaf,V:[['t','Campi'],['t','Trattamenti']]},
+ {k:'documenti',n:'Documenti',col:'--f-imp',i:Q2I.up,V:[['x','doc']],go:'apriDocumenti()'},
+ {k:'prev',n:'Preventivi',col:'--f-attivita',i:Q2I.euro,V:[['t','Preventivi']],go:"apriPagina('Preventivi')"},
+ {k:'imp',n:'Impostazioni',col:'--f-imp',i:Q2I.gear,V:[['p','Dati dell’operatore'],['p','Avvisi via email'],['p','Utenti e permessi'],['x','vista'],['p','Codice dell’Admin'],['x','guida'],['p','Studio Gestionale'],['x','parole']]}];
+function q2Voci(t){ return t.V.map(([tp,n])=>{ if(n==='vista') return {n:'Vedi come un pilota',c:'controlli cosa vede ognuno',d:'',i:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>',go:'tabOperatore()',vis:PILOTI.length>0};
+   if(n==='guida') return {n:'Tasti «Guidami» nelle pagine',c:gdOn()?'accesi: tocca per spegnerli':'spenti: tocca per accenderli',d:'',i:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14M12 17.5h.01"/></svg>',go:"gdToggle();apriHub('imp')",vis:true};
+   return hadmVoce(tp,n); }).filter(v=>v&&v.vis); }
+function q2Stato(t){ const v=q2Voci(t); if(!v.length) return null;
+  const k=v.filter(x=>x.d==='ko').length, w=v.filter(x=>x.d==='warn').length;
+  if(t.k==='imp'){ const m=['nome','resp','email','tel'].filter(x=>!OP[x]||/dati di esempio/.test(OP[x])).length+(OP.firma&&OP.firma.img?0:1); if(m) return {c:pl(m,'dato da completare','dati da completare'),d:'warn'}; }
+  if(k) return {c:t.V.length>1?pl(k,'da fare subito','da fare subito'):v[0].c,d:'ko'}; if(w) return {c:t.V.length>1?pl(w,'da guardare','da guardare'):v[0].c,d:'warn'};
+  return {c:{lavori:v[0].c,droni:v[0].c,piloti:v[0].c,permessi:'ENAC, permessi, rischio',agri:v.map(x=>x.c).join(' · '),imp:'azienda, avvisi, accessi'}[t.k]||v[0].c||'',d:''}; }
+function apriHub(k){ const t=Q2_TILES.find(x=>x.k===k); if(!t) return; if(t.go) return (new Function(t.go))();
+  const fr='<svg class="q2-fr" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>';
+  let h=`<h2 class="q2-h2">${t.n}</h2><div class="q2-box">`+q2Voci(t).map(v=>`<button type="button" class="q2-ri" onclick="${v.go}"><span class="sq" style="background:var(${t.col})">${v.i}</span><span class="k"><b>${ESC(v.n)}</b><small class="${v.d||''}">${ESC(v.c||'')}</small></span>${fr}</button>`).join('')+'</div>';
+  if(k==='imp') h+=`<div class="q2-box"><div class="q2-bt">La tua azienda</div>${['nome','resp','email','tel'].map(q2RigaOp).join('')}</div>`;
+  document.getElementById('v-hub').innerHTML=h; HUB_K=k; vai('hub',t.n); }
+let HUB_K='';
+/* un dato dell'azienda: si tocca la riga e si cambia solo quello */
+const Q2_OP={nome:['Nome dell’operatore','Il nome dell’azienda: va su tutti i documenti.','es. Riprese Delta Srl'],
+ codice:['Codice operatore D-Flight','Lo trovi su d-flight.it nel tuo profilo: comincia con ITA-.','es. ITA-rp1234abcd'],
+ resp:['Responsabile','Chi risponde dei voli, di solito tu: va sui moduli per ENAC.','es. Mario Rossi'],
+ email:['Email','Ci arrivano gli avvisi e va sui documenti per i clienti.','es. info@azienda.it'],
+ tel:['Telefono','Va sui documenti per i clienti.','es. 333 123 4567'],
+ dfReg:['Registrato su D-Flight il','La data in cui ti sei registrato come operatore.','gg/mm/aaaa'],
+ dfAbb:['Abbonamento D-Flight fino al','Ti avviso prima del rinnovo.','gg/mm/aaaa']};
+function q2ValOp(k){ const v=OP[k]||''; return (k==='codice'&&/x{3}/i.test(v))||/dati di esempio/.test(v)&&k!=='nome'?'':v; }
+function q2RigaOp(k){ const v=q2ValOp(k);
+  return `<button type="button" class="q2-ri" onclick="q2Campo('${k}')"><span class="k"><b>${Q2_OP[k][0]}</b></span><span class="q2-v ${v?'ok':'ko'}">${v?'<svg class="q2-ck" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>'+ESC(v.replace(/ \(dati di esempio\)/,'')):'da inserire'}</span><svg class="q2-fr" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>`; }
+function q2Campo(k){ const d=Q2_OP[k]; if(!d) return; haAiutoChiudi(); q2Ris(false);
+  gdSheet(`<h2>${d[0]}</h2><p class="gd-sub">${d[1]}</p><input class="adm-in q2-in" id="q2-f" value="${ESC(q2ValOp(k).replace(/ \(dati di esempio\)/,''))}" placeholder="${d[2]}" onkeydown="if(event.key==='Enter')q2SalvaCampo('${k}',document.getElementById('q2-sv'))">
+    <div class="row"><button class="btn" id="q2-sv" onclick="q2SalvaCampo('${k}',this)"><span class="spin"></span>Salva</button><button class="btn sec" onclick="gdChiudiSheet()">Annulla</button></div>`);
+  setTimeout(()=>{ const i=document.getElementById('q2-f'); i&&i.focus(); },60); }
+function q2SalvaCampo(k,b){ const v=document.getElementById('q2-f').value.trim();
+  if(/^df/.test(k)&&v&&!dt(v)){ toast('La data va scritta come gg/mm/aaaa'); return; }
+  if(k==='codice'&&v&&!/^ITA/i.test(v)){ toast('Il codice D-Flight comincia con ITA-'); return; }
+  lavora(b,()=>{ OP[k]=k==='codice'?v.replace(/^ita-?/i,'ITA-'):v; testata(); gdChiudiSheet(); toast(Q2_OP[k][0]+': salvato');
+    if(VISTA==='home') disegnaHome(); else if(VISTA==='dflight') apriDflight(); else if(VISTA==='hub') apriHub(HUB_K); else if(VISTA==='admin'&&typeof disegnaDatiOp==='function') disegnaDatiOp(false); }); }
+/* tasto della riga «Da sistemare»: dice cosa fa */
+function todoAz(t){ const r=[[/^Codice operatore|^Responsabile|^Email dell/,'Scrivi'],[/^Abbonamento D-Flight/,'Rinnova'],[/Autorizzazione ENAC/,'Prepara'],[/Check list|QR D-Flight|Polizza|attestato|Attestato|A1-A3|A2 |STS|file delle zone/i,'Carica'],
+  [/^Manutenzione/,'Segna fatta'],[/Batteria|celle|batteria/,'Controlla'],[/firma del responsabile|Manca la tua firma/,'Firma'],[/Richiesta di permesso/,'Manda'],[/trattament|volo da completare|voli da completare/,'Completa']];
+  for(const [re,l] of r) if(re.test(t)) return l; return 'Apri'; }
+/* ricerca «Cosa vuoi fare?» */
+function q2Indice(){ const L=[];
+  Object.entries(Q2_OP).forEach(([k,d])=>L.push({n:d[0],a:`q2Campo('${k}')`,s:{codice:'d-flight ita operatore',dfAbb:'abbonamento rinnovo d-flight',email:'mail avvisi',tel:'cellulare'}[k]||''}));
+  Q2_TILES.forEach(t=>{ L.push({n:t.n,a:t.go||`apriHub('${t.k}')`,s:''}); q2Voci(t).forEach(v=>L.push({n:v.n,a:v.go,s:t.n})); });
+  L.push({n:'Mappa delle zone',a:'apriMappaZone()',s:'quota dove si vola zone'},{n:'File delle zone',a:'apriZone()',s:'carica zone d-flight'},{n:'Nuovo lavoro',a:'nuovoLavoro()',s:'cliente'},
+    {n:'Controllo prima del volo',a:'vaiControllo()',s:'volo'},{n:'Guidami in un volo',a:'guidaVolo()',s:'guida'},{n:'Polizza RC aziendale',a:'apriDocumenti()',s:'assicurazione rc'});
+  return L; }
+function q2Ris(on){ const r=document.getElementById('q2-ris'); if(r&&!on){ r.style.display='none'; r.innerHTML=''; } }
+function q2Cerca(q){ const r=document.getElementById('q2-ris'); if(!r) return; const n=normM(q); if(n.length<2) return q2Ris(false);
+  const visti=new Set(), L=q2Indice().filter(x=>{ const h=normM(x.n+' '+x.s); if(!n.split(' ').every(w=>h.includes(w))||visti.has(x.n)) return false; visti.add(x.n); return true; }).slice(0,6);
+  r.innerHTML=L.length?L.map((x,i)=>`<button type="button" onclick="q2Ris(false);document.getElementById('q2-q').value='';${x.a.replace(/"/g,'&quot;')}"><span><b>${ESC(x.n)}</b>${x.s&&!/ /.test(x.s)||Q2_TILES.some(t=>t.n===x.s)?`<small>${ESC(x.s)}</small>`:''}</span><svg class="q2-fr" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>`).join('')
+    :'<div class="q2-vuoto">Nessun risultato: prova con un’altra parola</div>'; r.style.display='block'; }
+/* tasto «Nuovo» */
+function q2Nuovo(){ const fr='<svg class="q2-fr" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>', op=(t,c,a)=>`<button type="button" class="q2-op" onclick="gdChiudiSheet();${a}"><span><b>${t}</b><small>${c}</small></span>${fr}</button>`;
+  gdSheet('<h2>Cosa vuoi aggiungere?</h2><p class="gd-sub">Ti porto dritto al modulo.</p>'+op('Lavoro','cliente, data, luogo, drone e pilota','nuovoLavoro()')+op('Documento','foto o PDF: lo leggo io e lo metto al suo posto','apriDocumenti()')
+    +op('Drone','nome, classe, matricola','nuovoDrone()')+op('Pilota','nome e matricola','nuovoPilota()')+op('Preventivo','per un cliente','nuovoPreventivo(this)')+'<div class="row"><button class="btn sec" onclick="gdChiudiSheet()">Annulla</button></div>'); }
 /* ---------- Home dell'Admin: tasto «Aiuto» (un solo ingresso per tutte le guide) e barra sottile dei Primi passi ---------- */
 function ppStato(){ const L=ppLista(), F=L.map(x=>{try{return x.ok();}catch(e){return false;}}); return {L,F,n:F.filter(Boolean).length,i:F.indexOf(false)}; }
 function ppBarra(){ const {L,n,i}=ppStato(); if(!L.length||i<0) return '';
@@ -5572,19 +5697,20 @@ function haAiuto(b){ if(document.querySelector('.ha-menu')) return haAiutoChiudi
   const V=[['--ok','<path d="M5 21V4h11l-2 4 2 4H5"/>','Prepara l’azienda',ppTxt,i<0?'ppElenco()':`ppFai(${i})`],
     ['--f-flotta','<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8 8l8 8M16 8l-8 8"/>','Guidami in un volo','Tutte le operazioni di un volo, una dopo l’altra, dalle zone D-Flight alla chiusura','guidaVolo()'],
     ['--accent','<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14M12 17.5h.01"/>','Guida di questa pagina','Ti mostra a cosa serve ogni riquadro della Home','gdStart(\'homeadm\');gdGo()'],
-    ['--muted','<path d="M4 5h11a3 3 0 013 3v11H7a3 3 0 01-3-3z"/><path d="M8 9h6M8 13h6"/>','Le parole del drone','D-Flight, ENAC, NOTAM e le altre sigle spiegate','apriParole()']];
+    ['--muted','<path d="M4 5h11a3 3 0 013 3v11H7a3 3 0 01-3-3z"/><path d="M8 9h6M8 13h6"/>','Le parole del drone','D-Flight, ENAC, NOTAM e le altre sigle spiegate','apriParole()'],
+    ['--f-imp','<path d="M4 12h16M4 12a3 3 0 013-3h10a3 3 0 010 6H7a3 3 0 01-3-3z"/>',gdOn()?'Spegni i tasti «Guidami»':'Accendi i tasti «Guidami»',gdOn()?'quando conosci il programma: lo schermo è più pulito':'in ogni pagina torna il tasto con le guide passo passo','gdToggle()']];
   const velo=document.createElement('div'); velo.className='ha-menu-velo'; velo.onclick=haAiutoChiudi; document.body.appendChild(velo);
   const m=document.createElement('div'); m.className='ha-menu'; m.innerHTML='<div class="hm-cap">Cosa ti serve?</div>'+V.map(([c,ic,t,d,go])=>`<button type="button" onclick="haAiutoChiudi();${go}"><span class="ico" style="background:var(${c})"><svg viewBox="0 0 24 24">${ic}</svg></span><span><b>${t}</b><small>${d}</small></span></button>`).join('');
-  const r=b.getBoundingClientRect(); m.style.top=(r.bottom+8)+'px'; m.style.right=Math.max(16,innerWidth-r.right)+'px'; document.body.appendChild(m); }
+  const r=b.getBoundingClientRect(); m.style.top=(Math.max(r.bottom,0)+8)+'px'; m.style.right=Math.max(16,innerWidth-r.right)+'px'; document.body.appendChild(m); }
 window.addEventListener('scroll',()=>{ if(document.querySelector('.ha-menu')) haAiutoChiudi(); },{passive:true});
 GUIDES.homeadm={n:'La Home dell’Admin, riquadro per riquadro',r:'adm',base:()=>0,done:()=>false,
-  why:{h:'La Home dell’Admin',p:'Ti mostro a cosa serve ogni riquadro della Home. Non devi toccare niente: leggi e premi «Avanti».',uses:['Home dell’Admin'],tm:''},
+  why:{h:'La Home dell’Admin',p:'Ti mostro a cosa serve ogni parte della Home. Non devi toccare niente: leggi e premi «Avanti».',uses:['Home dell’Admin'],tm:''},
   end:'Hai visto tutta la Home. Quando ti serve aiuto, tocca «Aiuto» in alto.',
-  S:[GV('Aiuto','Il tasto da cui partono tutte le guide: i primi passi, la guida di un volo, questa guida e le parole del drone.','così c’è un solo posto dove cercare aiuto.','ogni volta che non sai cosa fare.',()=>gdVis('#ha-aiuto')),
-   GV('Primi passi','La barra dice quanti passi hai fatto per mettere in regola l’azienda. Toccala e riparti dal passo che manca.','sparisce da sola quando hai finito tutti i passi.','finché non arriva in fondo.',()=>gdVis('#h-pp'),1),
-   GV('Da fare','Scadenze e cose da sistemare, le più urgenti in alto. Rosso: subito. Verde: tutto a posto.','ti dice in un colpo d’occhio se la giornata parte bene.','ogni mattina.',()=>gdVis('#ha-daf')),
-   GV('Mappa delle zone','Tocchi un punto: ti dice se lì si vola, fino a che quota e a chi chiedere il permesso.','le zone cambiano anche di pochi metri.','prima di accettare un lavoro.',()=>gdVis('#ha-zmappa')),
-   GV('Le sezioni','Lavoro, Flotta, Persone, Regole e sicurezza, Impostazioni. Restano chiuse finché non le apri; un’etichetta rossa o gialla dice dove c’è qualcosa da sistemare.','così la Home resta corta e ordinata.','quando ti serve una di quelle cose.',()=>gdVis('#ha-lav'))]};
+  S:[GV('Aiuto','Da qui partono tutte le guide: i primi passi, la guida di un volo, questa guida e le parole del drone. Qui accendi o spegni anche i tasti «Guidami».','così c’è un solo posto dove cercare aiuto.','ogni volta che non sai cosa fare.',()=>gdVis('#q2-aiuto')),
+   GV('Nuovo','Aggiungi un lavoro, un documento, un drone, un pilota o un preventivo: ti porta dritto al modulo.','non devi cercare in quale pagina si aggiunge.','ogni volta che arriva qualcosa di nuovo.',()=>gdVis('#q2-nuovo')),
+   GV('Cosa vuoi fare?','Scrivi una parola (codice, polizza, batteria…) e tocca il risultato: ti porta dritto lì.','è la strada più corta per qualsiasi cosa.','quando non ricordi dove sta una cosa.',()=>gdVis('#q2-q')),
+   GV('Da sistemare','Le cose che scadono o mancano, le più urgenti in alto. Il tasto di ogni riga dice cosa fa: Scrivi, Carica, Segna fatta…','sistemi tutto da qui, senza girare per le pagine.','ogni mattina, finché non resta «Tutto in regola».',()=>gdVis('#ha-daf')),
+   GV('Tutto il resto','Dieci riquadri, sempre visibili. La scritta rossa o gialla dice dove c’è qualcosa da guardare.','ogni cosa sta in un posto solo.','quando ti serve una di quelle cose.',()=>gdVis('.q2-tiles'))]};
 let VOLO_S=null;
 function guidaVolo(){ VOLO_S=null; gdStart('unvolo'); }
 function passiVolo(){
