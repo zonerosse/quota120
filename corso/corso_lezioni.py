@@ -1,9 +1,9 @@
 # Le lezioni del video corso A1-A3: ogni scena = testo detto dalla voce + quello che si vede.
 # Scena: dict(v=voce, t=titolo, p=[punti], k=etichetta piccola in alto, n=numero grande, l=[(parola,significato)] legenda)
 L = [
- dict(slug='01-sicurezza-del-volo', titolo='Sicurezza del volo', scene=[
-  dict(k='LEZIONE 1', t='Sicurezza del volo', p=['Le regole base della categoria aperta'],
-       v='Lezione uno: la sicurezza del volo. Vediamo le regole base della categoria aperta, quella dei voli semplici, senza permessi.'),
+ dict(slug='01-sicurezza-del-volo', titolo='Sicurezza aerea', scene=[
+  dict(k='LEZIONE 1', t='Sicurezza aerea', p=['Le regole base della categoria aperta'],
+       v='Lezione uno: la sicurezza aerea. Vediamo le regole base della categoria aperta, quella dei voli semplici, senza permessi.'),
   dict(k='CATEGORIA APERTA', t='Quattro regole sempre', p=['A vista, senza binocolo','Sotto i 120 metri','Drone sotto i 25 chili','Niente merci pericolose, niente oggetti lanciati'],
        v='In categoria aperta valgono sempre quattro regole. Il drone si vola a vista, senza binocolo. Si resta sotto i centoventi metri. Il drone pesa meno di venticinque chili. E non si trasportano merci pericolose, né si lasciano cadere oggetti.'),
   dict(k='ALTEZZA MASSIMA', n='120 m', p=['Misurati dal punto del terreno più vicino al drone'],
@@ -20,9 +20,9 @@ L = [
        v='Una regola senza eccezioni: in categoria aperta non si sorvola mai un assembramento di persone, cioè un gruppo che non riesce ad allontanarsi. Vale anche per i droni più piccoli.'),
   dict(k='RIPASSO', t='Da ricordare', l=[('120 m','altezza massima'),('25 kg','peso massimo'),('30 m','distanza in A2'),('150 m','distanza in A3')],
        v='Ripassiamo: centoventi metri di altezza massima, venticinque chili di peso massimo, trenta metri dalle persone in A due, centocinquanta metri dalle zone abitate in A tre. Ora prova le domande della lezione.')]),
- dict(slug='02-spazio-aereo-e-zone', titolo='Spazio aereo e zone', scene=[
-  dict(k='LEZIONE 2', t='Spazio aereo e zone', p=['Dove si può volare e dove no'],
-       v='Lezione due: lo spazio aereo e le zone. Prima di ogni volo bisogna sapere dove si vola, e se in quel punto ci sono regole speciali.'),
+ dict(slug='02-spazio-aereo-e-zone', titolo='Restrizioni dello spazio aereo', scene=[
+  dict(k='LEZIONE 2', t='Restrizioni dello spazio aereo', p=['Dove si può volare e dove no'],
+       v='Lezione due: le restrizioni dello spazio aereo. Prima di ogni volo bisogna sapere dove si vola, e se in quel punto ci sono regole speciali.'),
   dict(k='LA MAPPA UFFICIALE', t='D-Flight', p=['Le zone geografiche per i droni','Dove si vola, fino a che quota','Dove serve un permesso'],
        v='In Italia le zone per i droni si guardano sulla mappa del portale D-Flight. Lì vedi se in quel punto si vola liberamente, fino a che quota, oppure se serve un permesso.'),
   dict(k='VICINO AGLI AEROPORTI', t='CTR e ATZ', p=['Spazi aerei intorno agli aeroporti','Limiti di quota o divieti','Spesso serve un\'autorizzazione'],
@@ -35,9 +35,9 @@ L = [
        v='E se mentre voli si avvicina un aereo o un elicottero? Hanno sempre la precedenza: abbassi subito il drone e ti allontani.'),
   dict(k='RIPASSO', t='Da ricordare', l=[('D-Flight','la mappa delle zone'),('CTR / ATZ','spazi intorno agli aeroporti'),('NOTAM','avviso del giorno'),('AGL','altezza dal suolo')],
        v='Ripassiamo: D-Flight per la mappa delle zone, C T R e A T Z intorno agli aeroporti, i NOTAM per gli avvisi del giorno, e A G L, che vuol dire altezza dal suolo.')]),
- dict(slug='03-regole-e-documenti', titolo='Le regole e i documenti', scene=[
-  dict(k='LEZIONE 3', t='Le regole e i documenti', p=['Operatore, registrazione, classi, Remote ID'],
-       v='Lezione tre: le regole e i documenti. Le regole sono europee, e in Italia le applica l\'ENAC.'),
+ dict(slug='03-regole-e-documenti', titolo='Regolamentazione aeronautica', scene=[
+  dict(k='LEZIONE 3', t='Regolamentazione aeronautica', p=['Operatore, registrazione, classi, Remote ID'],
+       v='Lezione tre: la regolamentazione aeronautica, cioè le regole e i documenti. Le regole sono europee, e in Italia le applica l\'ENAC.'),
   dict(k='DUE FIGURE', l=[('Operatore','il responsabile dei voli, persona o azienda'),('Pilota remoto','chi pilota fisicamente il drone')],
        v='Due figure da non confondere. L\'operatore è il responsabile dei voli, una persona o un\'azienda. Il pilota remoto è chi pilota il drone. Spesso sono la stessa persona.'),
   dict(k='REGISTRAZIONE SU D-FLIGHT', t='Quando serve', p=['Drone da 250 grammi in su','Oppure con fotocamera o sensore','Il codice operatore va attaccato sul drone'],
@@ -48,9 +48,9 @@ L = [
        v='Il Remote ID è il segnale con cui il drone dice chi è mentre vola. Sui C uno, C due e C tre va tenuto acceso, con il codice operatore caricato.'),
   dict(k='RIPASSO', t='Da ricordare', l=[('Reg. UE 2019/947','le regole dei voli'),('Operatore','il responsabile'),('250 g o fotocamera','registrazione'),('Remote ID','acceso su C1, C2, C3')],
        v='Ripassiamo: il regolamento europeo duemiladiciannove novecentoquarantasette, l\'operatore responsabile dei voli, la registrazione da duecentocinquanta grammi o con fotocamera, e il Remote ID acceso sui C uno, C due e C tre.')]),
- dict(slug='04-fattore-umano', titolo='Il fattore umano', scene=[
-  dict(k='LEZIONE 4', t='Il fattore umano', p=['Stanchezza, alcol, attenzione'],
-       v='Lezione quattro: il fattore umano. La maggior parte degli incidenti dipende dal pilota, non dal drone.'),
+ dict(slug='04-fattore-umano', titolo='Limiti delle prestazioni umane', scene=[
+  dict(k='LEZIONE 4', t='Limiti delle prestazioni umane', p=['Stanchezza, alcol, attenzione'],
+       v='Lezione quattro: i limiti delle prestazioni umane. La maggior parte degli incidenti dipende dal pilota, non dal drone.'),
   dict(k='PRIMA DI VOLARE', t='Sei in forma?', p=['Niente alcol, droghe, farmaci che rallentano','Non stanco, non stressato','Se non sei lucido, non voli'],
        v='Prima di volare chiediti se sei in forma. Niente alcol, droghe o farmaci che riducono l\'attenzione. Se sei stanco o stressato, le reazioni rallentano: se non sei lucido, non voli.'),
   dict(k='LA VISTA', t='Un puntino nel cielo', p=['A distanza il drone sparisce','Controluce e cielo bianco ingannano','Non andare oltre quello che vedi'],
@@ -61,9 +61,9 @@ L = [
        v='Con il visore F P V tu non vedi il drone dall\'esterno: in categoria aperta serve un osservatore accanto che lo tiene a vista.'),
   dict(k='RIPASSO', t='Da ricordare', l=[('Idoneità','in forma, niente alcol'),('Distrazione','prima causa di incidenti'),('Osservatore','ti aiuta, sempre in contatto'),('FPV','solo con osservatore')],
        v='Ripassiamo: si vola solo in forma, la distrazione è la prima causa di incidenti, l\'osservatore ti aiuta, e con il visore serve sempre l\'osservatore.')]),
- dict(slug='05-procedure-di-volo', titolo='Procedure di volo', scene=[
-  dict(k='LEZIONE 5', t='Procedure di volo', p=['Prima, durante e dopo'],
-       v='Lezione cinque: le procedure di volo, prima, durante e dopo.'),
+ dict(slug='05-procedure-di-volo', titolo='Procedure operative', scene=[
+  dict(k='LEZIONE 5', t='Procedure operative', p=['Prima, durante e dopo'],
+       v='Lezione cinque: le procedure operative, prima, durante e dopo.'),
   dict(k='PRIMA DEL VOLO', t='La check-list', p=['Zone, NOTAM e meteo','Area libera, ostacoli, cavi','Eliche, batterie, firmware, bussola'],
        v='Prima del volo: zone, NOTAM e meteo. Poi l\'area: libera dalle persone, attenzione a ostacoli e cavi. Poi il drone: eliche integre, batterie cariche e senza gonfiori, firmware aggiornato, bussola a posto.'),
   dict(k='HOME POINT E RTH', t='Il ritorno automatico', p=['Prima di decollare: home point registrato','Altezza di ritorno sopra gli ostacoli'],
@@ -76,9 +76,9 @@ L = [
        v='Dopo il volo: controlla eliche e bracci, togli le batterie, annota il volo e ogni problema. Un incidente va segnalato.'),
   dict(k='RIPASSO', t='Da ricordare', l=[('Home point','prima del decollo'),('Altezza RTH','sopra gli ostacoli'),('Notte','luce verde accesa'),('Follow-me','max 50 m')],
        v='Ripassiamo: home point prima del decollo, altezza di ritorno sopra gli ostacoli, luce verde di notte, follow me entro cinquanta metri.')]),
- dict(slug='06-drone-e-meteo', titolo='Il drone e il meteo', scene=[
-  dict(k='LEZIONE 6', t='Il drone e il meteo', p=['Batterie, GPS, vento, freddo'],
-       v='Lezione sei: il drone e il meteo. Batterie, satelliti, vento e freddo.'),
+ dict(slug='06-drone-e-meteo', titolo='Conoscenze generali degli UAS', scene=[
+  dict(k='LEZIONE 6', t='Conoscenze generali degli UAS', p=['Batterie, GPS, vento, freddo'],
+       v='Lezione sei: le conoscenze generali sul drone, e il meteo. Batterie, satelliti, vento e freddo.'),
   dict(k='LE BATTERIE', t='LiPo', p=['Mai usare una batteria gonfia','Ferma per giorni: a metà carica, 40–60%','Il freddo ne riduce la durata'],
        v='Le batterie sono al litio. Una batteria gonfia non va mai usata. Se resta ferma per giorni, tienila a metà carica, tra il quaranta e il sessanta per cento. E il freddo ne riduce la durata: d\'inverno tienila al caldo e atterra prima.'),
   dict(k='SENZA GPS', t='Modalità ATTI', p=['Il drone non sta fermo','Scivola con il vento','Lo piloti a mano'],
@@ -89,9 +89,9 @@ L = [
        v='Il vento in quota è più forte che a terra: a terra sembra calmo, a cento metri può non esserlo. Controlla il limite di vento del tuo drone.'),
   dict(k='RIPASSO', t='Da ricordare', l=[('Gonfia','non si usa'),('40–60%','carica per conservarla'),('ATTI','senza GPS, scivola'),('Vento','più forte in quota')],
        v='Ripassiamo: batteria gonfia non si usa, conservazione a metà carica, senza GPS il drone scivola, e il vento in quota è più forte.')]),
- dict(slug='07-privacy', titolo='Privacy', scene=[
-  dict(k='LEZIONE 7', t='Privacy', p=['Riprese, persone e dati'],
-       v='Lezione sette: la privacy. Un drone con la fotocamera raccoglie dati personali.'),
+ dict(slug='07-privacy', titolo='Privacy e protezione dei dati', scene=[
+  dict(k='LEZIONE 7', t='Privacy e protezione dei dati', p=['Riprese, persone e dati'],
+       v='Lezione sette: la privacy e la protezione dei dati. Un drone con la fotocamera raccoglie dati personali.'),
   dict(k='DATI PERSONALI', t='Cosa sono', p=['Un volto riconoscibile','Una targa','Una casa, un giardino'],
        v='Sono dati personali un volto riconoscibile, una targa, una casa o un giardino. Valgono le regole europee sulla privacy, il GDPR.'),
   dict(k='LE REGOLE', t='Come comportarsi', p=['Niente persone riconoscibili senza motivo','Serve il consenso, se le riprendi','Non guardare dentro le proprietà','Sfoca volti e targhe prima di pubblicare'],
