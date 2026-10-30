@@ -223,10 +223,10 @@ AZ.rifai=async(x,b)=>{leggiScene();if(!$('#dom').hidden)leggiDom();
   try{const prima=l.video;await salvaC();await caricaC();const n=corsoDi(LEZ.cid).lezioni.find(y=>y.id===LEZ.lid);
     b.disabled=false;b.textContent='Salva e rifai il video';PILA[PILA.length-1][1]=n.t;
     if(n.pronto){$('#st').innerHTML='<div class="stato ok">Salvato. Il video non cambia: le scene sono le stesse.</div>';return}
-    $('#st').innerHTML='<div class="stato"><span class="spin"></span>Salvato. Video in preparazione: pronto tra circa 5-10 minuti. Puoi chiudere, va avanti da solo.</div>';
+    $('#st').innerHTML='<div class="stato"><span class="spin"></span>Salvato. Video in preparazione: pronto entro un’ora circa. Puoi chiudere, va avanti da solo.</div>';
     attendi(LEZ.cid,LEZ.lid)}catch(e){b.disabled=false;b.textContent='Salva e rifai il video';$('#st').innerHTML=`<div class="stato ko">${esc(e.message)}</div>`}};
 let ATT=null;
-function attendi(cid,lid){clearInterval(ATT);let n=0;ATT=setInterval(async()=>{if(++n>60)return clearInterval(ATT);
+function attendi(cid,lid){clearInterval(ATT);let n=0;ATT=setInterval(async()=>{if(++n>160)return clearInterval(ATT);
   try{await caricaC();const l=corsoDi(cid).lezioni.find(y=>y.id===lid);if(l&&l.pronto){clearInterval(ATT);const st=$('#st');if(st&&LEZ&&LEZ.lid===lid)st.innerHTML='<div class="stato ok">Video pronto: è già nel corso. Riapri la lezione per vederlo.</div>'}}catch(e){}},30000)}
 AZ.togliLez=async(x,b)=>{const c=corsoDi(LEZ.cid),l=c.lezioni.find(y=>y.id===LEZ.lid);if(!confirm('Togliere la lezione «'+l.t+'» con il suo video e le sue domande?'))return;
   b.disabled=true;try{c.lezioni=c.lezioni.filter(y=>y.id!==LEZ.lid);await salvaC();PILA.pop();mostra()}catch(e){alert(e.message);b.disabled=false}};
