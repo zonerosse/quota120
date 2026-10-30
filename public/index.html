@@ -6548,6 +6548,7 @@ function rkPericoli(r){
   if(v.includes('case')) add('case','Case vicine',2,4,[['Avvisare i residenti prima del volo',1],['Non sorvolare le case e i cortili',1]]);
   if(v.includes('animali')) add('animali','Animali (allevamenti, pascoli)',2,3,[['Avvisare il proprietario e tenersi lontani',1]]);
   if(v.includes('acqua')) add('acqua','Corsi d’acqua',2,3,[['Decollo e atterraggio lontano dall’acqua',1]]);
+  if(v.includes('agricolo')) add('agricolo','Persone o mezzi al lavoro nei campi',3,3,[['Avvisare chi lavora nel campo prima del volo',1],['Tenere il drone lontano dai mezzi in movimento',1]]);
   if(v.includes('alberi')) add('alberi','Alberi alti o pali',3,3,[['Quota di ritorno automatico sopra gli ostacoli più alti',1],['Volo in vista, senza perdere il drone dietro gli alberi',1]]);
   const Z=r.auto&&r.auto.zona;
   if(Z&&Z.liv==='ko') add('zonad','Zona D-Flight con divieto o autorizzazione',4,5,[['Autorizzazione o coordinamento ottenuto (ENAC, ente della zona)',3]]);
