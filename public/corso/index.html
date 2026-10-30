@@ -102,7 +102,7 @@ video::cue{background:rgba(0,0,0,.78);color:#fff;font-family:var(--body);font-si
 
   <h2 class="sez">SIMULAZIONE D'ESAME</h2>
   <div id="esame">
-    <p class="nota" style="margin-bottom:10px">Come all'esame ENAC: 40 domande a caso, 60 minuti, +2 punti per ogni risposta giusta, 0 se la lasci vuota, −1 se sbagli. Si passa con 60 punti su 80. Se non sei sicuro, conviene lasciarla vuota.</p>
+    <p class="nota" id="esame-desc" style="margin-bottom:10px">Come all'esame ENAC: 40 domande a caso, 60 minuti, +2 punti per ogni risposta giusta, 0 se la lasci vuota, −1 se sbagli. Si passa con 60 punti su 80. Se non sei sicuro, conviene lasciarla vuota.</p>
     <div class="riga"><button class="btn" id="avvia" type="button">Inizia la simulazione</button></div>
     <div id="eq"></div>
   </div>
@@ -110,6 +110,8 @@ video::cue{background:rgba(0,0,0,.78);color:#fff;font-family:var(--body);font-si
 
 <script>
 let L=[],CORSO=null;
+// formato della simulazione: quello del corso, altrimenti l'esame ENAC A1-A3
+let E={n:40,min:60,giusta:2,sbagliata:1,soglia:60};
 let K='q120CorsoA1A3';
 let fatte=[];
 function salva(){try{localStorage.setItem(K,JSON.stringify(fatte))}catch(e){}prog()}
@@ -154,7 +156,7 @@ function correggi(){clearInterval(TIMER);document.getElementById('eq').dataset.f
     const mi=+box.dataset.id.split('-')[0];(M[mi]=M[mi]||{g:0,t:0}).t++;if(s===q[2])M[mi].g++;
     bt.forEach(x=>x.classList.remove('giusta','sbagliata','scelta'));bt[q[2]].classList.add('giusta');if(s!==undefined&&s!==q[2]){bt[s].classList.add('sbagliata');sbagliate++}if(s===q[2])giuste++;
     const sp=box.querySelector('.sp');sp.hidden=false;sp.textContent=(s===q[2]?'Giusto. ':s===undefined?'Senza risposta. ':'No. ')+q[3]});
-  const tot=ELENCO.length,max=tot*2,punti=giuste*2-sbagliate,soglia=Math.ceil(max*0.75),pass=punti>=soglia;
+  const tot=ELENCO.length,max=tot*E.giusta,punti=giuste*E.giusta-sbagliate*E.sbagliata,soglia=Math.ceil(E.soglia/(E.n*E.giusta)*max),pass=punti>=soglia;
   const righe=Object.keys(M).map(Number).sort((x,y)=>x-y).map(i=>`<tr><td>${i+1}. ${esc(L[i].t)}</td><td>${M[i].g} su ${M[i].t}</td><td>${M[i].g/M[i].t>=.75?'<span style="color:var(--ok);font-weight:700">bene</span>':`<a data-ripassa="${i}">da ripassare</a>`}</td></tr>`).join('');
   document.getElementById('esito').innerHTML=`<div class="esito ${pass?'ok':'ko'}"><b>${punti} punti su ${max}</b>${giuste} giuste, ${sbagliate} sbagliate, ${tot-giuste-sbagliate} senza risposta. ${pass?'Promosso: sei pronto per l\'esame ENAC.':'Non ancora: servono '+soglia+' punti.'}</div>
   <h3 style="font:700 18px/1.2 var(--disp);margin:16px 0 8px">Come sei andato in ogni materia</h3><table class="mat"><tr><th>Materia</th><th>Giuste</th><th></th></tr>${righe}</table>
@@ -164,10 +166,10 @@ function orologio(){const r=Math.max(0,Math.round((FINE-Date.now())/1000)),e=doc
 document.getElementById('avvia').addEventListener('click',()=>{
   const tutte=[];L.forEach((l,i)=>l.q.forEach((q,j)=>tutte.push(i+'-'+j)));
   for(let k=tutte.length-1;k>0;k--){const r=Math.floor(Math.random()*(k+1));[tutte[k],tutte[r]]=[tutte[r],tutte[k]]}
-  ELENCO=tutte.slice(0,40);SCELTE={};delete document.getElementById('eq').dataset.fine;
+  ELENCO=tutte.slice(0,E.n);SCELTE={};delete document.getElementById('eq').dataset.fine;
   document.getElementById('eq').innerHTML=ELENCO.map((id,n)=>domanda([(n+1)+'. '+qDi(id)[0],qDi(id)[1]],id)).join('')+`<div class="riga" style="margin-top:14px"><button type="button" class="btn" id="correggi">Consegna e vedi il risultato</button><span class="nota" id="mancano"></span></div><div id="esito" style="margin-top:14px"></div>`;
   document.getElementById('eq').insertAdjacentHTML('afterbegin','<div class="riga" style="position:sticky;top:0;background:var(--bg);padding:8px 0;z-index:2"><b id="tempo" style="font-variant-numeric:tabular-nums">Tempo: 60:00</b></div>');
-  clearInterval(TIMER);FINE=Date.now()+60*60*1000;TIMER=setInterval(orologio,1000);
+  clearInterval(TIMER);FINE=Date.now()+E.min*60*1000;TIMER=setInterval(orologio,1000);
   document.getElementById('avvia').textContent='Ricomincia con altre domande';conta();
 });
 function conta(){const m=ELENCO.length-Object.keys(SCELTE).length,e=document.getElementById('mancano');if(e)e.textContent=m?'Mancano '+m+' risposte':'Tutte risposte'}
@@ -181,8 +183,14 @@ document.getElementById('eq').addEventListener('click',e=>{
 const hx=document.querySelector('header.top');
 function disegna(){
   document.title=CORSO.t;document.querySelector('header.top h1').textContent=CORSO.t;
-  const a1=CORSO.id==='a1a3';document.querySelector('.esame-info').hidden=!a1;document.querySelector('main .nota').hidden=!a1;
-  if(!a1){document.querySelector('header.top .eti').textContent='VIDEOCORSO';document.querySelector('header.top p').textContent=CORSO.s||''}
+  const a1=CORSO.id==='a1a3',ce=CORSO.esame;
+  if(ce){E=Object.assign({},E,ce);
+    if(ce.info)document.querySelector('.esame-info').innerHTML=ce.info.map(x=>`<div><b>${esc(x[0])}</b><span>${esc(x[1])}</span></div>`).join('');
+    if(ce.nota)document.querySelector('main .nota').textContent=ce.nota}
+  const pt=n=>n+(Math.abs(n)===1?' punto':' punti');
+  document.getElementById('esame-desc').textContent=E.n+' domande a caso da tutte le lezioni, '+E.min+' minuti, '+pt(E.giusta)+' per ogni risposta giusta, '+(E.sbagliata?'0 se la lasci vuota, −'+E.sbagliata+' se sbagli':'0 se sbagli o la lasci vuota')+'. Si passa con '+E.soglia+' punti su '+(E.n*E.giusta)+'.'+(E.sbagliata?' Se non sei sicuro, conviene lasciarla vuota.':'');
+  document.querySelector('.esame-info').hidden=!(a1||ce&&ce.info);document.querySelector('main .nota').hidden=!(a1||ce&&ce.nota);
+  if(!a1){document.querySelector('header.top .eti').textContent=ce?'PRIMA DELL\'ESAME ENAC':'VIDEOCORSO';document.querySelector('header.top p').textContent=CORSO.s||''}
   K=a1?'q120CorsoA1A3':'q120Corso-'+CORSO.id;try{fatte=JSON.parse(localStorage.getItem(K)||'[]')}catch(e){fatte=[]}
   const nq=L.reduce((n,l)=>n+(l.q||[]).length,0);document.getElementById('esame').previousElementSibling.hidden=document.getElementById('esame').hidden=!nq;
   L.forEach(l=>{l.v=l.video||'';l.leg=l.leg||[];l.h=l.h||'';l.q=l.q||[];l.s=l.s||''});

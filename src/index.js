@@ -481,8 +481,20 @@ export class Stato extends DurableObject {
     if (p === "/interno/elenco") return J((await st.get("elenco")) || []);
     if (p === "/interno/operatori") { const L = (await st.get("elenco")) || [], out = []; for (const op of L) out.push(Object.assign({ op }, (await st.get("op:" + op)) || {})); return J(out); }
     if (p === "/interno/corsi") {
-      if (request.method === "POST") { const b = await request.json().catch(() => null); if (!Array.isArray(b)) return J({ errore: "dati" }, 400); await st.put("corsi", b); return J({ ok: true }); }
-      return J((await st.get("corsi")) || CORSI_SEME);
+      // i corsi stanno qui; quelli del seme (nel codice) entrano da soli se mancano, o se il seme ha una revisione più nuova
+      const unisci = (salvati, tolti) => { const out = salvati.slice();
+        for (const c of CORSI_SEME) { const i = out.findIndex(x => x.id === c.id);
+          if (i < 0) { if (!tolti.includes(c.id)) out.push(c); } else if ((c.rev || "") > (out[i].rev || "")) out[i] = c; }
+        return out; };
+      if (request.method === "POST") {
+        const b = await request.json().catch(() => null); if (!Array.isArray(b)) return J({ errore: "dati" }, 400);
+        const prima = ((await st.get("corsi")) || CORSI_SEME).map(c => c.id), ora = b.map(c => c.id);
+        let tolti = ((await st.get("corsi-tolti")) || []).filter(id => !ora.includes(id));
+        for (const id of prima) if (!ora.includes(id) && !tolti.includes(id)) tolti.push(id);
+        await st.put("corsi", b); await st.put("corsi-tolti", tolti); return J({ ok: true });
+      }
+      const salvati = await st.get("corsi");
+      return J(salvati ? unisci(salvati, (await st.get("corsi-tolti")) || []) : CORSI_SEME);
     }
     if (p === "/interno/iscritti-n") { let n = 0, n30 = 0, nn = 0; for (const [, v] of await st.list({ prefix: "ce:" })) { n++; if (Date.now() - v.dal < 30 * 864e5) n30++; if (v.novita) nn++; } return J({ n, n30, nn }); }
     const OPN = request.headers.get("x-q120-op") || "";   // "" = versione di prova (dati di esempio)
