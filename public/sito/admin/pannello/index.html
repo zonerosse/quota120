@@ -137,6 +137,7 @@ async function statoP(){await caricaP();const s=P.stato,r=(n,ok,t,d)=>`<tr><td>$
   ${r('Email (codici e avvisi)',s.posta,s.posta?'funziona':'manca la chiave',s.posta?'mittente '+s.mittente:'manca la chiave della posta in Cloudflare')}
   ${r('Lettura file DJI',s.dji,s.dji?'funziona':'manca la chiave',s.dji?'chiave DJI presente':'manca DJI_API_KEY in Cloudflare')}
   ${r('Assistente',s.claude,s.claude?'funziona':'manca la chiave',s.claude?'chiave presente':'manca la chiave in Cloudflare')}
+  ${r('Protezione anti-robot',s.robot,s.robot?'attiva':'non attiva',s.robot?'sui moduli del corso e dell\'Admin':'manca TURNSTILE_SECRET in Cloudflare')}
   ${r('Video dei corsi',s.video===s.lezioni,s.video===s.lezioni?'pronti':'in preparazione',s.video+' su '+s.lezioni)}
   </table></div><p class="fine" style="margin-top:10px">Le chiavi si mettono solo in Cloudflare, in «Variabili e segreti»: qui si vede se ci sono, non cosa contengono.</p>`}
 

@@ -24,6 +24,16 @@ async function corsiConVideo(env, url, corsi, adm) {
     out.push(cc); }
   return out;
 }
+// controllo anti-robot di Cloudflare (Turnstile): attivo solo quando c'è la chiave segreta TURNSTILE_SECRET
+async function antiRobot(env, corpo, request) {
+  if (!env.TURNSTILE_SECRET) return true;
+  let ts = ""; try { ts = String(JSON.parse(corpo).ts || ""); } catch (e) {}
+  if (!ts) return false;
+  const f = new FormData(); f.append("secret", env.TURNSTILE_SECRET); f.append("response", ts);
+  const ip = request.headers.get("cf-connecting-ip"); if (ip) f.append("remoteip", ip);
+  const j = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", { method: "POST", body: f }).then(r => r.json()).catch(() => ({}));
+  return !!j.success;
+}
 // gettone OIDC di GitHub Actions: firmato da GitHub, valido solo per il repository zonerosse/quota120
 async function gettoneGithub(auth) {
   try {
@@ -1136,7 +1146,9 @@ export default {
     if (host === "quota120.com" && p.startsWith("/api/admin/")) {
       const az = p.slice(11), ta = biscotto("q120a"), I = "https://quota120.interno/api/registro/adm-";
       if ((az === "codice" || az === "verifica") && request.method === "POST") {
-        const r = await reg().fetch(new Request(I + az, { method: "POST", headers: { "content-type": "application/json", "cf-connecting-ip": request.headers.get("cf-connecting-ip") || "" }, body: await request.text() }));
+        const corpo = await request.text();
+        if (az === "codice" && !(await antiRobot(env, corpo, request))) return J({ errore: "Controllo anti-robot non superato: ricarica la pagina e riprova." }, 403);
+        const r = await reg().fetch(new Request(I + az, { method: "POST", headers: { "content-type": "application/json", "cf-connecting-ip": request.headers.get("cf-connecting-ip") || "" }, body: corpo }));
         const j = await r.json().catch(() => ({}));
         if (!j.t) return J(j, r.status);
         return new Response(JSON.stringify({ ok: true }), { headers: { "content-type": "application/json", "cache-control": "no-store", "set-cookie": "q120a=" + j.t + "; Path=/; Max-Age=31536000; Secure; HttpOnly; SameSite=Lax" } });
@@ -1157,7 +1169,7 @@ export default {
         const corsi = await corsiConVideo(env, url, await reg().fetch(new Request(N + "/interno/corsi")).then(r => r.json()), true);
         const lez = corsi.flatMap(c => c.lezioni || []), c = n => !!(env[n] && String(env[n]).trim());
         return J({ operatori: ops.map(o => ({ op: o.op, nome: o.nome, email: o.email, adm: o.adm, at: o.at, piloti: o.piloti || 0, droni: o.droni || 0, voli: o.voli || 0, telefoni: o.telefoni || 0, ultimo: o.ultimo || 0, sospeso: !!o.sospeso })),
-          iscritti: isc, stato: { posta: c("RESEND_API_KEY") || c("BREVO_API_KEY"), mittente: env.MITTENTE || "", dji: c("DJI_API_KEY"), claude: c("ANTHROPIC_API_KEY"), video: lez.filter(l => l.pronto).length, lezioni: lez.length }, corsi: corsi.map(x => ({ id: x.id, t: x.t, n: (x.lezioni || []).length })) });
+          iscritti: isc, stato: { posta: c("RESEND_API_KEY") || c("BREVO_API_KEY"), mittente: env.MITTENTE || "", dji: c("DJI_API_KEY"), claude: c("ANTHROPIC_API_KEY"), robot: c("TURNSTILE_SECRET"), video: lez.filter(l => l.pronto).length, lezioni: lez.length }, corsi: corsi.map(x => ({ id: x.id, t: x.t, n: (x.lezioni || []).length })) });
       }
       if (az === "sospendi" && request.method === "POST") { const b = await request.json().catch(() => ({})); if (!SLUG_OK(b.op)) return J({ errore: "operatore" }, 400);
         return env.STATO.get(env.STATO.idFromName("op:" + b.op)).fetch(new Request(N + "/interno/sospendi", { method: "POST", headers: { "x-q120-op": b.op }, body: JSON.stringify({ on: !!b.on }) })); }
@@ -1190,7 +1202,9 @@ export default {
       return J(out);
     }
     if (host === "quota120.com" && (p === "/api/corso/codice" || p === "/api/corso/verifica") && request.method === "POST") {
-      const r = await reg().fetch(new Request("https://quota120.interno/api/registro/corso-" + p.split("/").pop(), { method: "POST", headers: { "content-type": "application/json", "cf-connecting-ip": request.headers.get("cf-connecting-ip") || "" }, body: await request.text() }));
+      const corpo = await request.text();
+      if (p.endsWith("/codice") && !(await antiRobot(env, corpo, request))) return J({ errore: "Controllo anti-robot non superato: ricarica la pagina e riprova." }, 403);
+      const r = await reg().fetch(new Request("https://quota120.interno/api/registro/corso-" + p.split("/").pop(), { method: "POST", headers: { "content-type": "application/json", "cf-connecting-ip": request.headers.get("cf-connecting-ip") || "" }, body: corpo }));
       const j = await r.json().catch(() => ({}));
       if (!j.t) return J(j, r.status);
       return new Response(JSON.stringify({ ok: true }), { headers: { "content-type": "application/json", "cache-control": "no-store", "set-cookie": "q120c=" + j.t + "; Path=/; Max-Age=31536000; Secure; HttpOnly; SameSite=Lax" } });
