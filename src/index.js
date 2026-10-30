@@ -956,6 +956,33 @@ Stato.prototype.registro = async function (request, url, p) {
   const mail = b => String(b.email || "").trim().toLowerCase();
   const spazio = op => env.STATO.get(env.STATO.idFromName("op:" + op));
   // corso A1-A3: registrazione con email e codice (cc:<email> in attesa · ce:<email> iscritto · ct:<chiave> → email)
+  // Admin del sito (quota120.com/admin): solo l'email in SITO_ADMIN · ac:<email> codice in attesa · at:<chiave> → entrato
+  const tok = () => [...crypto.getRandomValues(new Uint8Array(20))].map(x => x.toString(16).padStart(2, "0")).join("");
+  const admOk = async t => /^[a-f0-9]{40}$/.test(t || "") && !!(await st.get("at:" + t));
+  if (p === "/api/registro/adm-codice" && POST) {
+    const b = await corpo(), email = mail(b), ammesso = String(env.SITO_ADMIN || "").toLowerCase().split(",").map(x => x.trim()).filter(Boolean);
+    if (!EMAIL(email)) return J({ errore: "L'email non sembra giusta: controllala." }, 400);
+    if (await troppi("lim:ac:" + ip, 10, 3600000)) return J({ errore: "Troppe richieste: riprova più tardi." }, 429);
+    if (!ammesso.includes(email)) return J({ errore: "Questa sezione è riservata al titolare del sito." }, 403);
+    const codice = cod6(); await st.put("ac:" + email, { codice, scad: now + 15 * 60000, tent: 0 });
+    try { await mandaMail(env, email, "Codice Admin del sito Quota 120: " + codice, codiceHtml("", "", codice, false)); }
+    catch (e) { await st.delete("ac:" + email); return J({ errore: "Non sono riuscito a mandare l'email: riprova tra poco." }, 502); }
+    return J({ ok: true });
+  }
+  if (p === "/api/registro/adm-verifica" && POST) {
+    const b = await corpo(), email = mail(b), c = String(b.codice || "").replace(/\D/g, ""), a = await st.get("ac:" + email);
+    if (!a || now > a.scad) return J({ errore: "Il codice è scaduto: chiedine un altro." }, 400);
+    if (a.codice !== c) { a.tent++; if (a.tent >= 5) await st.delete("ac:" + email); else await st.put("ac:" + email, a); return J({ errore: "Il codice non è giusto: controllalo nella mail." }, 400); }
+    await st.delete("ac:" + email); const t = tok(); await st.put("at:" + t, { email, dal: now });
+    return J({ ok: true, t });
+  }
+  if (p === "/api/registro/adm-ok") return J({ ok: await admOk(url.searchParams.get("t")) });
+  if (p === "/api/registro/adm-esci" && POST) { const t = url.searchParams.get("t"); if (await admOk(t)) await st.delete("at:" + t); return J({ ok: true }); }
+  if (p === "/api/registro/adm-iscritti") {
+    if (!(await admOk(url.searchParams.get("t")))) return J({ errore: "Entra di nuovo" }, 401);
+    const L = []; for (const [k, v] of await st.list({ prefix: "ce:" })) L.push({ email: k.slice(3), dal: v.dal, ultimo: v.ultimo, novita: !!v.novita });
+    return J({ iscritti: L });
+  }
   if (p === "/api/registro/corso-ok") { const t = String(url.searchParams.get("t") || ""); return J({ ok: /^[a-f0-9]{40}$/.test(t) && !!(await st.get("ct:" + t)) }); }
   if (p === "/api/registro/corso-codice" && POST) {
     const b = await corpo(), email = mail(b);
@@ -1065,11 +1092,26 @@ export default {
     const host = url.hostname;
     if (host === "www.quota120.com") return Response.redirect("https://quota120.com" + p + url.search, 301);
     const reg = () => env.STATO.get(env.STATO.idFromName("registro"));
+    const biscotto = n => ((request.headers.get("cookie") || "").match(new RegExp("(?:^|;\\s*)" + n + "=([a-f0-9]{40})")) || [])[1];
+    // Admin del sito: codice via email, poi la chiave nel cookie q120a
+    if (host === "quota120.com" && p.startsWith("/api/admin/")) {
+      const az = p.slice(11), ta = biscotto("q120a"), I = "https://quota120.interno/api/registro/adm-";
+      if ((az === "codice" || az === "verifica") && request.method === "POST") {
+        const r = await reg().fetch(new Request(I + az, { method: "POST", headers: { "content-type": "application/json", "cf-connecting-ip": request.headers.get("cf-connecting-ip") || "" }, body: await request.text() }));
+        const j = await r.json().catch(() => ({}));
+        if (!j.t) return J(j, r.status);
+        return new Response(JSON.stringify({ ok: true }), { headers: { "content-type": "application/json", "cache-control": "no-store", "set-cookie": "q120a=" + j.t + "; Path=/; Max-Age=31536000; Secure; HttpOnly; SameSite=Lax" } });
+      }
+      if (az === "iscritti") return reg().fetch(new Request(I + "iscritti?t=" + (ta || "")));
+      if (az === "esci" && request.method === "POST") { if (ta) await reg().fetch(new Request(I + "esci?t=" + ta, { method: "POST" })); return new Response('{"ok":true}', { headers: { "content-type": "application/json", "set-cookie": "q120a=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax" } }); }
+      return J({ errore: "non trovato" }, 404);
+    }
     // corso A1-A3: si apre solo con la registrazione (cookie q120c), solo su quota120.com
     if (p === "/corso" || p.startsWith("/corso/")) {
       if (host !== "quota120.com") return Response.redirect("https://quota120.com" + p, 302);
-      const t = ((request.headers.get("cookie") || "").match(/(?:^|;\s*)q120c=([a-f0-9]{40})/) || [])[1];
-      const ok = t && await reg().fetch(new Request("https://quota120.interno/api/registro/corso-ok?t=" + t)).then(r => r.json()).then(j => j.ok).catch(() => false);
+      const t = biscotto("q120c"), ta = biscotto("q120a");
+      const ok = (t && await reg().fetch(new Request("https://quota120.interno/api/registro/corso-ok?t=" + t)).then(r => r.json()).then(j => j.ok).catch(() => false))
+        || (ta && await reg().fetch(new Request("https://quota120.interno/api/registro/adm-ok?t=" + ta)).then(r => r.json()).then(j => j.ok).catch(() => false));
       if (!ok) return Response.redirect("https://quota120.com/corso-patentino-drone/", 302);
       return env.ASSETS.fetch(request);
     }
