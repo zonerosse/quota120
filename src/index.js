@@ -1230,7 +1230,11 @@ export default {
       // informativa e condizioni: le stesse pagine del programma, anche sul sito
       const LEG = { "/privacy/": "/privacy", "/condizioni/": "/condizioni" };
       if (p === "/privacy" || p === "/privacy.html" || p === "/condizioni" || p === "/condizioni.html") return Response.redirect("https://quota120.com/" + p.replace(/^\/|\.html$/g, "") + "/" + url.search, 301);
-      if (LEG[p]) { const ra = await env.ASSETS.fetch(new Request(new URL(LEG[p], url), request)); const r2 = new Response(ra.body, ra); r2.headers.delete("x-robots-tag"); return r2; }   // i caratteri sono gli stessi del programma
+      if (LEG[p]) {
+        const ra = await env.ASSETS.fetch(new Request(new URL(LEG[p], url), request));
+        const t = (await ra.text()).replace('<meta name="robots" content="noindex">', '<link rel="canonical" href="https://quota120.com' + p + '">');
+        return new Response(t, { status: ra.status, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-cache" } });
+      }   // i caratteri sono gli stessi del programma
       if (p === "/sito" || p.startsWith("/sito/")) return Response.redirect("https://quota120.com" + (p.slice(5) || "/") + url.search, 301);
       const ra = await env.ASSETS.fetch(new Request(new URL("/sito" + (p === "/" ? "/" : p), url), request));
       const loc = ra.headers.get("location");
