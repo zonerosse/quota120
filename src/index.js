@@ -1034,6 +1034,14 @@ export default {
   },
   async fetch(request, env) {
     const url = new URL(request.url), p = url.pathname;
+    // quota120.com è il sito; il programma sta su app.quota120.com (e su quota120.staffordshire.workers.dev)
+    const host = url.hostname;
+    if (host === "www.quota120.com") return Response.redirect("https://quota120.com" + p + url.search, 301);
+    if (host === "quota120.com" || url.searchParams.get("sito") === "1" && env.POSTA_FINTA === "1") {
+      if (p === "/robots.txt") return new Response("User-agent: *\nDisallow: /\n", { headers: { "content-type": "text/plain; charset=utf-8" } });
+      if (p.startsWith("/api/")) return new Response("Non trovato", { status: 404 });
+      return env.ASSETS.fetch(new Request(new URL("/sito" + (p === "/" ? "/" : p), url), request));
+    }
     const main = () => env.STATO.get(env.STATO.idFromName("main"));
     // nessuno da fuori può dire di essere uno spazio: l'intestazione la mette solo questo smistatore
     const pulita = (op) => { const r = new Request(request); r.headers.delete("x-q120-op"); if (op) r.headers.set("x-q120-op", op); return r; };
