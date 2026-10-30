@@ -116,7 +116,7 @@ const L=[
     ['In A2, quanto devi stare lontano in orizzontale dalle persone non coinvolte?',['5 m sempre','30 m (5 m in modalità a bassa velocità)','150 m'],1,'30 m in orizzontale, che diventano 5 m se il C2 è in modalità a bassa velocità.'],
     ['In A3 a che distanza minima voli da zone residenziali, commerciali o ricreative?',['50 m','150 m','500 m'],1,'In A3 si sta almeno a 150 m da quelle aree.'],
     ['Si può sorvolare un assembramento di persone in categoria aperta?',['Sì, con un C0','Sì, sotto i 30 m','No, mai'],2,'Gli assembramenti non si sorvolano mai in categoria aperta.']]},
-{t:'Spazio aereo e zone',s:'dove si può volare e dove no',
+{t:'Spazio aereo e zone',v:'02-spazio-aereo-e-zone',s:'dove si può volare e dove no',
  leg:[['Zona geografica UAS','area con regole speciali per i droni (vietata, limitata, con condizioni)'],['D-Flight','il portale italiano: mappa delle zone, registrazione operatori'],['CTR / ATZ','spazi aerei intorno agli aeroporti'],['NOTAM','avviso temporaneo per chi vola (area chiusa, evento, elicotteri)'],['AGL','altezza dal suolo'],['AMSL','altitudine sul livello del mare']],
  h:`<p>Prima di ogni volo si guarda <b>dove</b> si vola. In Italia le zone geografiche per i droni sono sulla <b>mappa D-Flight</b>: lì vedi se si vola liberamente, fino a che quota, o se serve un permesso.</p>
  <ul class="punti"><li><b>Vicino agli aeroporti</b> (CTR, ATZ) ci sono zone con limiti di quota o divieti: lì serve quasi sempre un'autorizzazione.</li>
@@ -128,7 +128,7 @@ const L=[
     ['Si avvicina un elicottero mentre voli. Cosa fai?',['Continui: sei sotto i 120 m','Abbassi subito il drone e ti allontani','Sali per farti vedere'],1,'Gli aeromobili con equipaggio hanno sempre la precedenza.'],
     ['Cosa sono CTR e ATZ?',['Classi di drone','Spazi aerei intorno agli aeroporti','Tipi di batteria'],1,'Sono le zone di controllo e di traffico intorno agli aeroporti.'],
     ['AGL vuol dire…',['altezza sul livello del mare','altezza dal suolo','altezza dal punto di decollo'],1,'Above Ground Level: altezza dal suolo.']]},
-{t:'Le regole e i documenti',s:'operatore, registrazione, classi, Remote ID',
+{t:'Le regole e i documenti',v:'03-regole-e-documenti',s:'operatore, registrazione, classi, Remote ID',
  leg:[['Operatore UAS','chi è responsabile dei voli (persona o azienda)'],['Pilota remoto','chi pilota fisicamente il drone'],['Codice operatore','numero ITA-… dato da D-Flight, da mettere sul drone'],['C0…C4','classe del drone, scritta sull\'etichetta'],['Remote ID','il segnale con cui il drone dice chi è mentre vola'],['EASA / ENAC','agenzia europea / ente italiano per l\'aviazione']],
  h:`<p>Le regole sono europee (Regolamento UE 2019/947) e in Italia le applica <b>ENAC</b>. Due figure da non confondere: l'<b>operatore</b> è responsabile dei voli, il <b>pilota remoto</b> pilota. Spesso sono la stessa persona.</p>
  <div class="tab"><table><tr><th>Cosa</th><th>Quando serve</th></tr>
@@ -144,7 +144,7 @@ const L=[
     ['Su quali classi va tenuto acceso il Remote ID?',['C0','C1, C2 e C3','Solo C4'],1,'Il Remote ID diretto va attivato sui C1, C2 e C3.'],
     ['Un drone C2 in che sotto-categoria vola normalmente?',['A1','A2 (o A3)','Solo categoria specifica'],1,'Il C2 vola in A2 con l\'attestato A2, oppure in A3.'],
     ['Quale regolamento europeo regola i voli dei droni?',['Reg. (UE) 2019/947','Codice della strada','Reg. (UE) 2016/679'],0,'Il 2019/947 regola le operazioni; il 2016/679 è il GDPR (privacy).']]},
-{t:'Il fattore umano',s:'stanchezza, alcol, attenzione',
+{t:'Il fattore umano',v:'04-fattore-umano',s:'stanchezza, alcol, attenzione',
  leg:[['Idoneità al volo','essere in forma: niente stanchezza, alcol, droghe, farmaci che rallentano'],['Consapevolezza situazionale','sapere sempre dove è il drone e cosa c\'è intorno'],['Osservatore','persona accanto al pilota che guarda il cielo e lo avvisa'],['Distrazione','telefono, gente che parla, fretta: la prima causa di incidenti']],
  h:`<p>La maggior parte degli incidenti dipende dal pilota, non dal drone. Prima di volare chiediti se sei in condizione di farlo.</p>
  <ul class="punti"><li><b>Niente alcol, droghe o farmaci</b> che riducono attenzione e riflessi.</li>
@@ -156,7 +156,7 @@ const L=[
     ['A cosa serve l\'osservatore?',['A pilotare al posto tuo','Ad aiutarti a guardare il drone, il cielo e le persone','A firmare il registro'],1,'L\'osservatore ti aiuta a tenere sotto controllo l\'area; deve poter comunicare con te.'],
     ['Con il visore FPV in categoria aperta…',['si vola da soli','serve un osservatore che tiene il drone a vista','è sempre vietato'],1,'Con il visore serve un osservatore accanto che vede il drone.'],
     ['Qual è la prima causa di incidenti?',['Il vento','Errori e distrazioni del pilota','I satelliti GPS'],1,'Il fattore umano è la causa più frequente.']]},
-{t:'Procedure di volo',s:'prima, durante e dopo',
+{t:'Procedure di volo',v:'05-procedure-di-volo',s:'prima, durante e dopo',
  leg:[['Check-list','le cose da controllare prima di decollare'],['RTH','ritorno automatico al punto di decollo'],['Home point','il punto dove il drone torna con RTH'],['Follow-me','il drone ti segue da solo: max 50 m di distanza'],['Luce verde','di notte la luce verde lampeggiante deve essere accesa']],
  h:`<h3>Prima del volo</h3>
  <ul class="punti"><li>Zone e NOTAM sulla mappa D-Flight; meteo e vento.</li><li>Area di decollo libera, persone lontane, ostacoli (cavi, alberi).</li>
@@ -172,7 +172,7 @@ const L=[
     ['Di notte cosa deve avere acceso il drone?',['Il flash della fotocamera','La luce verde lampeggiante','Niente'],1,'Di notte la luce verde lampeggiante va tenuta accesa.'],
     ['In modalità follow-me fino a che distanza da te?',['50 m','150 m','500 m'],0,'Il follow-me in categoria aperta si usa entro 50 m dal pilota.'],
     ['Dopo un urto in volo cosa fai?',['Riparti subito','Controlli il drone e annoti cosa è successo','Aggiorni il firmware'],1,'Controllo dei danni e annotazione; gli eventi importanti vanno segnalati.']]},
-{t:'Il drone e il meteo',s:'batterie, GPS, vento, freddo',
+{t:'Il drone e il meteo',v:'06-drone-e-meteo',s:'batterie, GPS, vento, freddo',
  leg:[['LiPo','batterie al litio: si gonfiano se maltrattate'],['Cella','uno dei pezzi della batteria: devono restare bilanciate'],['GNSS / GPS','satelliti che danno la posizione'],['ATTI','modalità senza GPS: il drone deriva con il vento'],['Raffica','aumento improvviso del vento'],['Indice Kp','attività solare: alto, il GPS è meno preciso']],
  h:`<h3>Batterie</h3>
  <ul class="punti"><li>Non usare batterie gonfie o rovinate.</li><li>Se non le usi per giorni, tienile a metà carica (circa 40–60%).</li>
@@ -188,7 +188,7 @@ const L=[
     ['Il drone perde il GPS e va in ATTI. Cosa succede?',['Resta fermo da solo','Scivola con il vento e lo piloti a mano','Atterra subito'],1,'Senza posizionamento il drone non si tiene fermo.'],
     ['Il vento in quota rispetto a terra è…',['di solito più forte','sempre uguale','più debole'],0,'Salendo il vento aumenta: a terra sembra calmo, a 100 m può non esserlo.'],
     ['Come conservi le batterie se non voli per una settimana?',['Cariche al 100%','A metà carica, circa 40–60%','Completamente scariche'],1,'A metà carica si rovinano di meno.']]},
-{t:'Privacy',s:'riprese, persone e dati',
+{t:'Privacy',v:'07-privacy',s:'riprese, persone e dati',
  leg:[['GDPR','Regolamento UE 2016/679 sulla protezione dei dati'],['Dato personale','un volto, una targa, una casa riconoscibile'],['Consenso','il permesso della persona ripresa'],['Minimizzazione','riprendere e tenere solo quello che serve']],
  h:`<p>Un drone con la fotocamera raccoglie <b>dati personali</b>: volti, targhe, case, giardini. Valgono le regole della privacy (GDPR).</p>
  <ul class="punti"><li>Non riprendere persone riconoscibili senza un motivo e, se serve, senza il loro <b>consenso</b>.</li>
@@ -198,7 +198,7 @@ const L=[
  q:[['Una targa ripresa dal drone è…',['un dato personale','un dato pubblico libero','niente di importante'],0,'Targhe e volti riconoscibili sono dati personali.'],
     ['Prima di pubblicare un video con persone riconoscibili…',['non serve niente','serve il consenso o vanno rese irriconoscibili','basta citare la fonte'],1,'Serve una base legale, di solito il consenso, oppure si sfocano.'],
     ['Quale regolamento tutela la privacy?',['Reg. (UE) 2016/679 (GDPR)','Reg. (UE) 2019/947','Codice della navigazione'],0,'Il GDPR è il 2016/679.']]},
-{t:'Assicurazione',s:'cosa serve in Italia',
+{t:'Assicurazione',v:'08-assicurazione',s:'cosa serve in Italia',
  leg:[['RC','responsabilità civile: paga i danni a persone e cose'],['Massimale','la cifra massima che paga l\'assicurazione'],['Polizza','il contratto'],['Quietanza','la ricevuta del pagamento: dice fino a quando sei coperto']],
  h:`<p>In Italia per far volare un drone serve un'<b>assicurazione di responsabilità civile</b> (RC) verso terzi, anche per i droni piccoli. Paga i danni che il drone può fare a persone o cose.</p>
  <ul class="punti"><li>Tienila sempre valida: la data che conta è quella della <b>quietanza</b> pagata.</li>
@@ -206,7 +206,7 @@ const L=[
  q:[['In Italia l\'assicurazione RC per il drone…',['serve solo sopra i 4 kg','serve per volare','è facoltativa'],1,'In Italia serve un\'assicurazione RC verso terzi per far volare il drone.'],
     ['Cosa paga l\'assicurazione RC?',['I danni al tuo drone','I danni che il drone fa ad altri','Il corso per l\'attestato'],1,'La responsabilità civile copre i danni a terzi.'],
     ['Cosa ti dice fino a quando sei coperto?',['Il manuale del drone','La quietanza di pagamento','Il QR di D-Flight'],1,'La copertura vale per il periodo pagato, scritto sulla quietanza.']]},
-{t:'Security',s:'proteggere il drone e gli altri',
+{t:'Security',v:'09-security',s:'proteggere il drone e gli altri',
  leg:[['Security','protezione da usi illeciti, furti, attacchi'],['Safety','sicurezza del volo, evitare incidenti'],['Infrastruttura critica','centrali, aeroporti, carceri, impianti'],['Firmware','il programma interno del drone']],
  h:`<p><b>Safety</b> è non fare incidenti; <b>security</b> è evitare che il drone venga usato male o manomesso.</p>
  <ul class="punti"><li>Non volare vicino a infrastrutture critiche: centrali, aeroporti, carceri, impianti industriali.</li>
