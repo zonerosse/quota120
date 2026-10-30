@@ -1,0 +1,40 @@
+WEBVTT
+
+00:00:00.100 --> 00:00:02.499
+Terza lezione: le prestazioni di volo.
+
+00:00:02.499 --> 00:00:07.928
+Ogni drone ha dei limiti scritti dal costruttore: peso, vento, temperature e velocità.
+
+00:00:08.828 --> 00:00:12.563
+La M T O M è la massa massima al decollo, carico compreso.
+
+00:00:12.563 --> 00:00:16.362
+Più peso vuol dire meno autonomia e un drone meno reattivo.
+
+00:00:16.362 --> 00:00:19.259
+E un carico sbilanciato sposta il baricentro.
+
+00:00:20.159 --> 00:00:24.039
+La batteria si consuma di più con il vento contrario e con il freddo.
+
+00:00:24.039 --> 00:00:29.044
+Si pianifica il ritorno prima di partire, e si atterra sempre con un margine, mai a zero.
+
+00:00:29.944 --> 00:00:37.663
+Se il segnale dei satelliti si perde, il drone passa in modalità A T T I: tiene la quota ma non la posizione, e va con il vento.
+
+00:00:37.663 --> 00:00:39.654
+Bisogna saperlo riportare a mano.
+
+00:00:40.554 --> 00:00:42.387
+Il drone non si ferma di colpo.
+
+00:00:42.387 --> 00:00:49.427
+A velocità alta, e con il vento a favore, serve spazio per frenare: per questo si tiene distanza da ostacoli e persone.
+
+00:00:50.327 --> 00:00:55.382
+Tutti questi limiti formano l'inviluppo di volo, e si trovano nel manuale del costruttore.
+
+00:00:55.382 --> 00:00:57.854
+Si legge prima di volare con un drone nuovo.

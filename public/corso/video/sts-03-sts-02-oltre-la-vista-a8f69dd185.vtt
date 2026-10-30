@@ -1,0 +1,28 @@
+WEBVTT
+
+00:00:00.100 --> 00:00:02.701
+Terza lezione: lo scenario S T S zero due.
+
+00:00:02.701 --> 00:00:10.506
+Il drone può andare oltre la vista del pilota, sempre sopra un'area di terra controllata, ma in una zona scarsamente popolata.
+
+00:00:11.406 --> 00:00:17.456
+Senza osservatori il drone resta entro un chilometro dal pilota, con una traiettoria preprogrammata quando è fuori vista.
+
+00:00:17.456 --> 00:00:23.507
+Con gli osservatori dello spazio aereo arriva a due chilometri, restando entro un chilometro dall'osservatore più vicino.
+
+00:00:24.407 --> 00:00:29.164
+Servono una visibilità di più di cinque chilometri e una zona scarsamente popolata.
+
+00:00:29.164 --> 00:00:32.317
+Il decollo e l'atterraggio si fanno a vista del pilota.
+
+00:00:33.217 --> 00:00:38.965
+Il buffer di rischio a terra deve coprire almeno la distanza che il drone percorrerebbe dopo la terminazione del volo.
+
+00:00:39.865 --> 00:00:47.518
+Il drone è di classe C 6: ha un sistema attivo che gli impedisce di uscire dalla geografia di volo, e l'identificazione a distanza attiva.
+
+00:00:48.418 --> 00:00:56.953
+L'osservatore dello spazio aereo guarda continuamente il cielo per vedere aerei ed elicotteri, segue la posizione del drone e avvisa subito il pilota dei pericoli.

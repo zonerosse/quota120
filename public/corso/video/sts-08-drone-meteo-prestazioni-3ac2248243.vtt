@@ -1,0 +1,22 @@
+WEBVTT
+
+00:00:00.100 --> 00:00:04.200
+Ottava e ultima lezione: il drone, il meteo e le prestazioni.
+
+00:00:05.100 --> 00:00:14.250
+Il drone deve avere la classe giusta: C 5 per lo S T S zero uno, C 6 per lo S T S zero due, che ha un sistema per non uscire dalla geografia di volo.
+
+00:00:14.250 --> 00:00:17.259
+Entrambi con l'identificazione a distanza attiva.
+
+00:00:18.159 --> 00:00:25.719
+Il pilota conosce i sistemi del drone: la geo consapevolezza, il modo per terminare il volo, e cosa fa il drone se perde il collegamento.
+
+00:00:26.619 --> 00:00:35.885
+Il meteo conta come sempre: vento in quota e raffiche, il freddo che riduce le batterie, e per lo S T S zero due una visibilità di più di cinque chilometri.
+
+00:00:36.785 --> 00:00:41.671
+Si rispettano i limiti del costruttore: vento massimo, temperature, peso e velocità.
+
+00:00:41.671 --> 00:00:44.173
+È l'inviluppo di volo, scritto nel manuale.
