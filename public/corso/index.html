@@ -69,6 +69,14 @@ ul.punti{margin:0;padding-left:20px}ul.punti li{margin:3px 0}
 .esito.ok{background:var(--ok-bg);color:var(--ok)}.esito.ko{background:var(--ko-bg);color:var(--ko)}
 .esito b{font:700 30px/1.1 var(--disp);display:block;font-variant-numeric:tabular-nums}
 .vid{width:100%;aspect-ratio:16/9;border-radius:10px;background:#0F2230;display:block}.vid-no{font-size:14px;color:var(--ink2);border:1px dashed var(--line);border-radius:10px;padding:10px 12px}
+.vbox{position:relative}.muto{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.65);color:#fff;font-size:13px;font-weight:700;padding:4px 9px;border-radius:5px;display:flex;gap:6px;align-items:center;pointer-events:none}
+video::cue{background:rgba(0,0,0,.78);color:#fff;font-family:var(--body);font-size:.95em;line-height:1.3}
+.vctr{display:flex;gap:8px;flex-wrap:wrap}.vctr button{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--line);border-radius:8px;padding:6px 11px;font-size:14.5px;font-weight:700;color:var(--ink2)}
+.vctr button.on{border-color:var(--petrolio);color:var(--petrolio);background:var(--soft)}.vctr button:focus-visible{outline:3px solid var(--ambra);outline-offset:2px}
+.testo{font-size:15px}.testo summary{cursor:pointer;font-weight:700;color:var(--petrolio)}.testo p{margin:6px 0 0;color:var(--ink2)}
+.q button.op.scelta{border-color:var(--petrolio);background:var(--soft)}
+.esito.w{background:var(--soft);color:var(--ink)}
+.mat{width:100%;border-collapse:collapse;font-size:15px;background:var(--sup);border:1px solid var(--line);border-radius:10px}.mat td,.mat th{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}.mat td:first-child{white-space:normal;font-weight:600}.mat td:nth-child(2),.mat td:nth-child(3){white-space:nowrap}.mat a{color:var(--petrolio);font-weight:700;cursor:pointer;text-decoration:underline}
 @media (max-width:560px){h1{font-size:32px}.esame-info{grid-template-columns:repeat(2,1fr)}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -110,39 +118,63 @@ function prog(){document.getElementById('pb').style.width=Math.round(fatte.lengt
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
 function domanda(q,id,subito){return `<div class="q" data-id="${id}"><div class="d">${esc(q[0])}</div><div class="o">${q[1].map((o,j)=>`<button type="button" class="op" data-j="${j}">${esc(o)}</button>`).join('')}</div><div class="sp" hidden></div></div>`}
 function qDi(id){const [i,j]=id.split('-').map(Number);return L[i].q[j]}
-// risposte nelle lezioni: correzione subito
+// prova della lezione: una risposta per domanda, risultato alla fine
+const RIS={};
+const prova=i=>L[i].q.map((q,j)=>domanda(q,i+'-'+j)).join('')+`<div id="ris${i}"></div>`;
+// audio e sottotitoli: la scelta vale per tutti i video e si ricorda
+let AV={a:true,s:true};try{Object.assign(AV,JSON.parse(localStorage.getItem('q120AV')||'{}'))}catch(e){}
+function salvaAV(){try{localStorage.setItem('q120AV',JSON.stringify(AV))}catch(e){}}
+const AU_ON='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>';
+const AU_NO='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9l5 6M21 9l-5 6"/></svg>';
+const CC_IC='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 14h4M13 14h4M7 10h10"/></svg>';
+function applicaAV(){document.querySelectorAll('video.vid').forEach(v=>{v.muted=!AV.a;for(const t of v.textTracks)t.mode=AV.s?'showing':'hidden'});
+  document.querySelectorAll('.muto').forEach(m=>m.hidden=AV.a);
+  document.querySelectorAll('[data-au]').forEach(b=>{b.classList.toggle('on',AV.a);b.setAttribute('aria-pressed',AV.a);b.innerHTML=(AV.a?AU_ON:AU_NO)+(AV.a?'Audio':'Senza audio')});
+  document.querySelectorAll('[data-cc]').forEach(b=>{b.classList.toggle('on',AV.s);b.setAttribute('aria-pressed',AV.s);b.innerHTML=CC_IC+(AV.s?'Sottotitoli':'Senza sottotitoli')})}
+// risposte nelle lezioni
 document.getElementById('lezioni').addEventListener('click',e=>{
-  const b=e.target.closest('button.op');if(b){const box=b.closest('.q'),q=qDi(box.dataset.id),j=+b.dataset.j;
-    box.querySelectorAll('button.op').forEach(x=>{x.classList.remove('giusta','sbagliata')});
+  const b=e.target.closest('button.op');if(b){const box=b.closest('.q');if(box.dataset.fatto)return;box.dataset.fatto=1;const id=box.dataset.id,q=qDi(id),j=+b.dataset.j,i=+id.split('-')[0];
     b.classList.add(j===q[2]?'giusta':'sbagliata');if(j!==q[2])box.querySelectorAll('button.op')[q[2]].classList.add('giusta');
-    const sp=box.querySelector('.sp');sp.hidden=false;sp.textContent=(j===q[2]?'Giusto. ':'No. ')+q[3];return}
+    const sp=box.querySelector('.sp');sp.hidden=false;sp.textContent=(j===q[2]?'Giusto. ':'No. ')+q[3];
+    (RIS[i]=RIS[i]||{})[id]=j===q[2];const n=Object.keys(RIS[i]).length,g=Object.values(RIS[i]).filter(Boolean).length,tot=L[i].q.length;
+    if(n===tot){const ok=g/tot>=.75;document.getElementById('ris'+i).innerHTML=`<div class="esito ${ok?'ok':'ko'}"><b>${g} su ${tot}</b>${ok?'Lezione superata: puoi passare alla prossima.':'Da ripassare: rivedi il video e rifai la prova (serve almeno '+Math.ceil(tot*.75)+' su '+tot+').'}</div><div class="riga" style="margin-top:8px"><button class="btn sec" type="button" data-rifai="${i}">Rifai la prova</button></div>`;
+      if(ok&&!fatte.includes(i)){fatte.push(i);const c=document.getElementById('fatta'+i);if(c)c.checked=true;salva()}}
+    return}
+  const rf=e.target.closest('[data-rifai]');if(rf){const i=+rf.dataset.rifai;delete RIS[i];document.getElementById('pq'+i).innerHTML=prova(i);return}
+  const au=e.target.closest('[data-au]');if(au){AV.a=!AV.a;salvaAV();applicaAV();return}
+  const cc=e.target.closest('[data-cc]');if(cc){AV.s=!AV.s;salvaAV();applicaAV();return}
   const a=e.target.closest('[data-apri]');if(a){const n=+a.dataset.apri;document.querySelectorAll('details.lez').forEach((d,k)=>d.open=k===n);document.getElementById('lez'+n).scrollIntoView({behavior:'smooth',block:'start'});return}
   if(e.target.closest('[data-esame]'))document.getElementById('esame').scrollIntoView({behavior:'smooth'});
 });
 document.getElementById('lezioni').addEventListener('change',e=>{const c=e.target;if(!c.id||!c.id.startsWith('fatta'))return;const i=+c.id.slice(5);fatte=fatte.filter(x=>x!==i);if(c.checked)fatte.push(i);salva()});
 // simulazione: 40 domande a caso (tutte quelle che ci sono, se meno), correzione alla fine
 let SCELTE={},ELENCO=[],TIMER=null,FINE=0;
-function correggi(){clearInterval(TIMER);document.getElementById('eq').dataset.fine='1';let giuste=0,sbagliate=0;
+function correggi(){clearInterval(TIMER);document.getElementById('eq').dataset.fine='1';const tb=document.getElementById('tempo');if(tb)tb.parentNode.style.display='none';let giuste=0,sbagliate=0;const M={};
   document.querySelectorAll('#eq .q').forEach(box=>{const q=qDi(box.dataset.id),s=SCELTE[box.dataset.id],bt=box.querySelectorAll('button.op');
-    bt.forEach(x=>x.classList.remove('giusta','sbagliata'));bt[q[2]].classList.add('giusta');if(s!==undefined&&s!==q[2]){bt[s].classList.add('sbagliata');sbagliate++}if(s===q[2])giuste++;
+    const mi=+box.dataset.id.split('-')[0];(M[mi]=M[mi]||{g:0,t:0}).t++;if(s===q[2])M[mi].g++;
+    bt.forEach(x=>x.classList.remove('giusta','sbagliata','scelta'));bt[q[2]].classList.add('giusta');if(s!==undefined&&s!==q[2]){bt[s].classList.add('sbagliata');sbagliate++}if(s===q[2])giuste++;
     const sp=box.querySelector('.sp');sp.hidden=false;sp.textContent=(s===q[2]?'Giusto. ':s===undefined?'Senza risposta. ':'No. ')+q[3]});
   const tot=ELENCO.length,max=tot*2,punti=giuste*2-sbagliate,soglia=Math.ceil(max*0.75),pass=punti>=soglia;
-  document.getElementById('esito').innerHTML=`<div class="esito ${pass?'ok':'ko'}"><b>${punti} punti su ${max}</b>${giuste} giuste, ${sbagliate} sbagliate, ${tot-giuste-sbagliate} senza risposta. ${pass?'Promosso: sei pronto per l\'esame ENAC.':'Non ancora: servono '+soglia+' punti. Rileggi le lezioni dove hai sbagliato e riprova.'}</div>`;
-  document.getElementById('esito').scrollIntoView({behavior:'smooth',block:'center'})}
+  const righe=Object.keys(M).map(Number).sort((x,y)=>x-y).map(i=>`<tr><td>${i+1}. ${esc(L[i].t)}</td><td>${M[i].g} su ${M[i].t}</td><td>${M[i].g/M[i].t>=.75?'<span style="color:var(--ok);font-weight:700">bene</span>':`<a data-ripassa="${i}">da ripassare</a>`}</td></tr>`).join('');
+  document.getElementById('esito').innerHTML=`<div class="esito ${pass?'ok':'ko'}"><b>${punti} punti su ${max}</b>${giuste} giuste, ${sbagliate} sbagliate, ${tot-giuste-sbagliate} senza risposta. ${pass?'Promosso: sei pronto per l\'esame ENAC.':'Non ancora: servono '+soglia+' punti.'}</div>
+  <h3 style="font:700 18px/1.2 var(--disp);margin:16px 0 8px">Come sei andato in ogni materia</h3><table class="mat"><tr><th>Materia</th><th>Giuste</th><th></th></tr>${righe}</table>
+  <p class="nota">Tocca «da ripassare» per aprire la lezione. Sopra, ogni domanda con la risposta giusta e la spiegazione.</p>`;
+  document.getElementById('esito').scrollIntoView({behavior:'smooth',block:'start'})}
 function orologio(){const r=Math.max(0,Math.round((FINE-Date.now())/1000)),e=document.getElementById('tempo');if(e)e.textContent='Tempo: '+Math.floor(r/60)+':'+String(r%60).padStart(2,'0');if(!r&&!document.getElementById('eq').dataset.fine)correggi()}
 document.getElementById('avvia').addEventListener('click',()=>{
   const tutte=[];L.forEach((l,i)=>l.q.forEach((q,j)=>tutte.push(i+'-'+j)));
   for(let k=tutte.length-1;k>0;k--){const r=Math.floor(Math.random()*(k+1));[tutte[k],tutte[r]]=[tutte[r],tutte[k]]}
   ELENCO=tutte.slice(0,40);SCELTE={};delete document.getElementById('eq').dataset.fine;
-  document.getElementById('eq').innerHTML=ELENCO.map((id,n)=>domanda([(n+1)+'. '+qDi(id)[0],qDi(id)[1]],id)).join('')+`<div class="riga" style="margin-top:14px"><button type="button" class="btn" id="correggi">Correggi</button><span class="nota" id="mancano"></span></div><div id="esito" style="margin-top:14px"></div>`;
+  document.getElementById('eq').innerHTML=ELENCO.map((id,n)=>domanda([(n+1)+'. '+qDi(id)[0],qDi(id)[1]],id)).join('')+`<div class="riga" style="margin-top:14px"><button type="button" class="btn" id="correggi">Consegna e vedi il risultato</button><span class="nota" id="mancano"></span></div><div id="esito" style="margin-top:14px"></div>`;
   document.getElementById('eq').insertAdjacentHTML('afterbegin','<div class="riga" style="position:sticky;top:0;background:var(--bg);padding:8px 0;z-index:2"><b id="tempo" style="font-variant-numeric:tabular-nums">Tempo: 60:00</b></div>');
   clearInterval(TIMER);FINE=Date.now()+60*60*1000;TIMER=setInterval(orologio,1000);
   document.getElementById('avvia').textContent='Ricomincia con altre domande';conta();
 });
 function conta(){const m=ELENCO.length-Object.keys(SCELTE).length,e=document.getElementById('mancano');if(e)e.textContent=m?'Mancano '+m+' risposte':'Tutte risposte'}
 document.getElementById('eq').addEventListener('click',e=>{
-  const b=e.target.closest('button.op');if(b&&!document.getElementById('eq').dataset.fine){const box=b.closest('.q');box.querySelectorAll('button.op').forEach(x=>x.classList.remove('giusta'));b.classList.add('giusta');SCELTE[box.dataset.id]=+b.dataset.j;conta();return}
-  if(e.target.id==='correggi')correggi();
+  const b=e.target.closest('button.op');if(b&&!document.getElementById('eq').dataset.fine){const box=b.closest('.q');box.querySelectorAll('button.op').forEach(x=>x.classList.remove('scelta'));b.classList.add('scelta');SCELTE[box.dataset.id]=+b.dataset.j;conta();return}
+  if(e.target.id==='correggi'){const m=ELENCO.length-Object.keys(SCELTE).length;if(m&&!confirm('Ci sono '+m+' domande senza risposta (valgono 0). Consegnare lo stesso?'))return;correggi()}
+  const r=e.target.closest('[data-ripassa]');if(r){const n=+r.dataset.ripassa;document.querySelectorAll('details.lez').forEach((d,k)=>d.open=k===n);document.getElementById('lez'+n).scrollIntoView({behavior:'smooth',block:'start'})}
 });
 
 // i contenuti arrivano dal programma (li cura l'Admin dal pannello)
@@ -155,10 +187,11 @@ function disegna(){
   const nq=L.reduce((n,l)=>n+(l.q||[]).length,0);document.getElementById('esame').previousElementSibling.hidden=document.getElementById('esame').hidden=!nq;
   L.forEach(l=>{l.v=l.video||'';l.leg=l.leg||[];l.h=l.h||'';l.q=l.q||[];l.s=l.s||''});
   document.getElementById('lezioni').innerHTML=L.map((l,i)=>`<details class="lez" id="lez${i}"><summary><span class="num">${i+1}</span><span class="tt"><b>${esc(l.t)}</b><small>${esc(l.s)}</small></span><span class="st" id="st${i}"></span><span class="fr">›</span></summary>
- <div class="dentro">${l.v?`<video class="vid" controls preload="none" playsinline poster="video/${l.v}.jpg" src="video/${l.v}.mp4"></video>`:`<div class="vid-no">Video in preparazione</div>`}${l.leg.length?`<div class="leg"><b>LEGENDA</b><div class="tab"><table>${l.leg.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</table></div></div>`:''}${l.h}
- ${l.q.length?'<h3>Vediamo se hai capito</h3>':''}${l.q.map((q,j)=>domanda(q,i+'-'+j)).join('')}
+ <div class="dentro">${l.v?`<div class="vbox"><video class="vid" controls preload="none" playsinline poster="video/${l.v}.jpg" src="video/${l.v}.mp4"><track kind="subtitles" srclang="it" label="Italiano" src="video/${l.v}.vtt" default></video><div class="muto" hidden>${AU_NO}Audio tolto</div></div>
+ <div class="vctr"><button type="button" data-au="1"></button><button type="button" data-cc="1"></button></div>`:`<div class="vid-no">Video in preparazione</div>`}${(l.testo||[]).length?`<details class="testo"><summary>Leggi tutto il testo della lezione</summary>${l.testo.map(x=>`<p>${esc(x)}</p>`).join('')}</details>`:''}${l.leg.length?`<div class="leg"><b>LEGENDA</b><div class="tab"><table>${l.leg.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</table></div></div>`:''}${l.h}
+ ${l.q.length?`<h3>Prova della lezione</h3><p class="nota" style="margin:0">${l.q.length} domande sulla lezione: alla fine vedi quante ne hai prese.</p><div id="pq${i}" style="display:grid;gap:10px">${prova(i)}</div>`:''}
  <div class="riga">${i<L.length-1?`<button type="button" class="btn sec" data-apri="${i+1}">Lezione ${i+2}</button>`:`<button type="button" class="btn sec" data-esame="1">Vai alla simulazione</button>`}<label class="spunta"><input type="checkbox" id="fatta${i}" ${fatte.includes(i)?'checked':''}>Studiata</label></div></div></details>`).join('');
-  prog()}
+  prog();applicaAV()}
 fetch('/api/corso/contenuti',{credentials:'same-origin'}).then(r=>r.json()).then(C=>{
   if(!Array.isArray(C)||!C.length){document.getElementById('lezioni').innerHTML='<p class="nota">Nessun corso disponibile.</p>';return}
   const vuoi=new URLSearchParams(location.search).get('c');CORSO=C.find(c=>c.id===vuoi)||C[0];L=CORSO.lezioni||[];

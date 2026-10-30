@@ -20,7 +20,7 @@ async function corsiConVideo(env, url, corsi, adm) {
   for (const c of corsi) { const cc = Object.assign({}, c, { lezioni: [] });
     for (const l of c.lezioni || []) { const h = await vh(l.scene), f = l.id + "-" + h;
       const pronto = (l.scene || []).length ? await env.ASSETS.fetch(new Request(url.origin + "/corso/video/" + f + ".mp4", { method: "HEAD" })).then(r => r.ok).catch(() => false) : false;
-      const x = Object.assign({}, l, { video: pronto ? f : "", pronto }); if (!adm) delete x.scene; cc.lezioni.push(x); }
+      const x = Object.assign({}, l, { video: pronto ? f : "", pronto }); if (!adm) { x.testo = (l.scene || []).map(s => s.v).filter(Boolean); delete x.scene; } cc.lezioni.push(x); }
     out.push(cc); }
   return out;
 }

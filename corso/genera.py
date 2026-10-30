@@ -25,6 +25,10 @@ def scena_html(s, lez):
     if s.get('p'): c += '<ul>' + ''.join(f'<li>{e(x)}</li>' for x in s['p']) + '</ul>'
     if s.get('l'): c += '<table>' + ''.join(f'<tr><td>{e(a)}</td><td>{e(b)}</td></tr>' for a, b in s['l']) + '</table>'
     return f"<!doctype html><html><head><meta charset='utf-8'>{FONT}<style>{CSS}</style></head><body><div class='b1'></div><div class='b2'></div><div class='g'></div><div class='c'>{c}</div><div class='marca'>{e(lez)}</div></body></html>"
+def frasi(t):
+    return [x.strip() for x in re.findall(r'[^.!?]+[.!?]*', t) if x.strip()] or [t]
+def ts(x):
+    h, r = divmod(x, 3600); m, s = divmod(r, 60); return f"{int(h):02d}:{int(m):02d}:{s:06.3f}"
 def durata(p):
     with wave.open(p) as w: return w.getnframes() / w.getframerate()
 OK = re.compile(r'^[A-Za-z0-9-]{3,80}$')
@@ -34,27 +38,34 @@ voluti = {x['file'] for x in elenco}
 # via i video vecchi (scene cambiate o lezione tolta)
 for f in os.listdir(OUT):
     b, ext = os.path.splitext(f)
-    if ext in ('.mp4', '.jpg') and b not in voluti: os.remove(os.path.join(OUT, f)); print('tolto', f)
-mancano = [x for x in elenco if not os.path.exists(f"{OUT}/{x['file']}.mp4")]
+    if ext in ('.mp4', '.jpg', '.vtt') and b not in voluti: os.remove(os.path.join(OUT, f)); print('tolto', f)
+mancano = [x for x in elenco if not (os.path.exists(f"{OUT}/{x['file']}.mp4") and os.path.exists(f"{OUT}/{x['file']}.vtt"))]
 if '--conta' in sys.argv: print(len(mancano)); sys.exit(0)
 if not mancano: print('niente da fare'); sys.exit(0)
 from playwright.sync_api import sync_playwright
 with sync_playwright() as pw:
     br = pw.chromium.launch(); pg = br.new_page(viewport={'width': 1280, 'height': 720})
     for lez in mancano:
-        nome, parti = lez['file'], []
+        nome, parti, sub, t0 = lez['file'], [], ['WEBVTT', ''], 0.0
         for i, s in enumerate(lez['scene']):
             img, wav, mp4 = f"{TMP}/{nome}-{i}.png", f"{TMP}/{nome}-{i}.wav", f"{TMP}/{nome}-{i}.mp4"
             pg.set_content(scena_html(s, lez.get('titolo', ''))); pg.wait_for_timeout(600); pg.screenshot(path=img)
             testo = (s.get('v') or s.get('t') or ' ').strip() or ' '
             subprocess.run(['piper', '--model', VOCE, '--output_file', wav, '--length_scale', '1.05', '--sentence_silence', '0.35'], input=testo.encode(), check=True)
-            d = durata(wav) + 0.9
+            parla = durata(wav); d = parla + 0.9
+            # sottotitoli: le frasi della voce, con il tempo diviso in base alla lunghezza
+            ff = frasi(testo); tot = sum(len(f) for f in ff) or 1; a = t0 + 0.1
+            for f in ff:
+                b = a + parla * len(f) / tot
+                sub += [ts(a) + ' --> ' + ts(b), f, '']; a = b
+            t0 += d
             vf = f"scale=1600:-1,zoompan=z='min(zoom+0.0005,1.05)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={int(d*25)}:s=1280x720:fps=25,fade=t=in:st=0:d=0.35,fade=t=out:st={d-0.35:.2f}:d=0.35"
             subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-loop', '1', '-i', img, '-i', wav, '-vf', vf, '-af', 'apad', '-t', f'{d:.2f}',
                             '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '26', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '96k', '-ar', '44100', mp4], check=True)
             parti.append(mp4)
         lista = f"{TMP}/{nome}.txt"; open(lista, 'w').write(''.join(f"file '{p}'\n" for p in parti))
         subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', lista, '-c', 'copy', '-movflags', '+faststart', f"{OUT}/{nome}.mp4"], check=True)
+        open(f"{OUT}/{nome}.vtt", 'w', encoding='utf-8').write('\n'.join(sub))
         subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', f"{TMP}/{nome}-0.png", '-vf', 'scale=960:-1', '-q:v', '4', f"{OUT}/{nome}.jpg"], check=True)
         print('fatto', nome)
     br.close()
