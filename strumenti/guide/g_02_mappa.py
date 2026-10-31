@@ -1,9 +1,9 @@
 G = dict(slug='mappa-d-flight', breve_nome='Mappa D-Flight: le zone dei droni', anchor='Guida alla mappa D-Flight',
- title='Mappa D-Flight: come leggere le zone geografiche per i droni (colori e quote)',
- desc='Come si legge la mappa D-Flight: zone vietate, regolamentate, aeroporti, colori e quote massime, cosa fare vicino agli ostacoli e cosa cambia con il nuovo regolamento ENAC.',
+ title='Mappa D-Flight: come leggere le zone per i droni e le quote',
+ desc='Come si legge la mappa D-Flight: zone vietate, regolamentate, aeroporti, colori e quote massime, ostacoli e cosa cambia con il nuovo regolamento ENAC.',
  h1='Mappa D-Flight: come si leggono le zone per i droni',
  lead='Dove si vola, fino a che quota e quando serve un permesso: i colori, le zone e i controlli da fare prima di ogni volo.',
- data='2026-10-31', data_it='31 ottobre 2026',
+ data='2026-11-01', data_it='1 novembre 2026',
  about=[{"@type": "Thing", "name": "D-Flight"}, {"@type": "Thing", "name": "Zone geografiche UAS"}],
  corpo=[
   ('breve', 'La mappa ufficiale delle zone per i droni è su <b>D-Flight</b>: solo quello che c’è lì vale per ENAC. Toccando un punto vedi la <b>quota massima</b> e la regola che vale; dove le regole si sovrappongono vale <b>la più restrittiva</b>. Nelle <b>zone rosse</b> in categoria aperta non si vola.'),

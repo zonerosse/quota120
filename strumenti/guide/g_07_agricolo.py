@@ -1,9 +1,9 @@
 G = dict(slug='drone-agricolo', breve_nome='Drone agricolo: cosa si può fare oggi', anchor='Guida al drone agricolo',
- title='Drone agricolo in Italia: trattamenti, regole e sperimentazione (2026)',
- desc='Si possono fare trattamenti fitosanitari con il drone in Italia? Il divieto di irrorazione aerea, la sperimentazione della legge 182/2025, le prove autorizzate e le regole ENAC per i droni agricoli.',
+ title='Drone agricolo in Italia: trattamenti, semina e regole 2026',
+ desc='Drone agricolo in Italia: semina e concime con autorizzazione ENAC, divieto di irrorazione aerea, sperimentazione della legge 182/2025 e prove autorizzate.',
  h1='Drone agricolo: cosa si può fare oggi in Italia',
  lead='Il divieto di irrorazione aerea, la sperimentazione in arrivo e cosa serve per volare in regola.',
- data='2026-10-31', data_it='31 ottobre 2026',
+ data='2026-11-01', data_it='1 novembre 2026',
  about=[{"@type": "Thing", "name": "Drone agricolo"}, {"@type": "Thing", "name": "Irrorazione aerea"}],
  corpo=[
   ('breve', 'In Italia l’<b>irrorazione di prodotti fitosanitari con il drone è ancora vietata</b>, salvo le prove sperimentali autorizzate dal Ministero della Salute. La <b>legge 182/2025</b> prevede una sperimentazione di 3 anni, che però parte solo con il <b>decreto attuativo</b>: verifica se è stato pubblicato prima di trattare.'),
@@ -20,6 +20,7 @@ G = dict(slug='drone-agricolo', breve_nome='Drone agricolo: cosa si può fare og
   ('img', 'campo.webp', 'Schermata di Quota 120 con la scheda di un campo, confini e superficie in ettari', 1280, 750, 'In Quota 120 i campi si disegnano sulla mappa con confini, coltura ed ettari, e i lavori si collegano al campo.'),
   ('h2', 'Il lato ENAC', 'enac'),
   ('p', 'I droni agricoli grandi (sopra 25 kg) sono nella <b>categoria specifica</b>: serve un’autorizzazione operativa basata sull’analisi del rischio. Il pilota ha l’attestato richiesto per l’operazione e il drone va registrato su D-Flight.'),
+  ('p', 'Semina e concime (spandimento di sementi e fertilizzanti) si fanno in <b>categoria specifica con autorizzazione ENAC</b>, con il percorso semplificato per i droni agricoli (AltMoC IT-UAS-2026-002 del 14/08/2026, droni fino a 5 m di dimensione caratteristica); i <b>trattamenti fitosanitari</b> invece restano possibili solo nelle sperimentazioni autorizzate, perché il decreto della legge 182/2025 non è ancora uscito (verifica della Commissione Agricoltura del Senato del 04/08/2026).'),
   ('h2', 'Cosa fare prima di trattare', 'prima'),
   ('passi', ['Verifica se il decreto attuativo della sperimentazione è stato pubblicato.', 'Controlla che il prodotto sia ammesso per la coltura e per l’uso con drone.', 'Presenta la SCIA al Servizio fitosanitario regionale, se previsto.', 'Verifica autorizzazione ENAC, assicurazione e zone D-Flight.', 'Registra il trattamento nel quaderno di campagna.'])],
  cta=[('Guida al quaderno di campagna digitale', 'Cosa registrare, chi lo tiene e la scadenza del 31/12/2026.', 'Guida al quaderno di campagna digitale', '/guide/quaderno-di-campagna-digitale/'),
@@ -27,7 +28,9 @@ G = dict(slug='drone-agricolo', breve_nome='Drone agricolo: cosa si può fare og
  faq=[('Si possono fare trattamenti fitosanitari con il drone in Italia?', 'Oggi no, salvo prove sperimentali autorizzate. La sperimentazione della legge 182/2025 parte con il decreto attuativo.'),
       ('Cosa prevede l’articolo 13-bis del D.Lgs. 150/2012?', 'Una sperimentazione di 3 anni con droni, con regole fissate da un decreto e una SCIA al Servizio fitosanitario regionale per ogni trattamento o ciclo.'),
       ('Che patentini servono per il drone agricolo?', 'Quelli ENAC per l’operazione (spesso categoria specifica) e, per i fitosanitari, il patentino fitosanitario.'),
-      ('Chi autorizza le prove con il drone?', 'Il Ministero della Salute, con avviso all’ASL prima di ogni trattamento.')],
+      ('Chi autorizza le prove con il drone?', 'Il Ministero della Salute, con avviso all’ASL prima di ogni trattamento.'),
+      ('Si può seminare o concimare con il drone?', 'Sì, in categoria specifica con autorizzazione ENAC: per i droni agricoli c’è il percorso semplificato AltMoC IT-UAS-2026-002 del 14/08/2026, per droni fino a 5 m di dimensione caratteristica. I trattamenti fitosanitari invece restano solo nelle sperimentazioni autorizzate.')],
  fonti=[('Ministero della Salute, presentazione «Impiego dei droni per la distribuzione di prodotti fitosanitari» (Regione Emilia-Romagna, 05/12/2025)', 'https://agricoltura.regione.emilia-romagna.it/fitosanitario/incontri-e-convegni/impiego-dei-droni-per-la-distribuzione-di-prodotti-fitosanitari/manzocchi-presentazione-droni_5-12-2025_unibo.pdf/@@download/file'),
         ('Direttiva 2009/128/CE', 'https://eur-lex.europa.eu/legal-content/IT/ALL/?uri=CELEX:32009L0128'),
-        ('ENAC, Droni', 'https://www.enac.gov.it/sicurezza-aerea/droni/')])
+        ('ENAC, Droni', 'https://www.enac.gov.it/sicurezza-aerea/droni/'),
+        ('ENAC, AltMoC ENAC IT-UAS-2026-002 per le operazioni agricole con droni (14/08/2026)', 'https://www.enac.gov.it/sicurezza-aerea/alternative-means-of-compliance/altmoc-enac-it-uas-2026-002/')])

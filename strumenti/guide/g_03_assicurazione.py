@@ -1,9 +1,9 @@
 G = dict(slug='assicurazione-drone', breve_nome='Assicurazione drone obbligatoria', anchor='Guida all’assicurazione drone',
- title='Assicurazione drone obbligatoria in Italia: chi deve averla e quale massimale',
- desc='In Italia serve un’assicurazione di responsabilità civile verso terzi per volare con un drone: cosa dice il regolamento ENAC UAS-IT, il massimale minimo, i droni sotto i 250 g e le sanzioni.',
+ title='Assicurazione drone obbligatoria: chi e quale massimale',
+ desc='Assicurazione drone obbligatoria in Italia: cosa dice il regolamento ENAC UAS-IT, il massimale minimo, i droni sotto i 250 g e le sanzioni.',
  h1='Assicurazione drone: quando è obbligatoria e quale scegliere',
  lead='Cosa chiede il regolamento ENAC, il massimale minimo e perché la polizza della casa spesso non basta.',
- data='2026-10-31', data_it='31 ottobre 2026',
+ data='2026-11-01', data_it='1 novembre 2026',
  about=[{"@type": "Thing", "name": "Assicurazione RC drone"}, {"@type": "Thing", "name": "Regolamento ENAC UAS-IT"}],
  corpo=[
   ('breve', 'In Italia non si vola con un drone senza un’<b>assicurazione di responsabilità civile verso terzi</b> valida e adatta all’uso: lo dice l’<b>articolo 27 del regolamento ENAC UAS-IT</b>. Il massimale non può essere inferiore a quello della tabella del Regolamento CE 785/2004, cioè circa <b>800.000 €</b> per i mezzi leggeri.'),

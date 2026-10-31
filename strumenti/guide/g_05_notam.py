@@ -1,9 +1,9 @@
 G = dict(slug='notam-droni', breve_nome='NOTAM per chi vola con i droni', anchor='Guida ai NOTAM per droni',
- title='NOTAM per droni: cosa sono, dove controllarli e quando servono',
+ title='NOTAM per droni: cosa sono e dove controllarli',
  desc='Cos’è un NOTAM, perché chi vola con un drone deve controllarli prima di ogni volo, dove trovarli in Italia e quando un volo con drone fa emettere un NOTAM.',
  h1='NOTAM per droni: cosa sono e dove si controllano',
  lead='Gli avvisi temporanei che possono chiudere un’area anche se la mappa sembra libera.',
- data='2026-10-31', data_it='31 ottobre 2026',
+ data='2026-11-01', data_it='1 novembre 2026',
  about=[{"@type": "Thing", "name": "NOTAM"}],
  corpo=[
   ('breve', 'Un <b>NOTAM</b> è un avviso aeronautico su qualcosa di temporaneo: un’area chiusa per un evento, un’esercitazione, lavori. Le zone fisse della mappa non bastano: prima di ogni volo si guardano anche le <b>riserve temporanee</b> su D-Flight e i NOTAM sul servizio di ENAV.'),

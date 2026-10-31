@@ -1,9 +1,9 @@
 G = dict(slug='d-flight', breve_nome='D-Flight: registrazione e QR code',
- title='D-Flight: come registrarsi come operatore di droni e quanto costa (2026)',
- desc='D-Flight è il portale ufficiale italiano per i droni: chi deve registrarsi, quanto costano abbonamento e QR code nel 2026, come si fa in 5 passi e dove va il QR.',
+ title='D-Flight: come registrarsi come operatore di droni (2026)',
+ desc='D-Flight è il portale ufficiale per i droni: chi deve registrarsi, quanto costano abbonamento e QR code nel 2026, come si fa in 5 passi e dove va il QR.',
  h1='D-Flight: come registrarsi come operatore di droni',
  lead='Chi deve registrarsi, quanto costa nel 2026, come si fa e dove va il QR code. In cinque minuti di lettura.',
- data='2026-10-31', data_it='31 ottobre 2026',
+ data='2026-11-01', data_it='1 novembre 2026',
  about=[{"@type": "Thing", "name": "D-Flight"}, {"@type": "Thing", "name": "Operatore UAS"}],
  corpo=[
   ('breve', 'D-Flight è il portale ufficiale italiano per chi usa droni. Se il tuo drone pesa 250 g o più, oppure ha una fotocamera, devi registrarti come <b>operatore UAS</b>: paghi l’abbonamento (Base 7 € l’anno, PRO 28 € l’anno, IVA compresa), ottieni il <b>QR code operatore</b> e lo attacchi su ogni drone prima di volare.'),

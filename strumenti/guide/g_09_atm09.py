@@ -1,9 +1,9 @@
 G = dict(slug='atm-09', breve_nome='Modulo ATM-09: riserva di spazio aereo', anchor='Guida al modulo ATM-09',
- title='Modulo ATM-09: riserva di spazio aereo per droni, quando serve e come si manda',
- desc='Il modulo ATM-09 serve a chiedere una riserva di spazio aereo per volare con un drone vicino agli aeroporti o oltre le quote: quando serve, cosa contiene, a chi si manda e con quanto anticipo.',
+ title='Modulo ATM-09: riserva di spazio aereo per droni',
+ desc='Modulo ATM-09 per la riserva di spazio aereo con il drone vicino agli aeroporti o oltre le quote: quando serve, cosa contiene, a chi va e con che anticipo.',
  h1='Modulo ATM-09: la riserva di spazio aereo per i droni',
  lead='Quando serve, cosa ci si scrive, a chi si manda e con quanto anticipo.',
- data='2026-10-31', data_it='31 ottobre 2026',
+ data='2026-11-01', data_it='1 novembre 2026',
  about=[{"@type": "Thing", "name": "Riserva di spazio aereo"}, {"@type": "Thing", "name": "Circolare ENAC ATM-09A"}],
  corpo=[
   ('breve', 'Il <b>modello ATM-09</b> è il modulo con cui si chiede una <b>riserva di spazio aereo</b> per volare con un drone dove normalmente non si potrebbe: vicino agli aeroporti (ATZ, CTR) o sopra i limiti. Si manda al fornitore dei servizi del traffico aereo (di solito <b>ENAV</b>) almeno <b>35 giorni prima</b>, con copia a ENAC; se approvato, diventa un NOTAM.'),

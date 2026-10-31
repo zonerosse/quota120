@@ -1,9 +1,9 @@
 G = dict(slug='patentino-drone', breve_nome='Patentino drone: quale serve e quanto costa', anchor='Guida al patentino drone',
- title='Patentino drone: come si ottiene e quanto costa (A1-A3, A2, STS) nel 2026',
- desc='Quale patentino serve per il drone, come si ottiene e quanto costa: esame A1-A3 online ENAC, A2 presso Entità Riconosciuta, certificato STS. Domande, tempi, punteggi e validità.',
+ title='Patentino drone: come si ottiene e quanto costa nel 2026',
+ desc='Quale patentino drone serve, come si ottiene e quanto costa: esame A1-A3 online ENAC, A2 presso Entità Riconosciuta, STS. Domande, punteggi e validità.',
  h1='Patentino drone: quale serve, come si ottiene e quanto costa',
  lead='A1-A3, A2 e scenari standard STS: chi deve prenderli, come sono gli esami e quanto si spende.',
- data='2026-10-31', data_it='31 ottobre 2026',
+ data='2026-11-01', data_it='1 novembre 2026',
  about=[{"@type": "Thing", "name": "Attestato pilota UAS A1-A3"}, {"@type": "Thing", "name": "Certificato A2"}],
  corpo=[
   ('breve', 'Il primo patentino è l’<b>attestato A1-A3</b>: esame online sul portale ENAC, 40 domande in 60 minuti, <b>31 €</b>, vale 5 anni. Per volare vicino alle persone con un drone C2 serve l’<b>A2</b> (esame presso un’Entità Riconosciuta, 31 €). Per lavorare negli scenari standard serve il <b>certificato STS</b> con l’addestramento pratico.'),

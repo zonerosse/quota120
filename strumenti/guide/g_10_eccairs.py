@@ -1,9 +1,9 @@
 G = dict(slug='segnalazione-incidenti-drone', breve_nome='Segnalare un incidente con il drone', anchor='Guida alla segnalazione incidenti con drone',
- title='Segnalare un incidente con il drone: ECCAIRS 2, 72 ore e quando avvisare l’ANSV',
- desc='Come e quando segnalare un incidente o un inconveniente con il drone in Italia: Regolamento UE 376/2014, il portale ECCAIRS 2, il termine di 72 ore, l’ANSV per gli incidenti gravi e le novità 2026.',
+ title='Segnalare un incidente con il drone: ECCAIRS 2 e 72 ore',
+ desc='Come segnalare un incidente con il drone in Italia: Regolamento UE 376/2014, il portale ECCAIRS 2, il termine di 72 ore, l’ANSV e le novità 2026.',
  h1='Incidente con il drone: cosa segnalare, a chi ed entro quando',
  lead='Le segnalazioni obbligatorie, il portale ECCAIRS 2, le 72 ore e l’avviso immediato all’ANSV.',
- data='2026-10-31', data_it='31 ottobre 2026',
+ data='2026-11-01', data_it='1 novembre 2026',
  about=[{"@type": "Thing", "name": "Segnalazione eventi aeronautici"}, {"@type": "Thing", "name": "ECCAIRS"}],
  corpo=[
   ('breve', 'Gli eventi con il drone che rientrano nell’obbligo si segnalano entro <b>72 ore</b> sul portale europeo <b>ECCAIRS 2</b> (aviationreporting.eu), che in Italia ha sostituito eE-MOR. <b>Incidenti e inconvenienti gravi</b> vanno comunicati subito all’<b>ANSV, entro 60 minuti</b>.'),

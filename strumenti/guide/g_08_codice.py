@@ -1,9 +1,9 @@
 G = dict(slug='codice-operatore-uas', breve_nome='Codice operatore UAS e Remote ID', anchor='Guida al codice operatore UAS',
- title='Codice operatore UAS: cos’è, dove va sul drone e come si usa nel Remote ID',
- desc='Il codice operatore UAS (QR code operatore) che rilascia D-Flight: com’è fatto, dove va applicato, i caratteri segreti, il Remote ID obbligatorio dal 2024 e come inserirlo nelle app DJI.',
+ title='Codice operatore UAS: cos’è, dove va sul drone e Remote ID',
+ desc='Codice operatore UAS (QR code operatore) di D-Flight: com’è fatto, dove va applicato, i caratteri segreti, il Remote ID e come inserirlo nelle app DJI.',
  h1='Codice operatore UAS: cos’è e dove si mette',
  lead='Il QR code dell’operatore, i caratteri segreti e l’identificazione a distanza obbligatoria.',
- data='2026-10-31', data_it='31 ottobre 2026',
+ data='2026-11-01', data_it='1 novembre 2026',
  about=[{"@type": "Thing", "name": "Codice operatore UAS"}, {"@type": "Thing", "name": "Remote ID"}],
  corpo=[
   ('breve', 'Quando ti registri su D-Flight ricevi il <b>codice operatore</b> con il suo <b>QR code</b>: uno solo per tutti i tuoi droni, valido in tutta l’Unione europea. Va attaccato <b>su ogni drone</b> e, se il drone ha l’identificazione a distanza, va anche inserito nel <b>Remote ID</b>.'),

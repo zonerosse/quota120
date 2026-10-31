@@ -58,7 +58,7 @@ def indice(guide):
     u = f'{B}/guide/'
     h = TPL
     tit = 'Guide per chi vola con i droni in Italia · Quota 120'
-    des = 'Guide semplici e aggiornate per operatori e piloti di droni: D-Flight, zone, NOTAM, assicurazione, patentino, drone agricolo, segnalazioni. Con le fonti ufficiali.'
+    des = 'Guide semplici per operatori e piloti di droni: D-Flight, zone, NOTAM, assicurazione, patentino, drone agricolo, segnalazioni. Con le fonti ufficiali.'
     h = re.sub(r'<title>[^<]*</title>', f'<title>{esc(tit)}</title>', h)
     for a, v in [('name="description"', des), ('property="og:title"', tit), ('property="og:description"', des), ('property="og:image:alt"', tit)]:
         h = re.sub(rf'<meta {a} content="[^"]*">', f'<meta {a} content="{esc(v)}">', h)

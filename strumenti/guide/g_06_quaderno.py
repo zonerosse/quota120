@@ -1,9 +1,9 @@
 G = dict(slug='quaderno-di-campagna-digitale', breve_nome='Quaderno di campagna digitale', anchor='Guida al quaderno di campagna digitale',
- title='Quaderno di campagna digitale: obbligo entro il 31/12/2026, cosa registrare e chi lo tiene',
- desc='Il registro dei trattamenti fitosanitari diventa elettronico: la scadenza del 31 dicembre 2026, cosa va registrato, chi lo tiene, per quanto tempo e cosa cambia per i trattamenti con drone.',
+ title='Quaderno di campagna digitale: obbligo entro il 31/12/2026',
+ desc='Quaderno di campagna digitale: la scadenza del 31 dicembre 2026, cosa registrare, chi lo tiene, per quanto tempo e cosa cambia per i trattamenti con drone.',
  h1='Quaderno di campagna digitale: cosa cambia e cosa registrare',
  lead='Il registro dei trattamenti passa al formato elettronico: scadenze, dati da scrivere e chi deve tenerlo.',
- data='2026-10-31', data_it='31 ottobre 2026',
+ data='2026-11-01', data_it='1 novembre 2026',
  about=[{"@type": "Thing", "name": "Registro dei trattamenti fitosanitari"}, {"@type": "Thing", "name": "Regolamento di esecuzione (UE) 2023/564"}],
  corpo=[
   ('breve', 'Il <b>quaderno di campagna</b> è il registro dei trattamenti con prodotti fitosanitari. Le regole europee (Reg. UE 2023/564) lo portano al <b>formato elettronico</b>: in Italia il decreto del Ministero dell’Agricoltura indica la conversione <b>entro il 31 dicembre 2026</b>. Si conserva almeno <b>3 anni</b>.'),
