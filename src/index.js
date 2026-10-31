@@ -18,9 +18,9 @@ async function vh(scene) { const b = await crypto.subtle.digest("SHA-256", new T
 async function corsiConVideo(env, url, corsi, adm) {
   const out = [];
   for (const c of corsi) { const cc = Object.assign({}, c, { lezioni: [] });
-    for (const l of c.lezioni || []) { const h = await vh(l.scene), f = l.id + "-" + h;
+    for (const l of c.lezioni || []) { const h = await vh(l.scene), f = (c.tok ? "az-" + c.tok + "-" : "") + l.id + "-" + h;
       const pronto = (l.scene || []).length ? await env.ASSETS.fetch(new Request(url.origin + "/corso/video/" + f + ".mp4", { method: "HEAD" })).then(r => r.ok).catch(() => false) : false;
-      const audio = adm && pronto ? await env.ASSETS.fetch(new Request(url.origin + "/corso/video/" + f + ".m4a", { method: "HEAD" })).then(r => r.ok).catch(() => false) : false;
+      const audio = pronto ? await env.ASSETS.fetch(new Request(url.origin + "/corso/video/" + f + ".m4a", { method: "HEAD" })).then(r => r.ok).catch(() => false) : false;
       const x = Object.assign({}, l, { video: pronto ? f : "", pronto, audio }); if (!adm) { x.testo = (l.scene || []).map(s => s.v).filter(Boolean); delete x.scene; } cc.lezioni.push(x); }
     out.push(cc); }
   return out;
@@ -506,6 +506,7 @@ export class Stato extends DurableObject {
       const dsp = (await st.get("disp")) || {}, vis = Object.values(dsp).map(x => x.visto || x.at || 0);
       return J({ piloti: (dd.PILOTI || []).length, droni: (dd.DRONI || []).length, voli: (dd.VOLI || []).length, telefoni: Object.keys(dsp).length, ultimo: vis.length ? Math.max(...vis) : 0, sospeso: !!(await st.get("sospeso")) });
     }
+    if (p === "/interno/corsi-az") return J((await st.get("corsi-az")) || []);
     if (p === "/interno/sospendi") { const b = await request.json().catch(() => ({})); if (b.on) await st.put("sospeso", true); else await st.delete("sospeso"); return J({ ok: true }); }
     if (OPN && p.startsWith("/api/") && await st.get("sospeso")) return J({ errore: "Questo spazio è sospeso: scrivi all'assistenza di Quota 120." }, 423);
     const BASEURL = url.origin + (OPN ? "/" + OPN : "");
@@ -633,6 +634,32 @@ export class Stato extends DurableObject {
     if (p === "/api/disp/esci" && request.method === "POST") { me.stato = "uscito"; await st.put("disp", disp); return J({ ok: true }); }
     if (me.stato !== "ok") return J({ errore: "non approvato", stato: me.stato }, 403);
     const adm = me.ruolo === "adm";
+
+    // ---- corsi dell'azienda: li prepara l'Admin, li vedono i suoi piloti ----
+    if (p === "/api/corsi" && request.method === "GET") {
+      const F = (await st.get("corsi-fatti")) || {};
+      return J({ az: (await st.get("corsi-az")) || [], fatti: adm ? F : { [me.n]: F[me.n] || {} }, io: me.n, adm });
+    }
+    if (p === "/api/corsi" && request.method === "POST") {
+      if (!adm) return J({ errore: "Solo l'Admin prepara i corsi" }, 403);
+      const tx = (v, max) => String(v == null ? "" : v).replace(/[\u0000-\u001f]/g, " ").slice(0, max);
+      let b; try { b = await request.json(); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
+      if (!Array.isArray(b) || b.length > 30) return J({ errore: "Dati non validi" }, 400);
+      const pulito = b.map(c => ({ id: String(c.id || "").replace(/[^a-z0-9-]/gi, "").slice(0, 40) || "c" + now.toString(36), tok: /^[a-f0-9]{12}$/.test(c.tok || "") ? c.tok : rnd(6),
+        t: tx(String(c.t || "Corso"), 120), s: tx(String(c.s || ""), 300), vis: "azienda", rev: String(c.rev || ""),
+        lezioni: (c.lezioni || []).slice(0, 40).map(l => ({ id: String(l.id || "").replace(/[^a-z0-9-]/gi, "").slice(0, 60) || "l" + now.toString(36) + rnd(2), t: tx(String(l.t || "Lezione"), 120), s: tx(String(l.s || ""), 200),
+          leg: (l.leg || []).slice(0, 20).map(r => [tx(String(r[0] || ""), 80), tx(String(r[1] || ""), 300)]), h: "",
+          q: (l.q || []).slice(0, 40).map(q => [tx(String(q[0] || ""), 300), (q[1] || []).slice(0, 6).map(o => tx(String(o || ""), 200)), Math.max(0, +q[2] || 0), tx(String(q[3] || ""), 400)]),
+          scene: (l.scene || []).slice(0, 40).map(x => { const y = {}; for (const k of ["k", "t", "n", "v"]) if (x[k]) y[k] = tx(String(x[k]), k === "v" ? 1500 : 120); if (Array.isArray(x.p) && x.p.length) y.p = x.p.slice(0, 8).map(z => tx(String(z), 160)); if (Array.isArray(x.l) && x.l.length) y.l = x.l.slice(0, 8).map(r => [tx(String(r[0] || ""), 60), tx(String(r[1] || ""), 160)]); return y; }) })) }));
+      await st.put("corsi-az", pulito); return J({ ok: true });
+    }
+    if (p === "/api/corsi/fatta" && request.method === "POST") {
+      let b; try { b = await request.json(); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
+      const c = String(b.c || "").slice(0, 40), i = Math.floor(+b.i); if (!c || !(i >= 0 && i < 60)) return J({ errore: "Dati non validi" }, 400);
+      const F = (await st.get("corsi-fatti")) || {}, M = F[me.n] = F[me.n] || {}, A = M[c] = M[c] || [];
+      if (!A.includes(i)) { A.push(i); await st.put("corsi-fatti", F); }
+      return J({ ok: true });
+    }
 
     // ---- aspetto della pagina iniziale: ognuno il suo, resta sulla persona ----
     if (p === "/api/aspetto" && request.method === "POST") {
@@ -1224,7 +1251,9 @@ export default {
     if (p === "/api/corso/da-fare") {
       if (!(await gettoneGithub(request.headers.get("authorization") || ""))) return J({ errore: "non autorizzato" }, 401);
       const tutti = await reg().fetch(new Request("https://quota120.interno/interno/corsi")).then(r => r.json());
-      const out = []; for (const c of tutti) for (const l of c.lezioni || []) if ((l.scene || []).length) out.push({ file: l.id + "-" + await vh(l.scene), titolo: l.t, scene: l.scene });
+      const ops = await reg().fetch(new Request("https://quota120.interno/interno/elenco")).then(r => r.json()).catch(() => []);
+      for (const op of ops) { const az = await env.STATO.get(env.STATO.idFromName("op:" + op)).fetch(new Request("https://quota120.interno/interno/corsi-az", { headers: { "x-q120-op": op } })).then(r => r.json()).catch(() => []); if (Array.isArray(az)) tutti.push(...az); }
+      const out = []; for (const c of tutti) for (const l of c.lezioni || []) if ((l.scene || []).length) out.push({ file: (c.tok ? "az-" + c.tok + "-" : "") + l.id + "-" + await vh(l.scene), titolo: l.t, scene: l.scene });
       return J(out);
     }
     if (host === "quota120.com" && (p === "/api/corso/codice" || p === "/api/corso/verifica") && request.method === "POST") {
@@ -1274,6 +1303,17 @@ export default {
     const pulita = (op) => { const r = new Request(request); r.headers.delete("x-q120-op"); if (op) r.headers.set("x-q120-op", op); return r; };
     if (p === "/api/salute") { const c = n => !!(env[n] && String(env[n]).trim()); const r = await main().fetch(pulita()).then(x => x.json()).catch(() => ({})); return Response.json({ ...r, worker: { RESEND_API_KEY: c("RESEND_API_KEY"), ANTHROPIC_API_KEY: c("ANTHROPIC_API_KEY"), DJI_API_KEY: c("DJI_API_KEY"), nomi: Object.keys(env).filter(k => /KEY/.test(k)) } }); }
     if (p.startsWith("/api/registro/")) return env.STATO.get(env.STATO.idFromName("registro")).fetch(pulita());
+    if (p === "/api/corsi" && request.method === "GET") {
+      const op = String(request.headers.get("x-op") || url.searchParams.get("op") || "").toLowerCase();
+      const stub = !op || op === "prova" ? main() : SLUG_OK(op) ? env.STATO.get(env.STATO.idFromName("op:" + op)) : null;
+      if (!stub) return J({ errore: "operatore" }, 404);
+      const r = await stub.fetch(pulita(SLUG_OK(op) ? op : "")); if (!r.ok) return r;
+      const j = await r.json();
+      const tutti = await reg().fetch(new Request("https://quota120.interno/interno/corsi")).then(x => x.json()).catch(() => []);
+      j.az = await corsiConVideo(env, url, j.az || [], !!j.adm);
+      j.q120 = await corsiConVideo(env, url, tutti, false);
+      return J(j);
+    }
     if (p.startsWith("/api/")) {
       const op = String(request.headers.get("x-op") || url.searchParams.get("op") || "").toLowerCase();
       if (!op || op === "prova") return main().fetch(pulita());

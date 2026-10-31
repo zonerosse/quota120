@@ -1125,6 +1125,23 @@ body.scuro .nav{background:transparent;border-color:#1F3241}
 .cf-m.on{border-color:var(--accent);background:var(--sup2,#eef3f7)}
 .cf-pt{background:#fff;border:3px solid #e8c15a;border-radius:50%}
 </style>
+<style id="cs-css">
+.cs-sez{font-size:12.5px;font-weight:700;letter-spacing:.05em;color:var(--muted);margin:16px 2px 6px}
+.cs-list{display:grid;gap:8px}.cs-riga{width:100%}.cs-riga .n{font-weight:700}
+.cs-bar{height:7px;background:var(--line,#E6EBEE);border-radius:4px;overflow:hidden;margin:8px 0 4px}.cs-bar i{display:block;height:100%;background:var(--ok,#17793F);width:0}
+.cs-vid{width:100%;aspect-ratio:16/9;border-radius:10px;background:#0F2230;display:block}
+.cs-tab{width:100%;border-collapse:collapse;font-size:14.5px}.cs-tab td,.cs-tab th{padding:7px 6px;border-top:1px solid var(--line,#E6EBEE);text-align:left;vertical-align:top}.cs-tab th{font-size:13px;color:var(--muted)}
+.cs-q{border:1px solid var(--bordo,#D3DBE0);border-radius:10px;padding:10px;margin-top:8px}.cs-q .d{font-weight:700;margin-bottom:6px}.cs-q .sp{font-size:14px;color:var(--muted);margin-top:6px}
+.cs-op{all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;border:1.5px solid var(--bordo,#D3DBE0);border-radius:8px;padding:8px 11px;margin-top:5px;font-size:15px;line-height:1.35}
+.cs-op.g{border-color:var(--ok,#17793F);background:var(--ok-bg,#E4F2EA)}.cs-op.s{border-color:var(--ko,#AE2F28);background:var(--ko-bg,#F8E3E1)}.cs-op.sc{border-color:var(--accent);background:#E3EDF3}
+.cs-esito{border-radius:10px;padding:12px;margin-top:10px;font-size:15px}.cs-esito b{display:block;font-size:22px}.cs-esito.ok{background:var(--ok-bg,#E4F2EA);color:var(--ok,#17793F)}.cs-esito.ko{background:var(--ko-bg,#F8E3E1);color:var(--ko,#AE2F28)}
+.cs-testo summary{cursor:pointer}.cs-testo p{font-size:15px;color:var(--muted);margin:8px 0 0}
+.cs-au{background:var(--notte,#132A3A)!important;color:#fff;border-color:var(--notte,#132A3A)!important}.cs-ora small{color:#E8C15A;font-weight:700;font-size:12.5px}.cs-ora b{display:block;font-size:18px}
+.cs-au .cs-bar{background:rgba(255,255,255,.18)}.cs-au .cs-bar i{background:#E8C15A}.cs-tm{display:flex;justify-content:space-between;font-size:13px;color:#C9D6DE}
+.cs-cmd{display:flex;justify-content:center;gap:10px;margin-top:12px}.cs-cmd button{all:unset;cursor:pointer;min-width:46px;height:46px;border-radius:23px;border:1.5px solid rgba(255,255,255,.3);display:grid;place-items:center;font-weight:700;font-size:15px;color:#fff}.cs-cmd button.play{min-width:62px;height:62px;border-radius:31px;background:#E8C15A;color:#132A3A;border:0;font-size:20px}
+.cs-sc,.cs-dom{border:1px solid var(--bordo,#D3DBE0);border-radius:10px;padding:10px;margin-top:8px}.cs-sc summary{cursor:pointer}
+.cs-sc input,.cs-sc textarea,.cs-dom input,.cs-dom textarea,.cs-dom select,#v-corsi .fld input,#v-corsi .fld textarea{width:100%;box-sizing:border-box;font:inherit;font-size:15px;border:1.5px solid var(--bordo,#D3DBE0);border-radius:8px;padding:8px 10px;background:var(--sup,#fff);color:inherit}
+</style>
 </head>
 <body>
 
@@ -1714,6 +1731,9 @@ body.scuro .nav{background:transparent;border-color:#1F3241}
     <div id="stu-list"></div>
   </div>
 
+  <!-- ================= CORSI ================= -->
+  <div id="v-corsi" class="hidden"><div id="cs-c"></div></div>
+
   <!-- ================= ZONE DI VOLO (solo Admin) ================= -->
   <!-- ================= ACCOUNT DEL PILOTA ================= -->
   <div id="v-account" class="hidden">
@@ -2162,6 +2182,7 @@ function disegnaHome(){
   const todo=calcolaTodo();
   const tieni=['h-data','h-cod','h-luogo'].map(i=>(document.getElementById(i)||{}).value), trov=LAVTROVATO;
   document.getElementById('h-asp').innerHTML=(ADM&&!COME?homeAdm(todo):ASP==='A'?homeA(todo):ASP==='C'?homeC(todo):(!ADM||COME)&&ioPilota()?homeP():homeB(todo));
+  if(!(ADM&&!COME)) document.getElementById('h-asp').insertAdjacentHTML('beforeend',`<div class="card" style="margin-top:12px"><h2>Corsi</h2><button class="tile" type="button" onclick="apriCorsi()" style="width:100%"><div class="ico" style="background:var(--f-persone,#5b7f6e)"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3z"/></svg></div><div><div class="n">Corsi</div><div class="c">dell’azienda e patentini · anche in auto</div></div></button></div>`);
   riempiSelect(vd,vp);
   ['h-data','h-cod','h-luogo'].forEach((i,k)=>{const e=document.getElementById(i); if(e&&tieni[k]) e.value=tieni[k];});
   if(tieni[1]) cercaCodice(); LAVTROVATO=trov; disegnaMeteo();
@@ -3430,7 +3451,7 @@ function crumbMenu(e){ document.querySelectorAll('.cr-menu').forEach(x=>x.remove
   document.querySelector('.nav').appendChild(m); setTimeout(()=>document.addEventListener('click',function chiudi(ev){ if(!m.contains(ev.target)){ m.remove(); document.removeEventListener('click',chiudi);} }),0); }
 window.addEventListener('resize',()=>{ clearTimeout(window._crT); window._crT=setTimeout(crumbLinks,150); });
 let BACK_PASSO=null;
-function navIndietro(){ if(BACK_PASSO&&BACK_PASSO()) return;
+function navIndietro(){ if(VISTA==='corsi'&&typeof csIndietro==='function'&&csIndietro()) return; if(BACK_PASSO&&BACK_PASSO()) return;
   const p=NAVST.pop();
   if(!p){ const f=NAV_LOG; if(f) f(); else vai('home'); return; }
   NAV_NO=true; try{ vai(p.v,p.t); }finally{ NAV_NO=false; }
@@ -4047,6 +4068,7 @@ function disegnaPannello(){
     (()=>{const da=RICH.filter(x=>x.stato==='bozza').length, at=RICH.filter(x=>x.stato==='inviata').length; return {i:'<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>',n:'Richieste di permesso',c:da?pl(da,'da mandare','da mandare'):at?pl(at,'in attesa','in attesa'):'ATM-09 e ATM-05',d:da?'warn':'',go:'apriRichieste()'};})(),
     {i:'<svg viewBox="0 0 24 24"><path d="M3 17c3-1 4-9 7-9s1 9 4 9 3-4 4-4 1 2 3 2"/><path d="M3 21h18"/></svg>',n:'Le firme',c:OP.firma&&OP.firma.img?(PILOTI.filter(p=>!(SCHEDEP[p.id]||{}).firma).length?pl(PILOTI.filter(p=>!(SCHEDEP[p.id]||{}).firma).length,'pilota senza','piloti senza'):'tutte fatte'):'manca la tua',d:OP.firma&&OP.firma.img&&!PILOTI.some(p=>!(SCHEDEP[p.id]||{}).firma)?'':'warn',go:"apriAdmin('ad-firma')"},
     ...(SPAZIO?[]:[{i:SHIELD,n:'Codice dell’Admin',c:'cambia il codice',go:'cambiaCodice()'}]),
+    {i:'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3z"/></svg>',n:'Corsi',c:'per i tuoi piloti',go:'apriCorsi()'},
     {i:'<svg viewBox="0 0 24 24"><path d="M4 5c3-1.5 5.5-1.5 8 0v14c-2.5-1.5-5-1.5-8 0z"/><path d="M12 5c2.5-1.5 5-1.5 8 0v14c-3-1.5-5.5-1.5-8 0"/></svg>',n:'Studio Gestionale',c:stuFatte().length+' lezioni su '+LEZIONI.length,go:'apriStudio()'}];
   window.PANN_T=T;
   document.getElementById('t-admin').innerHTML=document.getElementById('ad-tiles').innerHTML=T.map(t=>`<button class="tile" onclick="${t.go}">
@@ -4251,7 +4273,7 @@ let HADM_APERTE=new Set();
 const HADM_SEZ=[
   ['lav','Lavoro','lavori, calendario, voli, preventivi','--f-attivita','<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/>',[['t','Clienti e lavori'],['t','Calendario'],['t','Registro voli'],['t','Preventivi'],['x','ctrl']]],
   ['flotta','Flotta','droni, batterie, manutenzioni, inventario','--f-flotta','<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8 8l8 8M16 8l-8 8"/>',[['t','Droni'],['t','Batterie'],['t','Manutenzioni'],['t','Inventario'],['p','Aggiungi drone']]],
-  ['persone','Persone','piloti, telefoni, permessi, firme','--f-persone','<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><path d="M16 4.5a3.5 3.5 0 010 7M18 14c2 .8 3 2.8 3 6"/>',[['t','Piloti'],['p','Aggiungi pilota'],['p','Telefoni collegati'],['p','Utenti e permessi'],['p','Le firme']]],
+  ['persone','Persone','piloti, corsi, telefoni, permessi, firme','--f-persone','<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><path d="M16 4.5a3.5 3.5 0 010 7M18 14c2 .8 3 2.8 3 6"/>',[['t','Piloti'],['p','Aggiungi pilota'],['p','Corsi'],['p','Telefoni collegati'],['p','Utenti e permessi'],['p','Le firme']]],
   ['regole','Regole e sicurezza','D-Flight, ENAC, permessi, rischio, segnalazioni','--f-regole','<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',[['x','zd'],['t','Autorizzazioni ENAC'],['p','Richieste di permesso'],['p','Valutazioni del rischio'],['p','Segnalazioni'],['p','Checklist'],['t','Campi'],['t','Trattamenti']]],
   ['imp','Impostazioni','dati dell’operatore, avvisi, documenti, codice, studio','--f-imp','<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>',[['p','Dati dell’operatore'],['p','Avvisi via email'],['x','doc'],['p','Codice dell’Admin'],['p','Studio Gestionale'],['x','parole']]]];
 function hadmVoce(tipo,n){
@@ -5721,7 +5743,7 @@ const Q2_TILES=[
  {k:'lavori',n:'Lavori',col:'--f-attivita',i:Q2I.cal,V:[['t','Clienti e lavori'],['t','Calendario']]},
  {k:'voli',n:'Voli',col:'--f-attivita',i:Q2I.log,V:[['t','Registro voli']],go:'apriVoli()'},
  {k:'droni',n:'Droni',col:'--f-flotta',i:Q2I.drone,V:[['t','Droni'],['t','Batterie'],['t','Manutenzioni'],['t','Inventario'],['p','Aggiungi drone']]},
- {k:'piloti',n:'Piloti',col:'--f-persone',i:Q2I.users,V:[['t','Piloti'],['p','Aggiungi pilota'],['p','Le firme'],['p','Telefoni collegati']]},
+ {k:'piloti',n:'Piloti',col:'--f-persone',i:Q2I.users,V:[['t','Piloti'],['p','Aggiungi pilota'],['p','Le firme'],['p','Telefoni collegati'],['p','Corsi']]},
  {k:'dflight',n:'D-Flight e zone',col:'--f-regole',i:Q2I.pin,V:[['x','zd']],go:'apriDflight()'},
  {k:'permessi',n:'Permessi e sicurezza',col:'--f-regole',i:Q2I.reg,V:[['t','Autorizzazioni ENAC'],['p','Richieste di permesso'],['p','Valutazioni del rischio'],['p','Segnalazioni'],['p','Checklist']]},
  {k:'agri',n:'Agricoltura',col:'--f-agri,#6b7a45',i:Q2I.leaf,V:[['t','Campi'],['t','Trattamenti']]},
@@ -7813,6 +7835,143 @@ function provaAvvisi(b){
 }
 
 avvio();
+
+</script>
+<script>
+/* ================= CORSI: quelli dell'azienda (li prepara l'Admin) e quelli di Quota 120 ================= */
+let CS={az:[],q120:[],fatti:{},io:'',adm:false}, CSP=[], CS_LEZ=null, CS_RIS={};
+const CS_IC={libro:'<path d="M4 5c3-1.5 5.5-1.5 8 0v14c-2.5-1.5-5-1.5-8 0z"/><path d="M12 5c2.5-1.5 5-1.5 8 0v14c-3-1.5-5.5-1.5-8 0"/>',play:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3z"/>',cuffie:'<path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="7" rx="1.5"/><rect x="17" y="14" width="4" height="7" rx="1.5"/>'};
+const csIco=(k,c)=>`<div class="ico" style="background:var(${c||'--accent'})"><svg viewBox="0 0 24 24">${CS_IC[k]}</svg></div>`;
+function csTutti(){return [...(CS.az||[]).map(c=>Object.assign(c,{_az:1})),...(CS.q120||[])];}
+function csCorso(id){return csTutti().find(c=>c.id===id);}
+function csFatte(c,n){const F=(CS.fatti||{})[n||(COME||CS.io)]||{};return F[c.id]||[];}
+function apriCorsi(){ CSP=[]; document.getElementById('cs-c').innerHTML='<div class="card"><span class="spin"></span> Carico i corsi…</div>'; vai('corsi','Corsi');
+  api('GET','/api/corsi').then(j=>{ if(j.errore){ document.getElementById('cs-c').innerHTML=`<div class="card">${ESC(j.errore==='dispositivo'?'Entra di nuovo per vedere i corsi.':j.errore)}</div>`; return; } CS=j; csVai(csLista,'Corsi'); })
+  .catch(()=>{ document.getElementById('cs-c').innerHTML='<div class="card">Senza rete i corsi non si aprono: riprova quando torna la rete.</div>'; }); }
+function csIndietro(){ csAudioStop(); if(CSP.length>1){ CSP.pop(); csMostra(); return true; } return false; }
+function csVai(f,t,a){ CSP.push([f,t,a]); csMostra(); }
+function csMostra(){ const [f,,a]=CSP[CSP.length-1];
+  document.getElementById('cs-c').innerHTML=f(a);
+  document.getElementById('crumb').innerHTML=(ADM&&!COME?'Home Admin':'Home')+' &rsaquo; '+CSP.map((x,i)=>i<CSP.length-1?ESC(x[1]):'<b>'+ESC(x[1])+'</b>').join(' &rsaquo; ');
+  window.scrollTo(0,0); if(document.getElementById('cs-au')) csAutoPronto(); if(document.getElementById('csl-scene')) csEdDisegna(); }
+function csRiga(c){ const n=(c.lezioni||[]).length, f=csFatte(c).length;
+  return `<button type="button" class="tile cs-riga" onclick="csVai(csCorsoV,'${ESC(c.t).replace(/'/g,'’')}','${c.id}')">${csIco('play',c._az?'--f-persone':'--accent')}<div><div class="n">${ESC(c.t)}</div><div class="c">${n} ${n===1?'lezione':'lezioni'} · ${f?f+' fatte':'da iniziare'}</div></div></button>`; }
+function csLista(){ const az=CS.az||[], q=CS.q120||[];
+  let h=`<div class="card"><h2>Corsi</h2><div style="font-size:15px;color:var(--muted)">${CS.adm&&!COME?'I corsi che vedono i tuoi piloti: quelli della tua azienda li prepari tu, quelli di Quota 120 sono già pronti.':'Video con voce e sottotitoli, legende e prove. Li puoi ascoltare anche in auto.'}</div></div>`;
+  h+=`<div class="cs-sez">DELLA TUA AZIENDA</div><div class="cs-list">${az.length?az.map(csRiga).join(''):`<div class="card" style="font-size:15px;color:var(--muted)">${CS.adm&&!COME?'Nessun corso ancora. Prepara il primo: le procedure dell’azienda, le regole sulle batterie, come si compila la checklist…':'L’Admin non ha ancora preparato corsi per l’azienda.'}</div>`}</div>`;
+  if(CS.adm&&!COME) h+=`<div class="row"><button class="btn" type="button" onclick="csNuovo()">+ Nuovo corso dell’azienda</button></div>`;
+  h+=`<div class="cs-sez">DI QUOTA 120</div><div class="cs-list">${q.map(csRiga).join('')}</div>`;
+  h+=`<div class="card" style="margin-top:12px"><div class="row" style="margin-top:0"><button class="btn sec" type="button" onclick="csVai(csAuto,'Ascolta in auto')"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">${CS_IC.cuffie}</svg> Ascolta in auto</button></div><div style="font-size:14px;color:var(--muted);margin-top:6px">Le lezioni di fila, solo voce, anche a schermo spento.</div></div>`;
+  if(CS.adm&&!COME&&az.length){ const nomi=[...new Set([...PILOTI.map(p=>p.nome),...Object.keys(CS.fatti||{})])].filter(n=>n&&n!=='Admin');
+    h+=`<div class="card" style="margin-top:12px"><h2>Chi li ha fatti</h2>${nomi.length?`<div class="tab"><table class="cs-tab"><tr><th>Pilota</th>${az.map(c=>`<th>${ESC(c.t)}</th>`).join('')}</tr>${nomi.map(n=>`<tr><td>${ESC(n)}</td>${az.map(c=>{const f=csFatte(c,n).length,t=(c.lezioni||[]).length;return `<td><span class="tag ${t&&f>=t?'ok':f?'warn':''}">${f} su ${t}</span></td>`}).join('')}</tr>`).join('')}</table></div>`:'<div style="font-size:14px;color:var(--muted)">Nessun pilota ancora.</div>'}</div>`; }
+  return h; }
+function csCorsoV(id){ const c=csCorso(id); if(!c) return '<div class="card">Corso non trovato.</div>'; const F=csFatte(c), L=c.lezioni||[], nq=L.reduce((n,l)=>n+(l.q||[]).length,0);
+  let h=`<div class="card"><h2>${ESC(c.t)}</h2>${c.s?`<div style="font-size:15px;color:var(--muted)">${ESC(c.s)}</div>`:''}<div class="cs-bar"><i style="width:${L.length?Math.round(F.length/L.length*100):0}%"></i></div><div style="font-size:13.5px;color:var(--muted)">${F.length} lezioni fatte su ${L.length}</div></div>`;
+  h+=`<div class="cs-list">${L.map((l,i)=>`<button type="button" class="tile cs-riga" onclick="csVai(csLezV,'${ESC(l.t).replace(/'/g,'’')}','${c.id}|${i}')"><div class="ico" style="background:var(--petrolio,#1E6B6F);font-weight:700;color:#fff">${i+1}</div><div><div class="n">${ESC(l.t)}</div><div class="c">${ESC(l.s||'')}${l.pronto?'':(l.scene||[]).length||c._az?' · video in preparazione':''}</div></div>${F.includes(i)?'<span class="tag ok" style="margin-left:auto">fatta</span>':''}</button>`).join('')||'<div class="card">Ancora nessuna lezione.</div>'}</div>`;
+  if(nq) h+=`<div class="row"><button class="btn" type="button" onclick="csVai(csEsame,'Simulazione','${c.id}')">Simulazione d’esame</button></div>`;
+  if(c._az&&CS.adm&&!COME) h+=`<div class="card" style="margin-top:12px"><h2>Per l’Admin</h2><div class="row" style="margin-top:0"><button class="btn sec" type="button" onclick="csVai(csEdCorso,'Modifica','${c.id}')">Modifica il corso</button><button class="btn sec" type="button" onclick="csNuovaLez('${c.id}')">+ Aggiungi una lezione</button></div></div>`;
+  return h; }
+function csLezV(x){ const [id,i]=x.split('|'), c=csCorso(id), l=(c.lezioni||[])[+i]; if(!l) return ''; CS_LEZ={c:id,i:+i}; CS_RIS={};
+  const testo=l.testo||(l.scene||[]).map(s=>s.v).filter(Boolean);
+  let h=l.pronto?`<video class="cs-vid" controls playsinline preload="metadata" poster="/corso/video/${l.video}.jpg" src="/corso/video/${l.video}.mp4" onended="csFatta('${id}',${+i})"><track kind="subtitles" srclang="it" label="Italiano" src="/corso/video/${l.video}.vtt" default></video>`:`<div class="card" style="font-size:15px;color:var(--muted)">${(l.scene||[]).length||c._az?'Il video è in preparazione: sarà pronto entro domani mattina.':'Questa lezione non ha video.'}</div>`;
+  if((l.leg||[]).length) h+=`<div class="card" style="margin-top:12px"><h2>Legenda</h2><div class="tab"><table class="cs-tab">${l.leg.map(r=>`<tr><td><b>${c._az?ESC(r[0]):r[0]}</b></td><td>${c._az?ESC(r[1]):r[1]}</td></tr>`).join('')}</table></div></div>`;
+  if(l.h&&!c._az) h+=`<div class="card cs-h" style="margin-top:12px">${l.h}</div>`;
+  if(testo.length) h+=`<details class="card cs-testo" style="margin-top:12px"><summary><b>Leggi tutto il testo della lezione</b></summary>${testo.map(t=>`<p>${ESC(t)}</p>`).join('')}</details>`;
+  if((l.q||[]).length) h+=`<div class="card" style="margin-top:12px"><h2>Prova della lezione</h2>${l.q.map((q,j)=>csDomanda(q,j)).join('')}<div id="cs-ris"></div></div>`;
+  else h+=`<div class="row"><button class="btn sec" type="button" onclick="csFatta('${id}',${+i});this.textContent='Segnata come fatta'">Segna come fatta</button></div>`;
+  return h; }
+function csDomanda(q,j){ return `<div class="cs-q" data-j="${j}"><div class="d">${ESC(q[0])}</div>${(q[1]||[]).map((o,k)=>`<button type="button" class="cs-op" onclick="csRisp(this,${j},${k})">${ESC(o)}</button>`).join('')}<div class="sp" hidden></div></div>`; }
+function csRisp(b,j,k){ const c=csCorso(CS_LEZ.c), l=c.lezioni[CS_LEZ.i], q=l.q[j], box=b.closest('.cs-q'); if(box.dataset.f) return; box.dataset.f=1;
+  b.classList.add(k===q[2]?'g':'s'); if(k!==q[2]) box.querySelectorAll('.cs-op')[q[2]].classList.add('g');
+  const sp=box.querySelector('.sp'); sp.hidden=false; sp.textContent=(k===q[2]?'Giusto. ':'No. ')+(q[3]||''); CS_RIS[j]=k===q[2];
+  const n=Object.keys(CS_RIS).length, g=Object.values(CS_RIS).filter(Boolean).length, t=l.q.length;
+  if(n===t){ const ok=g/t>=.75; document.getElementById('cs-ris').innerHTML=`<div class="cs-esito ${ok?'ok':'ko'}"><b>${g} su ${t}</b>${ok?'Lezione superata.':'Da ripassare: rivedi il video e riprova (serve almeno '+Math.ceil(t*.75)+' su '+t+').'}</div>`; if(ok) csFatta(CS_LEZ.c,CS_LEZ.i); } }
+function csFatta(id,i){ const F=(CS.fatti=CS.fatti||{}), M=F[COME||CS.io]=F[COME||CS.io]||{}, A=M[id]=M[id]||[]; if(A.includes(i)) return; A.push(i); if(!COME) api('POST','/api/corsi/fatta',{c:id,i}).catch(()=>{}); }
+/* ---- simulazione ---- */
+let CSE=null;
+function csEsame(id){ const c=csCorso(id), E=Object.assign({n:40,min:60,giusta:1,sbagliata:0,soglia:0},c.esame||{}), tutte=[];
+  (c.lezioni||[]).forEach((l,i)=>(l.q||[]).forEach((q,j)=>tutte.push([i,j])));
+  for(let k=tutte.length-1;k>0;k--){const r=Math.floor(Math.random()*(k+1));[tutte[k],tutte[r]]=[tutte[r],tutte[k]];}
+  const el=tutte.slice(0,Math.min(E.n,tutte.length)); if(!c.esame) E.soglia=Math.ceil(el.length*.75); CSE={c:id,E,el,sc:{},fine:Date.now()+E.min*60000};
+  clearInterval(window.CS_T); window.CS_T=setInterval(()=>{const e=document.getElementById('cs-tempo'); if(!e){clearInterval(window.CS_T);return;} const r=Math.max(0,Math.round((CSE.fine-Date.now())/1000)); e.textContent='Tempo: '+Math.floor(r/60)+':'+String(r%60).padStart(2,'0'); if(!r) csConsegna();},1000);
+  return `<div class="card"><h2>Simulazione d’esame</h2><div style="font-size:14.5px;color:var(--muted)">${el.length} domande, ${E.min} minuti. ${E.sbagliata?'Le sbagliate tolgono '+E.sbagliata+' punto: se non sei sicuro lascia vuota.':'Le sbagliate e le vuote valgono 0.'}</div><div id="cs-tempo" style="font-weight:700;margin-top:6px">Tempo: ${E.min}:00</div></div>
+   <div class="card" style="margin-top:12px" id="cs-eq">${el.map(([i,j],n)=>{const q=c.lezioni[i].q[j];return `<div class="cs-q" data-n="${n}"><div class="d">${n+1}. ${ESC(q[0])}</div>${q[1].map((o,k)=>`<button type="button" class="cs-op" onclick="csScelta(this,${n},${k})">${ESC(o)}</button>`).join('')}<div class="sp" hidden></div></div>`}).join('')}
+   <div class="row"><button class="btn" type="button" onclick="csConsegna()">Consegna e vedi il risultato</button></div><div id="cs-esr"></div></div>`; }
+function csScelta(b,n,k){ if(CSE.chiuso) return; b.closest('.cs-q').querySelectorAll('.cs-op').forEach(x=>x.classList.remove('sc')); b.classList.add('sc'); CSE.sc[n]=k; }
+function csConsegna(){ if(!CSE||CSE.chiuso) return; CSE.chiuso=1; clearInterval(window.CS_T); const c=csCorso(CSE.c), E=CSE.E; let g=0,s=0;
+  document.querySelectorAll('#cs-eq .cs-q').forEach(box=>{ const n=+box.dataset.n, [i,j]=CSE.el[n], q=c.lezioni[i].q[j], x=CSE.sc[n], bt=box.querySelectorAll('.cs-op');
+    bt.forEach(y=>y.classList.remove('sc')); bt[q[2]].classList.add('g'); if(x!==undefined&&x!==q[2]){bt[x].classList.add('s');s++;} if(x===q[2]) g++;
+    const sp=box.querySelector('.sp'); sp.hidden=false; sp.textContent=(x===q[2]?'Giusto. ':x===undefined?'Senza risposta. ':'No. ')+(q[3]||''); });
+  const tot=CSE.el.length, max=tot*E.giusta, punti=g*E.giusta-s*E.sbagliata, soglia=c.esame?Math.ceil(E.soglia/(E.n*E.giusta)*max):E.soglia, ok=punti>=soglia;
+  document.getElementById('cs-esr').innerHTML=`<div class="cs-esito ${ok?'ok':'ko'}"><b>${punti} punti su ${max}</b>${g} giuste, ${s} sbagliate, ${tot-g-s} senza risposta. ${ok?'Promosso.':'Non ancora: servono '+soglia+' punti.'}</div>`;
+  document.getElementById('cs-esr').scrollIntoView({behavior:'smooth',block:'center'}); }
+/* ---- ascolta in auto ---- */
+const CSAU=new Audio(); CSAU.preload='metadata'; let CSA={c:'',i:0,v:1}; try{Object.assign(CSA,JSON.parse(localStorage.getItem('q120AutoApp')||'{}'));}catch(e){}
+function csAudioStop(){ try{CSAU.pause();}catch(e){} }
+function csAuto(){ const T=csTutti().filter(c=>(c.lezioni||[]).some(l=>l.audio||l.pronto)); if(!T.some(c=>c.id===CSA.c)) CSA.c=(T[0]||{}).id||'';
+  return `<div class="card"><h2>Ascolta in auto</h2><div style="font-size:14.5px;color:var(--muted)">Scegli il corso: le lezioni vanno di fila, solo voce. In auto collega il telefono in Bluetooth e scegli «Bluetooth audio».</div><div class="row">${T.map(c=>`<button type="button" class="btn ${c.id===CSA.c?'':'sec'} mini" onclick="CSA.c='${c.id}';CSA.i=0;csAudioStop();CSAU.removeAttribute('src');csMostra()">${ESC(c.t)}</button>`).join('')||'Nessun corso con la voce pronta.'}</div></div>
+  <div class="card cs-au" id="cs-au" style="margin-top:12px"><div class="cs-ora"><small id="csa-cap"></small><b id="csa-tit"></b><div class="cs-bar"><i id="csa-bar"></i></div><div class="cs-tm"><span id="csa-pos">0:00</span><span id="csa-tot">–</span></div></div>
+  <div class="cs-cmd"><button type="button" onclick="csSalta(-1)" aria-label="Lezione precedente">⏮</button><button type="button" onclick="CSAU.currentTime=Math.max(0,CSAU.currentTime-15)" aria-label="Indietro 15 secondi">−15</button><button type="button" class="play" id="csa-play" onclick="CSAU.paused?csSuona():CSAU.pause()" aria-label="Ascolta">▶</button><button type="button" onclick="CSAU.currentTime+=15" aria-label="Avanti 15 secondi">+15</button><button type="button" onclick="csSalta(1)" aria-label="Lezione successiva">⏭</button></div></div>`; }
+function csAL(){ const c=csCorso(CSA.c); return c?(c.lezioni||[]).filter(l=>l.pronto):[]; }
+function csAutoPronto(){ const L=csAL(); if(CSA.i>=L.length) CSA.i=0; if(L.length&&!CSAU.src.endsWith(L[CSA.i].video+'.m4a')&&!CSAU.src.endsWith(L[CSA.i].video+'.mp4')) csCarica(CSA.i,false); csAgg(); }
+function csCarica(i,via){ const L=csAL(), l=L[i]; if(!l) return; CSA.i=i; try{localStorage.setItem('q120AutoApp',JSON.stringify(CSA));}catch(e){}
+  CSAU.src='/corso/video/'+l.video+(l.audio?'.m4a':'.mp4');
+  if('mediaSession' in navigator) navigator.mediaSession.metadata=new MediaMetadata({title:l.t,artist:(csCorso(CSA.c)||{}).t||'',album:'Quota 120'});
+  if(via) csSuona(); csAgg(); }
+function csSalta(d){ const L=csAL(), i=CSA.i+d; if(i<0||i>=L.length) return; csCarica(i,!CSAU.paused); }
+function csSuona(){ CSAU.play().catch(()=>{}); }
+function csAgg(){ if(!document.getElementById('cs-au')) return; const L=csAL(), l=L[CSA.i], mm=s=>isFinite(s)?Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0'):'–';
+  document.getElementById('csa-cap').textContent=l?'LEZIONE '+(CSA.i+1)+' DI '+L.length:''; document.getElementById('csa-tit').textContent=l?l.t:'Nessuna lezione con la voce pronta';
+  document.getElementById('csa-pos').textContent=mm(CSAU.currentTime||0); document.getElementById('csa-tot').textContent=mm(CSAU.duration);
+  document.getElementById('csa-bar').style.width=(CSAU.duration?CSAU.currentTime/CSAU.duration*100:0)+'%'; document.getElementById('csa-play').textContent=CSAU.paused?'▶':'❚❚'; }
+['timeupdate','play','pause','loadedmetadata'].forEach(e=>CSAU.addEventListener(e,csAgg));
+CSAU.addEventListener('ended',()=>{ const L=csAL(); if(CSA.i<L.length-1) csCarica(CSA.i+1,true); });
+if('mediaSession' in navigator){ try{ navigator.mediaSession.setActionHandler('nexttrack',()=>csSalta(1)); navigator.mediaSession.setActionHandler('previoustrack',()=>csSalta(-1)); }catch(e){} }
+/* ---- l'Admin prepara i corsi dell'azienda ---- */
+const csSlug=t=>String(t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40);
+function csPulisci(){ return (CS.az||[]).map(c=>({id:c.id,tok:c.tok,t:c.t,s:c.s||'',rev:c.rev||'',lezioni:(c.lezioni||[]).map(l=>({id:l.id,t:l.t,s:l.s||'',leg:l.leg||[],q:l.q||[],scene:l.scene||[]}))})); }
+function csSalva(msg){ return api('POST','/api/corsi',csPulisci()).then(j=>{ if(j.errore){toast(j.errore);throw new Error(j.errore);} toast(msg||'Salvato'); return api('GET','/api/corsi').then(k=>{ if(!k.errore) CS=k; }); }); }
+function csNuovo(){ const t=prompt('Titolo del nuovo corso (es. Procedure dell’azienda)'); if(!t||!t.trim()) return; let id=csSlug(t)||'corso'; while((CS.az||[]).some(c=>c.id===id)) id+='-2';
+  (CS.az=CS.az||[]).push({id,t:t.trim(),s:'',lezioni:[]}); csSalva('Corso creato').then(()=>{ CSP=CSP.slice(0,1); csVai(csCorsoV,t.trim(),id); }); }
+function csNuovaLez(id){ const c=(CS.az||[]).find(x=>x.id===id), t=prompt('Titolo della nuova lezione'); if(!c||!t||!t.trim()) return; let lid=(String(c.lezioni.length+1).padStart(2,'0')+'-'+csSlug(t)).slice(0,50); while(c.lezioni.some(l=>l.id===lid)) lid+='-2';
+  c.lezioni.push({id:lid,t:t.trim(),s:'',leg:[],q:[],scene:[{k:'LEZIONE '+(c.lezioni.length+1),t:t.trim(),v:'Lezione '+(c.lezioni.length+1)+': '+t.trim()+'.'}]}); csSalva('Lezione aggiunta').then(()=>csVai(csEdLez,t.trim(),id+'|'+(c.lezioni.length-1))); }
+function csEdCorso(id){ const c=(CS.az||[]).find(x=>x.id===id); if(!c) return '';
+  return `<div class="card"><h2>Il corso</h2><div class="fld"><div class="k">Titolo</div><input id="cse-t" value="${ESC(c.t)}"></div><div class="fld"><div class="k">Descrizione breve</div><input id="cse-s" value="${ESC(c.s||'')}"></div>
+   <div class="row"><button class="btn" type="button" onclick="csSalvaCorso('${id}',this)">Salva</button><button class="btn sec" type="button" onclick="csTogliCorso('${id}')">Togli il corso</button></div></div>
+   <div class="card" style="margin-top:12px"><h2>Lezioni</h2>${(c.lezioni||[]).map((l,i)=>`<button type="button" class="tile cs-riga" onclick="csVai(csEdLez,'${ESC(l.t).replace(/'/g,'’')}','${id}|${i}')"><div class="ico" style="background:var(--accent);color:#fff;font-weight:700">${i+1}</div><div><div class="n">${ESC(l.t)}</div><div class="c">${(l.scene||[]).length} scene · ${(l.q||[]).length} domande · tocca per modificare</div></div></button>`).join('')}
+   <div class="row"><button class="btn sec" type="button" onclick="csNuovaLez('${id}')">+ Aggiungi una lezione</button></div></div>`; }
+function csSalvaCorso(id,b){ const c=CS.az.find(x=>x.id===id); c.t=document.getElementById('cse-t').value.trim()||c.t; c.s=document.getElementById('cse-s').value.trim(); b.classList.add('busy'); csSalva().finally(()=>{b.classList.remove('busy'); CSP.pop(); csMostra();}); }
+function csTogliCorso(id){ const c=CS.az.find(x=>x.id===id); if(!confirm('Togliere il corso «'+c.t+'» con le sue lezioni?')) return; CS.az=CS.az.filter(x=>x.id!==id); csSalva('Corso tolto').then(()=>{ CSP=CSP.slice(0,1); csMostra(); }); }
+let CSED=null;
+function csEdLez(x){ const [id,i]=x.split('|'), c=CS.az.find(y=>y.id===id), l=c.lezioni[+i]; CSED={id,i:+i,scene:JSON.parse(JSON.stringify(l.scene||[])),q:JSON.parse(JSON.stringify(l.q||[]))};
+  return `<div class="card"><div class="fld"><div class="k">Titolo della lezione</div><input id="csl-t" value="${ESC(l.t)}"></div><div class="fld"><div class="k">Sottotitolo</div><input id="csl-s" value="${ESC(l.s||'')}"></div>
+   <div class="fld"><div class="k">Legenda (una riga per voce: nome | spiegazione)</div><textarea id="csl-leg" rows="4">${ESC((l.leg||[]).map(r=>r.join(' | ')).join('\n'))}</textarea></div></div>
+   <div class="card" style="margin-top:12px"><h2>Scene del video</h2><div style="font-size:14px;color:var(--muted)">Ogni scena è quello che si vede e quello che dice la voce.</div><div id="csl-scene"></div><div class="row"><button class="btn sec" type="button" onclick="csScenaPiu()">+ Aggiungi una scena</button></div></div>
+   <div class="card" style="margin-top:12px"><h2>Domande della prova</h2><div id="csl-q"></div><div class="row"><button class="btn sec" type="button" onclick="csDomPiu()">+ Aggiungi una domanda</button></div></div>
+   <div class="row"><button class="btn" type="button" onclick="csSalvaLez(this)">Salva e rifai il video</button><button class="btn sec" type="button" onclick="csTogliLez()">Togli la lezione</button></div><div id="csl-st"></div>`; }
+function csEdDisegna(){ const S=document.getElementById('csl-scene'); if(!S) return;
+  S.innerHTML=CSED.scene.map((s,j)=>`<details class="cs-sc" data-j="${j}"${s._o?' open':''}><summary><b>Scena ${j+1}</b> · ${ESC(s.t||s.n||'')}</summary>
+   <div class="fld"><div class="k">Etichetta in alto</div><input data-f="k" value="${ESC(s.k||'')}"></div><div class="fld"><div class="k">Titolo</div><input data-f="t" value="${ESC(s.t||'')}"></div>
+   <div class="fld"><div class="k">Punti sullo schermo (uno per riga)</div><textarea data-f="p" rows="3">${ESC((s.p||[]).join('\n'))}</textarea></div>
+   <div class="fld"><div class="k">Cosa dice la voce</div><textarea data-f="v" rows="3">${ESC(s.v||'')}</textarea></div>
+   <div class="row"><button class="btn sec mini" type="button" onclick="csScenaMuovi(${j},-1)">▲</button><button class="btn sec mini" type="button" onclick="csScenaMuovi(${j},1)">▼</button><button class="btn sec mini" type="button" onclick="csScenaTogli(${j})">Togli</button></div></details>`).join('')||'<div style="font-size:14px;color:var(--muted)">Nessuna scena.</div>';
+  document.getElementById('csl-q').innerHTML=CSED.q.map((q,j)=>`<div class="cs-dom" data-j="${j}"><div class="fld"><div class="k">Domanda ${j+1}</div><input data-f="d" value="${ESC(q[0]||'')}"></div>
+   <div class="fld"><div class="k">Risposte (una per riga)</div><textarea data-f="o" rows="3">${ESC((q[1]||[]).join('\n'))}</textarea></div>
+   <div class="fld"><div class="k">Quella giusta è la</div><select data-f="g">${[0,1,2,3,4,5].slice(0,Math.max(3,(q[1]||[]).length)).map(k=>`<option value="${k}"${k===q[2]?' selected':''}>${k+1}ª risposta</option>`).join('')}</select></div>
+   <div class="fld"><div class="k">Spiegazione</div><input data-f="s" value="${ESC(q[3]||'')}"></div><div class="row"><button class="btn sec mini" type="button" onclick="csDomTogli(${j})">Togli la domanda</button></div></div>`).join('')||'<div style="font-size:14px;color:var(--muted)">Nessuna domanda.</div>'; }
+function csEdLeggi(){ document.querySelectorAll('#csl-scene .cs-sc').forEach(d=>{ const s=CSED.scene[+d.dataset.j]; s._o=d.open; d.querySelectorAll('[data-f]').forEach(e=>{ const f=e.dataset.f,v=e.value; if(f==='p') s.p=v.split('\n').map(x=>x.trim()).filter(Boolean); else s[f]=v.trim(); }); });
+  document.querySelectorAll('#csl-q .cs-dom').forEach(d=>{ const q=CSED.q[+d.dataset.j], v=f=>d.querySelector(`[data-f="${f}"]`).value; q[0]=v('d').trim(); q[1]=v('o').split('\n').map(x=>x.trim()).filter(Boolean); q[2]=Math.min(+v('g')||0,Math.max(0,q[1].length-1)); q[3]=v('s').trim(); }); }
+function csScenaPiu(){ csEdLeggi(); CSED.scene.push({k:'',t:'',v:'',_o:true}); csEdDisegna(); }
+function csScenaMuovi(j,d){ csEdLeggi(); const k=j+d; if(k<0||k>=CSED.scene.length) return; [CSED.scene[j],CSED.scene[k]]=[CSED.scene[k],CSED.scene[j]]; csEdDisegna(); }
+function csScenaTogli(j){ csEdLeggi(); if(confirm('Togliere la scena '+(j+1)+'?')){ CSED.scene.splice(j,1); csEdDisegna(); } }
+function csDomPiu(){ csEdLeggi(); CSED.q.push(['',['','',''],0,'']); csEdDisegna(); }
+function csDomTogli(j){ csEdLeggi(); if(confirm('Togliere la domanda '+(j+1)+'?')){ CSED.q.splice(j,1); csEdDisegna(); } }
+function csSalvaLez(b){ csEdLeggi(); const bad=CSED.q.findIndex(q=>!q[0]||q[1].length<2); if(bad>=0){ toast('La domanda '+(bad+1)+' è incompleta: servono il testo e almeno 2 risposte'); return; }
+  const c=CS.az.find(y=>y.id===CSED.id), l=c.lezioni[CSED.i]; l.t=document.getElementById('csl-t').value.trim()||l.t; l.s=document.getElementById('csl-s').value.trim();
+  l.leg=document.getElementById('csl-leg').value.split('\n').map(r=>r.split('|').map(x=>x.trim())).filter(r=>r[0]).map(r=>[r[0],r.slice(1).join(' | ')]);
+  l.scene=CSED.scene.filter(s=>s.t||s.v||(s.p||[]).length).map(s=>{const y=Object.assign({},s);delete y._o;return y;}); l.q=CSED.q;
+  b.classList.add('busy'); csSalva('Salvato: il video si rifà entro domani mattina').finally(()=>{ b.classList.remove('busy'); document.getElementById('csl-st').innerHTML='<div class="cs-esito ok" style="margin-top:10px">Salvato. Il video nuovo sarà pronto entro domani mattina; intanto i piloti vedono testi, legenda e prova.</div>'; }); }
+function csTogliLez(){ const c=CS.az.find(y=>y.id===CSED.id), l=c.lezioni[CSED.i]; if(!confirm('Togliere la lezione «'+l.t+'»?')) return; c.lezioni.splice(CSED.i,1); csSalva('Lezione tolta').then(()=>{ CSP.pop(); csMostra(); }); }
 
 </script>
 </body>
