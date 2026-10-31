@@ -41,3 +41,23 @@ lezioni cambiate li rifà GitHub la notte (o subito, facendo partire a mano «Vi
 | STS-01 | Condizioni | VLOS; area di terra controllata; contingenza ≥ 10 m; velocità al suolo < 5 m/s; 120 m; volume ≤ 30 m sopra; C5 con Remote ID; niente merci pericolose | F5 |
 | STS-01 | Buffer minimo | 30 m: 10/20 m · 60 m: 15/30 m · 90 m: 20/45 m · 120 m: 25/60 m (fino a 10 kg / oltre 10 kg) | F5 |
 | STS-02 | Condizioni | BVLOS; zona scarsamente popolata; visibilità > 5 km; 1 km senza osservatori (traiettoria preprogrammata), 2 km con osservatori (≤ 1 km dal più vicino, ognuno ≤ 1 km dal pilota); decollo e atterraggio a vista; C6 con sistema anti-uscita e Remote ID | F5 |
+
+## Guide del sito (quota120.com/guide/)
+
+Le guide si scrivono in `strumenti/guide/g_*.py` (una per file) e si rigenerano con
+`python3 strumenti/guide/genera_guide.py public/sito`. Quando cambia un dato, si corregge il file della guida,
+si aggiornano `data` (AAAA-MM-GG) e `data_it` («31 ottobre 2026») e si rigenera.
+
+| Guida | Dato | Valore scritto | Fonte |
+|---|---|---|---|
+| d-flight | Tariffe 2026 | Base 7 €/anno, PRO 28 €/anno, QR drone Base 7 €, QR PRO 112 € (IVA compresa; 5,74 / 22,95 / 5,74 / 91,80 + IVA) | D-Flight, Condizioni generali ed. 4.0.0 del 15/01/2026 |
+| d-flight | Chi si registra | drone ≥ 250 g, o < 250 g con fotocamera (non giocattolo); specifica con PRO | Reg. UE 2019/947 art. 14; condizioni D-Flight |
+| mappa-d-flight | Zone e quote | rosso da 0 m (niente OPEN); ostacoli 50 m / +5 m (rosse 10 m / 3 m); bozza nuovo regolamento: 0/40/60/80 m | ENAC zone geografiche (agg. 05/02/2026); modifica §6.4 ATM-09A; bozza ENAC 24/06/2026 |
+| notam-droni | Dove e costi | servizio pre-volo ENAV; NOTAM con diritti ENAC per le riserve | ENAC riserva di spazio aereo (agg. 15/11/2022) |
+| atm-09 | Anticipo | 35 giorni (ENAV/civile), 60 giorni (Aeronautica Militare), copia a DT ENAC | ENAC riserva di spazio aereo |
+| assicurazione-drone | Obbligo | art. 27 UAS-IT ed. 1/2021; massimale tabella Reg. CE 785/2004 (~800.000 € mezzi leggeri) | ENAC normativa droni; testo art. 27 citato da Regione Piemonte (BUR 49/2025) |
+| patentino-drone | Esami | A1-A3 40 domande/60 min/60 su 80/31 €/4 tentativi; A2 30/60 min/45 su 60/31 €/5 tentativi; STS 40 (30 con A2), 75% | ENAC pagine A1-A3 e A2 (agg. 15/05/2024); scenari standard (agg. 17/12/2025) |
+| quaderno-di-campagna-digitale | Scadenza | formato elettronico entro 31/12/2026; conservazione 3 anni | Reg. UE 2023/564, 2025/2203; D.M. 30/12/2025 (GU 23/04/2026) |
+| drone-agricolo | Irrorazione | vietata salvo prove autorizzate; sperimentazione L. 182/2025 art. 13-bis in attesa del decreto attuativo | Min. Salute (05/12/2025); **controllare se esce il decreto** |
+| codice-operatore-uas | Remote ID | obbligatorio dal 1/1/2024 per C1-C3 e in specifica; codice 16 + 3 segreti | ENAC FAQ (16/05/2024); EASA |
+| segnalazione-incidenti-drone | Termini | 72 ore su ECCAIRS 2; ANSV entro 60 minuti; Reg. UE 2026/1821 dal 17/08/2026 | ENAC SPL-21 Rev. 1 (settembre 2026) |
