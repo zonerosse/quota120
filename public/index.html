@@ -6380,10 +6380,12 @@ const ckDroni=c=>c.vale==='tutti'?'tutti i droni':DRONI.filter(d=>ckVale(c,d)).m
 // pilota
 let CKSPUN={}, CKRES='';
 function apriChecklist(){
+  if(!dSel){ toast('Prima scegli il drone e il pilota'); if(typeof cambiaPD==='function'&&VISTA==='controllo') cambiaPD(); else vai('home'); return; }
   const L=ckPer(dSel); if(!L.length){ lavora(document.createElement('button'),()=>{checklistOk=true;CKRES='';disegnaControllo();}); return; }
   CKSPUN={}; disegnaChecklist(); vai('checklist','Controllo prima del volo &rsaquo; Prima del volo'); document.getElementById('back').onclick=()=>{vai('controllo','Controllo prima del volo');};
 }
 function disegnaChecklist(){
+  if(!dSel){ vai('home'); return; }
   const L=ckPer(dSel), M=ckConta(L), tot=M.reduce((a,c)=>a+c.voci.length,0), fatte=M.reduce((a,c)=>a+c.voci.filter((v,i)=>CKSPUN[c.id+':'+i]).length,0);
   const mancanoOb=M.reduce((a,c)=>a+c.voci.filter((v,i)=>v.ob&&!CKSPUN[c.id+':'+i]).length,0);
   const box=on=>`<span class="ck-box">${on?'<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>':''}</span>`;
@@ -7867,13 +7869,13 @@ function csLista(){ const az=CS.az||[], q=CS.q120||[];
   return h; }
 function csCorsoV(id){ const c=csCorso(id); if(!c) return '<div class="card">Corso non trovato.</div>'; const F=csFatte(c), L=c.lezioni||[], nq=L.reduce((n,l)=>n+(l.q||[]).length,0);
   let h=`<div class="card"><h2>${ESC(c.t)}</h2>${c.s?`<div style="font-size:15px;color:var(--muted)">${ESC(c.s)}</div>`:''}<div class="cs-bar"><i style="width:${L.length?Math.round(F.length/L.length*100):0}%"></i></div><div style="font-size:13.5px;color:var(--muted)">${F.length} lezioni fatte su ${L.length}</div></div>`;
-  h+=`<div class="cs-list">${L.map((l,i)=>`<button type="button" class="tile cs-riga" onclick="csVai(csLezV,'${ESC(l.t).replace(/'/g,'’')}','${c.id}|${i}')"><div class="ico" style="background:var(--petrolio,#1E6B6F);font-weight:700;color:#fff">${i+1}</div><div><div class="n">${ESC(l.t)}</div><div class="c">${ESC(l.s||'')}${l.pronto?'':(l.scene||[]).length||c._az?' · video in preparazione':''}</div></div>${F.includes(i)?'<span class="tag ok" style="margin-left:auto">fatta</span>':''}</button>`).join('')||'<div class="card">Ancora nessuna lezione.</div>'}</div>`;
+  h+=`<div class="cs-list">${L.map((l,i)=>`<button type="button" class="tile cs-riga" onclick="csVai(csLezV,'${ESC(l.t).replace(/'/g,'’')}','${c.id}|${i}')"><div class="ico" style="background:var(--petrolio,#1E6B6F);font-weight:700;color:#fff">${i+1}</div><div><div class="n">${ESC(l.t)}</div><div class="c">${ESC(l.fv||'')}${l.pronto?'':(l.scene||[]).length||c._az?' · video in preparazione':''}</div></div>${F.includes(i)?'<span class="tag ok" style="margin-left:auto">fatta</span>':''}</button>`).join('')||'<div class="card">Ancora nessuna lezione.</div>'}</div>`;
   if(nq) h+=`<div class="row"><button class="btn" type="button" onclick="csVai(csEsame,'Simulazione','${c.id}')">Simulazione d’esame</button></div>`;
   if(c._az&&CS.adm&&!COME) h+=`<div class="card" style="margin-top:12px"><h2>Per l’Admin</h2><div class="row" style="margin-top:0"><button class="btn sec" type="button" onclick="csVai(csEdCorso,'Modifica','${c.id}')">Modifica il corso</button><button class="btn sec" type="button" onclick="csNuovaLez('${c.id}')">+ Aggiungi una lezione</button></div></div>`;
   return h; }
 function csLezV(x){ const [id,i]=x.split('|'), c=csCorso(id), l=(c.lezioni||[])[+i]; if(!l) return ''; CS_LEZ={c:id,i:+i}; CS_RIS={};
   const testo=l.testo||(l.scene||[]).map(s=>s.v).filter(Boolean);
-  let h=l.pronto?`<video class="cs-vid" controls playsinline preload="metadata" poster="/corso/video/${l.video}.jpg" src="/corso/video/${l.video}.mp4" onended="csFatta('${id}',${+i})"><track kind="subtitles" srclang="it" label="Italiano" src="/corso/video/${l.video}.vtt" default></video>`:`<div class="card" style="font-size:15px;color:var(--muted)">${(l.scene||[]).length||c._az?'Il video è in preparazione: sarà pronto entro domani mattina.':'Questa lezione non ha video.'}</div>`;
+  let h=l.pronto?`<video class="cs-vid" controls playsinline preload="metadata" poster="/corso/video/${l.video}.jpg${l.fv||''}" src="/corso/video/${l.video}.mp4${l.fv||''}" onended="csFatta('${id}',${+i})"><track kind="subtitles" srclang="it" label="Italiano" src="/corso/video/${l.video}.vtt${l.fv||''}" default></video>`:`<div class="card" style="font-size:15px;color:var(--muted)">${(l.scene||[]).length||c._az?'Il video è in preparazione: sarà pronto entro domani mattina.':'Questa lezione non ha video.'}</div>`;
   if((l.leg||[]).length) h+=`<div class="card" style="margin-top:12px"><h2>Legenda</h2><div class="tab"><table class="cs-tab">${l.leg.map(r=>`<tr><td><b>${c._az?ESC(r[0]):r[0]}</b></td><td>${c._az?ESC(r[1]):r[1]}</td></tr>`).join('')}</table></div></div>`;
   if(l.h&&!c._az) h+=`<div class="card cs-h" style="margin-top:12px">${l.h}</div>`;
   if(testo.length) h+=`<details class="card cs-testo" style="margin-top:12px"><summary><b>Leggi tutto il testo della lezione</b></summary>${testo.map(t=>`<p>${ESC(t)}</p>`).join('')}</details>`;
@@ -7915,7 +7917,7 @@ function csAuto(){ const T=csTutti().filter(c=>(c.lezioni||[]).some(l=>l.audio||
 function csAL(){ const c=csCorso(CSA.c); return c?(c.lezioni||[]).filter(l=>l.pronto):[]; }
 function csAutoPronto(){ const L=csAL(); if(CSA.i>=L.length) CSA.i=0; if(L.length&&!CSAU.src.endsWith(L[CSA.i].video+'.m4a')&&!CSAU.src.endsWith(L[CSA.i].video+'.mp4')) csCarica(CSA.i,false); csAgg(); }
 function csCarica(i,via){ const L=csAL(), l=L[i]; if(!l) return; CSA.i=i; try{localStorage.setItem('q120AutoApp',JSON.stringify(CSA));}catch(e){}
-  CSAU.src='/corso/video/'+l.video+(l.audio?'.m4a':'.mp4');
+  CSAU.src='/corso/video/'+l.video+(l.audio?'.m4a':'.mp4')+(l.fv||'');
   if('mediaSession' in navigator) navigator.mediaSession.metadata=new MediaMetadata({title:l.t,artist:(csCorso(CSA.c)||{}).t||'',album:'Quota 120'});
   if(via) csSuona(); csAgg(); }
 function csSalta(d){ const L=csAL(), i=CSA.i+d; if(i<0||i>=L.length) return; csCarica(i,!CSAU.paused); }
@@ -7929,7 +7931,7 @@ CSAU.addEventListener('ended',()=>{ const L=csAL(); if(CSA.i<L.length-1) csCaric
 if('mediaSession' in navigator){ try{ navigator.mediaSession.setActionHandler('nexttrack',()=>csSalta(1)); navigator.mediaSession.setActionHandler('previoustrack',()=>csSalta(-1)); }catch(e){} }
 /* ---- l'Admin prepara i corsi dell'azienda ---- */
 const csSlug=t=>String(t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40);
-function csPulisci(){ return (CS.az||[]).map(c=>({id:c.id,tok:c.tok,t:c.t,s:c.s||'',rev:c.rev||'',lezioni:(c.lezioni||[]).map(l=>({id:l.id,t:l.t,s:l.s||'',leg:l.leg||[],q:l.q||[],scene:l.scene||[]}))})); }
+function csPulisci(){ return (CS.az||[]).map(c=>({id:c.id,tok:c.tok,t:c.t,s:c.s||'',rev:c.rev||'',lezioni:(c.lezioni||[]).map(l=>({id:l.id,t:l.t,s:l.fv||'',leg:l.leg||[],q:l.q||[],scene:l.scene||[]}))})); }
 function csSalva(msg){ return api('POST','/api/corsi',csPulisci()).then(j=>{ if(j.errore){toast(j.errore);throw new Error(j.errore);} toast(msg||'Salvato'); return api('GET','/api/corsi').then(k=>{ if(!k.errore) CS=k; }); }); }
 function csNuovo(){ const t=prompt('Titolo del nuovo corso (es. Procedure dell’azienda)'); if(!t||!t.trim()) return; let id=csSlug(t)||'corso'; while((CS.az||[]).some(c=>c.id===id)) id+='-2';
   (CS.az=CS.az||[]).push({id,t:t.trim(),s:'',lezioni:[]}); csSalva('Corso creato').then(()=>{ CSP=CSP.slice(0,1); csVai(csCorsoV,t.trim(),id); }); }
@@ -7944,7 +7946,7 @@ function csSalvaCorso(id,b){ const c=CS.az.find(x=>x.id===id); c.t=document.getE
 function csTogliCorso(id){ const c=CS.az.find(x=>x.id===id); if(!confirm('Togliere il corso «'+c.t+'» con le sue lezioni?')) return; CS.az=CS.az.filter(x=>x.id!==id); csSalva('Corso tolto').then(()=>{ CSP=CSP.slice(0,1); csMostra(); }); }
 let CSED=null;
 function csEdLez(x){ const [id,i]=x.split('|'), c=CS.az.find(y=>y.id===id), l=c.lezioni[+i]; CSED={id,i:+i,scene:JSON.parse(JSON.stringify(l.scene||[])),q:JSON.parse(JSON.stringify(l.q||[]))};
-  return `<div class="card"><div class="fld"><div class="k">Titolo della lezione</div><input id="csl-t" value="${ESC(l.t)}"></div><div class="fld"><div class="k">Sottotitolo</div><input id="csl-s" value="${ESC(l.s||'')}"></div>
+  return `<div class="card"><div class="fld"><div class="k">Titolo della lezione</div><input id="csl-t" value="${ESC(l.t)}"></div><div class="fld"><div class="k">Sottotitolo</div><input id="csl-s" value="${ESC(l.fv||'')}"></div>
    <div class="fld"><div class="k">Legenda (una riga per voce: nome | spiegazione)</div><textarea id="csl-leg" rows="4">${ESC((l.leg||[]).map(r=>r.join(' | ')).join('\n'))}</textarea></div></div>
    <div class="card" style="margin-top:12px"><h2>Scene del video</h2><div style="font-size:14px;color:var(--muted)">Ogni scena è quello che si vede e quello che dice la voce.</div><div id="csl-scene"></div><div class="row"><button class="btn sec" type="button" onclick="csScenaPiu()">+ Aggiungi una scena</button></div></div>
    <div class="card" style="margin-top:12px"><h2>Domande della prova</h2><div id="csl-q"></div><div class="row"><button class="btn sec" type="button" onclick="csDomPiu()">+ Aggiungi una domanda</button></div></div>

@@ -1,6 +1,6 @@
 // Quota 120 senza rete: il programma (pagina, mappe, PDF, lettore DJI) resta sul telefono.
 // I dati non passano di qui: /api/ va sempre in rete; i dati per lavorare senza rete li tiene la pagina.
-const C = 'q120-v3';
+const C = 'q120-v4';
 const BASE = ['/', '/manifest.webmanifest', '/icon.svg', '/fonts/barlow.css', '/icon-180.png', '/icon-192.png',
   '/leaflet/leaflet.js', '/leaflet/leaflet.css', '/lib/jspdf.umd.min.js', '/lib/html2canvas.min.js', '/dji/dji_log_parser_js.mjs'];
 self.addEventListener('install', e => {
@@ -13,7 +13,7 @@ self.addEventListener('fetch', e => {
   const r = e.request; if (r.method !== 'GET') return;
   const u = new URL(r.url);
   if (u.origin === location.origin) {
-    if (u.pathname.startsWith('/api/') || u.pathname.startsWith('/interno/')) return;
+    if (u.pathname.startsWith('/api/') || u.pathname.startsWith('/interno/') || u.pathname.startsWith('/corso/video/')) return;   // i video vanno sempre in rete (sono grandi e alcuni sono firmati)
     // la pagina: prima la rete (così arrivano gli aggiornamenti), senza rete quella salvata
     if (r.mode === 'navigate' || u.pathname === '/' || u.pathname === '/index.html') {
       e.respondWith(fetch(r).then(x => { if (x.ok) { const y = x.clone(); caches.open(C).then(c => c.put('/', y)); } return x; })

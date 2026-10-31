@@ -14,6 +14,10 @@ import CORSI_SEME from "./corso_seed.json";
 import { DurableObject } from "cloudflare:workers";
 
 // impronta delle scene di una lezione: il nome del video cambia quando cambiano le scene
+// video dei corsi delle aziende: si aprono solo con la firma che dà il programma a chi è dentro (vale 1-2 giorni)
+let CHIAVE_V = null;
+async function chiaveVideo(env) { if (!CHIAVE_V) { const k = await env.STATO.get(env.STATO.idFromName("registro")).fetch(new Request("https://quota120.interno/interno/chiave-video")).then(r => r.text()); CHIAVE_V = await crypto.subtle.importKey("raw", new TextEncoder().encode(k), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]); } return CHIAVE_V; }
+async function firmaV(env, nome, exp) { const s = await crypto.subtle.sign("HMAC", await chiaveVideo(env), new TextEncoder().encode(nome + "|" + exp)); return [...new Uint8Array(s)].slice(0, 16).map(x => x.toString(16).padStart(2, "0")).join(""); }
 async function vh(scene) { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(scene || []))); return [...new Uint8Array(b)].slice(0, 5).map(x => x.toString(16).padStart(2, "0")).join(""); }
 async function corsiConVideo(env, url, corsi, adm) {
   const out = [];
@@ -21,7 +25,7 @@ async function corsiConVideo(env, url, corsi, adm) {
     for (const l of c.lezioni || []) { const h = await vh(l.scene), f = (c.tok ? "az-" + c.tok + "-" : "") + l.id + "-" + h;
       const pronto = (l.scene || []).length ? await env.ASSETS.fetch(new Request(url.origin + "/corso/video/" + f + ".mp4", { method: "HEAD" })).then(r => r.ok).catch(() => false) : false;
       const audio = pronto ? await env.ASSETS.fetch(new Request(url.origin + "/corso/video/" + f + ".m4a", { method: "HEAD" })).then(r => r.ok).catch(() => false) : false;
-      const x = Object.assign({}, l, { video: pronto ? f : "", pronto, audio }); if (!adm) { x.testo = (l.scene || []).map(s => s.v).filter(Boolean); delete x.scene; } cc.lezioni.push(x); }
+      const x = Object.assign({}, l, { video: pronto ? f : "", pronto, audio }); if (c.tok && pronto) { const e = (Math.floor(Date.now() / 86400000) + 2) * 86400; x.fv = "?s=" + e + "." + await firmaV(env, f, e); } if (!adm) { x.testo = (l.scene || []).map(s => s.v).filter(Boolean); delete x.scene; } cc.lezioni.push(x); }
     out.push(cc); }
   return out;
 }
@@ -479,6 +483,7 @@ export class Stato extends DurableObject {
     const url = new URL(request.url), st = this.ctx.storage, p = url.pathname;
     if (p.startsWith("/api/registro/")) return this.registro(request, url, p);
     if (p === "/interno/elenco") return J((await st.get("elenco")) || []);
+    if (p === "/interno/chiave-video") { let k = await st.get("chiave-video"); if (!k) { k = [...crypto.getRandomValues(new Uint8Array(32))].map(x => x.toString(16).padStart(2, "0")).join(""); await st.put("chiave-video", k); } return new Response(k); }
     if (p === "/interno/operatori") { const L = (await st.get("elenco")) || [], out = []; for (const op of L) out.push(Object.assign({ op }, (await st.get("op:" + op)) || {})); return J(out); }
     if (p === "/interno/corsi") {
       // i corsi stanno qui; quelli del seme (nel codice) entrano da soli se mancano, o se il seme ha una revisione più nuova
@@ -1194,6 +1199,18 @@ export default {
     const host = (env.POSTA_FINTA === "1" && request.headers.get("x-prova-host")) || url.hostname;   // l'intestazione vale solo nelle prove in locale
     if (host === "www.quota120.com") return Response.redirect("https://quota120.com" + p + url.search, 301);
     const reg = () => env.STATO.get(env.STATO.idFromName("registro"));
+    if (p.startsWith("/corso/video/az-")) {
+      const m = p.match(/^\/corso\/video\/(az-[a-z0-9-]+)\.(mp4|jpg|vtt|m4a)$/), [e, g] = (url.searchParams.get("s") || "").split(".");
+      if (!m || !(+e > Date.now() / 1000) || !g || g !== await firmaV(env, m[1], e)) return new Response("Video non disponibile: apri il corso dal programma.", { status: 403, headers: { "content-type": "text/plain; charset=utf-8" } });
+      const r = await env.ASSETS.fetch(new Request(url.origin + p, { headers: request.headers, method: request.method }));
+      let x = new Response(r.body, r); const rg = (request.headers.get("range") || "").match(/^bytes=(\d*)-(\d*)$/);
+      if (rg && r.status === 200 && request.method === "GET") {   // iPhone vuole i pezzi (206) per far partire i video
+        const buf = await r.arrayBuffer(), n = buf.byteLength; let a = rg[1] === "" ? Math.max(0, n - +rg[2]) : +rg[1], b = rg[1] !== "" && rg[2] !== "" ? Math.min(+rg[2], n - 1) : n - 1;
+        if (a >= n || a > b) return new Response(null, { status: 416, headers: { "content-range": "bytes */" + n } });
+        x = new Response(buf.slice(a, b + 1), { status: 206, headers: r.headers }); x.headers.set("content-range", "bytes " + a + "-" + b + "/" + n); x.headers.set("content-length", String(b - a + 1));
+      }
+      x.headers.set("accept-ranges", "bytes"); x.headers.set("cache-control", "private, max-age=86400"); x.headers.set("x-robots-tag", "noindex"); return x;
+    }
     const biscotto = n => ((request.headers.get("cookie") || "").match(new RegExp("(?:^|;\\s*)" + n + "=([a-f0-9]{40})")) || [])[1];
     // Admin del sito: codice via email, poi la chiave nel cookie q120a
     if (host === "quota120.com" && p.startsWith("/api/admin/")) {
