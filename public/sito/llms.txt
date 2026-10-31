@@ -11,6 +11,19 @@ Il sito offre anche corsi gratuiti (A1-A3, A2 e scenari standard STS) con regist
 - [Corso per il patentino drone STS](https://quota120.com/patentino-drone-sts/): scenari standard STS-01 e STS-02; simulazione con 40 domande
 - [Contatti](https://quota120.com/contatti/): email e chi c'è dietro Quota 120
 
+## Guide
+- [Tutte le guide](https://quota120.com/guide/)
+- [D-Flight: come registrarsi come operatore di droni](https://quota120.com/guide/d-flight/): Chi deve registrarsi, quanto costa nel 2026, come si fa e dove va il QR code. In cinque minuti di lettura.
+- [Mappa D-Flight: come si leggono le zone per i droni](https://quota120.com/guide/mappa-d-flight/): Dove si vola, fino a che quota e quando serve un permesso: i colori, le zone e i controlli da fare prima di ogni volo.
+- [Assicurazione drone: quando è obbligatoria e quale scegliere](https://quota120.com/guide/assicurazione-drone/): Cosa chiede il regolamento ENAC, il massimale minimo e perché la polizza della casa spesso non basta.
+- [Patentino drone: quale serve, come si ottiene e quanto costa](https://quota120.com/guide/patentino-drone/): A1-A3, A2 e scenari standard STS: chi deve prenderli, come sono gli esami e quanto si spende.
+- [NOTAM per droni: cosa sono e dove si controllano](https://quota120.com/guide/notam-droni/): Gli avvisi temporanei che possono chiudere un’area anche se la mappa sembra libera.
+- [Quaderno di campagna digitale: cosa cambia e cosa registrare](https://quota120.com/guide/quaderno-di-campagna-digitale/): Il registro dei trattamenti passa al formato elettronico: scadenze, dati da scrivere e chi deve tenerlo.
+- [Drone agricolo: cosa si può fare oggi in Italia](https://quota120.com/guide/drone-agricolo/): Il divieto di irrorazione aerea, la sperimentazione in arrivo e cosa serve per volare in regola.
+- [Codice operatore UAS: cos’è e dove si mette](https://quota120.com/guide/codice-operatore-uas/): Il QR code dell’operatore, i caratteri segreti e l’identificazione a distanza obbligatoria.
+- [Modulo ATM-09: la riserva di spazio aereo per i droni](https://quota120.com/guide/atm-09/): Quando serve, cosa ci si scrive, a chi si manda e con quanto anticipo.
+- [Incidente con il drone: cosa segnalare, a chi ed entro quando](https://quota120.com/guide/segnalazione-incidenti-drone/): Le segnalazioni obbligatorie, il portale ECCAIRS 2, le 72 ore e l’avviso immediato all’ANSV.
+
 ## Programma
 - [Accedi o crea il tuo spazio](https://app.quota120.com/): il programma (serve un account)
 - [Privacy e cookie](https://quota120.com/privacy/)
