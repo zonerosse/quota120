@@ -3391,6 +3391,7 @@ function ricalcola(){
 let TODOGO=[];
 function calcolaTodo(){
   const L=[], add=(liv,t,w,go,inl)=>L.push({liv,t,w,go,inl});
+  if(ADM&&!COME) for(const x of (DOCS||[]).filter(x=>x.daApprovare)) add('ko','Attestato da approvare: '+ESC(x.dest&&x.dest.voce||'documento')+' di '+ESC(x.da||'un pilota'),(x.diverso?'attenzione: il pilota ha cambiato i dati letti · ':'')+'controlla e approva',()=>docApprova(x.id));
   const spec=DRONI.filter(d=>d.cat==='specific');
   if(spec.length&&!AUT_ENAC.agricola) add('ko','Autorizzazione ENAC agricola mancante ('+spec.map(d=>d.nome.replace('DJI ','')).join(', ')+')',
     DOMANDA&&DOMANDA.stato==='inviata'?'domanda inviata':'da richiedere',puoVedere('Autorizzazioni ENAC')?()=>apriEnac():null);
@@ -3955,6 +3956,19 @@ function apriDocumenti(){
     : '<div style="font-size:13px;color:var(--muted)">Nessun documento caricato ancora. Quelli della prova (attestati, polizza…) sono solo dati di esempio, senza file.</div>';
   vai('documenti','Documenti');
 }
+/* attestati caricati da un pilota: l'Admin li controlla prima che valgano */
+function docApprova(id){ const x=(DOCS||[]).find(d=>d.id===id&&d.daApprovare); if(!x){ toast('Già sistemato'); return; }
+  const c=x.claude||{}, dd=x.dati||{}, r=(k,l)=>`<label>${l}${c[k]!=null&&c[k]!==dd[k]?` <small style="color:var(--ko)">(letto dal documento: ${ESC(c[k]||'vuoto')})</small>`:''}</label><input type="text" id="da-${k}" value="${ESC(dd[k]||'')}">`;
+  const ve=document.createElement('div'); ve.className='velo';
+  ve.innerHTML=`<div class="card"><h2>Attestato da approvare</h2><div style="font-size:15px;color:var(--muted);margin-bottom:6px">${ESC(x.dest&&x.dest.voce||'')} di <b>${ESC(x.da||'')}</b>, caricato il ${ESC(x.data||'')}. Finché non lo approvi non vale per i voli.</div>
+    <div class="row" style="margin:0 0 8px"><button class="btn sec mini" type="button" onclick="apriFile('${ESC(id)}')">Vedi il documento</button></div>
+    ${r('numero','Numero')}${r('rilascio','Rilasciato il')}${r('scadenza','Scade il')}
+    <div class="row"><button class="btn sec" type="button" id="da-no">Annulla</button><button class="btn sec" type="button" id="da-rif" style="color:var(--ko);border-color:var(--ko)"><span class="spin"></span>Rifiuta</button><button class="btn" type="button" id="da-ok"><span class="spin"></span>Approva</button></div></div>`;
+  document.body.appendChild(ve); ve.querySelector('#da-no').onclick=()=>ve.remove();
+  const manda=(ok,b)=>{ b.classList.add('busy'); b.disabled=true; const g=k=>(ve.querySelector('#da-'+k)||{}).value||'';
+    api('POST','/api/doc/approva',{id,ok,dati:{numero:g('numero'),rilascio:g('rilascio'),scadenza:g('scadenza')}}).then(j=>{ if(j.errore){ b.classList.remove('busy'); b.disabled=false; toast(j.errore); return; }
+      return ricarica().then(()=>{ ve.remove(); toast(ok?'Approvato: ora vale per i voli':'Rifiutato'); if(VISTA==='home') disegnaHome(); }); }).catch(()=>{ b.classList.remove('busy'); b.disabled=false; toast('Non riuscito: controlla la rete'); }); };
+  ve.querySelector('#da-ok').onclick=function(){ manda(true,this); }; ve.querySelector('#da-rif').onclick=function(){ manda(false,this); }; }
 function apriFile(id){ window.open('/api/doc/file?d='+encodeURIComponent(id)+'&id='+ME.id+'&k='+ME.k,'_blank'); }
 function apriDocDrone(id,k){ const s=SCHEDE[id]||{}; if(s.docIds&&s.docIds[k]) apriFile(s.docIds[k]); else toast('Documento di esempio: nella prova non c’è il file'); }
 function docOperatore(n){
@@ -4067,7 +4081,7 @@ function confermaDoc(b){
   api('POST','/api/doc/conferma',{id:DOCCORR.id,tipo:D.tipo,dest:D.dest,categorie:D.categorie||{},dati:D.dati}).then(j=>{
     if(j.errore){b.disabled=false;b.classList.remove('busy');toast(j.errore);return;}
     return ricarica().then(()=>{
-      b.disabled=false;b.classList.remove('busy'); const s=D.dest; toast('Documento salvato');
+      b.disabled=false;b.classList.remove('busy'); const s=D.dest; toast(j.daApprovare?'Salvato: vale dopo che l’Admin lo approva':'Documento salvato');
       if(s.k==='pilota') apriPilota(s.id); else if(s.k==='drone') apriDrone(s.id,'droni');
       else if(s.k==='operatore') (s.voce==='dflight'?apriDflight():apriEnac()); else apriDocumenti();
       document.getElementById('back').onclick=()=>apriDocumenti();
@@ -5858,7 +5872,7 @@ const Q2_TILES=[
  {k:'prev',n:'Preventivi',col:'--f-attivita',i:Q2I.euro,V:[['t','Preventivi']],go:"apriPagina('Preventivi')"},
  {k:'imp',n:'Impostazioni',col:'--f-imp',i:Q2I.gear,V:[['p','Dati dell’operatore'],['p','Avvisi via email'],['p','Utenti e permessi'],['x','vista'],['p','Codice dell’Admin'],['x','guida'],['p','Studio Gestionale'],['x','parole']]}];
 function q2Voci(t){ return t.V.map(([tp,n])=>{ if(n==='vista') return {n:'Vedi come un pilota',c:'controlli cosa vede ognuno',d:'',i:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>',go:'tabOperatore()',vis:PILOTI.length>0};
-   if(n==='guida') return {n:'Tasti «Guidami» nelle pagine',c:gdOn()?'accesi: tocca per spegnerli':'spenti: tocca per accenderli',d:'',i:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14M12 17.5h.01"/></svg>',go:"gdToggle();apriHub('imp')",vis:true};
+   if(n==='guida') return {n:'Tasti «Guidami» nelle pagine',c:gdOn()?'accesi: tocca per spegnerli':'spenti: tocca per accenderli',d:'',i:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14M12 17.5h.01"/></svg>',go:"gdToggle();vai('home')",vis:true};
    return hadmVoce(tp,n); }).filter(v=>v&&v.vis); }
 function q2Stato(t){ const v=q2Voci(t); if(!v.length) return null;
   const k=v.filter(x=>x.d==='ko').length, w=v.filter(x=>x.d==='warn').length;
@@ -5940,7 +5954,7 @@ function inDocConferma(b){ const g=id=>document.getElementById(id).value.trim(),
   b.disabled=true; b.classList.add('busy'); controllaModifiche();
   api('POST','/api/doc/conferma',{id:INDOC.id,tipo:g('in-tipo'),dest:INDOC.dest,categorie:INDOC.cat||{},dati}).then(j=>{
     if(j.errore){ b.disabled=false; b.classList.remove('busy'); toast(j.errore); return; }
-    return ricarica().then(()=>{ gdChiudiSheet(); toast('Documento salvato nella scheda giusta'); if(VISTA==='home') disegnaHome(); }); })
+    return ricarica().then(()=>{ gdChiudiSheet(); toast(j.daApprovare?'Salvato: vale dopo che l’Admin lo approva':'Documento salvato nella scheda giusta'); if(VISTA==='home') disegnaHome(); }); })
   .catch(()=>{ b.disabled=false; b.classList.remove('busy'); toast('Non riuscito: controlla la rete'); }); }
 function inFirma(){ const prima=OP.firma;
   gdSheet(`<h2>La tua firma</h2><p class="gd-sub">Con il dito (o con il mouse): va da sola su moduli, valutazioni del rischio e rapporti.</p><div id="in-firma"></div><div class="row"><button class="btn sec" onclick="gdChiudiSheet()">Chiudi</button></div>`);
@@ -5966,7 +5980,7 @@ function inAbb(){ gdSheet(`<h2>Rinnova l’abbonamento D-Flight</h2><p class="gd
     <div class="row"><button class="btn" onclick="const v=document.getElementById('in-abb').value.trim();if(!dt(v)){toast('La data va scritta come gg/mm/aaaa');return;}lavora(this,()=>{OP.dfAbb=v;testata();inFine('Nuova scadenza salvata: ti avviso prima');})"><span class="spin"></span>Salva</button><button class="btn sec" onclick="gdChiudiSheet()">Annulla</button></div>`); }
 
 /* tasto della riga «Da sistemare»: dice cosa fa */
-function todoAz(t){ const r=[[/^Codice operatore|^Responsabile|^Email dell/,'Scrivi'],[/^Abbonamento D-Flight/,'Rinnova'],[/Autorizzazione ENAC/,'Prepara'],[/Check list|QR D-Flight|Polizza|attestato|Attestato|A1-A3|A2 |STS|file delle zone/i,'Carica'],
+function todoAz(t){ const r=[[/^Attestato da approvare/,'Controlla'],[/^Codice operatore|^Responsabile|^Email dell/,'Scrivi'],[/^Abbonamento D-Flight/,'Rinnova'],[/Autorizzazione ENAC/,'Prepara'],[/Check list|QR D-Flight|Polizza|attestato|Attestato|A1-A3|A2 |STS|file delle zone/i,'Carica'],
   [/^Manutenzione/,'Segna fatta'],[/Batteria|celle|batteria/,'Controlla'],[/firma del responsabile|Manca la tua firma/,'Firma'],[/Richiesta di permesso/,'Manda'],[/piloti? senza firma/,'Ricorda'],[/trattament|volo da completare|voli da completare/,'Completa']];
   for(const [re,l] of r) if(re.test(t)) return l; return 'Apri'; }
 /* ricerca «Cosa vuoi fare?» */

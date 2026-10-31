@@ -56,6 +56,13 @@ const J = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: 
 const rnd = n => [...crypto.getRandomValues(new Uint8Array(n))].map(b => b.toString(16).padStart(2, "0")).join("");
 const cod4 = () => String(1000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 9000));
 const esc = (v, max = 500) => String(v == null ? "" : v).replace(/[<>&"']/g, c => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&#39;" }[c])).slice(0, max);
+// testo «crudo» da salvare: senza caratteri di controllo e tagliato (righe = tiene gli a capo); l'HTML si fa solo nelle email, con esc
+const TX = (v, max = 500, righe = false) => String(v == null ? "" : v).replace(righe ? /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g : /[\u0000-\u001f\u007f]/g, " ").slice(0, max);
+// nomi di file arrivati codificati: se la codifica è sbagliata si tiene com'è (niente errore)
+const dec = s => { try { return decodeURIComponent(s); } catch (e) { return String(s); } };
+const SPENTA_PROVA = () => J({ errore: "Nella versione di prova questa funzione è spenta" }, 403);
+const MAX_MAIN = 1900000;                    // byte massimi dei dati di uno spazio (il limite di Cloudflare è circa 2 MB)
+const giornoUTC = () => new Date().toISOString().slice(0, 10);
 const DATA = v => /^\d{2}\/\d{2}\/\d{4}$/.test(v || "") ? v : "";
 const oggi = () => { const n = new Date(); return String(n.getDate()).padStart(2, "0") + "/" + String(n.getMonth() + 1).padStart(2, "0") + "/" + n.getFullYear(); };
 const PEZZO = 1000000;                       // byte per pezzo di documento
@@ -92,7 +99,7 @@ function applicaVolo(d, v) {
 }
 // toglie un volo: ore, voli e cicli tornano come prima (solo se il volo era stato contato)
 function togliVolo(d, v) {
-  if (!(v.contato || (v.importato && v.stato === "completo"))) return d;
+  if (!v.contato) return d;
   const min = v.min || 0, dr = (d.DRONI || []).find(x => x.nome === v.drone), giu = (h, m) => hDi(Math.max(0, minDi(h) - m));
   if (dr && d.SCHEDE && d.SCHEDE[dr.id]) { const sc = d.SCHEDE[dr.id]; sc.ore = giu(sc.ore, min); sc.voli = Math.max(0, (+sc.voli || 0) - 1);
     if (sc.man && minDi(sc.man.mancano) > 0) sc.man.mancano = oreDi(minDi(sc.man.mancano) + min); }
@@ -105,11 +112,11 @@ function togliVolo(d, v) {
 function pulisciLetto(v) {
   return { letto: !!v.letto, quotaMax: NUM(v.quotaMax, 0, 9999), oltre120: NUM(v.oltre120, 0, 99999), km: NUM(v.km, 0, 9999), velMax: NUM(v.velMax, 0, 999),
     foto: NUM(v.foto, 0, 99999), video: NUM(v.video, 0, 9999), videoS: NUM(v.videoS, 0, 999999), cIni: NUM(v.cIni, 0, 100), cFin: NUM(v.cFin, 0, 100), tMax: NUM(v.tMax, -50, 150),
-    dev: NUM(v.dev, 0, 5), celle: Array.isArray(v.celle) ? v.celle.slice(0, 14).map(x => NUM(x, 0, 10)) : [], batt: esc(v.batt, 40), bsn: esc(v.bsn, 60),
-    sn: esc(v.sn, 60), logKey: esc(v.logKey, 120), fine: esc(v.fine, 5), sec: NUM(v.sec, 0, 86400),
+    dev: NUM(v.dev, 0, 5), celle: Array.isArray(v.celle) ? v.celle.slice(0, 14).map(x => NUM(x, 0, 10)) : [], batt: TX(v.batt, 40), bsn: TX(v.bsn, 60),
+    sn: TX(v.sn, 60), logKey: TX(v.logKey, 120), fine: TX(v.fine, 5), sec: NUM(v.sec, 0, 86400),
     prof: Array.isArray(v.prof) ? v.prof.slice(0, 160).map(x => Math.round(NUM(x, -999, 9999))) : [],
     trk: Array.isArray(v.trk) ? v.trk.slice(0, 420).filter(p => Array.isArray(p) && p.length >= 2).map(p => [NUM(p[0], -90, 90), NUM(p[1], -180, 180), Math.round(NUM(p[2], -999, 9999))]) : [],
-    distMax: NUM(v.distMax, 0, 999999), haTrk: !!v.haTrk, daFoto: !!v.daFoto, fotoDoc: esc(v.fotoDoc, 40) };
+    distMax: NUM(v.distMax, 0, 999999), haTrk: !!v.haTrk, daFoto: !!v.daFoto, fotoDoc: TX(v.fotoDoc, 40) };
 }
 
 // ---- zone di volo D-Flight: il file ufficiale (formato europeo) caricato dall'Admin, il controllo del punto ----
@@ -172,7 +179,8 @@ const ASP_BASE = "B";                           // di base: Plancia
 function vista(d, n) {
   const P = permDi(d, n), me = pilotaDi(d, n), v = {};
   // sempre: i droni (servono al controllo prima del volo), lui stesso, l'operatore, i suoi voli e i suoi permessi
-  v.OP = Object.assign({}, d.OP, { firma: undefined }); v.MATR = d.MATR;
+  // la firma dell'operatore mai; il documento D-Flight (dell'azienda) solo con il permesso «enac», come in docVisibile
+  v.OP = Object.assign({}, d.OP, { firma: undefined }, P.enac ? {} : { dfDoc: undefined }); v.MATR = d.MATR;
   v.DRONI = d.DRONI;
   v.ASSIC = { scad: (d.ASSIC || {}).scad, ok: (d.ASSIC || {}).ok };
   v.AUT_ENAC = { agricola: !!(d.AUT_ENAC || {}).agricola };
@@ -216,35 +224,43 @@ function pulisciMissione(x) {
   return { tipo: ["area", "percorso", "punti"].includes(x.tipo) ? x.tipo : "area", pts, home: pt(x.home), quota: num(x.quota, 10, 120, 80), fo: num(x.fo, 50, 90, 80), fs: num(x.fs, 50, 90, 70),
     vel: num(x.vel, 0, 15, 0), giro: !!x.giro, fine: ["goHome", "noAction", "autoLand"].includes(x.fine) ? x.fine : "goHome", gimbal: num(x.gimbal, -90, 0, -90), drone: +x.drone || null, il: String(x.il || "").slice(0, 10) };
 }
-function unisci(full, m, n) {
+// docOk: i documenti caricati da questo pilota (li controlla il server prima): solo questi può allegare a un volo
+const LISTA = a => Array.isArray(a) ? a : [];
+function unisci(full, m, n, docOk) {
   const d = JSON.parse(JSON.stringify(full));
+  if (!m || typeof m !== "object" || Array.isArray(m)) m = {};
   const vecchi = new Map((d.VOLI || []).map(v => [String(v.id), v]));
-  for (const v of (m.VOLI || []).slice(0, 2000)) {
+  let nuoviVoli = 0;
+  for (const v of LISTA(m.VOLI).slice(0, 2000)) {
     if (!v || v.pilota !== n) continue;
     const id = String(v.id || ""); if (!/^\d{1,16}$/.test(id)) continue;
     const o = vecchi.get(id);
     if (o && o.pilota !== n) continue;                       // non può toccare i voli degli altri
-    const pulito = { id: +id, data: DATA(v.data) || oggi(), ora: esc(v.ora, 5), drone: esc(v.drone, 80), pilota: n, luogo: esc(v.luogo, 120),
+    if (!o && ++nuoviVoli > 200) continue;                   // al massimo 200 voli nuovi per salvataggio
+    // il registro allegato: resta quello salvato; uno nuovo solo se il file l'ha caricato lui
+    const dl = TX(v.docLog, 40), docLog = (o && o.docLog) || (dl && docOk && docOk.has(dl) ? dl : "");
+    const pulito = { id: +id, data: DATA(v.data) || oggi(), ora: TX(v.ora, 5), drone: TX(v.drone, 80), pilota: n, luogo: TX(v.luogo, 120),
       min: Math.max(0, Math.min(600, +v.min || 0)), stato: ["completo", "dacompl", "attesa"].includes(v.stato) ? v.stato : "dacompl",
-      ctrl: !!v.ctrl, ctrlOra: esc(v.ctrlOra, 5), cliente: esc(v.cliente, 200), note: esc(v.note, 2000), importato: !!v.importato, amano: !!v.amano,
-      cat: esc(v.cat, 60), inc: esc(v.inc, 60), codLav: esc(v.codLav, 20), meteo: esc(v.meteo, 160), zona: esc(v.zona, 200), notam: esc(v.notam, 300), ck: esc(v.ck, 400), dopo: v.dopo && typeof v.dopo === "object" ? { drone: !!v.dopo.drone, batt: !!v.dopo.batt, succ: !!v.dopo.succ } : undefined, docLog: (o && o.docLog) || esc(v.docLog, 40), logNome: esc(v.logNome, 120) };
+      ctrl: !!v.ctrl, ctrlOra: TX(v.ctrlOra, 5), cliente: TX(v.cliente, 200), note: TX(v.note, 2000, true), importato: !!v.importato, amano: !!v.amano,
+      cat: TX(v.cat, 60), inc: TX(v.inc, 60), codLav: TX(v.codLav, 20), meteo: TX(v.meteo, 160), zona: TX(v.zona, 200), notam: TX(v.notam, 300), ck: TX(v.ck, 400), dopo: v.dopo && typeof v.dopo === "object" ? { drone: !!v.dopo.drone, batt: !!v.dopo.batt, succ: !!v.dopo.succ } : undefined, docLog, logNome: TX(v.logNome, 120) };
     // i dati letti dal registro li scrive solo il server (/api/volo/importa): il telefono non li può cambiare
     if (o && o.letto) Object.assign(pulito, pulisciLetto(o), { drone: o.drone, data: o.data, ora: o.ora, min: o.min, pilota: o.pilota });
     if (o) Object.assign(o, pulito); else { d.VOLI = d.VOLI || []; d.VOLI.unshift(pulito); }
   }
   const zk = z => z.data + "|" + z.ora + "|" + z.drone + "|" + z.pilota, zs = new Set((d.ZONE || []).map(zk));
-  for (const z of (m.ZONE || []).slice(0, 50)) {
+  for (const z of LISTA(m.ZONE).slice(0, 50)) {
     if (!z || z.pilota !== n) continue;
-    const pz = { data: DATA(z.data) || oggi(), ora: esc(z.ora, 5), drone: esc(z.drone, 80), pilota: n, esito: esc(z.esito, 200) };
+    const pz = { data: DATA(z.data) || oggi(), ora: TX(z.ora, 5), drone: TX(z.drone, 80), pilota: n, esito: TX(z.esito, 200) };
     if (!zs.has(zk(pz))) { d.ZONE = d.ZONE || []; d.ZONE.unshift(pz); zs.add(zk(pz)); }
   }
   d.ZONE = (d.ZONE || []).slice(0, 2000);
   // polizza RC personale: il pilota cambia solo la sua; la verifica e il documento li tiene il server
+  if (m.SCHEDEP && typeof m.SCHEDEP !== "object") m.SCHEDEP = null;
   const me = pilotaDi(d, n), mp = me && ((m.SCHEDEP || {})[me.id] || {}).polizza;
   if (me && m.SCHEDEP && (m.SCHEDEP[me.id] || m.SCHEDEP[String(me.id)])) {
     const sp = (d.SCHEDEP = d.SCHEDEP || {})[me.id] = d.SCHEDEP[me.id] || { ruolo: "Pilota", ore: "0 h", voli: 0, ore90: "0 h", inc: 0, att: {} }, o = sp.polizza;
     if (mp && typeof mp === "object") {
-      const q = { comp: esc(mp.comp, 80), num: esc(mp.num, 60), mass: esc(mp.mass, 40), scad: DATA(mp.scad) || "" };
+      const q = { comp: TX(mp.comp, 80), num: TX(mp.num, 60), mass: TX(mp.mass, 40), scad: DATA(mp.scad) || "" };
       if (o && o.doc) q.doc = o.doc;
       if (o && o.ver && o.scad === q.scad && o.num === q.num) q.ver = o.ver;
       sp.polizza = q;
@@ -254,7 +270,7 @@ function unisci(full, m, n) {
   if (me && m.SCHEDEP) {
     const x = m.SCHEDEP[me.id] || m.SCHEDEP[String(me.id)];
     if (x && typeof x === "object") { const sp = (d.SCHEDEP = d.SCHEDEP || {})[me.id] = d.SCHEDEP[me.id] || { ruolo: "Pilota", ore: "0 h", voli: 0, ore90: "0 h", inc: 0, att: {} };
-      if (typeof x.tel === "string") sp.tel = esc(x.tel, 30); if (typeof x.email === "string") sp.email = EMAIL(x.email) ? x.email.trim().slice(0, 120) : "";       if (x.dfOk && typeof x.dfOk === "object") sp.dfOk = { il: DATA(x.dfOk.il) || oggi() }; else if ("dfOk" in sp) delete sp.dfOk; }
+      if (typeof x.tel === "string") sp.tel = TX(x.tel, 30); if (typeof x.email === "string") sp.email = EMAIL(x.email) ? x.email.trim().slice(0, 120) : "";       if (x.dfOk && typeof x.dfOk === "object") sp.dfOk = { il: DATA(x.dfOk.il) || oggi() }; else if ("dfOk" in sp) delete sp.dfOk; }
   }
   // la firma del pilota: la mette solo lui, dal suo telefono (immagine PNG piccola)
   if (me && m.SCHEDEP) {
@@ -267,30 +283,32 @@ function unisci(full, m, n) {
     for (const dr of d.DRONI || []) {
       const x = m.SCHEDE[dr.id] || m.SCHEDE[String(dr.id)], sc = (d.SCHEDE || {})[dr.id]; if (!x || !sc || !Array.isArray(x.storia)) continue;
       const ha = new Set((sc.storia || []).map(r => JSON.stringify(r))), nuovi = [];
-      for (const r of x.storia.slice(0, 10)) { if (!Array.isArray(r) || ha.has(JSON.stringify(r))) continue; const p = [DATA(r[0]) || oggi(), esc(r[1], 300)]; if (!/registrato da /.test(p[1])) p[1] += " · registrato da " + n; nuovi.push(p); }
+      for (const r of x.storia.slice(0, 10)) { if (!Array.isArray(r) || ha.has(JSON.stringify(r))) continue; const p = [DATA(r[0]) || oggi(), TX(r[1], 300)]; if (!/registrato da /.test(p[1])) p[1] += " · registrato da " + n; nuovi.push(p); }
       if (!nuovi.length) continue;
       sc.storia = nuovi.concat(sc.storia || []).slice(0, 200);
-      if (x.man && typeof x.man === "object") sc.man = Object.assign(sc.man || {}, { perc: Math.max(0, Math.min(100, +x.man.perc || 0)), liv: ["ok", "warn", "ko"].includes(x.man.liv) ? x.man.liv : (sc.man || {}).liv, mancano: esc(x.man.mancano, 40), prox: esc(x.man.prox, 120) });
-      const md = (m.DRONI || []).find(y => y && y.id === dr.id); if (md && ["ok", "warn", "ko"].includes(md.manut)) dr.manut = md.manut;
+      if (x.man && typeof x.man === "object") sc.man = Object.assign(sc.man || {}, { perc: Math.max(0, Math.min(100, +x.man.perc || 0)), liv: ["ok", "warn", "ko"].includes(x.man.liv) ? x.man.liv : (sc.man || {}).liv, mancano: TX(x.man.mancano, 40), prox: TX(x.man.prox, 120) });
+      const md = LISTA(m.DRONI).find(y => y && y.id === dr.id); if (md && ["ok", "warn", "ko"].includes(md.manut)) dr.manut = md.manut;
     }
   }
   // missione pianificata: il pilota la salva nei lavori assegnati a lui (o in tutti, con il permesso «clienti»)
-  for (const x of (m.LAVORI || []).slice(0, 500)) {
+  for (const x of LISTA(m.LAVORI).slice(0, 500)) {
     if (!x || !x.missione) continue;
     const l = (d.LAVORI || []).find(y => y.id === x.id); if (!l || !(permDi(d, n).clienti || (me && l.pilota === me.id))) continue;
     const ms = pulisciMissione(x.missione); if (ms) { ms.da = n; l.missione = ms; }
   }
   // confini dei campi: i piloti con il permesso «agricoltura» li possono mettere (anche camminando il bordo)
-  if (permDi(d, n).agri) for (const x of (m.CAMPI || []).slice(0, 500)) {
+  if (permDi(d, n).agri) for (const x of LISTA(m.CAMPI).slice(0, 500)) {
     if (!x || !Array.isArray(x.geo)) continue; const c = (d.CAMPI || []).find(y => y.id === x.id); if (!c) continue;
     const geo = x.geo.slice(0, 500).filter(p => Array.isArray(p) && isFinite(+p[0]) && isFinite(+p[1]) && Math.abs(+p[0]) <= 90 && Math.abs(+p[1]) <= 180).map(p => [+(+p[0]).toFixed(7), +(+p[1]).toFixed(7)]);
     if (geo.length >= 3 && JSON.stringify(geo) !== JSON.stringify(c.geo || [])) { c.geo = geo; c.ha = Math.max(0, Math.min(100000, +x.ha || 0)); c.confini = true; delete c.poly; }
   }
   // valutazioni del rischio: il pilota aggiunge o cambia solo le sue
   const rv = new Map((d.RISCHI || []).map(r => [r.id, r]));
-  for (const r of (m.RISCHI || []).slice(0, 300)) {
+  let nuoviR = 0;
+  for (const r of LISTA(m.RISCHI).slice(0, 300)) {
     if (!r || typeof r !== "object" || !/^R[a-z0-9]{4,14}$/.test(String(r.id || ""))) continue;
     const o = rv.get(r.id); if (o && o.firma !== n) continue;
+    if (!o && (++nuoviR > 20 || (d.RISCHI || []).length >= 1000)) continue;   // al massimo 20 nuove per salvataggio, 1000 in tutto
     const t = JSON.stringify(r); if (t.length > 30000) continue;
     const pulito = JSON.parse(t.replace(/[<>]/g, "")); pulito.firma = n;
     if (o) Object.assign(o, pulito); else { d.RISCHI = d.RISCHI || []; d.RISCHI.unshift(pulito); rv.set(r.id, pulito); }
@@ -304,11 +322,12 @@ function applicaDoc(d, doc) {
   if (s.k === "pilota") {
     const sp = (d.SCHEDEP = d.SCHEDEP || {})[s.id] = (d.SCHEDEP || {})[s.id] || { ruolo: "Pilota", ore: "0 h", voli: 0, ore90: "0 h", inc: 0, att: {} };
     if (["A1-A3", "A2", "STS-01"].includes(s.voce)) {
-      sp.att[s.voce] = Object.assign(sp.att[s.voce] || {}, { num: esc(c.numero, 60) || (sp.att[s.voce] || {}).num || "", ril: DATA(c.rilascio) || (sp.att[s.voce] || {}).ril || "", scad: DATA(c.scadenza) || (sp.att[s.voce] || {}).scad || "", file: true, doc: doc.id });
+      sp.att = sp.att || {};
+      sp.att[s.voce] = Object.assign(sp.att[s.voce] || {}, { num: TX(c.numero, 60) || (sp.att[s.voce] || {}).num || "", ril: DATA(c.rilascio) || (sp.att[s.voce] || {}).ril || "", scad: DATA(c.scadenza) || (sp.att[s.voce] || {}).scad || "", file: true, doc: doc.id });
       const p = (d.PILOTI || []).find(x => x.id === s.id); if (p) { p.att = p.att || []; if (!p.att.includes(s.voce)) p.att.push(s.voce); if (s.voce === "STS-01") p.sts = true; }
     }
     if (s.voce === "polizza") { const q = sp.polizza || {};
-      sp.polizza = { comp: esc(c.compagnia, 80) || q.comp || "", num: esc(c.numero, 60) || q.num || "", mass: esc(c.massimale, 40) || q.mass || "", scad: DATA(c.scadenza) || q.scad || "", doc: doc.id }; }
+      sp.polizza = { comp: TX(c.compagnia, 80) || q.comp || "", num: TX(c.numero, 60) || q.num || "", mass: TX(c.massimale, 40) || q.mass || "", scad: DATA(c.scadenza) || q.scad || "", doc: doc.id }; }
     if (s.voce === "patentino") { (d.PATENTINO = d.PATENTINO || {})[s.id] = DATA(c.scadenza) ? "scade il " + c.scadenza : "presente"; }
   }
   if (s.k === "drone") {
@@ -479,7 +498,15 @@ function nomeSpazio(nome) {
 }
 
 export class Stato extends DurableObject {
+  // ogni errore imprevisto torna come JSON (mai la pagina d'errore di Cloudflare)
   async fetch(request) {
+    try { return await this.gestisci(request); }
+    catch (e) {
+      if (e && e.pieno) return J({ errore: "Spazio pieno: i dati di questo spazio hanno raggiunto il limite. Elimina voli o documenti vecchi, oppure scrivi all'assistenza." }, 413);
+      console.error("Stato:", e && e.stack || e); return J({ errore: "Errore interno" }, 500);
+    }
+  }
+  async gestisci(request) {
     const url = new URL(request.url), st = this.ctx.storage, p = url.pathname;
     if (p.startsWith("/api/registro/")) return this.registro(request, url, p);
     if (p === "/interno/elenco") return J((await st.get("elenco")) || []);
@@ -525,7 +552,32 @@ export class Stato extends DurableObject {
       return [so, br].filter(Boolean).join(" · "); };
     const pub = () => Object.keys(disp).map(id => { const x = disp[id]; return { id, ruolo: x.ruolo, n: x.n, codice: x.codice, stato: x.stato, at: x.at, visto: x.visto, nuovo: !!x.nuovo, pid: x.pid, dev: x.dev || "" }; });
     const leggiMain = async () => { const row = await st.get("main"); return row ? { row, d: JSON.parse(row.json) } : null; };
-    const scriviMain = async (d, ver) => { await st.put("main", { json: JSON.stringify(d), ver }); };
+    // prima di scrivere si misura: oltre il limite si ferma con «Spazio pieno» (lo trasforma in risposta fetch, qui sopra)
+    const scriviMain = async (d, ver) => { const json = JSON.stringify(d);
+      if (new TextEncoder().encode(json).length > MAX_MAIN) throw Object.assign(new Error("spazio pieno"), { pieno: true });
+      await st.put("main", { json, ver }); };
+    const PROVA = !OPN;                                       // versione di prova: chiunque può essere Admin (codice 1234)
+    // Claude nella prova: al massimo 40 letture al giorno (UTC) per tutta la prova
+    const limiteClaude = async () => { if (!PROVA) return null;
+      const g = giornoUTC(), c = (await st.get("claude:giorno")) || {}; const n = c.g === g ? c.n || 0 : 0;
+      if (n >= 40) return J({ errore: "Nella versione di prova le letture con l'intelligenza artificiale di oggi sono finite: riprova domani, oppure iscriviti per avere il tuo spazio." }, 429);
+      await st.put("claude:giorno", { g, n: n + 1 }); return null; };
+    // file: si cancellano i pezzi e le informazioni
+    const togliFile = async did => { if (!/^d[a-z0-9]+$/.test(did || "")) return; const info = await st.get("docinfo:" + did); if (!info) return;
+      for (let i = 0; i < (+info.pezzi || 0); i++) await st.delete("doc:" + did + ":" + i); await st.delete("docinfo:" + did); };
+    // ... ma solo se non li usa più niente (dati dello spazio o voli arrivati)
+    const togliSeLiberi = async (ids, d) => { ids = [...new Set(ids.filter(Boolean))]; if (!ids.length) return;
+      const tutto = JSON.stringify(d || ((await leggiMain()) || {}).d || {}) + JSON.stringify((await st.get("arrivi")) || []);
+      for (const x of ids) if (!tutto.includes('"' + x + '"')) await togliFile(x); };
+    // codici personali del calendario e dell'invio dei voli: si tolgono quando la persona è bloccata o tolta
+    // un codice del calendario o dell'invio vale solo se la persona c'è ancora e non è bloccata (l'Admin: se ha ancora un telefono approvato)
+    const codiceValido = async (chi, d) => {
+      if (!d) { const m = await leggiMain(); d = m ? m.d : {}; }
+      const pc = !chi.adm && pilotaDi(d, chi.n);
+      if (pc) return !blocchi[pc.id];
+      return (!!chi.adm || chi.n === "Admin") && Object.values(disp).some(x => x.ruolo === "adm" && x.stato === "ok" && x.n === chi.n);
+    };
+    const togliCodici = async n => { for (const t of ["cal", "invio"]) { const tk = await st.get(t + ":di:" + n); if (tk) await st.delete(t + ":" + tk); await st.delete(t + ":di:" + n); } };
     const nuovoAdmin = async email => {
       const id = rnd(8), k = rnd(18);
       disp[id] = { k, ruolo: "adm", n: "Admin", pid: null, nuovo: false, codice: cod4(), stato: "ok", at: now, visto: now, app: true, via: "email", email, dev: nomeDisp(request.headers.get("user-agent")) };
@@ -568,7 +620,7 @@ export class Stato extends DurableObject {
         if (now - err.t > 900000) { err.n = 0; err.t = now; }
         if (err.n >= 5) return J({ errore: "Troppi tentativi: riprova tra 15 minuti" }, 429);
         const nn = norm(b.n), mm = norm(b.matr);
-        const pi = nn && mm ? (m.d.PILOTI || []).find(x => norm(x.nome) === nn && x.matr && norm(x.matr) === mm && !((m.d.PERM || {})[x.id] || {}).admin) : null;
+        const pi = nn && mm && nn !== "admin" ? (m.d.PILOTI || []).find(x => norm(x.nome) === nn && x.matr && norm(x.matr) === mm && !((m.d.PERM || {})[x.id] || {}).admin) : null;
         if (!pi) { err.n++; await st.put(kk, err); return J({ errore: "Nome o matricola non corretti" }, 403); }
         await st.delete(kk);
         if (blocchi[pi.id]) return J({ errore: "bloccato" }, 403);
@@ -585,7 +637,16 @@ export class Stato extends DurableObject {
     }
 
     // ---- invio programmato degli avvisi: lo chiama solo il cron (non passa da /api) ----
-    if (p === "/interno/avvisi") return J(await this.avvisi(false, url.origin));
+    if (p === "/interno/avvisi") return J(PROVA ? { ok: true, saltato: "versione di prova" } : await this.avvisi(false, url.origin));
+    // pulizia (una volta al giorno, dal cron): i file caricati e mai usati da più di 14 giorni
+    if (p === "/interno/pulizia") {
+      const g = giornoUTC(); if ((await st.get("pulizia:giorno")) === g) return J({ ok: true, saltato: "già fatto oggi" });
+      await st.put("pulizia:giorno", g);
+      const lim = now - 14 * 864e5, vecchi = [];
+      for (const [kk, info] of await st.list({ prefix: "docinfo:" })) if (info && !info.confermato && (+info.at || 0) < lim) vecchi.push(kk.slice(8));
+      await togliSeLiberi(vecchi);
+      return J({ ok: true, guardati: vecchi.length });
+    }
     if (p === "/interno/posta" && this.env.POSTA_FINTA === "1") return J(globalThis.__POSTA || []);
 
     // ---- controllo pubblico: dice solo SE le impostazioni ci sono (mai i valori) ----
@@ -602,12 +663,14 @@ export class Stato extends DurableObject {
       const tk = url.searchParams.get("t") || "", chi = tk.length >= 16 ? await st.get("cal:" + tk) : null;
       if (!chi) return new Response("calendario non valido", { status: 403 });
       const m = await leggiMain(); const d = m ? m.d : {};
+      if (!(await codiceValido(chi, d))) return new Response("calendario non valido", { status: 403 });
       return new Response(calendarioIcs(d, chi), { headers: { "content-type": "text/calendar; charset=utf-8", "cache-control": "private, max-age=900", "content-disposition": "inline; filename=quota120.ics" } });
     }
     if (p === "/api/invio" && request.method === "POST") {
       const tk = url.searchParams.get("t") || "", chi = tk.length >= 16 ? await st.get("invio:" + tk) : null;
-      if (!chi) return new Response("codice di invio non valido", { status: 403 });
-      const nome = esc(decodeURIComponent(url.searchParams.get("nome") || request.headers.get("x-nome") || "volo.txt"), 120);
+      if (!chi || !(await codiceValido(chi))) return new Response("codice di invio non valido", { status: 403 });
+      // il nome nell'indirizzo è già decodificato; quello nell'intestazione no
+      const nome = TX(url.searchParams.get("nome") || dec(request.headers.get("x-nome") || "") || "volo.txt", 120);
       const buf = await request.arrayBuffer();
       if (!buf.byteLength) return new Response("file vuoto", { status: 400 });
       if (buf.byteLength > 30 * 1024 * 1024) return new Response("file troppo grande", { status: 413 });
@@ -621,6 +684,7 @@ export class Stato extends DurableObject {
       await st.put("docinfo:" + did, { mime: "text/plain", pezzi, size: buf.byteLength, nome, da: chi.n, at: now, confermato: false });
       await st.put(k1, did);
       const L = (await st.get("arrivi")) || []; L.push({ id: did, nome, size: buf.byteLength, da: chi.n, at: now, via: "iPhone" }); await st.put("arrivi", L.slice(-300));
+      if (L.length > 300) await togliSeLiberi(L.slice(0, L.length - 300).map(x => x.id));   // quelli usciti dall'elenco: via i file non usati
       await st.put("invio:ultimo:" + chi.n, { at: now, nuovi: (prima.at && now - prima.at < 600000 ? prima.nuovi || 0 : 0) + 1, via: "iPhone" });
       return new Response("ok");
     }
@@ -652,7 +716,8 @@ export class Stato extends DurableObject {
       if (!Array.isArray(b) || b.length > 30) return J({ errore: "Dati non validi" }, 400);
       const pulito = b.map(c => ({ id: String(c.id || "").replace(/[^a-z0-9-]/gi, "").slice(0, 40) || "c" + now.toString(36), tok: /^[a-f0-9]{12}$/.test(c.tok || "") ? c.tok : rnd(6),
         t: tx(String(c.t || "Corso"), 120), s: tx(String(c.s || ""), 300), vis: "azienda", rev: String(c.rev || ""),
-        lezioni: (c.lezioni || []).slice(0, 40).map(l => ({ id: String(l.id || "").replace(/[^a-z0-9-]/gi, "").slice(0, 60) || "l" + now.toString(36) + rnd(2), t: tx(String(l.t || "Lezione"), 120), s: tx(String(l.s || ""), 200),
+        // id in minuscolo: il nome del video (az-...) deve passare dal controllo del percorso dei video, che è in minuscolo
+        lezioni: (c.lezioni || []).slice(0, 40).map(l => ({ id: String(l.id || "").toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 60) || "l" + now.toString(36) + rnd(2), t: tx(String(l.t || "Lezione"), 120), s: tx(String(l.s || ""), 200),
           leg: (l.leg || []).slice(0, 20).map(r => [tx(String(r[0] || ""), 80), tx(String(r[1] || ""), 300)]), h: "",
           q: (l.q || []).slice(0, 40).map(q => [tx(String(q[0] || ""), 300), (q[1] || []).slice(0, 6).map(o => tx(String(o || ""), 200)), Math.max(0, +q[2] || 0), tx(String(q[3] || ""), 400)]),
           scene: (l.scene || []).slice(0, 40).map(x => { const y = {}; for (const k of ["k", "t", "n", "v"]) if (x[k]) y[k] = tx(String(x[k]), k === "v" ? 1500 : 120); if (Array.isArray(x.p) && x.p.length) y.p = x.p.slice(0, 8).map(z => tx(String(z), 160)); if (Array.isArray(x.l) && x.l.length) y.l = x.l.slice(0, 8).map(r => [tx(String(r[0] || ""), 60), tx(String(r[1] || ""), 160)]); return y; }) })) }));
@@ -677,7 +742,7 @@ export class Stato extends DurableObject {
     if (p === "/api/disp/azione" && request.method === "POST") {
       if (!adm) return J({ errore: "Solo l'Admin" }, 403);
       let b; try { b = await request.json(); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
-      if (b.op === "pin") { if (!/^\d{4}$/.test(b.pin || "")) return J({ errore: "Servono 4 cifre" }, 400); await st.put("pin", b.pin); return J({ ok: true }); }
+      if (b.op === "pin") { if (PROVA) return SPENTA_PROVA(); if (!/^\d{4}$/.test(b.pin || "")) return J({ errore: "Servono 4 cifre" }, 400); await st.put("pin", b.pin); return J({ ok: true }); }
       if (b.op === "togliVecchi") {   // telefoni e computer non usati da 30 giorni (non questo)
         const lim = Date.now() - 30 * 864e5; let n = 0;
         for (const [k2, x] of Object.entries(disp)) if (k2 !== id && x.stato === "ok" && (x.visto || x.at || 0) < lim) { x.stato = "tolto"; n++; }
@@ -691,7 +756,8 @@ export class Stato extends DurableObject {
       if (b.op === "blocca" || b.op === "sblocca") {
         const pidB = +b.pid; if (!Number.isFinite(pidB)) return J({ errore: "Pilota non valido" }, 400);
         const mB = await leggiMain(), pB = mB && (mB.d.PILOTI || []).find(q => q.id === pidB), suo = x => x.ruolo === "op" && (x.pid === pidB || (pB && x.n === pB.nome));
-        if (b.op === "blocca") { blocchi[pidB] = true; for (const x of Object.values(disp)) if (suo(x)) { if (x.stato === "ok") x.stato = "bloccato"; else if (x.stato === "attesa") x.stato = "rifiutato"; } }
+        if (b.op === "blocca") { blocchi[pidB] = true; for (const x of Object.values(disp)) if (suo(x)) { if (x.stato === "ok") x.stato = "bloccato"; else if (x.stato === "attesa") x.stato = "rifiutato"; }
+          if (pB) await togliCodici(pB.nome); }
         else { delete blocchi[pidB]; for (const x of Object.values(disp)) if (suo(x) && x.stato === "bloccato") x.stato = "tolto"; }
         await st.put("blocchi", blocchi); await st.put("disp", disp);
         return J({ ok: true, disp: pub(), blocchi });
@@ -700,6 +766,7 @@ export class Stato extends DurableObject {
       if (b.id === id && b.op === "togli") return J({ errore: "Non puoi togliere te stesso" }, 400);
       x.stato = b.op === "approva" ? "ok" : b.op === "rifiuta" ? "rifiutato" : b.op === "togli" ? "tolto" : x.stato;
       if (b.op === "approva") x.app = true;
+      if (b.op === "togli" && x.n) await togliCodici(x.n);   // via anche il calendario e l'invio dei voli di quella persona
       await st.put("disp", disp);
       return J({ ok: true, disp: pub(), blocchi });
     }
@@ -712,6 +779,7 @@ export class Stato extends DurableObject {
     }
     if (p === "/api/avvisi/prova" && request.method === "POST") {
       if (!adm) return J({ errore: "Solo l'Admin" }, 403);
+      if (PROVA) return SPENTA_PROVA();
       try { return J(await this.avvisi(true, BASEURL)); } catch (e) { const m = String(e.message || e); return J({ errore: m.startsWith("posta") ? "posta" : m, dettaglio: m.startsWith("posta:") ? m.slice(6) : "" }, 502); }
     }
     if (p === "/api/volo/trk") {
@@ -722,12 +790,13 @@ export class Stato extends DurableObject {
     }
     // ---- registri di volo DJI: la chiave resta qui, il telefono chiede solo le chiavi del suo file ----
     if (p === "/api/dji/keychains" && request.method === "POST") {
+      if (PROVA) return SPENTA_PROVA();
       if (!this.env.DJI_API_KEY) return J({ errore: "chiave_dji" }, 503);
       const txt = await request.text(); if (txt.length > 300000) return J({ errore: "Richiesta troppo grande" }, 413);
       try {
         const r = await fetch(DJI_KEYCHAINS, { method: "POST", headers: { "content-type": "application/json", "api-key": this.env.DJI_API_KEY }, body: txt });
         const j = await r.json().catch(() => ({}));
-        if (!r.ok || !j.data) return J({ errore: "DJI non ha dato le chiavi" + (j.result && j.result.msg ? ": " + esc(j.result.msg, 200) : " (" + r.status + ")") }, 502);
+        if (!r.ok || !j.data) return J({ errore: "DJI non ha dato le chiavi" + (j.result && j.result.msg ? ": " + TX(j.result.msg, 200) : " (" + r.status + ")") }, 502);
         return J({ data: j.data });
       } catch (e) { return J({ errore: "DJI non risponde: riprova tra poco" }, 502); }
     }
@@ -737,6 +806,7 @@ export class Stato extends DurableObject {
       if (!adm && info.da !== me.n) return J({ errore: "Non è tua" }, 403);
       if (!this.env.ANTHROPIC_API_KEY) return J({ errore: "chiave" }, 503);
       if (!/^image\/(jpeg|png|webp)$/.test(info.mime)) return J({ errore: "Serve una foto JPEG o PNG" }, 415);
+      { const no = await limiteClaude(); if (no) return no; }
       const parti = []; for (let i = 0; i < info.pezzi; i++) parti.push(new Uint8Array(await st.get("doc:" + b.id + ":" + i)));
       const tutto = new Uint8Array(info.size); let o = 0; for (const x of parti) { tutto.set(x, o); o += x.length; }
       const m = await leggiMain(), droni = ((m && m.d.DRONI) || []).map(x => x.nome).join("; ");
@@ -750,15 +820,15 @@ export class Stato extends DurableObject {
       const d = m.d, dr = (d.DRONI || []).find(x => x.nome === b.drone);
       if (!dr) return J({ errore: "Scegli il drone" }, 400);
       const foto = [];
-      for (const f of (Array.isArray(b.foto) ? b.foto : []).slice(0, 8)) { const info = await st.get("docinfo:" + f); if (info && (adm || info.da === me.n)) foto.push(esc(f, 40)); }
-      const x = { id: now * 10 + Math.floor(Math.random() * 10), at: now, data: DATA(b.data) || oggi(), ora: /^\d{2}:\d{2}$/.test(b.ora || "") ? b.ora : "", pilota: adm && b.pilota ? esc(b.pilota, 80) : me.n,
-        drone: dr.nome, tipo: b.tipo, feriti: !!b.feriti, danni: !!b.danni, testo: esc(b.testo, 2000), luogo: esc(b.luogo, 160), foto, volo: esc(b.volo, 20), fermo: true, stato: "aperta", eccairs: "" };
+      for (const f of (Array.isArray(b.foto) ? b.foto : []).slice(0, 8)) { if (typeof f !== "string") continue; const info = await st.get("docinfo:" + f); if (info && (adm || info.da === me.n)) foto.push(TX(f, 40)); }
+      const x = { id: now * 10 + Math.floor(Math.random() * 10), at: now, data: DATA(b.data) || oggi(), ora: /^\d{2}:\d{2}$/.test(b.ora || "") ? b.ora : "", pilota: adm && b.pilota ? TX(b.pilota, 80) : me.n,
+        drone: dr.nome, tipo: b.tipo, feriti: !!b.feriti, danni: !!b.danni, testo: TX(b.testo, 2000, true), luogo: TX(b.luogo, 160), foto, volo: TX(b.volo, 20), fermo: true, stato: "aperta", eccairs: "" };
       x.liv = livSegn(x);
       d.SEGN = d.SEGN || []; d.SEGN.unshift(x); d.SEGN = d.SEGN.slice(0, 500);
       await scriviMain(d, m.row.ver + 1);
-      // mail subito all'Admin
+      // mail subito all'Admin (non nella versione di prova: lì le email sono spente)
       const A = (d.AVVISI || {}).adm || {};
-      if (A.email && A.on !== false) {
+      if (!PROVA && EMAIL(A.email) && A.on !== false) {
         const txt = x.liv === "grave" ? "Incidente grave: avvisare subito ANSV e segnalare a ENAC su ECCAIRS 2 entro 72 ore." : x.liv === "enac" ? "Da segnalare a ENAC su ECCAIRS 2 entro 72 ore." : "Segnalazione facoltativa a ENAC, consigliata se riguarda la sicurezza.";
         const html = `<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;color:#0F1C26;font-size:15px;line-height:1.45"><div style="border-bottom:2px solid #132A3A;padding-bottom:10px;margin-bottom:14px;font-size:20px;font-weight:bold;color:#132A3A">Quota 120</div>
           <div style="background:${x.liv === "grave" ? "#AE2F28" : "#A5660A"};color:#fff;border-radius:8px;padding:10px 14px;font-weight:bold">${esc(txt)}</div>
@@ -771,12 +841,14 @@ export class Stato extends DurableObject {
     // codice di invio personale (per il comando rapido) e voli arrivati dal telefono
     if (p === "/api/cal/codice") {
       let tk = await st.get("cal:di:" + me.n);
+      // il calendario «di tutti» (adm) solo a un telefono dell'Admin: un codice salvato con un altro ruolo non si riusa
+      if (tk) { const r0 = await st.get("cal:" + tk); if (!r0 || !!r0.adm !== !!adm) tk = null; }
       if (!tk || url.searchParams.get("nuovo") === "1") { if (tk) await st.delete("cal:" + tk); tk = crypto.randomUUID().replace(/-/g, ""); await st.put("cal:" + tk, { n: me.n, adm: !!adm }); await st.put("cal:di:" + me.n, tk); }
       return J({ codice: tk });
     }
     if (p === "/api/invio/codice") {
       let tk = await st.get("invio:di:" + me.n);
-      if (!tk || url.searchParams.get("nuovo") === "1") { if (tk) await st.delete("invio:" + tk); tk = crypto.randomUUID().replace(/-/g, ""); await st.put("invio:" + tk, { n: me.n }); await st.put("invio:di:" + me.n, tk); }
+      if (!tk || url.searchParams.get("nuovo") === "1") { if (tk) await st.delete("invio:" + tk); tk = crypto.randomUUID().replace(/-/g, ""); await st.put("invio:" + tk, { n: me.n, adm: !!adm }); await st.put("invio:di:" + me.n, tk); }
       return J({ codice: tk, ultimo: (await st.get("invio:ultimo:" + me.n)) || null });
     }
     if (p === "/api/arrivi" && request.method === "GET") {
@@ -784,7 +856,7 @@ export class Stato extends DurableObject {
       return J({ arrivi: L.filter(x => adm || x.da === me.n) });
     }
     if (p === "/api/arrivi" && request.method === "POST") {   // file arrivati da Android (Condividi › Quota 120) o dal telefono
-      const nome = esc(decodeURIComponent(request.headers.get("x-nome") || "volo.txt"), 120), buf = await request.arrayBuffer();
+      const nome = TX(dec(request.headers.get("x-nome") || "") || "volo.txt", 120), buf = await request.arrayBuffer();
       if (!buf.byteLength || buf.byteLength > 30 * 1024 * 1024) return J({ errore: "File non valido" }, 400);
       const k1 = "arrivo:" + me.n + ":" + nome + ":" + buf.byteLength;
       if (await st.get(k1)) return J({ ok: true, gia: true });
@@ -792,7 +864,8 @@ export class Stato extends DurableObject {
       for (let i = 0; i < pezzi; i++) await st.put("doc:" + did + ":" + i, buf.slice(i * PEZZO, (i + 1) * PEZZO));
       await st.put("docinfo:" + did, { mime: "text/plain", pezzi, size: buf.byteLength, nome, da: me.n, at: now, confermato: false });
       await st.put(k1, did);
-      const L = (await st.get("arrivi")) || []; L.push({ id: did, nome, size: buf.byteLength, da: me.n, at: now, via: esc(request.headers.get("x-via") || "Android", 20) }); await st.put("arrivi", L.slice(-300));
+      const L = (await st.get("arrivi")) || []; L.push({ id: did, nome, size: buf.byteLength, da: me.n, at: now, via: TX(request.headers.get("x-via") || "Android", 20) }); await st.put("arrivi", L.slice(-300));
+      if (L.length > 300) await togliSeLiberi(L.slice(0, L.length - 300).map(x => x.id));   // quelli usciti dall'elenco: via i file non usati
       return J({ ok: true, id: did });
     }
     // lettura automatica: chi apre Quota 120 «prende» i voli arrivati (uno alla volta, nessun doppione tra due telefoni aperti insieme)
@@ -806,7 +879,7 @@ export class Stato extends DurableObject {
     if (p === "/api/arrivi/sistemare" && request.method === "POST") {
       let b; try { b = await request.json(); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
       const L = (await st.get("arrivi")) || [], x = L.find(y => y.id === b.id && (adm || y.da === me.n));
-      if (x) { x.sist = esc(b.motivo || "da controllare", 200); x.presa = 0; if (b.info && typeof b.info === "object") x.info = { data: esc(b.info.data, 10), ora: esc(b.info.ora, 5), drone: esc(b.info.drone, 80) }; await st.put("arrivi", L); }
+      if (x) { x.sist = TX(b.motivo || "da controllare", 200); x.presa = 0; if (b.info && typeof b.info === "object") x.info = { data: TX(b.info.data, 10), ora: TX(b.info.ora, 5), drone: TX(b.info.drone, 80) }; await st.put("arrivi", L); }
       return J({ ok: true });
     }
     if (p === "/api/arrivi/libera" && request.method === "POST") {
@@ -818,35 +891,47 @@ export class Stato extends DurableObject {
     if (p === "/api/arrivi/letti" && request.method === "POST") {
       let b; try { b = await request.json(); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
       const ids = new Set(Array.isArray(b.ids) ? b.ids : []), L = (await st.get("arrivi")) || [];
-      await st.put("arrivi", L.filter(x => !(ids.has(x.id) && (adm || x.da === me.n))));
+      const via = L.filter(x => ids.has(x.id) && (adm || x.da === me.n));
+      await st.put("arrivi", L.filter(x => !via.includes(x)));
+      await togliSeLiberi(via.map(x => x.id));   // il file resta solo se un volo lo usa (registro allegato)
       return J({ ok: true });
     }
+    // zone salvate: null = non caricate, false = file rovinato, altrimenti l'elenco (tenuto anche in this.ZC)
+    const leggiZone = async () => {
+      if (this.ZC) return this.ZC;
+      const gen = await st.get("zone:gen"), n = gen ? gen.n : +(await st.get("zone:n")) || 0; if (!n) return null;
+      let t = ""; for (let i = 0; i < n; i++) t += (await st.get(gen ? "zone:" + gen.g + ":" + i : "zone:" + i)) || "";
+      try { this.ZC = JSON.parse(t); return this.ZC; } catch (e) { console.error("zone rovinate:", e); return false; }
+    };
+    const ZONE_ROTTE = () => J({ errore: "Le zone di volo salvate non si leggono: l'Admin le deve caricare di nuovo (Pannello Admin › Zone di volo)." }, 500);
     if (p === "/api/zone/carica" && request.method === "POST") {
       if (!adm) return J({ errore: "Solo l'Admin può caricare le zone" }, 403);
       const txt = await request.text(); if (txt.length > 40e6) return J({ errore: "File troppo grande" }, 413);
       let b; try { b = JSON.parse(txt); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
       const Z = Array.isArray(b.zone) ? b.zone : []; if (!Z.length) return J({ errore: "Nel file non ho trovato zone" }, 400);
-      const tutto = JSON.stringify(Z), PEZ = 1500000, n = Math.ceil(tutto.length / PEZ), vecchi = +(await st.get("zone:n")) || 0;
-      for (let i = 0; i < n; i++) await st.put("zone:" + i, tutto.slice(i * PEZ, (i + 1) * PEZ));
-      for (let i = n; i < vecchi; i++) await st.delete("zone:" + i);
-      await st.put("zone:n", n); this.ZC = Z;
+      // i pezzi nuovi vanno sotto una «generazione» nuova; il puntatore zone:gen cambia per ultimo, poi si tolgono i vecchi
       const m = await leggiMain(); if (!m) return J({ errore: "Nessun dato" }, 409);
+      const tutto = JSON.stringify(Z), PEZ = 500000, n = Math.ceil(tutto.length / PEZ), prima = await st.get("zone:gen"), g = rnd(4);
+      for (let i = 0; i < n; i++) await st.put("zone:" + g + ":" + i, tutto.slice(i * PEZ, (i + 1) * PEZ));
+      await st.put("zone:gen", { g, n }); this.ZC = Z;
+      if (prima && prima.g) for (let i = 0; i < prima.n; i++) await st.delete("zone:" + prima.g + ":" + i);
+      const vecchi = +(await st.get("zone:n")) || 0; for (let i = 0; i < vecchi; i++) await st.delete("zone:" + i); if (vecchi) await st.delete("zone:n");
       const scade = new Date(Date.now() + 28 * 864e5), ds = String(scade.getUTCDate()).padStart(2, "0") + "/" + String(scade.getUTCMonth() + 1).padStart(2, "0") + "/" + scade.getUTCFullYear();
-      m.d.ZONEINFO = { data: oggiRoma().data, n: Z.length, file: esc(b.file, 120), scade: ds };
+      m.d.ZONEINFO = { data: oggiRoma().data, n: Z.length, file: TX(b.file, 120), scade: ds };
       await scriviMain(m.d, m.row.ver + 1);
       return J({ ok: true, info: m.d.ZONEINFO, ver: m.row.ver + 1 });
     }
     if (p === "/api/zone/area") {   // le zone intorno a un punto (circa 50 km), da tenere sul telefono per lavorare senza rete
       const lat = +url.searchParams.get("lat"), lon = +url.searchParams.get("lon");
       if (!isFinite(lat) || !isFinite(lon)) return J({ errore: "Posizione non valida" }, 400);
-      if (!this.ZC) { const n = +(await st.get("zone:n")) || 0; if (!n) return J({ zone: [] }); let t = ""; for (let i = 0; i < n; i++) t += (await st.get("zone:" + i)) || ""; try { this.ZC = JSON.parse(t); } catch (e) { return J({ zone: [] }); } }
+      const zc = await leggiZone(); if (zc === null) return J({ zone: [] }); if (zc === false) return ZONE_ROTTE();
       const dl = 0.45, dn = dl / Math.cos(lat * Math.PI / 180);
       return J({ zone: this.ZC.filter(z => { const b = z.b; return !b || !(b[2] < lat - dl || b[0] > lat + dl || b[3] < lon - dn || b[1] > lon + dn); }).slice(0, 4000) });
     }
     if (p === "/api/zone") {
       const lat = +url.searchParams.get("lat"), lon = +url.searchParams.get("lon");
       if (!isFinite(lat) || !isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) return J({ errore: "Posizione non valida" }, 400);
-      if (!this.ZC) { const n = +(await st.get("zone:n")) || 0; if (!n) return J({ nessuna: true }); let t = ""; for (let i = 0; i < n; i++) t += (await st.get("zone:" + i)) || ""; try { this.ZC = JSON.parse(t); } catch (e) { return J({ nessuna: true }); } }
+      const zc = await leggiZone(); if (zc === null) return J({ nessuna: true }); if (zc === false) return ZONE_ROTTE();
       return J(controllaZone(this.ZC, lat, lon));
     }
     if (p === "/api/volo/elimina" && request.method === "POST") {
@@ -857,6 +942,7 @@ export class Stato extends DurableObject {
       if (!v) return J({ errore: "Volo non trovato" }, 404);
       togliVolo(d, v); d.VOLI.splice(d.VOLI.indexOf(v), 1); await st.delete("trk:" + v.id);
       await scriviMain(d, m.row.ver + 1);
+      await togliSeLiberi([v.docLog, v.fotoDoc], d);   // i file del volo, se non li usa nient'altro
       return J({ ok: true, ver: m.row.ver + 1 });
     }
     if (p === "/api/volo/importa" && request.method === "POST") {
@@ -867,17 +953,19 @@ export class Stato extends DurableObject {
       if (!(d.PILOTI || []).some(x => x.nome === pilota)) return J({ errore: "Scegli il pilota" }, 400);
       if (!(d.DRONI || []).some(x => x.nome === v0.drone)) return J({ errore: "Scegli il drone" }, 400);
       const L = pulisciLetto(Object.assign({}, v0, { letto: true }));
+      L.fotoDoc = "";   // la foto allegata la mette solo il server (qui sotto, quando completa un volo caricato con la foto)
       if (L.batt && !(d.BATT || []).some(x => x.id === L.batt)) L.batt = "";
       if (v0.codLav && !v0.cliente) { const lw = (d.LAVORI || []).find(x => norm(x.codice).replace(/\s/g, "") === norm(v0.codLav).replace(/\s/g, "")); if (lw) { v0.cliente = lw.cliente + ": " + String(lw.titolo || "").toLowerCase(); if (!v0.luogo) v0.luogo = lw.luogo; } }
-      if (L.daFoto) L.logKey = "foto|" + esc(v0.drone, 80) + "|" + (DATA(v0.data) || "") + "|" + esc(v0.ora, 5);
+      if (L.daFoto) L.logKey = "foto|" + TX(v0.drone, 80) + "|" + (DATA(v0.data) || "") + "|" + TX(v0.ora, 5);
       if (L.logKey && (d.VOLI || []).some(x => x.logKey === L.logKey)) return J({ errore: "doppio" }, 409);
       // la stessa foto (o un'altra foto dello stesso volo) caricata due volte: non si conta due volte
       if (L.daFoto && (d.VOLI || []).some(x => x.daFoto && x.pilota === pilota && x.drone === v0.drone && x.data === (DATA(v0.data) || oggi()) && x.ora === v0.ora)) return J({ errore: "doppio" }, 409);
+      if (typeof b.docLog !== "string") b.docLog = "";
       if (b.docLog) { const info = await st.get("docinfo:" + b.docLog); if (!info || (!adm && info.da !== me.n)) b.docLog = ""; }
       const v = Object.assign({ id: Date.now() * 10 + Math.floor(Math.random() * 10), data: DATA(v0.data) || oggi(), ora: /^\d{2}:\d{2}$/.test(v0.ora || "") ? v0.ora : "00:00",
-        drone: v0.drone, pilota, luogo: esc(v0.luogo, 120), min: NUM(v0.min, 0, 600), stato: "completo", ctrl: !!v0.ctrl, ctrlOra: esc(v0.ctrlOra, 5),
-        cliente: esc(v0.cliente, 200), codLav: esc(v0.codLav, 20), note: esc(v0.note, 2000), importato: true, amano: false, cat: esc(v0.cat, 60), inc: "Nessuno",
-        docLog: esc(b.docLog, 40), logNome: esc(v0.logNome, 120) }, L);
+        drone: v0.drone, pilota, luogo: TX(v0.luogo, 120), min: NUM(v0.min, 0, 600), stato: "completo", ctrl: !!v0.ctrl, ctrlOra: TX(v0.ctrlOra, 5),
+        cliente: TX(v0.cliente, 200), codLav: TX(v0.codLav, 20), note: TX(v0.note, 2000, true), importato: true, amano: false, cat: TX(v0.cat, 60), inc: "Nessuno",
+        docLog: TX(b.docLog, 40), logNome: TX(v0.logNome, 120) }, L);
       // il percorso GPS sta a parte (pesa troppo per stare nei dati di tutti)
       const trk = v.trk; delete v.trk; v.haTrk = trk.length > 1;
       d.VOLI = d.VOLI || [];
@@ -918,11 +1006,35 @@ export class Stato extends DurableObject {
         const txt = await request.text();
         if (txt.length > 1800000) return J({ errore: "Troppi dati" }, 413);
         let b; try { b = JSON.parse(txt); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
+        if (!b || typeof b !== "object" || (b.data != null && (typeof b.data !== "object" || Array.isArray(b.data)))) return J({ errore: "Dati non validi" }, 400);
         // l'Admin riscrive tutto, quindi deve avere l'ultima versione; il pilota manda solo le sue cose (unisci), anche se ha lavorato senza rete
         if (b.ver !== row.ver && adm) return J({ ver: row.ver, data: m.d }, 409);
-        const nd = adm ? Object.assign({}, b.data || {}, { DOCS: m.d.DOCS || [], ZONEINFO: m.d.ZONEINFO || null }) : unisci(m.d, b.data || {}, me.n);
+        let nd, avviso = "", salto = b.ver !== row.ver;
+        if (adm) {
+          nd = Object.assign({}, b.data || {}, { DOCS: m.d.DOCS || [], ZONEINFO: m.d.ZONEINFO || null });
+          // i piloti si riconoscono dal nome: niente «Admin» e niente nomi doppi (quelli già salvati prima restano, per non bloccare i salvataggi)
+          const sbagliati = L => { const visti = new Set(), out = new Set(); for (const q of LISTA(L)) { const k = norm(q && q.nome); if (!k) continue; if (k === "admin" || visti.has(k)) out.add(k); visti.add(k); } return out; };
+          const primaS = sbagliati(m.d.PILOTI), oraS = [...sbagliati(nd.PILOTI)].filter(k => !primaS.has(k));
+          if (oraS.length) return J({ errore: oraS[0] === "admin" ? "Un pilota non si può chiamare «Admin»: scrivi il suo nome e cognome." : "Ci sono due piloti con lo stesso nome: aggiungi qualcosa per distinguerli (per esempio il secondo nome)." }, 400);
+          // piloti tolti o rinominati: via i loro codici del calendario e dell'invio dei voli
+          const nuovi = new Set(LISTA(nd.PILOTI).map(q => q && q.nome));
+          for (const q of LISTA(m.d.PILOTI)) if (q && q.nome && !nuovi.has(q.nome)) await togliCodici(q.nome);
+          // versione di prova: niente email per gli avvisi (chiunque è Admin, non deve poter mandare mail a chi vuole)
+          if (PROVA && nd.AVVISI && typeof nd.AVVISI === "object") {
+            const A = nd.AVVISI, ha = (A.adm && A.adm.email) || Object.values(A.piloti || {}).some(x => x && x.email);
+            if (ha) { nd.AVVISI = Object.assign({}, A, { adm: Object.assign({}, A.adm, { email: "" }), piloti: Object.fromEntries(Object.entries(A.piloti || {}).map(([k3, x]) => [k3, Object.assign({}, x, { email: "" })])) });
+              avviso = "Nella versione di prova gli avvisi via email sono spenti: l'email non è stata salvata."; salto = true; }
+          }
+        } else {
+          if (b.data && b.data.VOLI != null && !Array.isArray(b.data.VOLI)) return J({ errore: "Dati non validi" }, 400);
+          // i registri che il pilota allega a un volo: solo file caricati da lui
+          const docOk = new Set(), conDoc = new Set((m.d.VOLI || []).filter(v => v.docLog).map(v => String(v.id)));
+          for (const v of LISTA((b.data || {}).VOLI).slice(0, 2000)) { const x = v && typeof v.docLog === "string" && !conDoc.has(String(v.id)) ? v.docLog.slice(0, 40) : "";
+            if (x && !docOk.has(x) && docOk.size < 50) { const info = await st.get("docinfo:" + x); if (info && info.da === me.n) docOk.add(x); } }
+          nd = unisci(m.d, b.data || {}, me.n, docOk);
+        }
         await scriviMain(nd, row.ver + 1);
-        return J({ ver: row.ver + 1, salto: b.ver !== row.ver });
+        return J(Object.assign({ ver: row.ver + 1, salto }, avviso ? { avviso } : {}));
       }
     }
 
@@ -935,21 +1047,27 @@ export class Stato extends DurableObject {
       if (buf.byteLength > MAXDOC) return J({ errore: "Il file supera i 10 MB" }, 413);
       const did = "d" + now.toString(36) + rnd(3), pezzi = Math.ceil(buf.byteLength / PEZZO);
       for (let i = 0; i < pezzi; i++) await st.put("doc:" + did + ":" + i, buf.slice(i * PEZZO, (i + 1) * PEZZO));
-      const nome = esc(decodeURIComponent(request.headers.get("x-nome") || "documento"), 120);
+      const nome = TX(dec(request.headers.get("x-nome") || "") || "documento", 120);
       await st.put("docinfo:" + did, { mime, pezzi, size: buf.byteLength, nome, da: me.n, at: now, confermato: false });
       return J({ id: did, nome, size: buf.byteLength });
     }
     // manda un documento (es. la valutazione del rischio in PDF) per email, con l'allegato; la risposta arriva all'operatore
     if (p === "/api/doc/invia" && request.method === "POST") {
+      if (PROVA) return SPENTA_PROVA();
       let b; try { b = await request.json(); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
       const info = await st.get("docinfo:" + b.d); if (!info) return J({ errore: "Documento non trovato" }, 404);
       if (!adm && info.da !== me.n) return J({ errore: "Non puoi mandarlo" }, 403);
       const a = String(b.a || "").trim(); if (!EMAIL(a)) return J({ errore: "Indirizzo email non valido" }, 400);
+      // al massimo 30 invii al giorno per spazio e 10 per telefono (giorno UTC)
+      const g = giornoUTC(), cnt0 = (await st.get("invia:giorno")) || {}, cnt = cnt0.g === g ? cnt0 : { g, n: 0, disp: {} };
+      if (cnt.n >= 30) return J({ errore: "Oggi sono già stati mandati 30 documenti per email da questo spazio: riprova domani." }, 429);
+      if ((cnt.disp[id] || 0) >= 10) return J({ errore: "Oggi hai già mandato 10 documenti per email da questo telefono: riprova domani." }, 429);
+      cnt.n++; cnt.disp[id] = (cnt.disp[id] || 0) + 1; await st.put("invia:giorno", cnt);
       const parti = []; for (let i = 0; i < info.pezzi; i++) parti.push(await st.get("doc:" + b.d + ":" + i));
       const buf = await new Blob(parti).arrayBuffer(), m = await leggiMain(), op = m ? String((m.d.OP || {}).nome || "").replace(/ \(dati di esempio\)/, "") : "";
       const testo = esc(String(b.testo || "").slice(0, 2000), 2000).replace(/\n/g, "<br>");
       const html = `<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;color:#0F1C26;font-size:15px;line-height:1.5">${testo}<p style="font-size:12.5px;color:#5E6D77;margin-top:18px;border-top:1px solid #E3E8EB;padding-top:10px">Inviato da ${esc(op || "l'operatore", 120)} con Quota 120. In allegato: ${esc(info.nome, 120)}.</p></div>`;
-      try { await mandaMail(this.env, a, esc(String(b.oggetto || info.nome), 160), html, [{ nome: info.nome, b64: b64(buf) }], m && EMAIL((m.d.OP || {}).email) ? m.d.OP.email : null); }
+      try { await mandaMail(this.env, a, TX(b.oggetto || info.nome, 160), html, [{ nome: info.nome, b64: b64(buf) }], m && EMAIL((m.d.OP || {}).email) ? m.d.OP.email : null); }
       catch (e) { return J({ errore: String(e.message || e).replace(/^posta:/, "La posta non è pronta: ").slice(0, 300) }, 502); }
       return J({ ok: true });
     }
@@ -960,11 +1078,18 @@ export class Stato extends DurableObject {
       if (!this.env.ANTHROPIC_API_KEY) return J({ errore: "chiave" }, 503);
       if (info.mime === "image/heic") return J({ errore: "heic" }, 415);
       if (info.mime === "text/plain") return J({ errore: "Il registro di volo non si legge come documento" }, 415);
+      { const no = await limiteClaude(); if (no) return no; }
       const parti = []; for (let i = 0; i < info.pezzi; i++) parti.push(new Uint8Array(await st.get("doc:" + b.id + ":" + i)));
       const tutto = new Uint8Array(info.size); let o = 0; for (const x of parti) { tutto.set(x, o); o += x.length; }
       const m = await leggiMain();
-      try { const letto = await leggiConClaude(this.env, b64(tutto.buffer), info.mime, m ? m.d : {}); return J({ letto }); }
+      let letto; try { letto = await leggiConClaude(this.env, b64(tutto.buffer), info.mime, m ? m.d : {}); }
       catch (e) { return J({ errore: String(e.message || e) }, 502); }
+      // quello che ha letto Claude resta col file: alla conferma si confronta con quello che manda il telefono
+      const ld = (letto && letto.dest) || {}, lx = (letto && letto.dati) || {};
+      info.claude = { tipo: TX(letto && letto.tipo, 120), dest: { k: TX(ld.k, 20), id: ld.id == null ? null : +ld.id, voce: TX(ld.voce, 30) },
+        dati: { numero: TX(lx.numero, 60), rilascio: DATA(lx.rilascio), scadenza: DATA(lx.scadenza) }, il: now };
+      await st.put("docinfo:" + b.id, info);
+      return J({ letto });
     }
     if (p === "/api/doc/conferma" && request.method === "POST") {
       let b; try { b = await request.json(); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
@@ -974,13 +1099,38 @@ export class Stato extends DurableObject {
       const d = m.d, dest = b.dest || {};
       const k2 = ["pilota", "drone", "operatore", "altro"].includes(dest.k) ? dest.k : "altro";
       if (!adm) { const mio = pilotaDi(d, me.n); if (!(k2 === "pilota" && mio && +dest.id === mio.id)) return J({ errore: "Puoi caricare solo i tuoi documenti" }, 403); }
-      const cat = {}; for (const [c, arr] of Object.entries(b.categorie || {}).slice(0, 20)) cat[esc(c, 60)] = (arr || []).slice(0, 40).map(r => [esc(r[0], 80), esc(r[1], 300)]);
-      const dati = { numero: esc((b.dati || {}).numero, 60), rilascio: DATA((b.dati || {}).rilascio), scadenza: DATA((b.dati || {}).scadenza) };
-      const doc = { id: b.id, nome: info.nome, mime: info.mime, tipo: esc(b.tipo, 120) || "Documento", dest: { k: k2, id: dest.id == null ? null : +dest.id, voce: esc(dest.voce, 30) },
+      const cat = {}; for (const [c, arr] of Object.entries(b.categorie || {}).slice(0, 20)) cat[TX(c, 60)] = LISTA(arr).slice(0, 40).map(r => Array.isArray(r) ? [TX(r[0], 80), TX(r[1], 300)] : ["", TX(r, 300)]);
+      const dati = { numero: TX((b.dati || {}).numero, 60), rilascio: DATA((b.dati || {}).rilascio), scadenza: DATA((b.dati || {}).scadenza) };
+      const doc = { id: b.id, nome: info.nome, mime: info.mime, tipo: TX(b.tipo, 120) || "Documento", dest: { k: k2, id: dest.id == null ? null : +dest.id, voce: TX(dest.voce, 30) },
         dati, categorie: cat, data: oggi(), da: me.n };
+      // attestati e patentino caricati dal pilota: restano «da approvare» finché l'Admin non li conferma (/api/doc/approva)
+      const daApprovare = !adm && k2 === "pilota" && ["A1-A3", "A2", "STS-01", "patentino"].includes(doc.dest.voce);
+      if (daApprovare) {
+        const c = info.claude || null;
+        doc.daApprovare = true;
+        // cosa aveva letto Claude, e se il pilota ha cambiato voce, numero o date (l'Admin lo vede prima di approvare)
+        doc.claude = c ? { voce: c.dest.voce, numero: c.dati.numero, rilascio: c.dati.rilascio, scadenza: c.dati.scadenza } : null;
+        doc.diverso = !c || c.dest.voce !== doc.dest.voce || c.dati.numero !== dati.numero || c.dati.rilascio !== dati.rilascio || c.dati.scadenza !== dati.scadenza;
+      }
       d.DOCS = (d.DOCS || []).filter(x => x.id !== b.id); d.DOCS.unshift(doc);
-      applicaDoc(d, doc);
+      if (!daApprovare) applicaDoc(d, doc);
       info.confermato = true; await st.put("docinfo:" + b.id, info);
+      await scriviMain(d, m.row.ver + 1);
+      return J(Object.assign({ ok: true, ver: m.row.ver + 1 }, daApprovare ? { daApprovare: true } : {}));
+    }
+    // l'Admin approva (ok: true) o rifiuta (ok: false) un attestato caricato da un pilota
+    if (p === "/api/doc/approva" && request.method === "POST") {
+      if (!adm) return J({ errore: "Solo l'Admin" }, 403);
+      let b; try { b = await request.json(); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
+      const m = await leggiMain(); if (!m) return J({ errore: "Nessun dato" }, 409);
+      const d = m.d, doc = (d.DOCS || []).find(x => x.id === b.id && x.daApprovare);
+      if (!doc) return J({ errore: "Documento non trovato o già sistemato" }, 404);
+      delete doc.daApprovare;
+      if (b.ok) {
+        // l'Admin può correggere i dati prima di approvare
+        if (b.dati && typeof b.dati === "object") doc.dati = { numero: TX(b.dati.numero, 60) || doc.dati.numero, rilascio: DATA(b.dati.rilascio) || doc.dati.rilascio, scadenza: DATA(b.dati.scadenza) || doc.dati.scadenza };
+        doc.approvato = oggi(); applicaDoc(d, doc);
+      } else doc.rifiutato = oggi();
       await scriviMain(d, m.row.ver + 1);
       return J({ ok: true, ver: m.row.ver + 1 });
     }
@@ -1001,7 +1151,8 @@ Stato.prototype.avvisi = async function (prova, origine) {
   const st = this.ctx.storage, row = await st.get("main"); if (!row) return { ok: false, motivo: "nessun dato" };
   const d = JSON.parse(row.json), A = d.AVVISI || {}, oggi = oggiRoma();
   if (!prova) {
-    if ((+A.ora || 7) !== oggi.ora) return { ok: true, saltato: "non è l'ora" };
+    const ora = A.ora == null || A.ora === "" || !Number.isFinite(+A.ora) ? 7 : +A.ora;   // anche mezzanotte (0) è un'ora valida
+    if (ora !== oggi.ora) return { ok: true, saltato: "non è l'ora" };
     if ((await st.get("avvisi:giorno")) === oggi.data) return { ok: true, saltato: "già fatto oggi" };
     await st.put("avvisi:giorno", oggi.data);
   }
@@ -1024,19 +1175,22 @@ Stato.prototype.avvisi = async function (prova, origine) {
   const nomeOp = String((d.OP || {}).nome || "").replace(/ \(dati di esempio\)/, ""), url = (await st.get("origine")) || origine || "", esiti = [];
   const adm = A.adm || {};
   if (prova && !EMAIL(adm.email)) throw new Error("Scrivi prima la tua email e salva");
+  // nell'invio programmato una mail che non parte non ferma le altre (e le scadenze restano segnate come mandate); nella prova l'errore torna all'Admin
+  const manda = async (a, ogg, html) => { if (prova) { await mandaMail(this.env, a, ogg, html); esiti.push(a); return; }
+    try { await mandaMail(this.env, a, ogg, html); esiti.push(a); } catch (e) { console.error("avviso non mandato a " + a + ":", e && e.message || e); errori.push(a); } };
+  const errori = [];
   if (adm.on !== false && EMAIL(adm.email) && (righe.length || prova)) {
     const ogg = prova ? "Prova degli avvisi di Quota 120" : pl0(righe.length, "scadenza in arrivo", "scadenze in arrivo") + (nomeOp ? " · " + nomeOp : "");
-    await mandaMail(this.env, adm.email.trim(), ogg, righe.length ? mailHtml(nomeOp, righe, true, url) : mailHtml(nomeOp, [{ t: "Nessuna scadenza in arrivo", s: "Gli avvisi funzionano: quando qualcosa starà per scadere riceverai una mail come questa.", g: null }], true, url));
-    esiti.push(adm.email.trim());
+    await manda(adm.email.trim(), ogg, righe.length ? mailHtml(nomeOp, righe, true, url) : mailHtml(nomeOp, [{ t: "Nessuna scadenza in arrivo", s: "Gli avvisi funzionano: quando qualcosa starà per scadere riceverai una mail come questa.", g: null }], true, url));
   }
   if (!prova) for (const p of d.PILOTI || []) {
     const c = (A.piloti || {})[p.id] || {}, pe = ((d.SCHEDEP || {})[p.id] || {}).email || "", em = EMAIL(c.email) ? c.email : pe, on = c.on !== undefined ? !!c.on : !!pe;
     if (!on || !EMAIL(em)) continue;
     const mie = righe.filter(r => r.pid === p.id); if (!mie.length) continue;
-    await mandaMail(this.env, em.trim(), pl0(mie.length, "tua scadenza in arrivo", "tue scadenze in arrivo"), mailHtml(nomeOp, mie, false, url)); esiti.push(em.trim());
+    await manda(em.trim(), pl0(mie.length, "tua scadenza in arrivo", "tue scadenze in arrivo"), mailHtml(nomeOp, mie, false, url));
   }
   if (nuovi.length) { for (const k of nuovi) inviati[k] = oggi.data; await st.put("avvisi:inviati", inviati); }
-  return { ok: true, mandate: esiti, righe: righe.length };
+  return Object.assign({ ok: true, mandate: esiti, righe: righe.length }, errori.length ? { nonMandate: errori } : {});
 };
 const pl0 = (n, s, p) => n + " " + (n === 1 ? s : p);
 
@@ -1124,7 +1278,7 @@ Stato.prototype.registro = async function (request, url, p) {
   if (p === "/api/registro/iscrivi" && POST) {
     if (await troppi("lim:isc:" + ip, 6, 86400000)) return J({ errore: "Troppe iscrizioni da questa rete oggi: riprova domani" }, 429);
     const b = await corpo(), email = mail(b);
-    const nomeOp = esc(String(b.op || "").replace(/\s+/g, " ").trim(), 80), nome = esc(String(b.nome || "").replace(/\s+/g, " ").trim(), 80), df = esc(String(b.df || "").trim(), 40);
+    const nomeOp = TX(String(b.op || "").replace(/\s+/g, " ").trim(), 80), nome = TX(String(b.nome || "").replace(/\s+/g, " ").trim(), 80), df = TX(String(b.df || "").trim(), 40);
     if (nomeOp.length < 2) return J({ errore: "Scrivi il nome dell'operatore." }, 400);
     if (nome.length < 3) return J({ errore: "Scrivi il tuo nome e cognome." }, 400);
     if (!EMAIL(email)) return J({ errore: "L'email non sembra giusta: controllala." }, 400);
@@ -1172,16 +1326,21 @@ Stato.prototype.registro = async function (request, url, p) {
 
 export default {
   async scheduled(evento, env, ctx) {
+    // versione di prova: niente avvisi via email (li salta anche lo spazio), solo la pulizia dei file
     const main = env.STATO.get(env.STATO.idFromName("main"));
-    ctx.waitUntil(main.fetch("https://quota120.interno/interno/avvisi").catch(() => {}));
-    // gli avvisi di ogni spazio
+    ctx.waitUntil(main.fetch("https://quota120.interno/interno/pulizia").catch(() => {}));
+    // gli avvisi di ogni spazio, e la pulizia dei file mai usati (una volta al giorno)
     ctx.waitUntil((async () => {
       const L = await env.STATO.get(env.STATO.idFromName("registro")).fetch("https://quota120.interno/interno/elenco").then(r => r.json()).catch(() => []);
-      for (const op of L) await env.STATO.get(env.STATO.idFromName("op:" + op)).fetch("https://quota120.interno/interno/avvisi", { headers: { "x-q120-op": op } }).catch(() => {});
+      for (const op of L) { const s = env.STATO.get(env.STATO.idFromName("op:" + op));
+        await s.fetch("https://quota120.interno/interno/avvisi", { headers: { "x-q120-op": op } }).catch(() => {});
+        await s.fetch("https://quota120.interno/interno/pulizia", { headers: { "x-q120-op": op } }).catch(() => {}); }
     })());
   },
   async fetch(request, env) {
-    const r = await this.smista(request, env);
+    let r;
+    try { r = await this.smista(request, env); }
+    catch (e) { console.error("smista:", e && e.stack || e); return J({ errore: "Errore interno" }, 500); }
     // quota120.com: intestazioni di sicurezza su tutte le risposte del sito
     const h = (env.POSTA_FINTA === "1" && request.headers.get("x-prova-host")) || new URL(request.url).hostname;
     if (h !== "quota120.com" || r.status === 101) return r;
@@ -1199,6 +1358,8 @@ export default {
     const host = (env.POSTA_FINTA === "1" && request.headers.get("x-prova-host")) || url.hostname;   // l'intestazione vale solo nelle prove in locale
     if (host === "www.quota120.com") return Response.redirect("https://quota120.com" + p + url.search, 301);
     const reg = () => env.STATO.get(env.STATO.idFromName("registro"));
+    // video dei corsi: niente percorsi codificati (%) o con barre doppie, che potrebbero aggirare il controllo della firma qui sotto
+    if (/^\/corso\/+video\//i.test(p) && (p.includes("%") || !p.startsWith("/corso/video/"))) return new Response("Indirizzo non valido", { status: 400, headers: { "content-type": "text/plain; charset=utf-8" } });
     if (p.startsWith("/corso/video/az-")) {
       const m = p.match(/^\/corso\/video\/(az-[a-z0-9-]+)\.(mp4|jpg|vtt|m4a)$/), [e, g] = (url.searchParams.get("s") || "").split(".");
       if (!m || !(+e > Date.now() / 1000) || !g || g !== await firmaV(env, m[1], e)) return new Response("Video non disponibile: apri il corso dal programma.", { status: 403, headers: { "content-type": "text/plain; charset=utf-8" } });
@@ -1212,6 +1373,16 @@ export default {
       x.headers.set("accept-ranges", "bytes"); x.headers.set("cache-control", "private, max-age=86400"); x.headers.set("x-robots-tag", "noindex"); return x;
     }
     const biscotto = n => ((request.headers.get("cookie") || "").match(new RegExp("(?:^|;\\s*)" + n + "=([a-f0-9]{40})")) || [])[1];
+    // controllo delle impostazioni: pubblico (solo sì/no); la prova dal vivo di DJI e Claude (?prova=1) solo per l'Admin del sito (cookie q120a)
+    if (p === "/api/salute") {
+      const c = n => !!(env[n] && String(env[n]).trim()), u = new URL(request.url);
+      if (u.searchParams.get("prova") === "1") {
+        const ta = biscotto("q120a"), ok = ta && await reg().fetch(new Request("https://quota120.interno/api/registro/adm-ok?t=" + ta)).then(x => x.json()).then(j => j.ok).catch(() => false);
+        if (!ok) return J({ errore: "Solo per l'Admin del sito: entra da quota120.com/admin" }, 401);
+      } else { u.searchParams.delete("prova"); u.searchParams.delete("finta"); }
+      const r = await env.STATO.get(env.STATO.idFromName("main")).fetch(new Request(u.toString())).then(x => x.json()).catch(() => ({}));
+      return Response.json({ ...r, worker: { RESEND_API_KEY: c("RESEND_API_KEY"), ANTHROPIC_API_KEY: c("ANTHROPIC_API_KEY"), DJI_API_KEY: c("DJI_API_KEY"), nomi: Object.keys(env).filter(k => /KEY/.test(k)) } });
+    }
     // Admin del sito: codice via email, poi la chiave nel cookie q120a
     if (host === "quota120.com" && p.startsWith("/api/admin/")) {
       const az = p.slice(11), ta = biscotto("q120a"), I = "https://quota120.interno/api/registro/adm-";
@@ -1318,8 +1489,12 @@ export default {
     const main = () => env.STATO.get(env.STATO.idFromName("main"));
     // nessuno da fuori può dire di essere uno spazio: l'intestazione la mette solo questo smistatore
     const pulita = (op) => { const r = new Request(request); r.headers.delete("x-q120-op"); if (op) r.headers.set("x-q120-op", op); return r; };
-    if (p === "/api/salute") { const c = n => !!(env[n] && String(env[n]).trim()); const r = await main().fetch(pulita()).then(x => x.json()).catch(() => ({})); return Response.json({ ...r, worker: { RESEND_API_KEY: c("RESEND_API_KEY"), ANTHROPIC_API_KEY: c("ANTHROPIC_API_KEY"), DJI_API_KEY: c("DJI_API_KEY"), nomi: Object.keys(env).filter(k => /KEY/.test(k)) } }); }
-    if (p.startsWith("/api/registro/")) return env.STATO.get(env.STATO.idFromName("registro")).fetch(pulita());
+    // registro: da fuori solo quello che chiamano le pagine dell'app (iscrizione e entrata dell'Admin dello spazio);
+    // codici del corso e dell'Admin del sito passano solo da /api/corso/* e /api/admin/* (con il controllo anti-robot)
+    if (p.startsWith("/api/registro/")) {
+      if (!["/api/registro/info", "/api/registro/iscrivi", "/api/registro/codice", "/api/registro/verifica"].includes(p)) return J({ errore: "Non trovato" }, 404);
+      return reg().fetch(pulita());
+    }
     if (p === "/api/corsi" && request.method === "GET") {
       const op = String(request.headers.get("x-op") || url.searchParams.get("op") || "").toLowerCase();
       const stub = !op || op === "prova" ? main() : SLUG_OK(op) ? env.STATO.get(env.STATO.idFromName("op:" + op)) : null;
