@@ -188,7 +188,7 @@ function vista(d, n) {
   if (P.clienti && P.prezzi) v.CLIDATI = d.CLIDATI;
   if (P.clienti) { v.CLIENTI = d.CLIENTI; v.LAVORI = (d.LAVORI || []).map(l => P.prezzi ? l : Object.assign({}, l, { importo: null })); }
   // i lavori assegnati a lui li vede sempre (senza prezzi né fatture), anche senza il permesso «clienti»
-  if (!P.clienti && me) v.LAVORI = (d.LAVORI || []).filter(l => l.pilota === me.id).map(l => ({ id: l.id, codice: l.codice, cliente: l.cliente, titolo: l.titolo, tipo: l.tipo, luogo: l.luogo, data: l.data, drone: l.drone, pilota: l.pilota, stato: l.stato, missione: l.missione, importo: null }));
+  if (!P.clienti && me) v.LAVORI = (d.LAVORI || []).filter(l => l.pilota === me.id).map(l => ({ id: l.id, codice: l.codice, cliente: l.cliente, titolo: l.titolo, tipo: l.tipo, luogo: l.luogo, data: l.data, drone: l.drone, pilota: l.pilota, stato: l.stato, missione: l.missione, dove: l.dove, perche: l.perche, importo: null }));
   if (P.prezzi) v.PREV = d.PREV;
   if (P.enac) { v.AUT_ENAC = d.AUT_ENAC; v.DOMANDA = d.DOMANDA; v.ASSIC = d.ASSIC; }
   if (P.agri) { v.CAMPI = d.CAMPI; v.TRATT = d.TRATT; if (!v.CLIENTI) v.CLIENTI = d.CLIENTI; }

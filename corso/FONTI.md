@@ -61,3 +61,17 @@ si aggiornano `data` (AAAA-MM-GG) e `data_it` («31 ottobre 2026») e si rigener
 | drone-agricolo | Irrorazione | vietata salvo prove autorizzate; sperimentazione L. 182/2025 art. 13-bis in attesa del decreto attuativo | Min. Salute (05/12/2025); **controllare se esce il decreto** |
 | codice-operatore-uas | Remote ID | obbligatorio dal 1/1/2024 per C1-C3 e in specifica; codice 16 + 3 segreti | ENAC FAQ (16/05/2024); EASA |
 | segnalazione-incidenti-drone | Termini | 72 ore su ECCAIRS 2; ANSV entro 60 minuti; Reg. UE 2026/1821 dal 17/08/2026 | ENAC SPL-21 Rev. 1 (settembre 2026) |
+
+## Regole del «Nuovo lavoro» nel programma (public/index.html, tabelle `VD` e `VP`)
+
+Le regole che il programma mostra all'Admin e al pilota (passi «Dove si vola?» e «Perché si vola?»). Se cambiano, si correggono `VD`/`VP` e questa tabella.
+
+| Dato | Valore nel programma | Fonte |
+|---|---|---|
+| A1 | C0 e senza classe sotto 250 g: anche sopra estranei, mai sopra la folla; nessun attestato (solo registrazione operatore se ha la fotocamera). C1: non sopra estranei; attestato A1-A3 | EASA Open category (node 119320); ENAC requisiti categoria aperta |
+| A2 | C2: 30 m dagli estranei, 5 m in velocità lenta; attestato A2 | EASA Open category |
+| A3 | C2, C3, C4, senza classe fino a 25 kg: 150 m da aree residenziali, commerciali, industriali, ricreative; nessun estraneo; attestato A1-A3 | EASA Open category |
+| Generale | 120 m da terra; sempre a vista; senza classe ammessi solo se comprati entro il 31/12/2023 | EASA; ENAC |
+| STS-01 / STS-02 | C5 in area chiusa al pubblico (anche zona abitata), a vista / C6 oltre la vista in zona poco abitata; esame STS e pratica; dichiarazione su D-Flight | F3, F5 |
+| Semina e concime | categoria specifica con autorizzazione ENAC (percorso semplificato droni agricoli, AltMoC IT-UAS-2026-002) | ENAC 14/08/2026 |
+| Trattamenti fitosanitari | solo sperimentazioni autorizzate; decreto L. 182/2025 non ancora uscito (agosto 2026): **controllare se esce** | Commissione Agricoltura Senato 04/08/2026 |

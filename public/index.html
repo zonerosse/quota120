@@ -1125,6 +1125,26 @@ body.scuro .nav{background:transparent;border-color:#1F3241}
 .cf-m.on{border-color:var(--accent);background:var(--sup2,#eef3f7)}
 .cf-pt{background:#fff;border:3px solid #e8c15a;border-radius:50%}
 </style>
+<style id="nv-css">
+.nv-passo{font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:2px}.nv-fine{font-size:14.5px;color:var(--muted)}
+.nv-card{margin-top:12px}
+.nv-dove{all:unset;box-sizing:border-box;cursor:pointer;display:flex;gap:11px;align-items:center;width:100%;border:1.5px solid var(--line);border-radius:12px;padding:10px 11px;margin-top:8px;background:var(--card)}
+.nv-dove.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}.nv-dove b{display:block;font-size:15.5px;line-height:1.2}.nv-dove small{color:var(--muted);font-size:13px}
+.nv-dove:focus-visible,.nv-riga:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.nv-ico{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;flex:none}.nv-ico svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.nv-ico.pic{width:30px;height:30px;border-radius:8px}.nv-ico.pic svg{width:17px;height:17px}
+.nv-riga{all:unset;box-sizing:border-box;cursor:pointer;display:flex;gap:10px;align-items:center;width:100%;padding:10px 6px;border-top:1px solid var(--line)}
+.nv-riga.on{background:var(--ok-bg);border-radius:8px}.nv-riga.no{cursor:default;opacity:.7}.nv-riga .m{flex:1;min-width:0}.nv-riga b{display:block;font-size:15px}.nv-riga small{display:block;color:var(--muted);font-size:13px}
+.nv-pal{width:11px;height:11px;border-radius:50%;flex:none;background:var(--line)}.nv-pal.ok{background:var(--ok)}
+.nv-pill{font-size:12px;font-weight:700;border-radius:20px;padding:2px 8px;white-space:nowrap;background:var(--ok-bg);color:var(--ok);margin-left:auto}.nv-pill.da{background:var(--warn-bg);color:var(--warn)}.nv-pill.az{background:var(--bg);color:var(--accent)}
+.nv-no{border:1.5px solid var(--ko);background:var(--ko-bg);border-radius:10px;padding:10px;font-size:14.5px;margin-top:8px}
+.nv-reg{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line)}.nv-reg:first-of-type{border-top:0}.nv-reg b{display:block;font-size:15px;line-height:1.25}.nv-reg small{color:var(--muted);font-size:13px}
+.nv-sig{margin-top:8px;font-size:13.5px}.nv-sig summary{cursor:pointer;color:var(--accent);font-weight:700}.nv-sig div{margin-top:6px;color:var(--muted);background:var(--bg);border-radius:7px;padding:6px 9px}
+.nv-prep{display:flex;gap:9px;align-items:center;padding:7px 0;font-size:14.5px;border-top:1px solid var(--line)}.nv-prep:first-of-type{border-top:0}
+.nv-campi{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}.nv-campi label{font-size:13.5px;font-weight:600;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+.nv-campi input{width:100%;box-sizing:border-box;min-height:48px;font-size:17px;font-family:inherit;font-weight:500;border:1.5px solid var(--bordo2,var(--line));border-radius:8px;padding:10px 12px;background:var(--card);color:var(--text)}
+.ml-reg{margin-top:6px}.ml-reg .nv-reg{padding:5px 0}
+</style>
 <style id="cs-css">
 .cs-sez{font-size:12.5px;font-weight:700;letter-spacing:.05em;color:var(--muted);margin:16px 2px 6px}
 .cs-list{display:grid;gap:8px}.cs-riga{width:100%}.cs-riga .n{font-weight:700}
@@ -1840,6 +1860,7 @@ body.scuro .nav{background:transparent;border-color:#1F3241}
   <div id="v-zone" class="hidden"></div>
 
   <!-- ================= SCHEDA LAVORO ================= -->
+  <div id="v-nvolo" class="hidden"><div id="nv-c"></div></div>
   <div id="v-lavoro" class="hidden ro">
     <div class="card">
       <div class="sem">
@@ -1853,6 +1874,7 @@ body.scuro .nav{background:transparent;border-color:#1F3241}
       <div style="font-size:14px;color:var(--muted);margin-bottom:8px">Dal preventivo al pagamento, un passo dopo l’altro.</div>
       <div id="lw-pratica"></div>
     </div>
+    <div class="card" style="margin-top:12px;display:none" id="lw-regole"></div>
     <div class="card" style="margin-top:12px" id="lw-rischio"></div>
     <div class="card" style="margin-top:12px">
       <h2>Dati del lavoro</h2>
@@ -2264,10 +2286,8 @@ function verifiche(){
   if(!ADM&&p&&p.nome===IO.n&&!(SCHEDEP[p.id]||{}).firma) L.push({l:'La tua firma',s:'ko',d:'Manca: falla in Account › La tua firma (una volta sola, con il dito)'});
   { const sf=droneFermo(d); if(sf) L.push({l:'Drone fermo per una segnalazione',s:'ko',d:sf.data+' · '+(SG_TIPI[sf.tipo]||'')+' · lo sblocca l’Admin'}); }
   // abilitazione pilota per la classe
-  let abil, det;
-  if(d.cat==='specific'){ abil=p.sts?'ok':'ko'; det=p.sts?'Ha l’attestato STS-01':'Per questo drone serve l’attestato STS'; }
-  else if(d.classe==='C2'){ abil=p.att.includes('A2')?'ok':'ko'; det=p.att.includes('A2')?'Ha l’attestato A2 per la classe C2':'Per la classe C2 vicino alle persone serve l’A2'; }
-  else { abil='ok'; det='Classe '+d.classe+': basta l’A1-A3'; }
+  const lwC=CTRLINFO&&CTRLINFO.codice?LAVORI.find(x=>x.codice===CTRLINFO.codice):null;
+  const [abil,det]=puoPilotare(p,d,lwC&&lwC.dove);
   L.push({l:'Pilota abilitato per questo drone',s:abil,d:det,pd:abil==='ko'});
   { const at=Object.values((SCHEDEP[p.id]||{}).att||{}).filter(a=>a.scad).sort((a,b)=>dt(a.scad)-dt(b.scad))[0];
     const lv=at?livData(at.scad):'ko';
@@ -2331,7 +2351,7 @@ function copiaTesto(t,msg){ (navigator.clipboard?navigator.clipboard.writeText(t
 const NT_AZ={fuori:'volo fuori dall’area',nonvolo:'non volo oggi',permesso:'ho il permesso'};
 function notamTesto(){ const n=NOTAM; if(!n.stato) return ''; return n.stato==='nessuno'?'D-Flight guardato alle '+n.ora+': nessun avviso':'«'+n.testo+'» · '+(n.quota==='sopra'?'sopra i 120 m, non riguarda il volo':NT_AZ[n.azione])+' (controllati alle '+n.ora+')'; }
 function cambiaPD(){
-  const abile=(d,p)=>d.cat==='specific'?!!p.sts:d.classe==='C2'?(p.att||[]).includes('A2'):true;
+  const abile=(d,p)=>puoPilotare(p,d)[0]==='ok';
   modulo('Cambia pilota o drone',[{k:'d',l:'Drone',t:'sel',o:DRONI.map(d=>[String(d.id),d.nome]),v:String(dSel.id),req:1},
     {k:'p',l:'Pilota',t:'sel',o:PILOTI.map(p=>[String(p.id),p.nome+(abile(dSel,p)?'':' (non abilitato per questo drone)')]),v:String(pSel.id),req:1}],v=>{
     dSel=DRONI.find(x=>x.id==v.d); pSel=PILOTI.find(x=>x.id==v.p); disegnaControllo();
@@ -2634,7 +2654,7 @@ function apriDrone(id, da, apriBatt){
 
   const chk='<svg viewBox="0 0 24 24">'+IC.check+'</svg>';
   const dati=[['Marca e modello',d.nome],['Classe',s.classe],['Categoria di volo',s.cat],['Matricola',MATR[d.nome]],
-    ['Peso',s.peso],['QR D-Flight',d.qr?'applicato':'da applicare'],['Remote ID',s.rid],['Acquistato il',s.acq],['Ore di volo',s.ore+' · '+s.voli+' voli'],
+    ['Peso',s.peso],['Cosa monta',(vdSens(d).map(x=>({foto:'fotocamera',termica:'termocamera',multi:'camera multispettrale'}[x])).join(', ')||'niente')+(ADM?` <button class="btn sec mini" onclick="cambiaSens(${d.id})">Cambia</button>`:'')],['QR D-Flight',d.qr?'applicato':'da applicare'],['Remote ID',s.rid],['Acquistato il',s.acq],['Ore di volo',s.ore+' · '+s.voli+' voli'],
     ['Vento massimo',VENTO_BASE(d)+' km/h'+(ADM?` <button class="btn sec mini" onclick="cambiaVento(${d.id})">Cambia</button>`:'')],
     ['Affidato a',(PILOTI.filter(p=>inDotazione(p).includes(d)).map(p=>p.nome).join(', '))||'nessun pilota']];
   const pieno=v=>v!=null&&String(v).trim()!==''&&!/^(—|-|da applicare)$/.test(String(v).trim());
@@ -2708,11 +2728,13 @@ let SCHEDEP={
           'A2':{num:'ITA-RP-3m4n5o',ril:'05/06/2024',scad:'05/06/2029',liv:'ok',file:true},
           'STS-01':{num:'ITA-STS-6p7q8r',ril:'14/02/2026',scad:'14/02/2031',liv:'ok',file:false}}}
 };
-function puoPilotare(p,d){
+function puoPilotare(p,d,dove){
   if(!p||!d) return ['ok',''];
-  if(d.cat==='specific') return p.sts?['ok','Ha l’STS-01'+(AUT_ENAC.agricola?'':'; serve anche l’autorizzazione ENAC dell’operatore')]:['ko','Serve l’attestato STS'];
-  if(d.classe==='C2') return p.att.includes('A2')?['ok','Ha l’A2']:['ko','Serve l’A2 per volare vicino alle persone'];
-  return ['ok','Basta l’A1-A3'];
+  const sv=vdServe(dove,d), si=vdHa(p,sv);
+  if(sv==='niente') return ['ok','Drone sotto i 250 g: non serve l’attestato'];
+  if(sv==='STS') return si?['ok','Ha l’STS'+(vdTipo(d)==='spec'&&!AUT_ENAC.agricola?'; serve anche l’autorizzazione ENAC dell’operatore':'')]:['ko','Serve '+VD_NOMI.STS];
+  if(sv==='A2') return si?['ok','Ha l’A2']:['ko','Serve l’A2 per volare vicino alle persone'];
+  return si?['ok','Ha l’A1-A3']:['ko','Serve l’attestato A1-A3'];
 }
 function statoPilota(p){
   const s=SCHEDEP[p.id]||{att:{}};
@@ -2919,7 +2941,8 @@ function verificaAssegna(l){
   if(!ADM&&!p&&l.pilota) return out;   // lavoro di un altro pilota: la verifica la vede l'Admin
   if(!d||!p){ out.push(['Mancano '+(!d?'il drone':'il pilota'),'Sceglilo qui sopra.']); return out; }
   const giorno=dt(l.data)||new Date();
-  const [lv,t]=puoPilotare(p,d); if(lv==='ko') out.push([p.nome+' non può usare '+(/^[AEIOU]/i.test(d.nome.replace('DJI ',''))?'l’':'il ')+d.nome.replace('DJI ','')+': '+t.charAt(0).toLowerCase()+t.slice(1),'Scegli un pilota con l’attestato giusto, o un altro drone.']);
+  const dNo=l.dove?vdDroneNo(d,l.dove,l.perche):''; if(dNo) out.push(['Il '+d.nome.replace('DJI ','')+' '+dNo,'Scegli un altro drone.']);
+  const [lv,t]=dNo?['ok','']:puoPilotare(p,d,l.dove); if(lv==='ko') out.push([p.nome+' non può usare '+(/^[AEIOU]/i.test(d.nome.replace('DJI ',''))?'l’':'il ')+d.nome.replace('DJI ','')+': '+t.charAt(0).toLowerCase()+t.slice(1),'Scegli un pilota con l’attestato giusto, o un altro drone.']);
   if(d.cat==='specific' && !AUT_ENAC.agricola) out.push(['Manca l’autorizzazione operativa ENAC per l’'+d.nome.replace('DJI ',''),'Finché non c’è, per questo lavoro usa un altro drone.']);
   const att=Object.entries((SCHEDEP[p.id]||{}).att||{}).filter(([k,a])=>a.scad&&dt(a.scad)&&dt(a.scad)<giorno);
   if(att.length) out.push(['L’attestato '+(ATTNOMI[att[0][0]]||att[0][0]).replace('Attestato ','')+' di '+p.nome+' scade il '+att[0][1].scad+', prima del lavoro','Fallo rinnovare prima, o scegli un altro pilota.']);
@@ -2933,6 +2956,8 @@ function problemiLavoro(l){ if(l.stato==='concluso') return []; return verificaA
 let LAVCUR=null;
 function apriLavoro(id){
   LAVCUR=id; const l=LAVORI.find(x=>x.id===id), prob=problemiLavoro(l), s=LST[l.stato];
+  { const e=document.getElementById('lw-regole'), D=VD.find(x=>x.k===l.dove), P=VP.find(x=>x.k===l.perche), dr=DRONI.find(x=>x.id===l.drone), h=dr?vdRegoleHtml(l,dr):'';
+    e.style.display=D?'':'none'; if(D) e.innerHTML=`<h2>Le regole di questo volo</h2><div class="nv-fine" style="margin-bottom:4px">${ESC(D.t)}${P?' · '+ESC(P.t.toLowerCase()):''}. Le vede anche il pilota.</div>`+(h||'<div class="nv-fine">Scegli un drone che può fare questo volo.</div>'); }
   document.getElementById('lw-light').className='light '+(prob.length?'ko':s[0]);
   document.getElementById('lw-t').textContent=l.cliente+': '+l.titolo.toLowerCase()+(l.codice?' · codice '+l.codice:'');
   document.getElementById('lw-s').textContent= prob.length ? 'Così non si può volare: '+prob.join(' · ') : s[1]+' · '+l.data+(l.stato==='concluso'?'':' · drone e pilota in regola');
@@ -3761,17 +3786,19 @@ function nuovoPilota(){
 }
 function nuovoDrone(){
   const f=v=>{const id=nuovoId(), spec=v.cat==='specific';
-    DRONI.push({id,nome:v.nome,classe:v.classe,cat:v.cat,qr:false,manut:'ok',batt:'ok'});
+    const cat=v.classe==='C5'||v.classe==='C6'?'specific':v.cat;
+    DRONI.push({id,nome:v.nome,classe:v.classe,cat,qr:false,manut:'ok',batt:'ok',sens:v.sens&&v.sens!=='nessuna'?v.sens.split(','):[]});
     MATR[v.nome]=v.matr||'';
-    SCHEDE[id]={marca:'',classe:v.classe,peso:v.peso||'—',cat:spec?'Specific':'Open',acq:v.acq||'—',ore:'0 h',voli:0,rid:'—',
+    SCHEDE[id]={marca:'',classe:v.classe,peso:v.peso||'—',cat:spec||cat==='specific'?'Specific':'Open',acq:v.acq||'—',ore:'0 h',voli:0,rid:'—',
       man:{prox:'Primo controllo generale a 50 ore',mancano:'50 ore',perc:0,liv:'ok'},storia:[[oggi(),'Inserito nel programma']],
       doc:{qr:false,classe:false,manuale:false,fattura:false}};
     ricalcola(); apriDrone(id,'droni'); toast('Ora carica la foto del QR e gli altri documenti');};
   f.check=v=>DRONI.some(d=>d.nome.toLowerCase()===v.nome.toLowerCase())?'C’è già un drone con questo nome: aggiungi un numero (es. "Mini 4 Pro 2")':'';
   modulo('Nuovo drone',[{k:'nome',l:'Marca e modello',p:'Es. DJI Mini 4 Pro',req:1},
-    {k:'classe',l:'Classe',t:'sel',o:['C0','C1','C2','C3','C4',['Senza classe','Senza classe (es. agricolo)']],v:'C0',req:1},
+    {k:'classe',l:'Classe (è sull’etichetta del drone)',t:'sel',o:['C0','C1','C2','C3','C4',['C5','C5 (scenario STS-01)'],['C6','C6 (scenario STS-02)'],['Senza classe','Senza classe (comprato entro il 2023, o agricolo)']],v:'C0',req:1},
     {k:'cat',l:'Categoria di volo',t:'sel',o:[['open','Open'],['specific','Specific (agricolo o con autorizzazione)']],v:'open',req:1},
-    {k:'matr',l:'Matricola'},{k:'peso',l:'Peso',p:'Es. 249 g'},{k:'acq',l:'Acquistato il',t:'data'}],f);
+    {k:'sens',l:'Cosa monta',t:'sel',o:VD_SENS_OPZ,v:'foto',req:1},
+    {k:'matr',l:'Matricola'},{k:'peso',l:'Peso (serve per i droni senza classe)',p:'Es. 249 g'},{k:'acq',l:'Acquistato il',t:'data'}],f);
 }
 function nuovaBatteria(droneId){
   const n=BATT.filter(b=>b.drone===droneId).length+1;
@@ -4322,6 +4349,7 @@ function mieiLavori(){
     return `<div class="ml-lav" id="ml-${l.id}"><span class="ml-q ${q[0]}">${ESC(q[1])}</span>
       <b class="t">${ESC(l.cliente)} · ${ESC(String(l.titolo||'').toLowerCase())}</b>
       <div class="ml-i">${ESC([l.luogo,d?d.nome:'drone da scegliere',l.codice?'codice '+l.codice:''].filter(Boolean).join(' · '))}</div>
+      ${l.dove&&d?`<details class="ml-reg nv-sig" ${oggiSi?'open':''}><summary>Le regole di questo volo</summary>${vdRegoleHtml(l,d)}</details>`:''}
       ${V.length?`<div class="ml-v ko">${KO}<span><b>Così non si vola:</b> ${ESC(V.map((x,i)=>{let t=x[0].replace(p.nome+' non può','non puoi').replace(' di '+p.nome,'').replace(' copre '+p.nome,' ti copre'); return /^[A-Z][a-z]/.test(t)&&!/^(DJI|D-Flight|ENAC)/.test(t)?t.charAt(0).toLowerCase()+t.slice(1):t;}).join('; '))}. Avvisa l’Admin: può cambiare drone o pilota.</span></div>`
         :`<div class="ml-v ok">${OK}<span>${oggiSi?'Tutto a posto: puoi fare il controllo e volare.':'Tutto a posto per ora. Il giorno del lavoro rifai il controllo.'}</span></div>`}
       <div class="row">${oggiSi?`<button class="btn" type="button" ${V.length?'disabled':''} onclick="controlloDaLavoro(${l.id},this)"><span class="spin"></span>Fai il controllo</button>`:''}${V.length&&mail?`<a class="btn sec" href="${mail}">Avvisa l’Admin</a>`:''}<button class="btn sec" type="button" onclick="apriMissione(${l.id})">${l.missione?'Missione':'Pianifica la missione'}</button>${l.luogo?`<button class="btn sec" type="button" onclick="zmLavoro(${l.id})">Mappa delle zone</button>`:''}</div></div>`;};
@@ -4580,6 +4608,7 @@ function homeP(){
     const mail=OP.email?`mailto:${encodeURIComponent(OP.email)}?subject=${encodeURIComponent('Lavoro '+(l.codice||l.cliente)+': così non si vola')}&body=${encodeURIComponent(V.map(x=>'- '+x[0]).join('\n'))}`:OP.tel?'tel:'+String(OP.tel).replace(/\s/g,''):'';
     return `<div class="ml-lav" id="ml-${l.id}">${g<0?`<span class="ml-q">In corso dal ${ESC(l.data)}</span>`:''}<b class="t">${ESC(l.cliente)} · ${ESC(String(l.titolo||'').toLowerCase())}</b>
       <div class="ml-i">${ESC([l.luogo,d?d.nome:'drone da scegliere',l.codice?'codice '+l.codice:''].filter(Boolean).join(' · '))}</div>
+      ${l.dove&&d?`<details class="ml-reg nv-sig" open><summary>Le regole di oggi</summary>${vdRegoleHtml(l,d)}</details>`:''}
       ${V.length?`<div class="ml-v ko">${KO}<span><b>Così non si vola:</b> ${ESC(V.map(x=>x[0].replace(p.nome+' non può','non puoi')).join('; '))}. Avvisa l’Admin: può cambiare drone o pilota.</span></div>`:`<div class="ml-v ok">${OK}<span>Drone e documenti a posto per questo lavoro.</span></div>`}
       <div class="row"><button class="btn pl-big" type="button" ${V.length?'disabled':''} onclick="controlloDaLavoro(${l.id},this)"><span class="spin"></span>Fai il controllo prima del volo</button></div>
       <div class="row">${V.length&&mail?`<a class="btn sec" href="${mail}">Avvisa l’Admin</a>`:''}<button class="btn sec" type="button" onclick="apriMissione(${l.id})">${l.missione?'Missione':'Pianifica la missione'}</button>${l.luogo?`<button class="btn sec" type="button" onclick="zmLavoro(${l.id})">Mappa delle zone</button>`:''}</div></div>`; };
@@ -4655,8 +4684,8 @@ const PP_ADM=[
    {t:'Scrivi la tua email',p:'Nella riga «Admin» di «Chi li riceve».',w:'Ogni mattina, se qualcosa sta per scadere (attestati, polizze, abbonamento, manutenzioni), ti arriva una mail.',el:()=>VISTA==='avvisi'?gdVis('#av-chi'):null,vai:()=>apriAvvisi(),nx:1},
    {t:'Tocca «Salva»',p:'In fondo. Con «Manda una prova» controlli che arrivi.',w:'Se non scade niente, non arriva niente.',el:()=>gdTesto('#v-avvisi .btn','Salva'),ok:()=>!!(AVVISI&&AVVISI.adm&&AVVISI.adm.email)}]},
  {k:'lav',t:'Il primo lavoro',w:'cliente, data, luogo, drone e pilota',ok:()=>LAVORI.length>0,S:[
-   {t:'Tocca «Nuovo lavoro»',p:'In «Clienti e lavori».',w:'Dal lavoro parte tutto: controllo prima del volo, permessi, rapporto per il cliente.',el:()=>VISTA==='lavori'?gdTesto('#v-lavori .btn','Nuovo lavoro'):null,vai:()=>apriLavori(),ok:()=>!!gdVis('.velo .card')||LAVORI.length>0},
-   {t:'Compila e tocca «Crea il lavoro»',p:'Cliente, cosa si fa, data, luogo, drone e pilota.',w:'Quota 120 controlla subito se drone e pilota vanno bene per quel giorno.',el:()=>gdVis('.velo .card'),ok:()=>LAVORI.length>0}]}];
+   {t:'Tocca «Nuovo lavoro»',p:'In «Clienti e lavori».',w:'Dal lavoro parte tutto: controllo prima del volo, permessi, rapporto per il cliente.',el:()=>VISTA==='lavori'?gdTesto('#v-lavori .btn','Nuovo lavoro'):null,vai:()=>apriLavori(),ok:()=>VISTA==='nvolo'||LAVORI.length>0},
+   {t:'Segui i passi e tocca «Crea e manda»',p:'Dove si vola, perché, drone, pilota; poi cliente, data e luogo.',w:'Quota 120 lascia scegliere solo i droni e i piloti giusti per quel volo, e scrive le regole per il pilota.',el:()=>VISTA==='nvolo'?gdVis('#nv-c'):null,ok:()=>LAVORI.length>0}]}];
 function ppAcc(k){ const p=ioPilota(), v=p&&accVoci(p).find(x=>x.k===k); return !!(v&&v.ok); }
 const PP_PIL_T={firma:['La tua firma','con il dito, una volta sola',1,'#ac-firma','Firma nel riquadro con il dito e tocca «Salva la firma».','Va nei documenti dei tuoi voli: è obbligatoria.'],
   att:['Il tuo attestato','foto o PDF dell’A1/A3 (e dell’A2 se ce l’hai)',1,'#ac-v-att','Tocca «Carica» e fotografa l’attestato: Quota 120 legge numero e scadenza.','Senza un attestato valido per il drone non puoi volare.','a1'],
@@ -4698,13 +4727,6 @@ function apriParole(){ disegnaParole(''); vai('parole','Le parole del drone'); }
 function disegnaParole(q){ q=String(q||'').toLowerCase(); let gr='';
   const L=Object.entries(PAROLE).filter(([k,p])=>!q||(p[0]+' '+p[1]+' '+p[2]).toLowerCase().includes(q));
   document.getElementById('par-leg').innerHTML=L.map(([k,p])=>{ let h=''; if(p[4]!==gr){ gr=p[4]; h=`<tr class="gr"><td colspan="2">${ESC(gr)}</td></tr>`; } return h+`<tr><td><a href="#" onclick="parola('${k}');return false">${ESC(p[0])}</a></td><td>${ESC(p[1])}</td></tr>`; }).join('')||'<tr><td colspan="2" class="nota">Nessuna parola trovata</td></tr>'; }
-function nuovoLavoro(){
-  modulo('Nuovo lavoro',[{k:'cliente',l:'Cliente',p:'es. Studio Ferri',req:1},{k:'titolo',l:'Cosa si fa',p:'es. ispezione del tetto',req:1},{k:'data',l:'Data',t:'data',req:1},{k:'luogo',l:'Luogo',p:'es. Ostellato (FE)',req:1},
-    {k:'tipo',l:'Tipo di lavoro',t:'sel',o:TIPI_LAV,v:'Rilievo',req:1},{k:'drone',l:'Drone',t:'sel',o:DRONI.map(d=>[d.id,d.nome]),v:(DRONI[0]||{}).id,req:1},{k:'pilota',l:'Pilota',t:'sel',o:PILOTI.map(x=>[x.id,x.nome]),v:(PILOTI[0]||{}).id,req:1}],
-    v=>{ if(!CLIENTI.includes(v.cliente)) CLIENTI.push(v.cliente); const id=nuovoId();
-      LAVORI.push({id,codice:nuovoCodiceLavoro(),cliente:v.cliente,titolo:v.titolo,tipo:v.tipo,luogo:v.luogo,data:v.data,drone:+v.drone,pilota:+v.pilota,stato:'dafare',consegna:false,pagato:false,importo:0});
-      controllaModifiche(); apriLavoro(id); },'Crea il lavoro');
-}
 
 /* ---------- confini del campo: disegnati sulla mappa, camminando il bordo con il GPS, o da un file KML/KMZ/GeoJSON ---------- */
 let CF=null;   // {id, modo, pts, m, lay, watch}
@@ -7975,6 +7997,124 @@ function csSalvaLez(b){ csEdLeggi(); const bad=CSED.q.findIndex(q=>!q[0]||q[1].l
   b.classList.add('busy'); csSalva('Salvato: il video si rifà entro domani mattina').finally(()=>{ b.classList.remove('busy'); document.getElementById('csl-st').innerHTML='<div class="cs-esito ok" style="margin-top:10px">Salvato. Il video nuovo sarà pronto entro domani mattina; intanto i piloti vedono testi, legenda e prova.</div>'; }); }
 function csTogliLez(){ const c=CS.az.find(y=>y.id===CSED.id), l=c.lezioni[CSED.i]; if(!confirm('Togliere la lezione «'+l.t+'»?')) return; c.lezioni.splice(CSED.i,1); csSalva('Lezione tolta').then(()=>{ CSP.pop(); csMostra(); }); }
 
+</script>
+<script>
+/* ---------- Nuovo volo in 5 passi: dove → perché → drone → pilota → regole. Le sigle (A1/A2/A3, STS, classi) le sceglie Quota 120.
+   Fonti: Reg. UE 2019/947 e 2019/945 (EASA, categoria aperta e scenari standard), ENAC requisiti categoria aperta; vedi corso/FONTI.md ---------- */
+function vdGrammi(d){ const s=String((SCHEDE[d.id]||{}).peso||d.peso||''), m=/(\d+(?:[.,]\d+)?)\s*(kg|g)\b/i.exec(s); if(!m) return null; const n=parseFloat(m[1].replace(',','.')); return /kg/i.test(m[2])?n*1000:n; }
+function vdTipo(d){ if(!d) return ''; const c=String(d.classe||'').toUpperCase().trim();
+  if(c==='C5'||c==='C6') return c; if(d.cat==='specific') return 'spec'; if(['C0','C1','C2','C3','C4'].includes(c)) return c;
+  const g=vdGrammi(d); return g!=null&&g<250?'L250':'L'; }   // L = senza classe (comprato entro il 2023): sotto i 250 g come un C0, sopra solo lontano dalle persone
+function vdSens(d){ return Array.isArray(d.sens)?d.sens:(d.cat==='specific'?[]:['foto']); }
+const VD_SENS={foto:'una fotocamera',termica:'la termocamera',multi:'la camera multispettrale'};
+const VD_SENS_OPZ=[['foto','Fotocamera'],['foto,termica','Fotocamera e termocamera'],['foto,multi','Fotocamera e camera multispettrale'],['nessuna','Niente (drone per spargere)']];
+const VD_NOMI={niente:'nessun attestato','A1-A3':'l’attestato A1-A3','A2':'l’attestato A2',STS:'l’attestato STS (o l’addestramento chiesto dall’autorizzazione ENAC)'};
+function vdHa(p,s){ const a=(p&&p.att)||[]; if(s==='niente') return true; if(s==='A1-A3') return a.some(x=>['A1-A3','A2','STS-01'].includes(x)); if(s==='A2') return a.includes('A2'); return !!(p&&p.sts); }
+const VR={q:['quota','Massimo 120 m da terra',''],vista:['occhio','Sempre a vista','il drone lo vedi tu, senza binocolo'],folla:['no','Mai sopra la folla','feste, mercati, partite, cortei'],
+  priv:['pers','Privacy: niente persone riconoscibili senza il loro consenso','se capitano nelle foto, sfoca volti e targhe']};
+const vrA1=t=>(t==='C0'||t==='L250')?[VR.q,['pers','Puoi passare sopra estranei','ma non fermarti sopra di loro'],VR.folla,VR.vista]:[VR.q,['dist','Non passare sopra gli estranei','se capita, spostati subito'],VR.folla,VR.vista];
+const vrA2=[VR.q,['dist','Almeno 30 m dagli estranei','5 m se metti la velocità lenta'],['no','Mai sopra gli estranei',''],VR.vista];
+const vrA3=[VR.q,['dist','Almeno 150 m da case, negozi, fabbriche e parchi',''],['no','Nessun estraneo nell’area di volo',''],VR.vista];
+const vsA1=t=>(t==='C0'||t==='L250')?'Categoria aperta A1 · '+(t==='C0'?'classe C0':'senza classe, sotto 250 g')+' · nessun attestato (solo registrazione operatore su D-Flight)':'Categoria aperta A1 · classe C1 · attestato A1-A3';
+const VD=[
+ {k:'lontano',t:'In campagna, lontano da case e persone',s:'campi, cave, capannoni isolati',i:'campo',col:'--f-regole',
+  ok:t=>['C0','C1','C2','C3','C4','L250','L'].includes(t), serve:t=>(t==='C0'||t==='L250')?'niente':'A1-A3',
+  R:t=>['C0','C1','L250'].includes(t)?vrA1(t):vrA3, sig:t=>['C0','C1','L250'].includes(t)?vsA1(t):'Categoria aperta A3 · '+(t==='L'?'senza classe':'classe '+t)+' · attestato A1-A3'},
+ {k:'vicino',t:'In paese, vicino a persone ma non sopra',s:'tetti, cantieri, facciate, strade',i:'pers',col:'--f-persone',
+  ok:t=>['C0','C1','C2','L250'].includes(t), serve:t=>(t==='C0'||t==='L250')?'niente':t==='C2'?'A2':'A1-A3',
+  R:t=>t==='C2'?vrA2:vrA1(t), sig:t=>t==='C2'?'Categoria aperta A2 · classe C2 · attestato A2':vsA1(t)},
+ {k:'sopra',t:'Anche sopra le persone',s:'riprese in piazza, sopra la gente (non la folla)',i:'citta',col:'--f-imp',
+  ok:t=>['C0','L250','C5'].includes(t), serve:t=>t==='C5'?'STS':'niente',
+  nota:'Sopra gli estranei può volare solo un drone sotto i 250 g. Con un drone più grande serve un drone classe C5, l’area chiusa al pubblico e la dichiarazione su D-Flight (scenario STS-01).',
+  R:t=>t==='C5'?[VR.q,['no','Area chiusa al pubblico','dentro solo chi lavora al volo'],['doc','Con la dichiarazione STS-01 su D-Flight',''],VR.vista]:vrA1(t),
+  sig:t=>t==='C5'?'Categoria specifica · scenario standard STS-01 · classe C5 · attestato STS':vsA1(t), aut:t=>t==='C5'?'Dichiarazione STS-01 su D-Flight':''},
+ {k:'oltre',t:'Oltre la vista',s:'linee lunghe, argini, condotte',i:'occhio',col:'--f-flotta',
+  ok:t=>t==='C6', serve:()=>'STS', nota:'Si può solo con un drone classe C6, in zona poco abitata e con osservatori (scenario STS-02), oppure con un’autorizzazione ENAC apposta.',
+  R:()=>[VR.q,['occhio','Oltre la vista solo con la traiettoria programmata','con gli osservatori dove previsto'],['no','Area a terra chiusa al pubblico',''],['doc','Con la dichiarazione STS-02 su D-Flight','']],
+  sig:()=>'Categoria specifica · scenario standard STS-02 · classe C6 · attestato STS', aut:()=>'Dichiarazione STS-02 su D-Flight'},
+ {k:'spargere',t:'Su un campo: semina o concime',s:'spargere semi, concime, esche',i:'goccia',col:'--f-regole',agri:1,
+  ok:t=>t==='spec', serve:()=>'STS',
+  R:()=>[['doc','Solo con l’autorizzazione ENAC dell’azienda','e dentro i limiti scritti lì'],['no','Area chiusa: nessun estraneo',''],VR.q,VR.vista],
+  sig:()=>'Categoria specifica · autorizzazione ENAC (percorso semplificato per droni agricoli)', aut:()=>'Autorizzazione ENAC'},
+ {k:'tratt',t:'Su un campo: trattamenti (fitofarmaci)',s:'irrorare prodotti fitosanitari',i:'goccia',col:'--f-imp',agri:1,
+  ok:()=>false, nota:'In Italia per ora si possono fare solo nelle sperimentazioni autorizzate: il decreto della Legge 182/2025 non è ancora uscito.'}
+];
+const VP=[
+ {k:'foto',t:'Foto e video',s:'immobili, eventi, pubblicità, turismo',i:'occhio',col:'--f-persone',need:'foto',R:[VR.priv],prep:'Liberatorie o cartello per la privacy, se si riprendono persone',tipo:'Foto e video'},
+ {k:'isp',t:'Ispezioni',s:'tetti, facciate, ponti, linee elettriche, camini',i:'citta',col:'--f-imp',need:'foto',R:[VR.priv],prep:'Permesso del proprietario o del gestore (Comune, ANAS, Terna, RFI…)',tipo:'Ispezione'},
+ {k:'termica',t:'Termografia',s:'pannelli solari, dispersioni di calore, impianti',i:'vento',col:'--f-regole',need:'termica',R:[VR.priv],prep:'Permesso del proprietario dell’impianto',tipo:'Ispezione'},
+ {k:'rilievo',t:'Rilievi e mappe',s:'cantieri, cave, volumi, topografia',i:'campo',col:'--f-flotta',need:'foto',R:[VR.priv],tipo:'Rilievo'},
+ {k:'colture',t:'Controllo delle colture',s:'mappe di vigore, piante in sofferenza',i:'goccia',col:'--f-regole',need:'multi',R:[],tipo:'Agricoltura'},
+ {k:'ambiente',t:'Ambiente e territorio',s:'frane, argini, coste, fauna',i:'campo',col:'--f-persone',need:'foto',R:[VR.priv],tipo:'Rilievo'},
+ {k:'prova',t:'Addestramento e prove',s:'autoaddestramento per l’A2, drone nuovo, dopo una riparazione',i:'quota',col:'--f-imp',need:null,R:[['doc','Segna il volo nel registro','vale come prova dell’addestramento o del collaudo']],tipo:'Altro'}
+];
+const VD_IC={campo:'<path d="M3 18c4-3 7-3 9 0s5 3 9 0"/><path d="M12 4v8M9 7l3-3 3 3"/>',pers:'<circle cx="9" cy="8" r="3"/><path d="M3 20c1-4 3-6 6-6s5 2 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14c3 0 5 2 5 6"/>',citta:'<path d="M3 21V9l6-4v16M9 21V3h7v18M16 21v-9h5v9"/>',occhio:'<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',goccia:'<path d="M12 3s7 7 7 12a7 7 0 0 1-14 0c0-5 7-12 7-12z"/>',quota:'<path d="M12 3v18M8 7l4-4 4 4M5 21h14"/>',dist:'<path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4"/>',no:'<circle cx="12" cy="12" r="9"/><path d="M6 6l12 12"/>',vento:'<path d="M3 8h11a3 3 0 1 0-3-3M3 16h15a3 3 0 1 1-3 3M3 12h8"/>',doc:'<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/>'};
+const vdIco=(k,c,cl)=>`<span class="nv-ico ${cl||''}" style="background:var(${c||'--accent'})"><svg viewBox="0 0 24 24">${VD_IC[k]}</svg></span>`;
+function vdServe(dove,d){ const D=VD.find(x=>x.k===dove), t=vdTipo(d); if(D&&D.serve) return D.serve(t); return t==='spec'||t==='C5'||t==='C6'?'STS':t==='C2'?'A2':(t==='C0'||t==='L250')?'niente':'A1-A3'; }
+function vdRegole(l,d){ const D=VD.find(x=>x.k===l.dove), P=VP.find(x=>x.k===l.perche); if(!D||!D.R||!d) return []; const R=D.R(vdTipo(d)).slice(); if(P) P.R.forEach(r=>{ if(!R.some(x=>x[1]===r[1])) R.push(r); }); return R; }
+function vdSigla(l,d){ const D=VD.find(x=>x.k===l.dove); return D&&D.sig&&d?D.sig(vdTipo(d)):''; }
+function vdRegoleHtml(l,d,id){ const R=vdRegole(l,d); if(!R.length) return ''; const sg=vdSigla(l,d);
+  return R.map(r=>`<div class="nv-reg">${vdIco(r[0],'--teal','pic')}<div><b>${ESC(r[1])}</b>${r[2]?`<small>${ESC(r[2])}</small>`:''}</div></div>`).join('')+
+    (sg?`<details class="nv-sig"><summary>Mostra le sigle</summary><div>${ESC(sg)}</div></details>`:''); }
+/* il drone può fare il volo «dove/perché»? motivo in parole semplici se no */
+function vdDroneNo(d,dove,perche){ const D=VD.find(x=>x.k===dove), P=VP.find(x=>x.k===perche);
+  if(D&&!D.ok(vdTipo(d))) return 'non può fare un volo «'+D.t.toLowerCase()+'»'; if(P&&P.need&&!vdSens(d).includes(P.need)) return 'non ha '+VD_SENS[P.need]; return ''; }
+
+let NV={};
+function nuovoLavoro(){ NV={}; nvDisegna(); vai('nvolo','Lavori &rsaquo; Nuovo lavoro'); }
+function nvScegli(k,v){ NV[k]=v; const ord=['dove','perche','d','p']; ord.slice(ord.indexOf(k)+1).forEach(x=>delete NV[x]); if(k==='dove'&&VD.find(x=>x.k===v).agri) NV.perche='-'; nvDisegna(); }
+function nvDisegna(){
+  const D=VD.find(x=>x.k===NV.dove), conP=D&&!D.agri, P=conP?VP.find(x=>x.k===NV.perche):null, tot=conP?5:4; let n=1;
+  const scelta=(arr,k,cur)=>arr.map(x=>`<button type="button" class="nv-dove ${cur===x.k?'on':''}" onclick="nvScegli('${k}','${x.k}')">${vdIco(x.i,x.col)}<span><b>${ESC(x.t)}</b><small>${ESC(x.s)}</small></span></button>`).join('');
+  const passo=(t,f)=>`<div class="card nv-card"><div class="nv-passo">Passo ${n++} di ${tot}</div><h2>${t}</h2>${f?`<div class="nv-fine">${f}</div>`:''}`;
+  let h=passo('Dove si vola?','Scegli il caso: le regole e le sigle le sistema Quota 120.')+scelta(VD,'dove',NV.dove)+'</div>';
+  if(D&&conP) h+=passo('Perché si vola?','Da qui Quota 120 sa quale camera serve e cosa preparare.')+scelta(VP,'perche',NV.perche)+'</div>';
+  const pronto2=D&&(!conP||P);
+  if(pronto2){
+    const dsi=DRONI.filter(d=>!vdDroneNo(d,NV.dove,NV.perche)), dno=DRONI.filter(d=>vdDroneNo(d,NV.dove,NV.perche));
+    h+=passo('Con quale drone?','Dal drone dipendono le regole del volo.');
+    if(!DRONI.length) h+=`<div class="nv-no"><b>Non c’è ancora nessun drone.</b><br>Aggiungilo da Home › Droni.</div>`;
+    else if(!dsi.length) h+=`<div class="nv-no"><b>Nessun vostro drone può fare questo volo.</b><br>${ESC(DRONI.some(d=>D.ok(vdTipo(d)))&&P&&P.need?'Serve un drone con '+VD_SENS[P.need]+'.':(D.nota||''))}</div>`;
+    else { if(D.nota) h+=`<div class="nv-fine" style="margin-bottom:6px">${ESC(D.nota)}</div>`;
+      h+=dsi.map(d=>`<button type="button" class="nv-riga ${String(NV.d)===String(d.id)?'on':''}" onclick="nvScegli('d','${d.id}')"><span class="nv-pal ok"></span><span class="m"><b>${ESC(d.nome)}</b><small>${ESC(nvDescD(d))}</small></span><span class="nv-pill">va bene</span></button>`).join(''); }
+    if(dno.length) h+=`<div class="cs-sez">NON VANNO BENE</div>`+dno.map(d=>`<div class="nv-riga no"><span class="nv-pal"></span><span class="m"><b>${ESC(d.nome)}</b><small>${ESC(vdDroneNo(d,NV.dove,NV.perche))}</small></span></div>`).join('');
+    h+='</div>';
+  }
+  const d=pronto2&&DRONI.find(x=>String(x.id)===String(NV.d));
+  if(d){ const sv=vdServe(NV.dove,d), psi=PILOTI.filter(p=>vdHa(p,sv)), pno=PILOTI.filter(p=>!vdHa(p,sv));
+    h+=passo('Quale pilota?',sv==='niente'?'Con il '+ESC(d.nome)+' non serve un attestato: vanno bene tutti.':'Con il '+ESC(d.nome)+', per questo volo serve '+VD_NOMI[sv]+'.');
+    h+=(psi.length?psi.map(p=>`<button type="button" class="nv-riga ${String(NV.p)===String(p.id)?'on':''}" onclick="nvScegli('p','${p.id}')"><span class="nv-pal ok"></span><span class="m"><b>${ESC(p.nome)}</b><small>${sv==='niente'?((p.att||[]).length?'ha '+ESC((p.att||[]).join(', ')):'senza attestato'):'ha '+VD_NOMI[sv]}</small></span><span class="nv-pill">può</span></button>`).join('')
+        :PILOTI.length?`<div class="nv-no"><b>Nessun pilota ha ${VD_NOMI[sv]}.</b><br>Carica l’attestato nella scheda del pilota, o scegli un altro drone.</div>`:`<div class="nv-no"><b>Non c’è ancora nessun pilota.</b><br>Aggiungilo da Home › Piloti.</div>`)+
+      (pno.length?`<div class="cs-sez">NON POSSONO</div>`+pno.map(p=>`<div class="nv-riga no"><span class="nv-pal"></span><span class="m"><b>${ESC(p.nome)}</b><small>gli manca ${VD_NOMI[sv]}</small></span></div>`).join(''):'')+'</div>';
+  }
+  const p=d&&PILOTI.find(x=>String(x.id)===String(NV.p));
+  if(p){ const l={dove:NV.dove,perche:NV.perche}, aut=D.aut?D.aut(vdTipo(d)):'';
+    const autOk=aut==='Autorizzazione ENAC'?!!AUT_ENAC.agricola:false;
+    const prep=[['Drone registrato su D-Flight (QR)',d.qr],['Assicurazione',rcDi(p,new Date()).ok]];
+    if(aut) prep.push([aut,autOk]); if(P&&P.prep) prep.push([P.prep,null]);
+    h+=passo('Le regole di questo volo','Le vede anche '+ESC(p.nome)+' sul telefono, così come sono scritte qui.')+vdRegoleHtml(l,d)+'</div>'+
+      `<div class="card nv-card"><h2>Cosa preparare</h2>${prep.map(x=>`<div class="nv-prep">${ESC(x[0])}<span class="nv-pill ${x[1]===true?'':'da'}">${x[1]===true?'a posto':x[1]===false?'manca':'da preparare'}</span></div>`).join('')}
+       <div class="nv-prep">Zone della mappa D-Flight<span class="nv-pill az">le guarda il pilota sul posto</span></div></div>
+      <div class="card nv-card"><h2>Il lavoro</h2><div class="nv-campi">
+       <label>Cliente<input type="text" id="nv-cli" list="nv-cl" placeholder="es. Studio Ferri"><datalist id="nv-cl">${CLIENTI.map(c=>`<option value="${ESC(c)}">`).join('')}</datalist></label>
+       <label>Cosa si fa<input type="text" id="nv-tit" placeholder="es. ${P?ESC(P.s.split(',')[0]):'semina del grano'}"></label>
+       <label>Data<input id="nv-data" type="date"></label>
+       <label>Luogo<input type="text" id="nv-luogo" placeholder="es. Ostellato (FE)"></label></div>
+       <div class="row"><button class="btn" type="button" onclick="nvCrea(this)"><span class="spin"></span>Crea e manda a ${ESC(p.nome.split(' ')[0])}</button></div></div>`;
+  }
+  document.getElementById('nv-c').innerHTML=h;
+}
+function nvDescD(d){ const t=vdTipo(d), cl=t==='spec'?'agricolo/specifica':t==='L'||t==='L250'?'senza classe':'classe '+t, g=(SCHEDE[d.id]||{}).peso;
+  const s=vdSens(d); return [cl,g&&g!=='—'?g:'',s.length?s.map(x=>({foto:'fotocamera',termica:'termocamera',multi:'multispettrale'}[x])).join(' e '):''].filter(Boolean).join(' · '); }
+function nvCrea(b){ const v=i=>(document.getElementById(i).value||'').trim(), cli=v('nv-cli'), tit=v('nv-tit'), dataI=v('nv-data'), luogo=v('nv-luogo');
+  if(!cli||!tit||!dataI||!luogo){ toast('Scrivi cliente, cosa si fa, data e luogo'); return; }
+  const [y,m,g]=dataI.split('-'), P=VP.find(x=>x.k===NV.perche), D=VD.find(x=>x.k===NV.dove);
+  lavora(b,()=>{ if(!CLIENTI.includes(cli)) CLIENTI.push(cli); const id=nuovoId();
+    LAVORI.push({id,codice:nuovoCodiceLavoro(),cliente:cli,titolo:tit,tipo:P?P.tipo:(D.agri?'Agricoltura':'Altro'),luogo,data:g+'/'+m+'/'+y,drone:DRONI.find(x=>String(x.id)===String(NV.d)).id,pilota:PILOTI.find(x=>String(x.id)===String(NV.p)).id,dove:NV.dove,perche:P?P.k:'',stato:'dafare',consegna:false,pagato:false,importo:0});
+    controllaModifiche(); apriLavoro(id); toast('Lavoro creato: lo vede anche il pilota'); }); }
+/* scheda del drone: cosa monta */
+function cambiaSens(id){ const d=DRONI.find(x=>x.id===id);
+  modulo('Cosa monta il '+d.nome,[{k:'s',l:'Camere a bordo',t:'sel',o:VD_SENS_OPZ,v:vdSens(d).join(',')||'nessuna',req:1}],v=>{ d.sens=v.s&&v.s!=='nessuna'?v.s.split(','):[]; controllaModifiche(); apriDrone(id,'droni'); toast('Salvato'); }); }
 </script>
 </body>
 </html>
