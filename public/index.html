@@ -5386,7 +5386,8 @@ function doveOk(k){ const D=DOVE[k]; if(!D) return false; if(D[5]) return VISTA=
 function doveEl(k){ const D=DOVE[k]; if(!D) return null;
   if(VISTA==='home'){ if(ADM&&!COME){ if(!D[1]) return k==='account'?gdVis('#chip'):null; const den=q2GrAperto(D[1])&&gdVis('.q2h-'+D[1]); if(den) return (D[2]&&gdTesto('.q2h-'+D[1],D[2]))||den; return gdVis('#q2g-'+q2GrDi(D[1])+'>summary'); }
     if(k==='account') return gdVis('#chip')||gdVis('#h-pp');
-    return gdTesto('#h-altro li',D[6]||D[0])||gdTesto('#h-altro li',D[0]); }
+    { const al=document.getElementById('h-altro'); if(al&&!al.open) return gdVis('#h-altro>summary'); }
+    return gdTesto('#h-altro .q2-vo',D[6]||D[0])||gdTesto('#h-altro .q2-vo',D[0]); }
   if(VISTA==='hub'&&HUB_K===D[1]&&D[2]) return gdTesto('#v-hub button',D[2]);
   if(k==='zmappa'&&VISTA==='dflight') return gdVis('#df-b-zmappa');
   return null; }
@@ -5734,7 +5735,7 @@ const GUIDES={
  spiega:{n:'Spiega al cliente perché no',r:'tutti',base:()=>0,done:()=>false,
   why:{h:'Dire di no, per iscritto',p:'Quando un volo non si può fare, Quota 120 scrive il messaggio per il cliente: cosa non va, cosa servirebbe per poter volare e in quanto tempo. È una tutela anche per te: resta scritto che hai detto di no e perché.',uses:['Il cliente insiste per un volo non in regola','Proporre una nuova data o le richieste da fare','Avere la prova di aver avvisato'],tm:'Ci vuole 1 minuto.'},
   end:'Fatto. Nel lavoro resta scritto quando hai mandato la spiegazione.',
-  S:[{t:'Tocca «Spiega al cliente perché no»',p:'Lo trovi dove c’è scritto che non si vola: nel lavoro, nel controllo prima del volo o nella valutazione del rischio.',w:'Il messaggio parte dai motivi che ha trovato Quota 120.',el:()=>gdVis('#lw-spiega')||gdVis('#c-spiega')||gdVis('#rk-spiega'),ok:()=>VISTA==='spiega'},
+  S:[{t:'Tocca «Spiega al cliente perché no»',p:'Lo trovi dove c’è scritto che non si vola: nel lavoro, nel controllo prima del volo o nella valutazione del rischio.',w:'Il messaggio parte dai motivi che ha trovato Quota 120.',el:()=>gdVis('#lw-spiega')||gdVis('#c-spiega')||gdVis('#rk-spiega')||(VISTA==='home'?gdVis('#q2-lav .q2-lr .p.ko'):null),ok:()=>VISTA==='spiega',vai:()=>{ const l=LAVORI.find(x=>x.stato!=='concluso'&&problemiLavoro(x).length); if(l) apriLavoro(l.id); else toast('Nessun lavoro bloccato: il tasto compare quando un volo non si può fare'); }},
    {t:'Rileggi il messaggio',p:'Per ogni motivo: cosa non va, cosa servirebbe, tempi indicativi. Cambia quello che vuoi.',w:'È scritto per il cliente, senza sigle: capisce cosa serve e quanto tempo ci vuole.',el:()=>gdVis('#sp-t'),nx:1},
    {t:'Mandalo',p:'Scrivi l’email del cliente e tocca «Manda per email»: parte con il PDF allegato. Oppure scarica il PDF o copia il testo.',w:'La risposta del cliente arriva alla tua email.',el:()=>gdVis('#sp-manda'),nx:1}]},
  calendario:{n:'Calendario',r:'tutti',base:()=>0,done:()=>false,
@@ -5992,7 +5993,8 @@ GUIDES.homeadm={n:'La Home dell’Admin, riquadro per riquadro',r:'adm',base:()=
    GV('Nuovo lavoro','Apre i passi del lavoro: dove si vola, perché, drone, pilota e regole.','è la cosa che si fa più spesso.','ogni volta che un cliente ti chiede un lavoro.',()=>gdVis('#q2-nuovo')),
    GV('Cosa vuoi fare?','Scrivi una parola (codice, polizza, batteria…) e tocca il risultato: ti porta dritto lì.','è la strada più corta per qualsiasi cosa.','quando non ricordi dove sta una cosa.',()=>gdVis('#q2-q')),
    GV('Da sistemare','Le cose che scadono o mancano, le più urgenti in alto. Il tasto di ogni riga dice cosa fa: Scrivi, Carica, Segna fatta…','sistemi tutto da qui, senza girare per le pagine.','ogni mattina, finché non resta «Tutto in regola».',()=>gdVis('#ha-daf')),
-   GV('Tutto il resto','Dieci riquadri, sempre visibili. La scritta rossa o gialla dice dove c’è qualcosa da guardare.','ogni cosa sta in un posto solo.','quando ti serve una di quelle cose.',()=>gdVis('.q2-tiles'))]};
+   GV('I prossimi lavori','I lavori in arrivo con il pallino: verde si vola, rosso no, con il motivo scritto. Tocca una riga per aprire il lavoro.','vedi subito se qualcosa ferma un lavoro.','ogni mattina.',()=>gdVis('#q2-lav')),
+   GV('Tutto il resto','Sei gruppi chiusi: Lavoro e clienti, Droni, Piloti, Regole e permessi, Agricoltura, Ufficio. Tocca un gruppo e si apre sul posto. La scritta rossa o gialla dice dove c’è qualcosa da guardare.','ogni cosa sta in un posto solo.','quando ti serve una di quelle cose.',()=>gdVis('#q2g-lav>summary'))]};
 // guide nuove: missione, confini, Da sistemare, i miei lavori, Nuovo e ricerca
 Object.assign(GUIDES,{
  missione:{n:'Pianificare la missione del drone',r:'tutti',base:()=>0,done:()=>false,
@@ -6031,9 +6033,10 @@ Object.assign(GUIDES,{
   get S(){ return [P_HOME,
    {t:'Oggi',p:'Il lavoro di oggi, con luogo e drone. Verde: drone e pilota vanno bene. Rosso: c’è scritto cosa manca, e «Avvisa l’Admin».',w:'Dal lavoro di oggi parte il controllo prima del volo, già compilato.',el:()=>gdVis('#h-oggi'),nx:1},
    {t:'Prossimi lavori',p:'Tocca un lavoro per vedere tutto: luogo, drone, missione.',w:'Così ti prepari prima: batterie, attrezzatura, permessi.',el:()=>gdVis('#h-miei'),nx:1,opt:1},
-   {t:'Le tue scadenze',p:'Attestati, assicurazione, firma. Se una riga ha la freccia, toccala e sistemala.',w:'Con un attestato scaduto il controllo prima del volo ti ferma.',el:()=>gdVis('#h-scad'),nx:1},
+   {t:'Le mie scadenze',p:'Tocca «Le mie scadenze»: attestati, assicurazione, firma. Se una riga ha la freccia, toccala e sistemala.',w:'Con un attestato scaduto il controllo prima del volo ti ferma.',el:()=>gdVis('#h-scad>summary'),nx:1},
+   {t:'Corsi',p:'I corsi dell’azienda e quelli di Quota 120, con «Ascolta in auto».',w:'Ripassi le procedure e le regole anche in macchina.',el:()=>gdVis('#h-corsi>summary'),nx:1,opt:1},
    {t:'Volo senza lavoro',p:'Se voli per una cosa che non è in elenco: scegli il drone, scrivi il luogo e fai il controllo.',w:'Anche un volo di prova va controllato e registrato.',el:()=>gdVis('#h-senzalav summary'),nx:1,opt:1},
-   {t:'Altro',p:'Registro voli, droni, documenti e le altre pagine che l’Admin ti fa vedere.',w:'Sono chiuse qui per lasciare spazio alle cose di tutti i giorni.',el:()=>gdVis('#h-altro summary'),nx:1,opt:1}]; }},
+   {t:'Altro',p:'Registro voli, droni, documenti e le altre pagine che l’Admin ti fa vedere.',w:'Sono chiuse qui per lasciare spazio alle cose di tutti i giorni.',el:()=>gdVis('#h-altro>summary'),nx:1,opt:1}]; }},
  nuovo:{n:'Creare un lavoro nuovo',r:'adm',base:()=>0,done:()=>false,
   why:{h:'Il tasto «Nuovo lavoro»',p:'In cima alla Home: apre i passi del lavoro. Un drone, un pilota o un documento nuovo si aggiungono dai loro gruppi (Droni, Piloti, Ufficio).',uses:['Un cliente ti chiama per un lavoro','Vuoi sapere chi può fare un volo'],tm:'Ci vogliono 10 secondi per arrivare ai passi.'},
   end:'Fatto. Nella stessa riga c’è anche «Cosa vuoi fare?»: scrivi una parola e vai dritto lì.',
