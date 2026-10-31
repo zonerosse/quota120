@@ -1161,6 +1161,11 @@ body.scuro .nav{background:transparent;border-color:#1F3241}
 .nv-prep{display:flex;gap:9px;align-items:center;padding:7px 0;font-size:14.5px;border-top:1px solid var(--line)}.nv-prep:first-of-type{border-top:0}
 .nv-campi{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}.nv-campi label{font-size:13.5px;font-weight:600;color:var(--muted);display:flex;flex-direction:column;gap:4px}
 .nv-campi input{width:100%;box-sizing:border-box;min-height:48px;font-size:17px;font-family:inherit;font-weight:500;border:1.5px solid var(--bordo2,var(--line));border-radius:8px;padding:10px 12px;background:var(--card);color:var(--text)}
+.nv-fatto{padding-top:10px;padding-bottom:10px}.nv-sc{display:flex;gap:10px;align-items:center}.nv-sc .m{flex:1;min-width:0}.nv-sc small{display:block;font-size:13px;color:var(--muted);font-weight:600}.nv-sc b{display:block;font-size:16px;line-height:1.2}
+.nv-ok{width:28px;height:28px;border-radius:50%;background:var(--ok);display:grid;place-items:center;flex:none}.nv-ok svg{width:17px;height:17px;stroke:#fff;fill:none;stroke-width:2.6}
+.nv-scegli{margin-left:auto;background:var(--accent);color:#fff;font-weight:700;font-size:14px;border-radius:8px;padding:6px 12px;white-space:nowrap}
+.nv-riga:not(.no){border:1.5px solid var(--line);border-radius:10px;margin-top:8px;padding:10px}.nv-riga:not(.no):hover{border-color:var(--accent)}
+.nv-nota{font-size:14px;color:var(--muted);background:var(--bg);border-radius:8px;padding:8px 10px;margin:8px 0 2px}
 .ml-reg{margin-top:6px}.ml-reg .nv-reg{padding:5px 0}
 </style>
 <style id="cs-css">
@@ -8105,32 +8110,36 @@ function vdDroneNo(d,dove,perche){ const D=VD.find(x=>x.k===dove), P=VP.find(x=>
 
 let NV={};
 function nuovoLavoro(){ NV={}; nvDisegna(); vai('nvolo','Lavori &rsaquo; Nuovo lavoro'); }
-function nvScegli(k,v){ NV[k]=v; const ord=['dove','perche','d','p']; ord.slice(ord.indexOf(k)+1).forEach(x=>delete NV[x]); if(k==='dove'&&VD.find(x=>x.k===v).agri) NV.perche='-'; nvDisegna(); }
-function nvDisegna(){
-  const D=VD.find(x=>x.k===NV.dove), conP=D&&!D.agri, P=conP?VP.find(x=>x.k===NV.perche):null, tot=conP?5:4; let n=1;
-  const scelta=(arr,k,cur)=>arr.map(x=>`<button type="button" class="nv-dove ${cur===x.k?'on':''}" onclick="nvScegli('${k}','${x.k}')">${vdIco(x.i,x.col)}<span><b>${ESC(x.t)}</b><small>${ESC(x.s)}</small></span></button>`).join('');
-  const passo=(t,f)=>`<div class="card nv-card"><div class="nv-passo">Passo ${n++} di ${tot}</div><h2>${t}</h2>${f?`<div class="nv-fine">${f}</div>`:''}`;
-  let h=passo('Dove si vola?','Scegli il caso: le regole e le sigle le sistema Quota 120.')+scelta(VD,'dove',NV.dove)+'</div>';
-  if(D&&conP) h+=passo('Perché si vola?','Da qui Quota 120 sa quale camera serve e cosa preparare.')+scelta(VP,'perche',NV.perche)+'</div>';
-  const pronto2=D&&(!conP||P);
+function nvScegli(k,v){ const ord=['dove','perche','d','p']; if(v==null) delete NV[k]; else NV[k]=v; ord.slice(ord.indexOf(k)+1).forEach(x=>delete NV[x]); if(k==='dove'&&v!=null&&VD.find(x=>x.k===v).agri) NV.perche='-'; nvDisegna(true); }
+function nvDisegna(scorri){
+  const D=VD.find(x=>x.k===NV.dove), conP=D&&!D.agri, P=conP?VP.find(x=>x.k===NV.perche):null, tot=conP?5:4; let n=1, cur=false;
+  const fatto=(tit,val,k)=>`<div class="card nv-card nv-fatto"><div class="nv-sc"><span class="nv-ok"><svg viewBox="0 0 24 24"><path d="M5 12l4 4 10-10"/></svg></span><span class="m"><small>Passo ${n++} · ${tit}</small><b>${ESC(val)}</b></span><button type="button" class="btn sec mini" onclick="nvScegli('${k}',null)">Cambia</button></div></div>`;
+  const passo=(t,f)=>{ const id=cur?'':' id="nv-cur"'; cur=true; return `<div class="card nv-card"${id}><div class="nv-passo">Passo ${n++} di ${tot}</div><h2>${t}</h2>${f?`<div class="nv-fine">${f}</div>`:''}`; };
+  const scelta=(arr,k)=>arr.map(x=>`<button type="button" class="nv-dove" onclick="nvScegli('${k}','${x.k}')">${vdIco(x.i,x.col)}<span><b>${ESC(x.t)}</b><small>${ESC(x.s)}</small></span></button>`).join('');
+  let h='';
+  if(D) h+=fatto('Dove si vola',D.t,'dove'); else h+=passo('Dove si vola?','Tocca il caso giusto: le regole e le sigle le sistema Quota 120.')+scelta(VD,'dove')+'</div>';
+  if(D&&conP){ if(P) h+=fatto('Perché si vola',P.t,'perche'); else h+=passo('Perché si vola?','Tocca lo scopo: Quota 120 sa quale camera serve e cosa preparare.')+scelta(VP,'perche')+'</div>'; }
+  const pronto2=D&&(!conP||P), d=pronto2&&DRONI.find(x=>String(x.id)===String(NV.d));
   if(pronto2){
-    const dsi=DRONI.filter(d=>!vdDroneNo(d,NV.dove,NV.perche)), dno=DRONI.filter(d=>vdDroneNo(d,NV.dove,NV.perche));
-    h+=passo('Con quale drone?','Dal drone dipendono le regole del volo.');
-    if(!DRONI.length) h+=`<div class="nv-no"><b>Non c’è ancora nessun drone.</b><br>Aggiungilo da Home › Droni.</div>`;
-    else if(!dsi.length) h+=`<div class="nv-no"><b>Nessun vostro drone può fare questo volo.</b><br>${ESC(DRONI.some(d=>D.ok(vdTipo(d)))&&P&&P.need?'Serve un drone con '+VD_SENS[P.need]+'.':(D.nota||''))}</div>`;
-    else { if(D.nota) h+=`<div class="nv-fine" style="margin-bottom:6px">${ESC(D.nota)}</div>`;
-      h+=dsi.map(d=>`<button type="button" class="nv-riga ${String(NV.d)===String(d.id)?'on':''}" onclick="nvScegli('d','${d.id}')"><span class="nv-pal ok"></span><span class="m"><b>${ESC(d.nome)}</b><small>${ESC(nvDescD(d))}</small></span><span class="nv-pill">va bene</span></button>`).join(''); }
-    if(dno.length) h+=`<div class="cs-sez">NON VANNO BENE</div>`+dno.map(d=>`<div class="nv-riga no"><span class="nv-pal"></span><span class="m"><b>${ESC(d.nome)}</b><small>${ESC(vdDroneNo(d,NV.dove,NV.perche))}</small></span></div>`).join('');
-    h+='</div>';
-  }
-  const d=pronto2&&DRONI.find(x=>String(x.id)===String(NV.d));
-  if(d){ const sv=vdServe(NV.dove,d), psi=PILOTI.filter(p=>vdHa(p,sv)), pno=PILOTI.filter(p=>!vdHa(p,sv));
-    h+=passo('Quale pilota?',sv==='niente'?'Con il '+ESC(d.nome)+' non serve un attestato: vanno bene tutti.':'Con il '+ESC(d.nome)+', per questo volo serve '+VD_NOMI[sv]+'.');
-    h+=(psi.length?psi.map(p=>`<button type="button" class="nv-riga ${String(NV.p)===String(p.id)?'on':''}" onclick="nvScegli('p','${p.id}')"><span class="nv-pal ok"></span><span class="m"><b>${ESC(p.nome)}</b><small>${sv==='niente'?((p.att||[]).length?'ha '+ESC((p.att||[]).join(', ')):'senza attestato'):'ha '+VD_NOMI[sv]}</small></span><span class="nv-pill">può</span></button>`).join('')
-        :PILOTI.length?`<div class="nv-no"><b>Nessun pilota ha ${VD_NOMI[sv]}.</b><br>Carica l’attestato nella scheda del pilota, o scegli un altro drone.</div>`:`<div class="nv-no"><b>Non c’è ancora nessun pilota.</b><br>Aggiungilo da Home › Piloti.</div>`)+
-      (pno.length?`<div class="cs-sez">NON POSSONO</div>`+pno.map(p=>`<div class="nv-riga no"><span class="nv-pal"></span><span class="m"><b>${ESC(p.nome)}</b><small>gli manca ${VD_NOMI[sv]}</small></span></div>`).join(''):'')+'</div>';
+    if(d) h+=fatto('Drone',d.nome,'d');
+    else { const dsi=DRONI.filter(x=>!vdDroneNo(x,NV.dove,NV.perche)), dno=DRONI.filter(x=>vdDroneNo(x,NV.dove,NV.perche));
+      h+=passo('Con quale drone?',dsi.length?'Tocca il drone che vuoi usare. Dal drone dipendono le regole del volo.':'');
+      if(!DRONI.length) h+=`<div class="nv-no"><b>Non c’è ancora nessun drone.</b><br>Aggiungilo da Home › Droni.</div>`;
+      else if(!dsi.length) h+=`<div class="nv-no"><b>Nessun vostro drone può fare questo volo.</b><br>${ESC(DRONI.some(x=>D.ok(vdTipo(x)))&&P&&P.need?'Serve un drone con '+VD_SENS[P.need]+'.':(D.nota||''))}</div><div class="row"><button type="button" class="btn sec" onclick="nvScegli('dove',null)">Cambia il tipo di volo</button></div>`;
+      else { if(D.nota) h+=`<div class="nv-nota">${ESC(D.nota)}</div>`;
+        h+=dsi.map(x=>`<button type="button" class="nv-riga" onclick="nvScegli('d','${x.id}')"><span class="nv-pal ok"></span><span class="m"><b>${ESC(x.nome)}</b><small>${ESC(nvDescD(x))}</small></span><span class="nv-scegli">Scegli</span></button>`).join(''); }
+      if(dno.length) h+=`<div class="cs-sez">NON VANNO BENE</div>`+dno.map(x=>`<div class="nv-riga no"><span class="nv-pal"></span><span class="m"><b>${ESC(x.nome)}</b><small>${ESC(vdDroneNo(x,NV.dove,NV.perche))}</small></span></div>`).join('');
+      h+='</div>'; }
   }
   const p=d&&PILOTI.find(x=>String(x.id)===String(NV.p));
+  if(d){ const sv=vdServe(NV.dove,d);
+    if(p) h+=fatto('Pilota',p.nome,'p');
+    else { const psi=PILOTI.filter(x=>vdHa(x,sv)), pno=PILOTI.filter(x=>!vdHa(x,sv));
+      h+=passo('Quale pilota?',(sv==='niente'?'Con il '+ESC(d.nome)+' non serve un attestato.':'Con il '+ESC(d.nome)+', per questo volo serve '+VD_NOMI[sv]+'.')+(psi.length?' Tocca il pilota.':''));
+      h+=(psi.length?psi.map(x=>`<button type="button" class="nv-riga" onclick="nvScegli('p','${x.id}')"><span class="nv-pal ok"></span><span class="m"><b>${ESC(x.nome)}</b><small>${sv==='niente'?((x.att||[]).length?'ha '+ESC((x.att||[]).join(', ')):'senza attestato'):'ha '+VD_NOMI[sv]}</small></span><span class="nv-scegli">Scegli</span></button>`).join('')
+          :PILOTI.length?`<div class="nv-no"><b>Nessun pilota ha ${VD_NOMI[sv]}.</b><br>Carica l’attestato nella scheda del pilota, o scegli un altro drone.</div>`:`<div class="nv-no"><b>Non c’è ancora nessun pilota.</b><br>Aggiungilo da Home › Piloti.</div>`)+
+        (pno.length?`<div class="cs-sez">NON POSSONO</div>`+pno.map(x=>`<div class="nv-riga no"><span class="nv-pal"></span><span class="m"><b>${ESC(x.nome)}</b><small>gli manca ${VD_NOMI[sv]}</small></span></div>`).join(''):'')+'</div>'; }
+  }
   if(p){ const l={dove:NV.dove,perche:NV.perche}, aut=D.aut?D.aut(vdTipo(d)):'';
     const autOk=aut==='Autorizzazione ENAC'?!!AUT_ENAC.agricola:false;
     const prep=[['Drone registrato su D-Flight (QR)',d.qr],['Assicurazione',rcDi(p,new Date()).ok]];
@@ -8138,7 +8147,7 @@ function nvDisegna(){
     h+=passo('Le regole di questo volo','Le vede anche '+ESC(p.nome)+' sul telefono, così come sono scritte qui.')+vdRegoleHtml(l,d)+'</div>'+
       `<div class="card nv-card"><h2>Cosa preparare</h2>${prep.map(x=>`<div class="nv-prep">${ESC(x[0])}<span class="nv-pill ${x[1]===true?'':'da'}">${x[1]===true?'a posto':x[1]===false?'manca':'da preparare'}</span></div>`).join('')}
        <div class="nv-prep">Zone della mappa D-Flight<span class="nv-pill az">le guarda il pilota sul posto</span></div></div>
-      <div class="card nv-card"><h2>Il lavoro</h2><div class="nv-campi">
+      <div class="card nv-card"><h2>Il lavoro</h2><div class="nv-fine" style="margin-bottom:8px">Ultima cosa: scrivi questi quattro dati e tocca il tasto blu.</div><div class="nv-campi">
        <label>Cliente<input type="text" id="nv-cli" list="nv-cl" placeholder="es. Studio Ferri"><datalist id="nv-cl">${CLIENTI.map(c=>`<option value="${ESC(c)}">`).join('')}</datalist></label>
        <label>Cosa si fa<input type="text" id="nv-tit" placeholder="es. ${P?ESC(P.s.split(',')[0]):'semina del grano'}"></label>
        <label>Data<input id="nv-data" type="date"></label>
@@ -8146,6 +8155,7 @@ function nvDisegna(){
        <div class="row"><button class="btn" type="button" onclick="nvCrea(this)"><span class="spin"></span>Crea e manda a ${ESC(p.nome.split(' ')[0])}</button></div></div>`;
   }
   document.getElementById('nv-c').innerHTML=h;
+  if(scorri){ const c=document.getElementById('nv-cur'); if(c) setTimeout(()=>{ const y=c.getBoundingClientRect().top+scrollY-90; window.scrollTo({top:Math.max(0,y),behavior:'smooth'}); },30); }
 }
 function nvDescD(d){ const t=vdTipo(d), cl=t==='spec'?'agricolo/specifica':t==='L'||t==='L250'?'senza classe':'classe '+t, g=(SCHEDE[d.id]||{}).peso;
   const s=vdSens(d); return [cl,g&&g!=='—'?g:'',s.length?s.map(x=>({foto:'fotocamera',termica:'termocamera',multi:'multispettrale'}[x])).join(' e '):''].filter(Boolean).join(' · '); }
