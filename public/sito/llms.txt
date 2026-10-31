@@ -2,11 +2,13 @@
 
 > Quota 120 è un gestionale in italiano per operatori di droni in Italia (aziende e piloti singoli): controllo prima del volo con le zone D-Flight, registro dei voli dai file DJI, piloti, droni, batterie, missioni, clienti e richieste ATM. Funziona dal telefono del pilota, anche senza rete. Oggi è in prova gratuita. Quota 120 non è collegato a ENAC, D-Flight, EASA o DJI.
 
-Il sito offre anche un corso gratuito, con registrazione via email, per preparare l'esame ENAC dell'attestato di pilota UAS A1-A3: 9 video lezioni (una per materia del programma europeo, Regolamento UE 2019/947), legende, domande di fine lezione e una simulazione d'esame come quella ENAC (40 domande in 60 minuti, +2 giusta, 0 vuota, -1 sbagliata, si passa con 60 punti su 80). Il corso non sostituisce il corso e l'esame ufficiali, che sono sul portale ENAC.
+Il sito offre anche corsi gratuiti (A1-A3, A2 e scenari standard STS) con registrazione via email. Il primo, con registrazione via email, per preparare l'esame ENAC dell'attestato di pilota UAS A1-A3: 9 video lezioni (una per materia del programma europeo, Regolamento UE 2019/947), legende, domande di fine lezione e una simulazione d'esame come quella ENAC (40 domande in 60 minuti, +2 giusta, 0 vuota, -1 sbagliata, si passa con 60 punti su 80). Il corso non sostituisce il corso e l'esame ufficiali, che sono sul portale ENAC.
 
 ## Pagine
 - [Quota 120, gestionale per operatori di droni](https://quota120.com/): cosa fa il programma, domande frequenti, prova gratuita
 - [Corso per il patentino drone A1-A3](https://quota120.com/corso-patentino-drone/): le 9 materie, avvertenze, registrazione
+- [Corso per il patentino drone A2](https://quota120.com/patentino-drone-a2/): meteorologia, prestazioni del drone, rischio a terra; simulazione con 30 domande in 60 minuti
+- [Corso per il patentino drone STS](https://quota120.com/patentino-drone-sts/): scenari standard STS-01 e STS-02; simulazione con 40 domande
 - [Contatti](https://quota120.com/contatti/): email e chi c'è dietro Quota 120
 
 ## Programma
