@@ -760,6 +760,7 @@ details.cp-ok>.checks,details.cp-ok>.cp-in{border-top:1px solid var(--line);padd
   .q2-gr{background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;overflow:hidden}
   .q2-gr>summary{list-style:none;cursor:pointer;display:flex;gap:11px;align-items:center;padding:11px 12px}.q2-gr>summary::-webkit-details-marker{display:none}
   .q2-gr>summary .sq{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:none}.q2-gr>summary .sq svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .q2-dir{display:flex;gap:11px;align-items:center;padding:11px 12px;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer}.q2-dir .sq{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:none}.q2-dir .sq svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.q2-dir .tx{flex:1;min-width:0}.q2-dir b{display:block;font-size:16.5px;line-height:1.2}.q2-dir small{display:block;font-size:14px;color:var(--muted);margin-top:2px}.q2-dir:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
   .q2-gr>summary .tx{flex:1;min-width:0}.q2-gr>summary b{display:block;font-size:16.5px;line-height:1.2}.q2-gr>summary small{display:block;font-size:14px;color:var(--muted);margin-top:2px}
   .q2-gr>summary small.ko{color:var(--ko);font-weight:700}.q2-gr>summary small.warn{color:var(--warn);font-weight:700}
   .q2-gr>summary .q2-fr{transition:transform .15s}.q2-gr[open]>summary .q2-fr{transform:rotate(90deg)}
@@ -4459,6 +4460,8 @@ const Q2_GR=[['lav','Lavoro e clienti',['lavori','voli','prev'],'lavori, calenda
   ['regole','Regole e permessi',['dflight','permessi'],'D-Flight, zone, ENAC, rischio, segnalazioni'],['agri','Agricoltura',['agri'],'campi e trattamenti'],['uff','Ufficio',['documenti','imp'],'documenti, impostazioni, studio']];
 function q2GrDi(k){ return (Q2_GR.find(g=>g[2].includes(k))||[])[0]; }
 function q2GrAperto(k){ const e=document.getElementById('q2g-'+q2GrDi(k)); return !!(e&&e.open&&VISTA==='home'); }
+// «Corsi»: riquadro suo nella Home dell'Admin, si tocca e si va dritti ai corsi (non è a tendina)
+function q2Corsi(fr){ return `<button type="button" class="q2-gr q2-dir" id="q2g-corsi" onclick="apriCorsi()"><span class="sq" style="background:var(--f-flotta)"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3z"/></svg></span><span class="tx"><b>Corsi</b><small>della tua azienda e di Quota 120 · anche in auto</small></span>${fr}</button>`; }
 function q2Gruppi(fr){
   return Q2_GR.map(([gk,n,ks,desc])=>{
     const T=ks.map(k=>Q2_TILES.find(t=>t.k===k)).filter(Boolean), st=T.map(t=>[t,q2Stato(t)]).filter(x=>x[1]); if(!st.length) return '';
@@ -4466,7 +4469,7 @@ function q2Gruppi(fr){
     const vo=(k,n,c,d,go,id)=>`<button type="button" class="q2-vo q2h-${k} ${d||''}" ${id?`id="${id}"`:''} onclick="${go}"><b>${ESC(n)}</b><small>${ESC(c||'')}</small></button>`;
     const hub=`<div class="q2-gv">${st.map(([t,x])=>t.go?vo(t.k,t.n,x.c,x.d,t.go,'q2-'+t.k):q2Voci(t).map(v=>vo(t.k,v.n,v.c,v.d,v.go)).join('')).join('')}</div>`, dirH='';
     const g0=T[0];
-    return `<details class="q2-gr" id="q2g-${gk}" ${HADM_APERTE.has('g:'+gk)?'open':''} ontoggle="hadmToggle('g:${gk}',this.open)"><summary><span class="sq" style="background:var(${g0.col})"><svg viewBox="0 0 24 24">${g0.i}</svg></span><span class="tx"><b>${n}</b><small class="${sm.d}">${ESC(sm.c)}</small></span>${fr}</summary>${hub}${dirH}</details>`; }).join(''); }
+    return `<details class="q2-gr" id="q2g-${gk}" ${HADM_APERTE.has('g:'+gk)?'open':''} ontoggle="hadmToggle('g:${gk}',this.open)"><summary><span class="sq" style="background:var(${g0.col})"><svg viewBox="0 0 24 24">${g0.i}</svg></span><span class="tx"><b>${n}</b><small class="${sm.d}">${ESC(sm.c)}</small></span>${fr}</summary>${hub}${dirH}</details>`; }).map((h,i)=>Q2_GR[i][0]==='piloti'?h+q2Corsi(fr):h).join(''); }
 /* Home Admin: i prossimi lavori, con il pallino (verde si vola, rosso no e perché) */
 function q2Prossimi(){
   const o=new Date(new Date().toDateString()), ap=LAVORI.filter(l=>l.stato!=='concluso').sort((a,b)=>(dt(a.data)||9e15)-(dt(b.data)||9e15));
@@ -5845,7 +5848,7 @@ const Q2_TILES=[
  {k:'lavori',n:'Lavori',col:'--f-attivita',i:Q2I.cal,V:[['t','Clienti e lavori'],['t','Calendario']]},
  {k:'voli',n:'Voli',col:'--f-attivita',i:Q2I.log,V:[['t','Registro voli']],go:'apriVoli()'},
  {k:'droni',n:'Droni',col:'--f-flotta',i:Q2I.drone,V:[['t','Droni'],['t','Batterie'],['t','Manutenzioni'],['t','Inventario'],['p','Aggiungi drone']]},
- {k:'piloti',n:'Piloti',col:'--f-persone',i:Q2I.users,V:[['t','Piloti'],['p','Aggiungi pilota'],['p','Le firme'],['p','Telefoni collegati'],['p','Corsi']]},
+ {k:'piloti',n:'Piloti',col:'--f-persone',i:Q2I.users,V:[['t','Piloti'],['p','Aggiungi pilota'],['p','Le firme'],['p','Telefoni collegati']]},
  {k:'dflight',n:'D-Flight e zone',col:'--f-regole',i:Q2I.pin,V:[['x','zd']],go:'apriDflight()'},
  {k:'permessi',n:'Permessi e sicurezza',col:'--f-regole',i:Q2I.reg,V:[['t','Autorizzazioni ENAC'],['p','Richieste di permesso'],['p','Valutazioni del rischio'],['p','Segnalazioni'],['p','Checklist']]},
  {k:'agri',n:'Agricoltura',col:'--f-agri,#6b7a45',i:Q2I.leaf,V:[['t','Campi'],['t','Trattamenti']]},
