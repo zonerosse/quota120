@@ -90,7 +90,7 @@ def menu_guide(h):
     """Voce «Guide» nel menu del sito (computer e telefono)."""
     if 'href="/guide/"' in h: return h
     h = re.sub(r'(<a class="mn-a" href="/?#domande">Domande</a>)', r'<a class="mn-a" href="/guide/">Guide</a>\1', h, count=1)
-    h = h.replace('<a href="/#domande">Domande</a>', '<a href="/guide/">Guide</a><a href="/#domande">Domande</a>', 1)
+    h = h.replace('<a href="/prezzi/">Prezzi</a><a href="/#domande">Domande</a>', '<a href="/guide/">Guide</a><a href="/#domande">Domande</a>', 1)
     return h
 
 if __name__ == '__main__':

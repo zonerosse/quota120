@@ -7,7 +7,7 @@ TIT = 'Prezzi di Quota 120 · gratis nel periodo di lancio'
 DES = 'Quanto costa Quota 120, gestionale per operatori di droni: nel periodo di lancio è gratis con tutte le funzioni, senza carta di credito né limiti di piloti.'
 FAQ = [
  ('Quota 120 è davvero gratis?', 'Sì. Nel periodo di lancio si usa gratis, con tutte le funzioni, senza carta di credito e senza limiti di piloti o droni.'),
- ('Perché è gratis?', 'Lo stiamo provando sul lavoro vero con i primi operatori. Le vostre segnalazioni ci dicono cosa migliorare prima di renderlo a pagamento.'),
+ ('Perché è gratis?', 'Lo stiamo provando sul lavoro vero con i primi operatori e raccogliamo i loro pareri e le loro proposte: ci dicono cosa migliorare.'),
  ('Quanto costerà dopo?', 'Non è ancora deciso. Quando sarà deciso lo saprai almeno 60 giorni prima, per email, e sarai libero di restare o di andartene.'),
  ('Se un giorno non lo voglio più, cosa succede ai miei dati?', 'I dati restano tuoi. Ti mandiamo una copia di tutto (voli, documenti, schede) e poi cancelliamo lo spazio, se ce lo chiedi.'),
  ('Serve un contratto o una carta di credito?', 'No. Ti iscrivi con l’email dell’azienda e accetti le condizioni d’uso: niente carta, niente contratto da firmare.'),
@@ -40,6 +40,7 @@ main = '''<main><div class="kh">
 <a class="kbtn kbp" href="https://app.quota120.com/" style="margin-top:6px;justify-content:center;width:100%">Crea il tuo spazio gratis</a>
 <p style="margin-top:12px;font-size:14px">Prima vuoi guardarlo? <a href="https://app.quota120.com/prova">Apri la prova con i dati di esempio</a>.</p></div></div>
 </div></section>
+<section class="cz" style="padding:0 0 50px"><div class="w" style="display:block"><div class="disc" style="border-left-color:#1E6B6F;margin-top:0"><b class="t">Raccogliamo pareri e proposte</b><p style="margin:0 0 12px">Quota 120 cresce con chi lo usa: cosa manca, cosa è scomodo, cosa vorresti che facesse da solo. Ogni proposta la leggiamo e ti rispondiamo.</p><a class="kbtn kbp" href="mailto:assistenza@quota120.com?subject=Proposta%20per%20Quota%20120">Mandaci la tua proposta</a></div></div></section>
 <section class="faq" id="domande"><div class="w"><div><p class="kick">Domande</p><h2>Le domande sul prezzo</h2></div>
 ''' + ''.join('<details><summary>%s</summary><p>%s</p></details>' % q for q in FAQ) + '''
 <p style="margin-top:22px;color:var(--muted)">Le regole del servizio sono nelle <a href="/condizioni/">condizioni d’uso di Quota 120</a>. Per altre domande scrivi ad <a href="mailto:assistenza@quota120.com">assistenza@quota120.com</a>.</p>

@@ -1469,7 +1469,7 @@ export default {
         const des = priv ? "Quali dati raccolgono Quota 120 e il sito quota120.com, perché, dove finiscono, quali cookie tecnici usano e quali diritti hai secondo il GDPR."
           : "Le condizioni d'uso di Quota 120, il gestionale per operatori di droni: cosa offre la prova gratuita, responsabilità e regole del servizio.";
         const ld = { "@context": "https://schema.org", "@graph": [
-          { "@type": "WebPage", "@id": u + "#page", url: u, name: tit, description: des, inLanguage: "it-IT", isPartOf: { "@id": "https://quota120.com/#web" }, publisher: { "@id": "https://quota120.com/#org" }, dateModified: "2026-10-30" },
+          { "@type": "WebPage", "@id": u + "#page", url: u, name: tit, description: des, inLanguage: "it-IT", isPartOf: { "@id": "https://quota120.com/#web" }, publisher: { "@id": "https://quota120.com/#org" }, dateModified: priv ? "2026-10-30" : "2026-11-01" },
           { "@type": "Organization", "@id": "https://quota120.com/#org", name: "Quota 120", url: "https://quota120.com/", logo: "https://quota120.com/img/logo-512.png", email: "assistenza@quota120.com", areaServed: "IT",
             address: { "@type": "PostalAddress", addressLocality: "Ostellato", addressRegion: "FE", postalCode: "44020", addressCountry: "IT" }, sameAs: ["https://puntowebferrara.com/", "https://app.quota120.com/"],
             contactPoint: { "@type": "ContactPoint", contactType: "customer support", email: "assistenza@quota120.com", availableLanguage: "it" } },
