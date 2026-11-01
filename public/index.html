@@ -749,6 +749,14 @@ details.cp-ok>.checks,details.cp-ok>.cp-in{border-top:1px solid var(--line);padd
   .q2-dr .t{flex:1;min-width:0}.q2-dr b{display:block;font-size:16.5px;line-height:1.25}.q2-dr small{font-size:14px;color:var(--muted)}
   .q2-az{flex:none;background:var(--accent);color:#fff;border:0;border-radius:9px;padding:9px 12px;font-weight:700;font-size:15px;font-family:inherit;cursor:pointer;white-space:nowrap;display:inline-flex;gap:6px;align-items:center}
   .q2-az .spin{display:none}.q2-az.busy .spin{display:inline-block}
+  .ds-card{margin-top:12px}#dc-manca+#dc-carica{margin-top:12px}.ds-card h2{margin-bottom:2px}.ds-sub{font-size:14px;color:var(--muted);margin-bottom:6px}
+  .ds-l .q2-dr{padding:11px 0}.ds-r[role=button]{cursor:pointer}.ds-r .chev{width:18px;height:18px;flex:none;stroke:var(--ink3,#5E6D77);fill:none;stroke-width:2}
+  .ds-r small.warn{color:var(--warn);font-weight:700}.ds-r small.ko{color:var(--ko);font-weight:700}
+  .ds-dt{flex:none;width:52px;text-align:center;border-radius:8px;padding:4px 0;background:var(--sup2,#F5F7F8);border:1px solid var(--line);font-family:"Barlow Semi Condensed",Barlow,Arial,sans-serif;font-weight:700;font-size:17px;line-height:1.05}
+  .ds-dt span{display:block;font-size:12.5px;font-weight:600;color:var(--muted)}.ds-dt.warn{background:var(--warn-bg);border-color:#e8d2a5}.ds-dt.ko{background:var(--ko-bg);border-color:#e9c1bd}
+  .ds-piu{font:inherit;font-weight:700;font-size:15px;color:var(--accent);background:none;border:0;padding:6px 0 0;text-decoration:underline;cursor:pointer}
+  .ds-gr{border:0;border-top:1px solid #edf1f4;border-radius:0;margin:0}.ds-gr>summary{padding:11px 0}
+  .ds-nota{font-size:14px;color:var(--muted);background:var(--sup2,#F5F7F8);border-radius:8px;padding:9px 11px;margin-top:8px}
   .q2-gr{background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;overflow:hidden}
   .q2-gr>summary{list-style:none;cursor:pointer;display:flex;gap:11px;align-items:center;padding:11px 12px}.q2-gr>summary::-webkit-details-marker{display:none}
   .q2-gr>summary .sq{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:none}.q2-gr>summary .sq svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -1916,10 +1924,9 @@ input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea{f
       <div class="row" id="dc-azioni"></div>
     </div>
 
-    <div class="card" style="margin-top:12px" id="dc-arch-card">
-      <h2>Tutti i documenti</h2>
-      <div id="dc-arch"></div>
-    </div>
+    <div class="card ds-card" id="dc-manca"></div>
+    <div class="card ds-card" id="dc-scad"></div>
+    <div class="card ds-card" id="dc-arch-card"><div id="dc-arch"></div></div>
   </div>
 
 </div>
@@ -3943,19 +3950,80 @@ const VOCI={pilota:[['A1-A3','Attestato A1-A3'],['A2','Attestato A2'],['STS-01',
   altro:[['altro','Documento generico']]};
 const KNOMI={pilota:'Pilota',drone:'Drone',operatore:'Operatore',altro:'Altro'};
 let DOCCORR=null;
+/* Documenti e scadenze: carica · cosa manca · le scadenze · l'archivio (Admin); i miei documenti (pilota) */
+let DS_FX=[], DS_GO=[];
+function dsData(s){ const d=dt(s); if(!d) return '<div class="ds-dt">—</div>'; const M=['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'], g=giorni(s), y=d.getFullYear()!==new Date().getFullYear()?' '+String(d.getFullYear()).slice(2):'';
+  return `<div class="ds-dt ${g<0?'ko':g<90?'warn':''}">${d.getDate()}<span>${M[d.getMonth()]}${y}</span></div>`; }
+function dsRiga(x){ const i=DS_FX.push(x.fx||null)-1; DS_GO.push(x.go||null);
+  const az=x.az!=null?x.az:(x.fx?fxAz(x.fx):'')||(x.go?'Apri':''), cl=x.go||x.fx?`role="button" onclick="dsTocca(${i})"`:'';
+  return `<div class="q2-dr ds-r" ${cl}>${x.data?dsData(x.data):`<span class="p ${x.liv}"></span>`}<div class="t"><b>${x.t}</b>${x.w?`<small class="${x.data&&x.liv!=='ok'?x.liv:x.liv==='ko'?'ko':''}">${x.w}</small>`:''}</div>${az&&(x.liv!=='ok')?`<button class="q2-az ${x.liv==='ko'||x.data?'':'via'}" type="button">${az}</button>`:x.go||x.fx?'<svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>':''}</div>`; }
+function dsTocca(i){ if(gdDa(DS_FX[i])) return; const g=DS_GO[i]; if(typeof g==='function') g(); else if(g) (new Function(g))(); }
+function dsTra(s){ const g=giorni(s); return g<0?'scaduto il '+s:g===0?'scade oggi':g<90?'tra '+pl(g,'giorno','giorni'):'fino al '+s; }
+function dsNomeDoc(d){ const v=(d.dest||{}).voce||''; if(d.tipo&&d.tipo!=='Documento') return d.tipo;
+  return ATTNOMI[v]||(DOCNOMI[v]||'').replace(/ \(.*\)/,'')||{assicurazione:'Polizza RC',polizza:'Polizza RC personale',patentino:'Patentino fitosanitari',dflight:'Documento D-Flight'}[v]||'Documento'; }
+function dsManca(){ const R=[];
+  (DOCS||[]).filter(x=>x.daApprovare).forEach(x=>R.push({liv:'ko',t:'Da controllare: '+ESC(ATTNOMI[(x.dest||{}).voce]||'attestato')+' di '+ESC(x.da||'un pilota'),w:'l’ha caricato il pilota: finché non lo approvi non vale',az:'Controlla',go:`docApprova('${x.id}')`}));
+  PILOTI.forEach(p=>{ const s=SCHEDEP[p.id]||{}; if(!Object.keys(s.att||{}).length) R.push({liv:'ko',t:'Attestato di '+ESC(p.nome),w:'senza attestato non può volare',fx:{q:'att',pid:p.id},go:()=>inDoc({k:'pilota',id:p.id,voce:'A1-A3'},'L’attestato di '+p.nome,'Fotografa l’attestato')});
+    const q=polP(p); if(q&&q.scad&&!q.doc) R.push({liv:'warn',t:'Quietanza della polizza di '+ESC(p.nome),w:'la polizza personale c’è, manca la ricevuta',fx:{q:'quiet',pid:p.id},go:`piPolDoc(${p.id})`}); });
+  if(!ASSIC.scad&&PILOTI.some(p=>!rcDi(p).ok)) R.push({liv:'ko',t:'Polizza RC dell’azienda',w:'senza assicurazione non si vola',fx:{q:'rcaz'},go:()=>inDoc({k:'operatore',voce:'assicurazione'},'La polizza RC aziendale','Fotografa la quietanza o scegli il PDF')});
+  if(DRONI.some(d=>d.cat==='specific')&&!AUT_ENAC.agricola) R.push({liv:'ko',t:'Autorizzazione ENAC agricola',w:DOMANDA&&DOMANDA.stato==='inviata'?'domanda inviata: caricala quando arriva':'il programma ti prepara la domanda',fx:{q:'enac'},go:'apriEnac()'});
+  DRONI.forEach(d=>{ const s=SCHEDE[d.id]||{}, n=ESC(d.nome.replace('DJI ',''));
+    if(!d.qr) R.push({liv:'ko',t:'QR D-Flight · '+n,w:'il drone non vola senza',fx:{q:'qr',did:d.id},go:`drCarica(${d.id},'qr')`});
+    ['classe','manuale','fattura'].forEach(k=>{ if(k==='classe'&&d.cat==='specific') return; if(!(s.doc||{})[k]) R.push({liv:'warn',t:DOCNOMI[k].replace(/ \(.*\)/,'')+' · '+n,w:{classe:'serve ai controlli',manuale:'serve per manutenzione e controlli',fattura:'per garanzia e assicurazione'}[k],fx:{q:'ddoc',did:d.id,k},go:`drCarica(${d.id},'${k}')`}); }); });
+  return R.sort((a,b)=>(a.liv==='ko'?0:1)-(b.liv==='ko'?0:1)); }
+function dsScadenze(){ const R=[], add=(data,t,fx,go)=>{ if(dt(data)) R.push({data,t,fx,go}); };
+  PILOTI.forEach(p=>{ const s=SCHEDEP[p.id]||{}; Object.entries(s.att||{}).forEach(([k,a])=>a&&a.scad&&add(a.scad,(ATTNOMI[k]||'Attestato '+k)+' · '+ESC(p.nome),{q:'att',pid:p.id,k},()=>apriPilota(p.id)));
+    const q=polP(p); if(q&&q.scad) add(q.scad,'Polizza RC personale · '+ESC(p.nome),{q:'polp',pid:p.id},()=>apriPilota(p.id));
+    const pt=PATENTINO[p.id], m=pt&&String(pt).match(/\d{2}\/\d{2}\/\d{4}/); if(m) add(m[0],'Patentino fitosanitari · '+ESC(p.nome),null,()=>apriPilota(p.id)); });
+  if(ASSIC.scad) add(ASSIC.scad,'Polizza RC dell’azienda',{q:'rcaz'},null);
+  if(OP.dfAbb) add(OP.dfAbb,'Abbonamento D-Flight',{q:'abb'},'apriDflight()');
+  if(AUT_ENAC.scad) add(AUT_ENAC.scad,'Autorizzazione ENAC agricola',{q:'enac'},'apriEnac()');
+  return R.sort((a,b)=>dt(a.data)-dt(b.data)); }
+function dsGr(id,n,col,ic,st,corpo){ return `<details class="q2-gr ds-gr" id="${id}" ${HADM_APERTE.has('p:'+id)?'open':''} ontoggle="hadmToggle('p:${id}',this.open)"><summary>${col?`<span class="sq" style="background:var(${col})"><svg viewBox="0 0 24 24">${ic}</svg></span>`:''}<span class="tx"><b>${n}</b><small class="${st.d||''}">${st.c}</small></span><svg class="q2-fr" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></summary>${corpo}</details>`; }
 function apriDocumenti(){
   document.getElementById('dc-letto').classList.add('hidden');
   document.getElementById('dc-prog').style.display='none';
-  const gruppi=ADM?['pilota','drone','operatore','altro']:['pilota','drone','operatore','altro'];
-  const nomeDest=d=>{const s=d.dest||{};
-    if(s.k==='pilota') return (PILOTI.find(p=>p.id===s.id)||{}).nome||'';
-    if(s.k==='drone') return (DRONI.find(x=>x.id===s.id)||{}).nome||''; return '';};
-  document.getElementById('dc-arch').innerHTML = DOCS.length ? gruppi.map(g=>{const arr=DOCS.filter(d=>(d.dest||{}).k===g); if(!arr.length) return '';
-    return `<div class="cat">${{pilota:'Piloti',drone:'Droni',operatore:'Operatore',altro:'Altri documenti'}[g]}</div><ul class="dlist">`+arr.map(d=>
-      `<li onclick="apriFile('${d.id}')"><div class="mark ok">${svg('check')}</div><div class="main"><div class="a">${d.tipo}${nomeDest(d)?' · '+nomeDest(d):''}</div>
-       <div class="b">Caricato il ${d.data}${d.da&&d.da!=='Admin'?' da '+d.da:''}${(d.dati||{}).scadenza?' · scade il '+d.dati.scadenza:''}</div></div>${chev}</li>`).join('')+'</ul>';}).join('')
-    : '<div style="font-size:13px;color:var(--muted)">Nessun documento caricato ancora. Quelli della prova (attestati, polizza…) sono solo dati di esempio, senza file.</div>';
-  vai('documenti','Documenti');
+  DS_FX=[]; DS_GO=[];
+  const adm=ADM&&!COME, $=id=>document.getElementById(id), file=d=>`<div class="q2-dr ds-r" role="button" onclick="apriFile('${d.id}')"><span class="p ok"></span><div class="t"><b>${ESC(dsNomeDoc(d))}${(d.dest||{}).k==='pilota'?' · '+ESC((PILOTI.find(p=>p.id===d.dest.id)||{}).nome||''):(d.dest||{}).k==='drone'?' · '+ESC(((DRONI.find(x=>x.id===d.dest.id)||{}).nome||'').replace('DJI ','')):''}</b><small>caricato il ${d.data}${d.da&&d.da!=='Admin'?' da '+ESC(d.da):''}${(d.dati||{}).scadenza?' · scade il '+d.dati.scadenza:''}</small></div><svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div>`;
+  let man='', sc='', arch='';
+  if(adm){
+    const M=dsManca(), N=4;
+    man=`<h2>Cosa manca</h2>`+(M.length?`<div class="ds-sub">Tocca una riga: ti guida a caricarlo.</div><div class="ds-l">${M.slice(0,N).map(dsRiga).join('')}</div>`+(M.length>N?`<div class="ds-l hidden" id="ds-altre">${M.slice(N).map(dsRiga).join('')}</div><button class="ds-piu" type="button" onclick="this.previousElementSibling.classList.remove('hidden');this.remove()">Altre ${M.length-N}</button>`:''):`<div class="ds-l">${dsRiga({liv:'ok',t:'Non manca niente',w:'tutti i documenti di piloti, droni e azienda sono caricati'})}</div>`);
+    const S=dsScadenze(), V=S.filter(x=>giorni(x.data)<90), L=S.filter(x=>giorni(x.data)>=90);
+    const ri=x=>{ const g=giorni(x.data); return dsRiga({data:x.data,liv:g<0?'ko':g<90?'warn':'ok',t:x.t,w:dsTra(x.data),fx:g<90?x.fx:null,go:x.go,az:g<90?'Rinnova':''}); };
+    sc=`<h2>Le scadenze</h2><div class="ds-sub">Tutto quello che scade, in ordine di data.${AVVISI.adm&&AVVISI.adm.email?' Ti arriva un’email prima.':''}</div>`
+      +`<div class="ds-l">${V.length?V.map(ri).join(''):dsRiga({liv:'ok',t:'Niente in scadenza nei prossimi 3 mesi',w:''})}</div>`
+      +(L.length?dsGr('ds-avanti','Più avanti','','',{c:pl(L.length,'scadenza','scadenze')+', tutte a posto'},`<div class="ds-l">${L.map(ri).join('')}</div>`):'');
+    const icA='<path d="M4 20V8l8-4 8 4v12"/><path d="M9 20v-6h6v6"/>', icP='<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/>', icD='<circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="18" r="3"/><path d="M9 9l6 6M15 9l-6 6"/>';
+    const az=[]; if(ASSIC.scad) az.push(dsRiga({liv:'ok',t:'Polizza RC',w:'copre tutti i piloti · fino al '+ASSIC.scad,go:ASSIC.doc?`apriFile('${ASSIC.doc}')`:null}));
+      if(OP.dfReg) az.push(dsRiga({liv:'ok',t:'Registrazione D-Flight',w:'dal '+OP.dfReg+(OP.dfAbb?' · abbonamento fino al '+OP.dfAbb:''),go:'apriDflight()'}));
+      if(DRONI.some(d=>d.cat==='specific')) az.push(AUT_ENAC.agricola?dsRiga({liv:'ok',t:'Autorizzazione ENAC agricola',w:'presente',go:'apriEnac()'}):dsRiga({liv:'ko',t:'Autorizzazione ENAC agricola',w:'manca',fx:{q:'enac'},go:'apriEnac()'}));
+      (DOCS||[]).filter(d=>['operatore','altro'].includes((d.dest||{}).k)&&d.id!==ASSIC.doc).forEach(d=>az.push(file(d)));
+    const pi=PILOTI.map(p=>{ const s=SCHEDEP[p.id]||{}, A=Object.entries(s.att||{}).filter(([k,a])=>a), w=A.some(([k,a])=>a.scad&&giorni(a.scad)<90);
+      return dsRiga({liv:!A.length?'ko':w?'warn':'ok',t:ESC(p.nome),w:A.length?A.map(([k,a])=>k+(a.scad&&giorni(a.scad)<90?' (scade il '+a.scad+')':'')).join(', ')+(PATENTINO[p.id]?', patentino':''):'nessun attestato',go:()=>apriPilota(p.id),az:A.length?'':'Carica',fx:A.length?null:{q:'att',pid:p.id}}); });
+    const dr=DRONI.map(d=>{ const s=SCHEDE[d.id]||{}, K=['qr','classe','manuale','fattura'].filter(k=>!(k==='classe'&&d.cat==='specific')), c=K.filter(k=>k==='qr'?d.qr:(s.doc||{})[k]), m=K.filter(k=>!c.includes(k)), nm={qr:'QR',classe:'classe',manuale:'manuale',fattura:'fattura'};
+      return dsRiga({liv:!d.qr?'ko':m.length?'warn':'ok',t:ESC(d.nome),w:(c.length?c.map(k=>nm[k]).join(', '):'nessun documento')+(m.length&&c.length?' · manca '+m.map(k=>nm[k]).join(', '):''),go:()=>apriDrone(d.id,'droni'),az:''}); });
+    const nPd=(DOCS||[]).filter(d=>(d.dest||{}).k==='pilota').length+PILOTI.reduce((n,p)=>n+Object.keys((SCHEDEP[p.id]||{}).att||{}).length,0);
+    arch=`<h2>L’archivio</h2><div class="ds-sub">Tutti i documenti, per chi li riguarda.</div>`
+      +dsGr('ds-az','L’azienda','--f-imp',icA,{c:pl(az.length,'documento','documenti')},`<div class="ds-l">${az.join('')||dsRiga({liv:'warn',t:'Ancora niente',w:'carica la polizza RC dell’azienda'})}</div>`)
+      +dsGr('ds-pi','Piloti','--f-persone',icP,{c:pl(PILOTI.length,'pilota','piloti')+(PILOTI.some(p=>!Object.keys((SCHEDEP[p.id]||{}).att||{}).length)?' · manca qualcosa':''),d:PILOTI.some(p=>!Object.keys((SCHEDEP[p.id]||{}).att||{}).length)?'warn':''},`<div class="ds-l">${pi.join('')}</div>`)
+      +dsGr('ds-dr','Droni','--f-flotta',icD,{c:pl(DRONI.length,'drone','droni')+(DRONI.some(d=>!d.qr)?' · manca qualcosa':''),d:DRONI.some(d=>!d.qr)?'warn':''},`<div class="ds-l">${dr.join('')}</div>`)
+      +((DOCS||[]).length?dsGr('ds-file','File caricati','','',{c:pl(DOCS.length,'file','file')+' · tocca per aprirli'},`<div class="ds-l">${DOCS.slice().reverse().map(file).join('')}</div>`):'');
+    $('dc-carica').querySelector('h2').textContent='Carica un documento';
+  } else {
+    const p=ioPilota()||PILOTI.find(x=>x.nome===IO.n);
+    const R=p?scadenzePilota(p):[], da=R.filter(x=>x.liv!=='ok'), ok=R.filter(x=>x.liv==='ok');
+    const rp=x=>dsRiga({liv:x.liv,t:x.t,w:x.w,fx:x.fx,go:x.go||null,az:x.liv==='ok'?'':(x.fx&&x.fx.q==='att'?'Fotografa':undefined)});
+    man=`<h2>Da fare</h2><div class="ds-l">${da.length?da.map(rp).join(''):dsRiga({liv:'ok',t:'Niente da fare',w:'i tuoi documenti sono a posto'})}</div><div class="ds-nota">Fotografi il documento e basta: il programma lo legge, l’Admin lo controlla e poi vale per i voli.</div>`;
+    sc=ok.length?`<h2>A posto</h2><div class="ds-l">${ok.map(rp).join('')}</div>`:'';
+    const mie=(DOCS||[]).filter(d=>!p||((d.dest||{}).k==='pilota'&&d.dest.id===p.id)||d.da===IO.n);
+    arch=mie.length?`<h2>I miei file</h2><div class="ds-l">${mie.slice().reverse().map(file).join('')}</div>`:'';
+  }
+  { const c=$('dc-carica'), m=$('dc-manca'); if(adm) c.after(m); else c.before(m); }
+  $('dc-manca').innerHTML=man; $('dc-manca').classList.toggle('hidden',!man);
+  $('dc-scad').innerHTML=sc; $('dc-scad').classList.toggle('hidden',!sc);
+  $('dc-arch-card').innerHTML=arch; $('dc-arch-card').classList.toggle('hidden',!arch);
+  vai('documenti',adm?'Documenti e scadenze':'I miei documenti');
 }
 /* attestati caricati da un pilota: l'Admin li controlla prima che valgano */
 function docApprova(id){ const x=(DOCS||[]).find(d=>d.id===id&&d.daApprovare); if(!x){ toast('Già sistemato'); return; }
@@ -4282,7 +4350,7 @@ function hadmVoce(tipo,n){
   if(tipo==='p'){ const t=(window.PANN_T||[]).find(x=>x.n===n); return t?{n:t.n.replace('Studio Gestionale','Studio'),c:t.c,d:t.d||'',i:t.i,go:t.go,vis:true}:null; }
   if(n==='parole') return {n:'Le parole del drone',c:'D-Flight, ENAC, NOTAM e le altre sigle',d:'',i:'<svg viewBox="0 0 24 24"><path d="M4 5h11a3 3 0 013 3v11H7a3 3 0 01-3-3z"/><path d="M8 9h6M8 13h6"/></svg>',go:'apriParole()',vis:true};
   if(n==='zd'){ const pr=(!OP.codice||/x{3}/i.test(OP.codice)?1:0)+(ZONEINFO?0:1)+(DRONI.some(d=>!d.qr)?1:0)+(ZONEINFO&&livZone()!=='ok'?1:0); return {n:'Zone e D-Flight',c:pr?pl(pr,'cosa da sistemare','cose da sistemare'):'mappa, file delle zone, dati D-Flight',d:pr?'warn':'',i:'<svg viewBox="0 0 24 24"><circle cx="12" cy="10" r="3"/><path d="M12 21s-7-6.5-7-11a7 7 0 0114 0c0 4.5-7 11-7 11z"/></svg>',go:'apriDflight()',vis:true}; }
-  if(n==='doc') return {n:'Documenti',c:DOCS.length?pl(DOCS.length,'caricato','caricati'):'si leggono da soli',d:'',i:'<svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z"/><path d="M12 17v-6M9 13l3-3 3 3"/></svg>',go:'apriDocumenti()',vis:true};
+  if(n==='doc'){ const m=ADM&&!COME?dsManca().length:0, v=ADM&&!COME?dsScadenze().filter(x=>giorni(x.data)<90).length:0; return {n:'Documenti e scadenze',c:m?pl(m,'documento da caricare','documenti da caricare'):v?pl(v,'scadenza vicina','scadenze vicine'):'tutto a posto',d:m||v?'warn':'',i:'<svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z"/><path d="M12 17v-6M9 13l3-3 3 3"/></svg>',go:'apriDocumenti()',vis:true}; }
   return null;
 }
 function homeAdm(todo){
@@ -5682,7 +5750,7 @@ const Q2_TILES=[
  {k:'dflight',n:'D-Flight e zone',col:'--f-regole',i:Q2I.pin,V:[['x','zd']],go:'apriDflight()'},
  {k:'permessi',n:'Permessi e sicurezza',col:'--f-regole',i:Q2I.reg,V:[['t','Autorizzazioni ENAC'],['p','Richieste di permesso'],['p','Valutazioni del rischio'],['p','Segnalazioni'],['p','Checklist']]},
  {k:'agri',n:'Agricoltura',col:'--f-agri,#6b7a45',i:Q2I.leaf,V:[['t','Campi'],['t','Trattamenti']]},
- {k:'documenti',n:'Documenti',col:'--f-imp',i:Q2I.up,V:[['x','doc']],go:'apriDocumenti()'},
+ {k:'documenti',n:'Documenti e scadenze',col:'--f-imp',i:Q2I.up,V:[['x','doc']],go:'apriDocumenti()'},
  {k:'prev',n:'Preventivi',col:'--f-attivita',i:Q2I.euro,V:[['t','Preventivi']],go:"apriPagina('Preventivi')"},
  {k:'imp',n:'Impostazioni',col:'--f-imp',i:Q2I.gear,V:[['p','Dati dell’operatore'],['p','Avvisi via email'],['p','Utenti e permessi'],['x','vista'],['p','Codice dell’Admin'],['x','guida'],['p','Studio Gestionale'],['x','parole']]}];
 function q2Voci(t){ return t.V.map(([tp,n])=>{ if(n==='vista') return {n:'Vedi come un pilota',c:'controlli cosa vede ognuno',d:'',i:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>',go:'tabOperatore()',vis:PILOTI.length>0};
