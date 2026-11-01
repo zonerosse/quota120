@@ -32,7 +32,18 @@ def ts(x):
 def durata(p):
     with wave.open(p) as w: return w.getnframes() / w.getframerate()
 OK = re.compile(r'^[A-Za-z0-9-]{3,80}$')
-elenco = [x for x in json.load(open(sys.argv[1])) if OK.match(x.get('file', '')) and x.get('scene')]
+MAX_MB = 20                      # un video oltre i 20 MB non si pubblica
+VOCE_LEZ, VOCE_AZ = 6000, 60000  # caratteri della voce: per lezione e per tutti i corsi di un'azienda
+def voce(x): return sum(len(str(s.get('v') or s.get('t') or '')) for s in x.get('scene') or [])
+elenco, per_az = [], {}
+for x in json.load(open(sys.argv[1])):
+    if not OK.match(x.get('file', '')): continue
+    # corsi delle aziende (az-): solo quelli che il titolare ha approvato, e dentro i tetti della voce
+    if x['file'].startswith('az-'):
+        if not x.get('approvato'): print('salto (corso aziendale non approvato):', x['file'], x.get('op', '')); continue
+        n = voce(x); per_az[x.get('op', '')] = per_az.get(x.get('op', ''), 0) + n
+        if n > VOCE_LEZ or per_az[x.get('op', '')] > VOCE_AZ: print('salto (testo della voce troppo lungo):', x['file'], n); continue
+    if x.get('scene'): elenco.append(x)
 if not elenco: sys.exit('elenco vuoto: non tocco niente')
 voluti = {x['file'] for x in elenco}
 # via i video vecchi (scene cambiate o lezione tolta)
@@ -71,6 +82,13 @@ with sync_playwright() as pw:
             parti.append(mp4)
         lista = f"{TMP}/{nome}.txt"; open(lista, 'w').write(''.join(f"file '{p}'\n" for p in parti))
         subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', lista, '-c', 'copy', '-movflags', '+faststart', f"{OUT}/{nome}.mp4"], check=True)
+        # troppo pesante: si rifà più leggero (960x540, qualità più bassa); se è ancora oltre i 20 MB non si pubblica
+        if os.path.getsize(f"{OUT}/{nome}.mp4") > MAX_MB * 1024 * 1024:
+            subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', f"{OUT}/{nome}.mp4", '-vf', 'scale=960:-2', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '32', '-pix_fmt', 'yuv420p',
+                            '-c:a', 'aac', '-b:a', '64k', '-movflags', '+faststart', f"{TMP}/{nome}-leggero.mp4"], check=True)
+            os.replace(f"{TMP}/{nome}-leggero.mp4", f"{OUT}/{nome}.mp4")
+        if os.path.getsize(f"{OUT}/{nome}.mp4") > MAX_MB * 1024 * 1024:
+            os.remove(f"{OUT}/{nome}.mp4"); print('salto (video oltre i', MAX_MB, 'MB):', nome); continue
         open(f"{OUT}/{nome}.vtt", 'w', encoding='utf-8').write('\n'.join(sub))
         subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', f"{TMP}/{nome}-0.png", '-vf', 'scale=960:-1', '-q:v', '4', f"{OUT}/{nome}.jpg"], check=True)
         print('fatto', nome)

@@ -2010,7 +2010,8 @@ const LOGP=[], LOG_FATTI={}; let LOG_N=0;
 function logPasso(t){ LOGP.push(new Date().toTimeString().slice(0,8)+' '+String(t).slice(0,150)); if(LOGP.length>30) LOGP.shift(); }
 function logInfo(){ let v='',o='',c='',r=''; try{ v=VISTA||''; o=(OP&&OP.nome)||''; c=(IO&&IO.n)||''; r=ADM?(COME?'Admin (vede come pilota)':'Admin'):'pilota'; }catch(e){}
   const n=navigator.connection||{}; return {vista:v,opn:o,chi:c,ruolo:r,rete:navigator.onLine?(n.effectiveType||'in rete'):'senza rete',schermo:innerWidth+'x'+innerHeight,passi:LOGP.slice()}; }
-function logManda(o){ try{ return fetch('/api/log',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(Object.assign(logInfo(),o)),keepalive:!o.testo}).then(r=>r.json()).catch(()=>({})); }catch(e){ return Promise.resolve({}); } }
+function logManda(o){ try{ let xd=''; try{ xd=ME&&ME.id&&ME.k?ME.id+':'+ME.k:''; }catch(e){}   // telefono riconosciuto: la segnalazione entra sempre (con la sua riserva)
+  return fetch('/api/log',{method:'POST',headers:Object.assign({'content-type':'application/json'},xd?{'x-disp':xd}:{}),body:JSON.stringify(Object.assign(logInfo(),o)),keepalive:!o.testo}).then(r=>r.json()).catch(()=>({})); }catch(e){ return Promise.resolve({}); } }
 function logErr(msg,stack){ msg=String(msg||'errore').slice(0,300); logPasso('ERRORE '+msg); if(!navigator.onLine||/ResizeObserver loop/.test(msg)) return;
   let v=''; try{ v=VISTA; }catch(e){} const k=msg+'|'+v; if(LOG_FATTI[k]||LOG_N>=15) return; LOG_FATTI[k]=1; LOG_N++; logManda({tipo:'err',msg,stack:String(stack||'').slice(0,1500)}); }
 window.addEventListener('error',e=>{ const t=e.target; if(t&&t!==window){ if(t.tagName==='SCRIPT') logErr('File del programma non caricato: '+String(t.src||'').split('?')[0]); return; } logErr(e.message,e.error&&e.error.stack); },true);
@@ -2701,7 +2702,7 @@ function disegnaDrone(id, apriBatt){
   const bAtt=BB.filter(b=>b.stato!=='fuori'), bFu=BB.length-bAtt.length, bPr=bAtt.filter(b=>{const t=trendBatt(VOLI,b.id);return bGuarda(b)||t.liv==='ko'||t.liv==='warn'||t.consumo;}), bKo=bAtt.some(b=>trendBatt(VOLI,b.id).liv==='ko'&&!bGuarda(b));
   const smDati={c:[s.classe,s.cat,sens.join(', ')||'niente a bordo','vento max '+VENTO_BASE(d)+' km/h'].filter(Boolean).join(' · '),d:''};
   const smDoc={c:dk.length-dm.length+' su '+dk.length+' · '+(!dm.length?'tutti allegati':dm.length===1?'manca '+({qr:'la ',classe:'la ',manuale:'il ',fattura:'la '}[dm[0]])+DOCBREVE[dm[0]]:'mancano '+dm.map(k=>DOCBREVE[k]).join(', ')),d:dm.includes('qr')?'ko':dm.length?'warn':''};
-  const smMan={c:'prossima: '+String(s.man.prox||'').charAt(0).toLowerCase()+String(s.man.prox||'').slice(1)+' · mancano '+s.man.mancano,d:s.man.liv==='ok'?'':s.man.liv};
+  const smMan={c:'prossima: '+String(s.man.prox||'').charAt(0).toLowerCase()+String(s.man.prox||'').slice(1)+' · mancano '+s.man.mancano,d:s.man.liv==='ok'?'':CLS(s.man.liv)};
   const smBatt={c:!bAtt.length?'nessuna batteria inserita':bPr.length?pl(bPr.length,'batteria da guardare','batterie da guardare')+' su '+bAtt.length:pl(bAtt.length,'batteria in regola','batterie in regola'),d:bKo?'ko':bPr.length?'warn':''}; if(bFu) smBatt.c+=' · '+bFu+' fuori uso';
   const smVoli={c:s.voli+' voli · '+s.ore+(vv[0]?' · ultimo il '+vv[0].data:''),d:''};
   document.getElementById('dr-gr').innerHTML=
@@ -2774,7 +2775,7 @@ function polVerifica(id,si){const q=polP({id}); if(!q) return; if(si) q.ver=oggi
 function polTogli(id){const s=SCHEDEP[id]; if(s&&s.polizza){delete s.polizza; disegnaPilota(id); toast('Polizza personale tolta');}}
 function disegnaRcPil(p){
   const el=document.getElementById('pi-rc'); if(!el) return; const q=polP(p), oggi=new Date(new Date().toDateString());
-  const az=ASSIC.scad?(rcVale(ASSIC.scad,oggi)?['ok','Valida fino al '+ASSIC.scad]:['ko','Scaduta il '+ASSIC.scad]):['ko','Non inserita'];
+  const az=ASSIC.scad?(rcVale(ASSIC.scad,oggi)?['ok','Valida fino al '+ESC(ASSIC.scad)]:['ko','Scaduta il '+ESC(ASSIC.scad)]):['ko','Non inserita'];
   const riga=(lv,a,b,btn)=>`<div class="att${lv==='manca'?' manca':''}"><div class="top"><div class="mark ${lv==='manca'?'':lv}" ${lv==='manca'?'style="background:#c3cad2"':''}>${svg(lv==='ok'?'check':lv==='warn'?'esc':'x')}</div><div class="main"><div class="a">${a}</div><div class="b">${b}</div></div>${btn||''}</div></div>`;
   let h=riga(az[0],'Polizza aziendale',az[1]+' · la inserisce l’Admin da Documenti (Polizza RC aziendale)');
   if(q){ const lv=rcVale(q.scad,oggi)?livData(q.scad):'ko';
@@ -2809,10 +2810,10 @@ function piProblemi(p){
     else if(!a.file) add('warn',ESC(n)+': manca il documento','allega la foto o il PDF dell’attestato',scAz('Allega',`lavora(this,()=>{SCHEDEP[${NID(id)}].att[${JSS(k)}].file=true;disegnaPilota(${NID(id)});})`)); });
   piDaApprovare(p).forEach(x=>add('warn','Attestato da approvare: '+ESC(x.dest.voce||''),ADM?(x.diverso?'attenzione: il pilota ha cambiato i dati letti · ':'')+'controlla e approva':'caricato il '+ESC(x.data||'')+': vale quando l’Admin lo approva',ADM?scAz('Controlla',`docApprova(${JSS(x.id)})`):'',ADM?{q:'approva',doc:x.id,pid:id}:null));
   const r=rcDi(p), q=polP(p);
-  if(!r.ok) add('ko','Assicurazione RC',(r.scad?'scaduta il '+r.scad:'nessuna polizza valida')+': senza non si vola',scAz('Sistema',"scApri('pg-rc')"),ADM&&!COME?{q:'rcaz'}:io?{q:'rcpil',pid:id}:null);
-  else { if(r.chi==='aziendale'&&giorni(r.scad)<60) add('warn','Polizza aziendale in scadenza','scade il '+r.scad,ADM?scAz('Carica','apriDocumenti()'):'',{q:'rcaz'});
-    if(q&&q.scad&&!rcVale(q.scad,oggi0)) add('warn','Polizza personale scaduta','il '+q.scad+' · ora lo copre la polizza aziendale',scAz('Cambia',`polModulo(${id})`),{q:'polp',pid:id});
-    else if(q){ if(r.chi==='personale'&&giorni(q.scad)<60) add('warn','Polizza personale in scadenza','scade il '+q.scad,scAz('Cambia',`polModulo(${id})`),{q:'polp',pid:id});
+  if(!r.ok) add('ko','Assicurazione RC',(r.scad?'scaduta il '+ESC(r.scad):'nessuna polizza valida')+': senza non si vola',scAz('Sistema',"scApri('pg-rc')"),ADM&&!COME?{q:'rcaz'}:io?{q:'rcpil',pid:id}:null);
+  else { if(r.chi==='aziendale'&&giorni(r.scad)<60) add('warn','Polizza aziendale in scadenza','scade il '+ESC(r.scad),ADM?scAz('Carica','apriDocumenti()'):'',{q:'rcaz'});
+    if(q&&q.scad&&!rcVale(q.scad,oggi0)) add('warn','Polizza personale scaduta','il '+ESC(q.scad)+' · ora lo copre la polizza aziendale',scAz('Cambia',`polModulo(${id})`),{q:'polp',pid:id});
+    else if(q){ if(r.chi==='personale'&&giorni(q.scad)<60) add('warn','Polizza personale in scadenza','scade il '+ESC(q.scad),scAz('Cambia',`polModulo(${id})`),{q:'polp',pid:id});
       if(!q.doc) add('warn','Quietanza della polizza personale','non ancora allegata',scAz('Carica',`piPolDoc(${id})`),{q:'quiet',pid:id});
       else if(ADM&&!q.ver) add('warn','Polizza personale da verificare','apri la quietanza e conferma che è pagata',scAz('Controlla',"scApri('pg-rc')"),{q:'polver',pid:id}); } }
   if(!(s.tel&&s.email)) add('warn','Contatti',(s.tel?'manca l’email':s.email?'manca il telefono':'telefono ed email')+' per gli avvisi delle scadenze',scAz('Scrivi',`piContatti(${id})`),{q:'cont',pid:id});
@@ -3562,6 +3563,7 @@ function contaRiquadri(){
 /* ---------- entrata ---------- */
 let BATTQ=[];   // pilota senza il permesso «Droni»: solo nome, cicli e celle delle batterie (per le etichette QR)
 let SEGN=[], CHECK=[], CLIDATI={}, RISCHI=[], RICH=[], BLOCCHI={}, AVVISI={ora:7,giorni:[60,30,7,0],adm:{email:'',on:true},piloti:{}};
+let EMAILOK={};   // indirizzi degli avvisi (solo Admin): true = confermato, 'inviata' = email di conferma mandata, false = da confermare
 let COME=null, ME=null, IO={r:'',n:''}, ADM=false, VER=0, DISP=[], LASTJ='', SAVING=false, BASE='', VISTA='', T_ATT=0, T_SAL=0, T_POLL=0;
 try{ME=JSON.parse(localStorage.getItem('quota120Disp'+KS)||'null');}catch(e){}
 function meSave(){try{if(ME)localStorage.setItem('quota120Disp'+KS,JSON.stringify(ME));else localStorage.removeItem('quota120Disp'+KS);}catch(e){}}
@@ -3805,7 +3807,7 @@ function entra(){
     if(j._s===403&&j.stato==='bloccato'){esci();toast('Il tuo accesso è bloccato: parla con l’Admin');return;}
     if(j._s===401||j._s===403||j.vuoto){esci();return;}
     COME=null; IO=j.io; ADM=IO.r==='adm'; document.body.classList.toggle('op',!ADM); document.body.classList.toggle('adm',ADM); document.body.classList.remove('come');
-    DISP=j.disp||[]; BLOCCHI=j.blocchi||{}; PIN_INI=!!j.pinIniziale; VER=j.ver; apply(j.data); LASTJ=MIGRATO?'':JSON.stringify(stato());MIGRATO=false;
+    DISP=j.disp||[]; BLOCCHI=j.blocchi||{}; PIN_INI=!!j.pinIniziale; EMAILOK=j.emailOk||{}; VER=j.ver; apply(j.data); LASTJ=MIGRATO?'':JSON.stringify(stato());MIGRATO=false;
     testata(); vai('home'); salvaLocale(); setRete(true); codaCarica(); caricaArrivi(true); scanDopoEntrata();
     clearInterval(T_SAL); T_SAL=setInterval(controllaModifiche,1500);
     clearInterval(T_POLL); T_POLL=setInterval(aggiorna,15000);
@@ -3844,7 +3846,7 @@ function tornaAdmin(b,dove){
     if(b){b.disabled=false;b.classList.remove('busy');}
     if(!j.data){toast('Niente rete: riprova');return;}
     IO=j.io; ADM=IO.r==='adm'; document.body.classList.remove('come'); document.body.classList.toggle('op',!ADM); document.body.classList.toggle('adm',ADM);
-    DISP=j.disp||DISP; BLOCCHI=j.blocchi||BLOCCHI; VER=j.ver; apply(j.data); LASTJ=MIGRATO?'':JSON.stringify(stato()); MIGRATO=false;
+    DISP=j.disp||DISP; BLOCCHI=j.blocchi||BLOCCHI; if(j.emailOk) EMAILOK=j.emailOk; VER=j.ver; apply(j.data); LASTJ=MIGRATO?'':JSON.stringify(stato()); MIGRATO=false;
     testata(); if(dove==='admin') apriAdmin(); else vai('home');
   }).catch(()=>{if(b){b.disabled=false;b.classList.remove('busy');}toast('Niente rete: riprova');});
 }
@@ -3865,7 +3867,7 @@ function controllaModifiche(){
     SAVING=false;
     if(j._s===409){VER=j.ver;apply(j.data);LASTJ=MIGRATO?'':JSON.stringify(stato());MIGRATO=false;toast('Qualcun altro ha appena cambiato qualcosa: ho aggiornato. Controlla l’ultima cosa che hai fatto.');ridisegna();return;}
     if(j._s===401||j._s===403){esci();return;}
-    if(j.ver){VER=j.ver;LASTJ=s;salvaLocale(s);setRete(true); if(j.salto) ricarica().then(ridisegna);} else toast(j.errore||'Salvataggio non riuscito');
+    if(j.ver){VER=j.ver;LASTJ=s;salvaLocale(s);setRete(true); if(j.emailOk){EMAILOK=j.emailOk;avConferme();} if(j.avviso) toast(j.avviso); if(j.salto) ricarica().then(ridisegna);} else toast(j.errore||'Salvataggio non riuscito');
   }).catch(()=>{SAVING=false;setRete(false);});
 }
 function aggiorna(){
@@ -3874,7 +3876,7 @@ function aggiorna(){
     if(j._s===401||j._s===403){esci();if(j.stato==='bloccato')toast('Il tuo accesso è bloccato: parla con l’Admin');return;}
     let ch=false;
     if(j.disp&&JSON.stringify(j.disp)!==JSON.stringify(DISP)){DISP=j.disp;ch=true;}
-    if(j.blocchi) BLOCCHI=j.blocchi;
+    if(j.blocchi) BLOCCHI=j.blocchi; if(j.emailOk){EMAILOK=j.emailOk;avConferme();}
     setRete(true); if(Date.now()-(window._arrT||0)>60000){ window._arrT=Date.now(); caricaArrivi(true); }
     if(j.data){ if(JSON.stringify(stato())!==LASTJ) return; VER=j.ver; apply(j.data); LASTJ=MIGRATO?'':JSON.stringify(stato());MIGRATO=false; ch=true; salvaLocale(); }
     if(ch) ridisegna();
@@ -3890,7 +3892,7 @@ function eliminaVolo(b){
     .catch(()=>{b.disabled=false;b.classList.remove('busy');toast('Niente rete: riprova');});
   if(JSON.stringify(stato())!==LASTJ){controllaModifiche();setTimeout(via,1200);} else via();
 }
-function ricarica(){return api('GET','/api/stato?all=1').then(j=>{if(j.data){VER=j.ver;apply(j.data);LASTJ=MIGRATO?'':JSON.stringify(stato());MIGRATO=false;DISP=j.disp||DISP;salvaLocale();}});}
+function ricarica(){return api('GET','/api/stato?all=1').then(j=>{if(j.data){VER=j.ver;apply(j.data);LASTJ=MIGRATO?'':JSON.stringify(stato());MIGRATO=false;DISP=j.disp||DISP;if(j.emailOk)EMAILOK=j.emailOk;salvaLocale();}});}
 function ridisegna(){
   testata();
   const a=document.activeElement; if(a&&/INPUT|SELECT|TEXTAREA/.test(a.tagName)) return;
@@ -4070,7 +4072,7 @@ function dsData(s){ const d=dt(s); if(!d) return '<div class="ds-dt">—</div>';
   return `<div class="ds-dt ${g<0?'ko':g<90?'warn':''}">${d.getDate()}<span>${M[d.getMonth()]}${y}</span></div>`; }
 function dsRiga(x){ const i=DS_FX.push(x.fx||null)-1; DS_GO.push(x.go||null);
   const az=x.az!=null?x.az:(x.fx?fxAz(x.fx):'')||(x.go?'Apri':''), cl=x.go||x.fx?`role="button" onclick="dsTocca(${i})"`:'';
-  return `<div class="q2-dr ds-r" ${cl}>${x.data?dsData(x.data):`<span class="p ${CLS(x.liv)}"></span>`}<div class="t"><b>${x.t}</b>${x.w?`<small class="${x.data&&x.liv!=='ok'?x.liv:x.liv==='ko'?'ko':''}">${x.w}</small>`:''}</div>${az&&(x.liv!=='ok')?`<button class="q2-az ${x.liv==='ko'||x.data?'':'via'}" type="button">${az}</button>`:x.go||x.fx?'<svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>':''}</div>`; }
+  return `<div class="q2-dr ds-r" ${cl}>${x.data?dsData(x.data):`<span class="p ${CLS(x.liv)}"></span>`}<div class="t"><b>${x.t}</b>${x.w?`<small class="${x.data&&x.liv!=='ok'?CLS(x.liv):x.liv==='ko'?'ko':''}">${x.w}</small>`:''}</div>${az&&(x.liv!=='ok')?`<button class="q2-az ${x.liv==='ko'||x.data?'':'via'}" type="button">${az}</button>`:x.go||x.fx?'<svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>':''}</div>`; }
 // un'azione scritta come testo (es. «apriEnac()») si esegue come un tasto della pagina: niente eval, così vale anche con la Content-Security-Policy
 function esegui(code){ const b=document.createElement('button'); b.type='button'; b.setAttribute('onclick',String(code||'')); b.click(); }
 function dsTocca(i){ if(gdDa(DS_FX[i])) return; const g=DS_GO[i]; if(typeof g==='function') g(); else if(g) esegui(g); }
@@ -4095,7 +4097,7 @@ function dsScadenze(){ const R=[], add=(data,t,fx,go)=>{ if(dt(data)) R.push({da
   if(OP.dfAbb) add(OP.dfAbb,'Abbonamento D-Flight',{q:'abb'},'apriDflight()');
   if(AUT_ENAC.scad) add(AUT_ENAC.scad,'Autorizzazione ENAC agricola',{q:'enac'},'apriEnac()');
   return R.sort((a,b)=>dt(a.data)-dt(b.data)); }
-function dsGr(id,n,col,ic,st,corpo){ return `<details class="q2-gr ds-gr" id="${id}" ${HADM_APERTE.has('p:'+id)?'open':''} ontoggle="hadmToggle('p:${id}',this.open)"><summary>${col?`<span class="sq" style="background:var(${col})"><svg viewBox="0 0 24 24">${ic}</svg></span>`:''}<span class="tx"><b>${n}</b><small class="${st.d||''}">${ESC(st.c)}</small></span><svg class="q2-fr" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></summary>${corpo}</details>`; }
+function dsGr(id,n,col,ic,st,corpo){ return `<details class="q2-gr ds-gr" id="${id}" ${HADM_APERTE.has('p:'+id)?'open':''} ontoggle="hadmToggle('p:${id}',this.open)"><summary>${col?`<span class="sq" style="background:var(${col})"><svg viewBox="0 0 24 24">${ic}</svg></span>`:''}<span class="tx"><b>${n}</b><small class="${CLS(st.d||'')}">${ESC(st.c)}</small></span><svg class="q2-fr" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></summary>${corpo}</details>`; }
 function apriDocumenti(){
   document.getElementById('dc-letto').classList.add('hidden');
   document.getElementById('dc-prog').style.display='none';
@@ -4210,7 +4212,7 @@ function leggiDoc(id,nome){
     if(j.letto) mostraLetto(id,nome,j.letto,'');
     else mostraLetto(id,nome,null, j.errore==='chiave'?'La lettura automatica non è ancora attiva su questo server: scegli tu cos’è e dove va.'
       : j.errore==='heic'?'Questa foto è in formato HEIC e non si legge da sola: scegli tu cos’è e dove va (oppure rifai la foto con “Fotografa”).'
-      : 'Non sono riuscito a leggerlo da solo ('+(j.errore||'errore')+'): scegli tu cos’è e dove va.');
+      : 'Non sono riuscito a leggerlo da solo ('+ESC(j.errore||'errore')+'): scegli tu cos’è e dove va.');
   }).catch(()=>{pr.style.display='none';mostraLetto(id,nome,null,'Non sono riuscito a leggerlo (rete): scegli tu cos’è e dove va.');});
 }
 function mostraLetto(id,nome,L,avviso,modifica){
@@ -4754,12 +4756,12 @@ function scadenzePilota(p){
   const R=[], s=SCHEDEP[p.id]||{att:{}};
   const att=Object.entries(s.att||{}).filter(([k,a])=>a&&a.scad);
   if(!att.length) R.push({liv:'ko',t:'Attestato da caricare',w:'senza attestato non puoi volare',go:'apriAccount()',fx:{q:'att',pid:p.id}});
-  att.forEach(([k,a])=>{ const g=giorni(a.scad); R.push({liv:g<0?'ko':g<90?'warn':'ok',t:(ATTNOMI[k]||'Attestato '+k),w:g<0?'scaduto il '+a.scad:'valido fino al '+a.scad+(g<90?', tra '+pl(g,'giorno','giorni'):''),go:g<90?'apriAccount()':'',fx:g<90?{q:'att',pid:p.id,k}:null}); });
-  { const r=rcDi(p), g=r.scad?giorni(r.scad):null; R.push(r.ok?{liv:g!=null&&g<60?'warn':'ok',t:'Assicurazione RC',w:(r.chi==='personale'?'polizza personale':'polizza dell’operatore')+' valida fino al '+r.scad+(g!=null&&g<60?', tra '+pl(g,'giorno','giorni'):''),go:''}
-    :{liv:'ko',t:'Assicurazione RC',w:r.scad?'scaduta il '+r.scad:'nessuna polizza ti copre',go:'apriAccount()',fx:{q:'rcpil',pid:p.id}}); }
+  att.forEach(([k,a])=>{ const g=giorni(a.scad); R.push({liv:g<0?'ko':g<90?'warn':'ok',t:ESC(ATTNOMI[k]||'Attestato '+k),w:g<0?'scaduto il '+ESC(a.scad):'valido fino al '+ESC(a.scad)+(g<90?', tra '+pl(g,'giorno','giorni'):''),go:g<90?'apriAccount()':'',fx:g<90?{q:'att',pid:p.id,k}:null}); });
+  { const r=rcDi(p), g=r.scad?giorni(r.scad):null; R.push(r.ok?{liv:g!=null&&g<60?'warn':'ok',t:'Assicurazione RC',w:(r.chi==='personale'?'polizza personale':'polizza dell’operatore')+' valida fino al '+ESC(r.scad)+(g!=null&&g<60?', tra '+pl(g,'giorno','giorni'):''),go:''}
+    :{liv:'ko',t:'Assicurazione RC',w:r.scad?'scaduta il '+ESC(r.scad):'nessuna polizza ti copre',go:'apriAccount()',fx:{q:'rcpil',pid:p.id}}); }
   const dc=VOLI.filter(v=>v.pilota===IO.n&&v.stato!=='completo').length;
   if(dc) R.push({liv:'warn',t:pl(dc,'volo da completare','voli da completare'),w:'nel registro voli',go:'apriVoli()',fx:{q:'voli'}});
-  if(permIo().flotta) droniMiei().forEach(d=>{ const sc=SCHEDE[d.id]; if(sc&&sc.man&&sc.man.liv!=='ok') R.push({liv:sc.man.liv,t:'Manutenzione del '+d.nome.replace('DJI ',''),w:sc.man.prox+' · mancano '+sc.man.mancano,go:'apriManut('+d.id+')',fx:{q:'manut',did:d.id}}); });
+  if(permIo().flotta) droniMiei().forEach(d=>{ const sc=SCHEDE[d.id]; if(sc&&sc.man&&sc.man.liv!=='ok') R.push({liv:CLS(sc.man.liv),t:'Manutenzione del '+ESC(String(d.nome||'').replace('DJI ','')),w:ESC(sc.man.prox)+' · mancano '+ESC(sc.man.mancano),go:'apriManut('+NID(d.id)+')',fx:{q:'manut',did:d.id}}); });
   return R.sort((a,b)=>({ko:0,warn:1,ok:2}[a.liv])-({ko:0,warn:1,ok:2}[b.liv]));
 }
 /* Home del pilota: motivi del «non si vola» divisi tra pilota e azienda; gruppi chiusi che si aprono sul posto */
@@ -4767,7 +4769,7 @@ function plMotivi(V,p){ const tu=[], az=[];
   V.forEach(([t])=>{ const mio=/non può usare|attestato|di |copre /.test(t)&&t.includes(p.nome); (mio?tu:az).push(mio?t.replace(p.nome+' non può','non puoi').replace(' di '+p.nome,'').replace(' copre '+p.nome,' ti copre'):t); });
   const r=(c,L)=>L.length?`<span class="pl-mot"><b>${c}</b> ${ESC(L.map(x=>x.charAt(0).toLowerCase()+x.slice(1)).join('; '))}</span>`:'';
   return r('Tu:',tu)+r('L’azienda:',az.map(x=>x+(/autorizzazione|QR|fermo/.test(x)?' (ci pensa l’Admin)':'')))+'<span class="pl-mot">Avvisa l’Admin: può sistemare o cambiare drone o pilota.</span>'; }
-function plGruppo(id,n,col,ic,st,corpo){ return `<details class="q2-gr" id="${id}" ${HADM_APERTE.has('p:'+id)?'open':''} ontoggle="hadmToggle('p:${id}',this.open)"><summary><span class="sq" style="background:var(${col})"><svg viewBox="0 0 24 24">${ic}</svg></span><span class="tx"><b>${n}</b><small class="${st.d||''}">${ESC(st.c)}</small></span><svg class="q2-fr" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></summary>${corpo}</details>`; }
+function plGruppo(id,n,col,ic,st,corpo){ return `<details class="q2-gr" id="${id}" ${HADM_APERTE.has('p:'+id)?'open':''} ontoggle="hadmToggle('p:${id}',this.open)"><summary><span class="sq" style="background:var(${col})"><svg viewBox="0 0 24 24">${ic}</svg></span><span class="tx"><b>${n}</b><small class="${CLS(st.d||'')}">${ESC(st.c)}</small></span><svg class="q2-fr" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></summary>${corpo}</details>`; }
 function plAuto(){ apriCorsi(); let n=0; const t=setInterval(()=>{ n++; let ok=false; try{ ok=!!(CS&&CS.q120&&CS.q120.length&&document.querySelector('#cs-c .cs-list')); }catch(e){} if(ok){ clearInterval(t); csVai(csAuto,'Ascolta in auto'); } else if(n>40) clearInterval(t); },150); }
 /* «Altro» del pilota: le pagine che può aprire (con i suoi permessi), più mappa delle zone, valutazioni del rischio e documenti */
 function plAltro(){ const grp=['flotta','attivita','regole'], out=[], vo=(n,c,d,go)=>`<button type="button" class="q2-vo ${d||''}" onclick="${ESC(go)}"><b>${ESC(n)}</b><small>${ESC(c||'')}</small></button>`;
@@ -8422,7 +8424,7 @@ function apriAvvisi(){
   if(!ADM) return;
   const A=AVVISI, q=v=>String(v==null?'':v).replace(/"/g,'&quot;');
   const riga=(id,ini,nome,cosa,email,on,adm)=>`<li><div class="ini" style="background:${adm?'var(--teal)':'var(--f-persone)'}">${ESC(ini)}</div>
-    <div class="main"><div class="a">${ESC(nome)}</div><div class="b">${cosa}</div></div>
+    <div class="main"><div class="a">${ESC(nome)}</div><div class="b">${cosa}<span id="av-cf-${ESC(id)}"></span></div></div>
     <input type="email" id="av-e-${ESC(id)}" value="${q(email)}" placeholder="${adm?'la tua email':'email del pilota'}" autocomplete="off">
     <label class="interr" title="Avvisi accesi o spenti"><input type="checkbox" id="av-on-${ESC(id)}" ${on?'checked':''}><span></span></label></li>`;
   document.getElementById('av-chi').innerHTML=riga('adm','A','Tu, Admin','tutte le scadenze: piloti, assicurazione, D-Flight, manutenzioni',(A.adm||{}).email,(A.adm||{}).on!==false,true)+
@@ -8431,6 +8433,14 @@ function apriAvvisi(){
   document.getElementById('av-giorni').innerHTML=[60,30,7,0].map(g=>`<label><input type="checkbox" value="${g}" ${G.includes(g)?'checked':''}>${g?g+' giorni':'il giorno stesso'}</label>`).join('');
   document.getElementById('av-ora').innerHTML=[6,7,8,9,12,15,18,20].map(h=>`<option value="${h}" ${(+A.ora||7)===h?'selected':''}>alle ${h}</option>`).join('');
   vai('avvisi','Impostazioni &rsaquo; Avvisi via email'); document.getElementById('back').onclick=()=>apriAdmin();
+  avConferme();
+}
+// accanto a ogni indirizzo non ancora confermato: gli avvisi partono solo dopo la conferma (link nell'email)
+function avConferme(){
+  const el=id=>document.getElementById(id);
+  for(const id of ['adm',...PILOTI.map(p=>p.id)]){ const s=el('av-cf-'+id), e=el('av-e-'+id); if(!s||!e) continue;
+    const st=EMAILOK[e.value.trim().toLowerCase()];
+    s.textContent=st===true||st===undefined?'':st==='inviata'?' · da confermare: abbiamo mandato un’email':' · da confermare'; }
 }
 function leggiAvvisi(){
   const g=id=>document.getElementById(id), em=v=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);

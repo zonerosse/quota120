@@ -227,9 +227,13 @@ function operatore(op){const x=P.operatori.find(y=>y.op===op);
   <tr><td class="e">Indirizzo</td><td><a href="https://app.quota120.com/${esc(x.op)}" target="_blank" rel="noopener"><b>app.quota120.com/${esc(x.op)}</b></a></td></tr>
   <tr><td class="e">Admin</td><td>${esc(x.adm||'–')}</td></tr><tr><td class="e">Email dell'Admin</td><td>${esc(x.email||'–')}</td></tr>
   <tr><td class="e">Iscritto il</td><td>${data(x.at)}</td></tr><tr><td class="e">Usato l'ultima volta</td><td>${quando(x.ultimo)}</td></tr>
-  <tr><td class="e">Piloti e droni</td><td>${x.piloti} ${x.piloti===1?'pilota':'piloti'} · ${x.droni} ${x.droni===1?'drone':'droni'} · ${x.voli} voli registrati</td></tr><tr><td class="e">Telefoni collegati</td><td>${x.telefoni}</td></tr></table></div>
+  <tr><td class="e">Piloti e droni</td><td>${x.piloti} ${x.piloti===1?'pilota':'piloti'} · ${x.droni} ${x.droni===1?'drone':'droni'} · ${x.voli} voli registrati</td></tr><tr><td class="e">Telefoni collegati</td><td>${x.telefoni}</td></tr>
+  <tr><td class="e">Corsi dell'azienda</td><td><label><input type="checkbox" data-video="${esc(x.op)}" ${x.video?'checked':''}> Video del corso approvati</label></td></tr></table></div>
   <div class="bar">${x.email?`<a class="btn sec" href="mailto:${esc(x.email)}?subject=${encodeURIComponent('Quota 120 – '+(x.nome||''))}">Scrivi all'Admin</a>`:''}<button class="btn ${x.sospeso?'sec':'ko'}" type="button" data-az="sospendi" data-x="${esc(x.op)}">${x.sospeso?'Riattiva lo spazio':'Sospendi lo spazio'}</button></div>
   <p class="fine" style="margin-top:10px">${x.sospeso?'Lo spazio è sospeso: nessuno può usarlo finché non lo riattivi. I dati restano dove sono.':'Sospendere blocca l\'accesso a tutto lo spazio (Admin e piloti). I dati restano dove sono e si può riattivare.'}</p>`}
+/* video dei corsi dell'azienda: si fanno solo se il titolare li approva */
+document.addEventListener('change',async e=>{const c=e.target.closest('[data-video]');if(!c)return;const op=c.dataset.video,x=P.operatori.find(y=>y.op===op);
+  c.disabled=true;try{await api('/api/admin/video',{op,on:c.checked});if(x)x.video=c.checked}catch(er){c.checked=!c.checked;alert(er.message)}c.disabled=false});
 AZ.sospendi=async(op,b)=>{const x=P.operatori.find(y=>y.op===op),on=!x.sospeso;
   if(on&&!confirm('Sospendere lo spazio di '+(x.nome||op)+'? Nessuno potrà usarlo finché non lo riattivi.'))return;
   b.disabled=true;try{await api('/api/admin/sospendi',{op,on});x.sospeso=on;mostra()}catch(e){alert(e.message);b.disabled=false}};
