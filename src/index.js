@@ -823,7 +823,9 @@ export class Stato extends DurableObject {
       for (const f of (Array.isArray(b.foto) ? b.foto : []).slice(0, 8)) { if (typeof f !== "string") continue; const info = await st.get("docinfo:" + f); if (info && (adm || info.da === me.n)) foto.push(TX(f, 40)); }
       const x = { id: now * 10 + Math.floor(Math.random() * 10), at: now, data: DATA(b.data) || oggi(), ora: /^\d{2}:\d{2}$/.test(b.ora || "") ? b.ora : "", pilota: adm && b.pilota ? TX(b.pilota, 80) : me.n,
         drone: dr.nome, tipo: b.tipo, feriti: !!b.feriti, danni: !!b.danni, testo: TX(b.testo, 2000, true), luogo: TX(b.luogo, 160), foto, volo: TX(b.volo, 20), fermo: true, stato: "aperta", eccairs: "" };
-      x.liv = livSegn(x);
+      // guasto trovato a terra nella check list prima del volo (il drone non ha volato): non è un evento da segnalare a ENAC
+      if (b.prima === true && b.tipo === "guasto") x.prima = true;
+      x.liv = x.prima ? "facolt" : livSegn(x);
       d.SEGN = d.SEGN || []; d.SEGN.unshift(x); d.SEGN = d.SEGN.slice(0, 500);
       await scriviMain(d, m.row.ver + 1);
       // mail subito all'Admin (non nella versione di prova: lì le email sono spente)
