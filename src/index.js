@@ -193,10 +193,12 @@ function vista(d, n) {
   v.PERM = me ? { [me.id]: (d.PERM || {})[me.id] || {} } : {};
   // a scelta dell'Admin
   if (P.flotta) { v.SCHEDE = d.SCHEDE; v.BATT = d.BATT; v.INV = d.INV; }
+  // etichetta QR di una batteria: chi non ha il permesso «flotta» vede solo nome, cicli e celle
+  else v.BATTQ = (d.BATT || []).map(b => ({ id: b.id, drone: b.drone, nome: b.nome, cicli: b.cicli, max: b.max, celle: b.celle, stato: b.stato }));
   if (P.clienti && P.prezzi) v.CLIDATI = d.CLIDATI;
   if (P.clienti) { v.CLIENTI = d.CLIENTI; v.LAVORI = (d.LAVORI || []).map(l => P.prezzi ? l : Object.assign({}, l, { importo: null })); }
   // i lavori assegnati a lui li vede sempre (senza prezzi né fatture), anche senza il permesso «clienti»
-  if (!P.clienti && me) v.LAVORI = (d.LAVORI || []).filter(l => l.pilota === me.id).map(l => ({ id: l.id, codice: l.codice, cliente: l.cliente, titolo: l.titolo, tipo: l.tipo, luogo: l.luogo, data: l.data, drone: l.drone, pilota: l.pilota, stato: l.stato, missione: l.missione, dove: l.dove, perche: l.perche, importo: null }));
+  if (!P.clienti && me) v.LAVORI = (d.LAVORI || []).filter(l => l.pilota === me.id).map(l => ({ id: l.id, codice: l.codice, cliente: l.cliente, titolo: l.titolo, tipo: l.tipo, luogo: l.luogo, data: l.data, drone: l.drone, pilota: l.pilota, stato: l.stato, missione: l.missione, dove: l.dove, perche: l.perche, istr: l.istr, importo: null }));
   if (P.prezzi) v.PREV = d.PREV;
   if (P.enac) { v.AUT_ENAC = d.AUT_ENAC; v.DOMANDA = d.DOMANDA; v.ASSIC = d.ASSIC; }
   if (P.agri) { v.CAMPI = d.CAMPI; v.TRATT = d.TRATT; if (!v.CLIENTI) v.CLIENTI = d.CLIENTI; }
@@ -242,7 +244,8 @@ function unisci(full, m, n, docOk) {
     const pulito = { id: +id, data: DATA(v.data) || oggi(), ora: TX(v.ora, 5), drone: TX(v.drone, 80), pilota: n, luogo: TX(v.luogo, 120),
       min: Math.max(0, Math.min(600, +v.min || 0)), stato: ["completo", "dacompl", "attesa"].includes(v.stato) ? v.stato : "dacompl",
       ctrl: !!v.ctrl, ctrlOra: TX(v.ctrlOra, 5), cliente: TX(v.cliente, 200), note: TX(v.note, 2000, true), importato: !!v.importato, amano: !!v.amano,
-      cat: TX(v.cat, 60), inc: TX(v.inc, 60), codLav: TX(v.codLav, 20), meteo: TX(v.meteo, 160), zona: TX(v.zona, 200), notam: TX(v.notam, 300), ck: TX(v.ck, 400), dopo: v.dopo && typeof v.dopo === "object" ? { drone: !!v.dopo.drone, batt: !!v.dopo.batt, succ: !!v.dopo.succ } : undefined, docLog, logNome: TX(v.logNome, 120) };
+      cat: TX(v.cat, 60), inc: TX(v.inc, 60), codLav: TX(v.codLav, 20), meteo: TX(v.meteo, 160), zona: TX(v.zona, 200), notam: TX(v.notam, 300), ck: TX(v.ck, 400), dopo: v.dopo && typeof v.dopo === "object" ? { drone: !!v.dopo.drone, batt: !!v.dopo.batt, succ: !!v.dopo.succ } : undefined, docLog, logNome: TX(v.logNome, 120),
+      istrOk: Array.isArray(v.istrOk) ? v.istrOk.slice(0, 30).map(x => TX(x, 200)) : undefined };
     // i dati letti dal registro li scrive solo il server (/api/volo/importa): il telefono non li può cambiare
     if (o && o.letto) Object.assign(pulito, pulisciLetto(o), { drone: o.drone, data: o.data, ora: o.ora, min: o.min, pilota: o.pilota });
     if (o) Object.assign(o, pulito); else { d.VOLI = d.VOLI || []; d.VOLI.unshift(pulito); }
@@ -713,6 +716,9 @@ export class Stato extends DurableObject {
       return new Response("ok");
     }
 
+    // ---- etichetta QR inquadrata da chi non è entrato in questo spazio: solo il nome dell'operatore, nient'altro ----
+    if (p === "/api/q/nome") { const m = await leggiMain(); return J({ nome: TX(String(((m && m.d.OP) || {}).nome || "").replace(/\s*\(dati di esempio\)\s*$/i, ""), 120) }); }
+
     // ---- da qui serve un dispositivo riconosciuto ----
     let id = url.searchParams.get("id") || "", k = url.searchParams.get("k") || "";
     const h = request.headers.get("x-disp") || ""; if (h.includes(":")) [id, k] = h.split(":");
@@ -799,7 +805,7 @@ export class Stato extends DurableObject {
     if (p === "/api/lavoro") {
       const c = norm(url.searchParams.get("c")).replace(/\s/g, ""), m = await leggiMain();
       const l = c && m && (m.d.LAVORI || []).find(x => norm(x.codice).replace(/\s/g, "") === c && x.stato !== "concluso");
-      return J({ lavoro: l ? { id: l.id, codice: l.codice, cliente: l.cliente, titolo: l.titolo, luogo: l.luogo, data: l.data } : null });
+      return J({ lavoro: l ? { id: l.id, codice: l.codice, cliente: l.cliente, titolo: l.titolo, luogo: l.luogo, data: l.data, istr: LISTA(l.istr).slice(0, 30), quota: l.missione && l.missione.quota || null } : null });
     }
     if (p === "/api/avvisi/prova" && request.method === "POST") {
       if (!adm) return J({ errore: "Solo l'Admin" }, 403);
@@ -811,6 +817,17 @@ export class Stato extends DurableObject {
       if (!v) return J({ errore: "Volo non trovato" }, 404);
       if (!adm && v.pilota !== me.n && !permDi(m.d, me.n).voliTutti) return J({ errore: "Non puoi vederlo" }, 403);
       return J({ trk: (await st.get("trk:" + vid)) || [] });
+    }
+    // ---- etichetta QR del drone: «Lo prendo io» / «Lo riconsegno». Il pilota non scrive i droni: qui cambia solo chi ce l'ha ----
+    if (p === "/api/drone/presa" && request.method === "POST") {
+      let b; try { b = await request.json(); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
+      const m = await leggiMain(); if (!m) return J({ errore: "Nessun dato" }, 409);
+      if (!adm && !pilotaDi(m.d, me.n)) return J({ errore: "Non sei tra i piloti" }, 403);
+      const dr = (m.d.DRONI || []).find(x => x.id === +b.id); if (!dr) return J({ errore: "Drone non trovato" }, 404);
+      if (b.on) dr.chi = { n: TX(me.n, 80), dal: new Intl.DateTimeFormat("it-IT", { timeZone: "Europe/Rome", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date()).replace(",", "") };
+      else delete dr.chi;
+      await scriviMain(m.d, m.row.ver + 1);
+      return J({ ok: true, chi: dr.chi || null, ver: m.row.ver + 1 });
     }
     // ---- registri di volo DJI: la chiave resta qui, il telefono chiede solo le chiavi del suo file ----
     if (p === "/api/dji/keychains" && request.method === "POST") {
@@ -1002,7 +1019,7 @@ export class Stato extends DurableObject {
       const daFoto = !v.daFoto && d.VOLI.find(x => x.daFoto && x.pilota === v.pilota && x.drone === v.drone && x.data === v.data && Math.abs(minuti(x.ora) - minuti(v.ora)) <= 15);
       if (daFoto) att = daFoto;
       if (att) {
-        Object.assign(v, { id: att.id, ctrl: att.ctrl, ctrlOra: att.ctrlOra, cliente: v.cliente || att.cliente || "", codLav: att.codLav || "", meteo: att.meteo || "", zona: att.zona || "", ck: att.ck || "",
+        Object.assign(v, { id: att.id, ctrl: att.ctrl, ctrlOra: att.ctrlOra, cliente: v.cliente || att.cliente || "", codLav: att.codLav || "", meteo: att.meteo || "", zona: att.zona || "", ck: att.ck || "", istrOk: att.istrOk,
           luogo: v.luogo || att.luogo, note: [att.note, v.note].filter(Boolean).join(" · "), cat: att.cat || v.cat });
         if (daFoto) Object.assign(v, { cliente: att.cliente || v.cliente, luogo: att.luogo || v.luogo, batt: att.batt || v.batt, fotoDoc: att.docLog || "" });
         d.VOLI[d.VOLI.indexOf(att)] = v;
@@ -1560,6 +1577,10 @@ export default {
       const q = url.searchParams.get("do") || "", stub = q === "registro" ? env.STATO.get(env.STATO.idFromName("registro")) : SLUG_OK(q) ? env.STATO.get(env.STATO.idFromName("op:" + q)) : main();
       return stub.fetch(pulita(SLUG_OK(q) ? q : ""));
     }
+    // etichette QR di droni e batterie: /q/<spazio>/d<id> (drone) o /q/<spazio>/b<id> (batteria) aprono il programma dello spazio sulla scheda dell'etichetta
+    { const mq = p.match(/^\/q\/([A-Za-z0-9-]{3,40})\/([db][A-Za-z0-9_%.-]{1,80})\/?$/), sq = mq && mq[1].toLowerCase();
+      if (mq && (sq === "prova" || SLUG_OK(sq))) { let c = mq[2]; try { c = decodeURIComponent(c); } catch (e) {}
+        return new Response(null, { status: 302, headers: { location: "/" + sq + "?q=" + encodeURIComponent(c), "cache-control": "no-store" } }); } }
     // /prova e /<spazio> aprono il programma; / è l'ingresso
     const seg = p.replace(/^\/+|\/+$/g, "");
     if (seg && seg !== "corso" && !seg.includes("/") && !seg.includes(".") && (seg === "prova" || SLUG_OK(seg.toLowerCase()))) return env.ASSETS.fetch(new Request(new URL("/", url), request));
