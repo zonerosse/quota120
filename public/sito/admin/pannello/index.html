@@ -84,7 +84,7 @@ a{color:var(--accent)}
 </div>
 <script>
 const $=s=>document.querySelector(s);
-const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 const data=t=>t?new Date(t).toLocaleDateString('it-IT'):'–';
 function quando(t){if(!t)return 'mai';const g=Math.floor((new Date().setHours(0,0,0,0)-new Date(t).setHours(0,0,0,0))/864e5);return g<=0?'oggi':g===1?'ieri':g+' giorni fa'}
 const giorni=t=>t?(Date.now()-t)/864e5:1e9;
@@ -109,7 +109,7 @@ function mostra(){const [f,,a]=PILA[PILA.length-1];if(f!==auto&&!AU.paused)AU.pa
   const v=$('#v');Promise.resolve(f(a)).then(h=>{if(typeof h==='string')v.innerHTML=h;if($('#scene')){scene();qInfo()}if($('#au'))autoPronto();scrollTo(0,0)}).catch(e=>{v.innerHTML=`<div class="stato ko">${esc(e.message)}</div>`})}
 $('#back').addEventListener('click',indietro);
 $('#crumb').addEventListener('click',e=>{const a=e.target.closest('[data-pila]');if(a){PILA.length=+a.dataset.pila;mostra()}});
-$('#esci').addEventListener('click',()=>fetch('/api/admin/esci',{method:'POST'}).finally(()=>location.replace('/admin/')));
+$('#esci').addEventListener('click',()=>fetch('/api/admin/esci',{method:'POST',headers:{'content-type':'application/json'},body:'{}'}).finally(()=>location.replace('/admin/')));
 /* i bottoni chiamano funzioni per nome: niente codice dentro l'HTML */
 const AZ={};
 document.addEventListener('click',e=>{const b=e.target.closest('[data-az]');if(!b)return;e.preventDefault();AZ[b.dataset.az](b.dataset.x,b)});

@@ -34,11 +34,17 @@ function idbSW() { return new Promise((ok, no) => { const r = indexedDB.open('q1
 self.addEventListener('fetch', e => {
   const r = e.request, u = new URL(r.url);
   if (r.method !== 'POST' || u.origin !== location.origin || u.pathname !== '/condividi') return;
+  // solo dalla condivisione del telefono (Sec-Fetch-Site «none») o da questa pagina: un modulo di un altro sito non mette file nella coda.
+  // Se il browser non fa vedere l'intestazione, i file restano in coda ma la pagina chiede prima di mandarli (conferma).
+  const sfs = r.headers.get('sec-fetch-site') || '', ref = r.referrer || '';
+  let altroSito = false; try { altroSito = !!ref && new URL(ref).origin !== location.origin; } catch (x) { altroSito = true; }
+  if ((sfs && sfs !== 'none' && sfs !== 'same-origin') || altroSito) { e.respondWith(Response.redirect('/', 303)); return; }
+  const conferma = !sfs;
   e.respondWith((async () => {
     try {
-      const fd = await r.formData(), files = fd.getAll('file').filter(f => f && f.size), d = await idbSW();
+      const fd = await r.formData(), files = fd.getAll('file').filter(f => f && f.size).slice(0, 50), d = await idbSW();
       await new Promise((ok, no) => { const t = d.transaction('coda', 'readwrite'), o = t.objectStore('coda');
-        files.forEach((f, i) => o.put({ id: 'c' + Date.now() + '-' + i, disp: null, tipo: 'log', nome: f.name || 'volo.txt', mime: f.type || 'text/plain', blob: f, quando: new Date().toLocaleString('it-IT') }));
+        files.forEach((f, i) => o.put({ id: 'c' + Date.now() + '-' + i, disp: null, tipo: 'log', nome: String(f.name || 'volo.txt').slice(0, 120), mime: f.type || 'text/plain', blob: f, quando: new Date().toLocaleString('it-IT'), conferma }));
         t.oncomplete = ok; t.onerror = () => no(t.error); });
     } catch (x) {}
     return Response.redirect('/?condivisi=1', 303);

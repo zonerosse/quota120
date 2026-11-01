@@ -63,7 +63,7 @@ async function carica(){let L;if(SITO){const r=await fetch('/api/admin/iscritti'
 $('#f1').addEventListener('submit',e=>{e.preventDefault();err('');lavora($('#f1 button'),'Invio in corso…',()=>post('/api/admin/codice',{email:$('#em').value,ts:window.tsToken?tsToken():''}).then(()=>{$('#f1').hidden=true;$('#f2').hidden=false;$('#ps1').classList.remove('on');$('#ps2').classList.add('on');$('#cod').focus()}).catch(x=>err(x.message)).finally(()=>window.tsReset&&tsReset()))});
 $('#f2').addEventListener('submit',e=>{e.preventDefault();err('');lavora($('#f2 button'),'Verifica…',()=>post('/api/admin/verifica',{email:$('#em').value,codice:$('#cod').value}).then(carica).catch(x=>err(x.message)))});
 $('#dinuovo').addEventListener('click',e=>{e.preventDefault();$('#f2').hidden=true;$('#f1').hidden=false;$('#ps2').classList.remove('on');$('#ps1').classList.add('on')});
-$('#esci').addEventListener('click',e=>{e.preventDefault();if(SITO)fetch('/api/admin/esci',{method:'POST'}).then(()=>location.reload());else location.reload()});
+$('#esci').addEventListener('click',e=>{e.preventDefault();if(SITO)fetch('/api/admin/esci',{method:'POST',headers:{'content-type':'application/json'},body:'{}'}).then(()=>location.reload());else location.reload()});
 document.getElementById('cod').addEventListener('input',e=>{const v=e.target.value.replace(/\D/g,'').slice(0,6);if(v!==e.target.value)e.target.value=v});
 if(SITO)carica();
 </script><script id="mcorsi-chiudi">document.addEventListener("click",function(e){document.querySelectorAll("details.mcorsi[open],details.mtel[open]").forEach(function(d){if(!d.contains(e.target))d.removeAttribute("open")})});</script></body></html>
