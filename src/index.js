@@ -25,7 +25,8 @@ async function corsiConVideo(env, url, corsi, adm) {
     for (const l of c.lezioni || []) { const h = await vh(l.scene), f = (c.tok ? "az-" + c.tok + "-" : "") + l.id + "-" + h;
       const pronto = (l.scene || []).length ? await env.ASSETS.fetch(new Request(url.origin + "/corso/video/" + f + ".mp4", { method: "HEAD" })).then(r => r.ok).catch(() => false) : false;
       const audio = pronto ? await env.ASSETS.fetch(new Request(url.origin + "/corso/video/" + f + ".m4a", { method: "HEAD" })).then(r => r.ok).catch(() => false) : false;
-      const x = Object.assign({}, l, { video: pronto ? f : "", pronto, audio }); if (c.tok && pronto) { const e = (Math.floor(Date.now() / 86400000) + 2) * 86400; x.fv = "?s=" + e + "." + await firmaV(env, f, e); } if (!adm) { x.testo = (l.scene || []).map(s => s.v).filter(Boolean); delete x.scene; } cc.lezioni.push(x); }
+      const x = Object.assign({}, l, { video: pronto ? f : "", pronto, audio }); if (pronto) {   // firma per tutti i video: così si aprono anche dal programma (app.quota120.com), sottotitoli compresi
+        const e = (Math.floor(Date.now() / 86400000) + 2) * 86400; x.fv = "?s=" + e + "." + await firmaV(env, f, e); } if (!adm) { x.testo = (l.scene || []).map(s => s.v).filter(Boolean); delete x.scene; } cc.lezioni.push(x); }
     out.push(cc); }
   return out;
 }
@@ -1404,8 +1405,8 @@ export default {
     const reg = () => env.STATO.get(env.STATO.idFromName("registro"));
     // video dei corsi: niente percorsi codificati (%) o con barre doppie, che potrebbero aggirare il controllo della firma qui sotto
     if (/^\/corso\/+video\//i.test(p) && (p.includes("%") || !p.startsWith("/corso/video/"))) return new Response("Indirizzo non valido", { status: 400, headers: { "content-type": "text/plain; charset=utf-8" } });
-    if (p.startsWith("/corso/video/az-")) {
-      const m = p.match(/^\/corso\/video\/(az-[a-z0-9-]+)\.(mp4|jpg|vtt|m4a)$/), [e, g] = (url.searchParams.get("s") || "").split(".");
+    if (p.startsWith("/corso/video/az-") || (p.startsWith("/corso/video/") && url.searchParams.has("s"))) {
+      const m = p.match(/^\/corso\/video\/([a-z0-9-]+)\.(mp4|jpg|vtt|m4a)$/), [e, g] = (url.searchParams.get("s") || "").split(".");
       if (!m || !(+e > Date.now() / 1000) || !g || g !== await firmaV(env, m[1], e)) return new Response("Video non disponibile: apri il corso dal programma.", { status: 403, headers: { "content-type": "text/plain; charset=utf-8" } });
       const r = await env.ASSETS.fetch(new Request(url.origin + p, { headers: request.headers, method: request.method }));
       let x = new Response(r.body, r); const rg = (request.headers.get("range") || "").match(/^bytes=(\d*)-(\d*)$/);

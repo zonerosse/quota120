@@ -285,7 +285,7 @@ AZ.lezione=x=>{const [cid,lid]=x.split('|'),l=corsoDi(cid).lezioni.find(y=>y.id=
 function lezione(x){const [cid,lid]=x.split('|'),c=corsoDi(cid),i=c.lezioni.findIndex(y=>y.id===lid),l=c.lezioni[i];
   LEZ={cid,lid,t:l.t,s:l.s||'',scene:JSON.parse(JSON.stringify(l.scene||[])),q:JSON.parse(JSON.stringify(l.q||[]))};
   return `<h2 class="t">Lezione ${i+1} · ${esc(l.t)}</h2>
-  ${l.pronto?`<video class="vid" controls preload="metadata" playsinline poster="/corso/video/${esc(l.video)}.jpg" src="/corso/video/${esc(l.video)}.mp4"></video>`:`<div class="vid">${(l.scene||[]).length?'Video in preparazione: pronto pochi minuti dopo il salvataggio':'Ancora nessun video'}</div>`}
+  ${l.pronto?`<video class="vid" controls preload="metadata" playsinline poster="/corso/video/${esc(l.video)}.jpg" src="/corso/video/${esc(l.video)}.mp4"><track kind="subtitles" srclang="it" label="Italiano" src="/corso/video/${esc(l.video)}.vtt" default></video>`:`<div class="vid">${(l.scene||[]).length?'Video in preparazione: pronto pochi minuti dopo il salvataggio':'Ancora nessun video'}</div>`}
   <div class="card g2"><div><label for="lt">Titolo della lezione</label><input type="text" id="lt" value="${esc(l.t)}"></div><div><label for="ls">Sottotitolo</label><input type="text" id="ls" value="${esc(l.s||'')}"></div></div>
   <div class="card"><h3>SCENE DEL VIDEO</h3><p class="fine">Ogni scena è quello che si vede e quello che dice la voce. Cambia i testi, poi «Salva e rifai il video».</p><div id="scene"></div>
   <div class="bar"><button class="btn sec" type="button" data-az="scenaPiu">+ Aggiungi una scena</button></div></div>
