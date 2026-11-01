@@ -31,6 +31,7 @@ td.e{color:var(--ink3);white-space:nowrap}
 .riga{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:12px;width:100%;padding:11px 4px;border-top:1px solid var(--riga)}.riga:first-child{border-top:0}
 .riga .n{width:30px;height:30px;border-radius:8px;background:var(--petrolio);color:#fff;font-weight:700;display:grid;place-items:center;flex:none}
 .riga .m{flex:1;min-width:0}.riga .m b{display:block}.riga .m small{color:var(--ink3)}.chev{color:var(--ink3)}
+.lg{border-top:1px solid var(--riga);padding:12px 0}.lg:first-child{border-top:0;padding-top:2px}.lg.ris{opacity:.55}.lg-h{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.lg-q{margin-left:auto!important}.lg-m{display:block;margin:6px 0 2px;font-size:16px;overflow-wrap:anywhere}.lg details{margin-top:6px}.lg summary{cursor:pointer;color:var(--accent,#1D5C7C);font-weight:700;font-size:14.5px}.lg pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12.5px;background:#F5F7F8;border-radius:8px;padding:8px;margin:6px 0 0;max-height:260px;overflow:auto}
 .pill{font-size:12.5px;font-weight:700;border-radius:20px;padding:2px 9px;white-space:nowrap}.pill.ok{background:var(--ok-bg);color:var(--ok)}.pill.w{background:var(--warn-bg);color:var(--warn)}.pill.ko{background:var(--ko-bg);color:var(--ko)}
 .btn{all:unset;box-sizing:border-box;cursor:pointer;background:var(--petrolio);color:#fff;font-weight:700;border-radius:9px;padding:10px 15px;font-size:15px;display:inline-flex;align-items:center;gap:8px}.btn.sec{background:var(--sup);color:var(--petrolio);border:1.5px solid var(--petrolio)}.btn.ko{background:var(--sup);color:var(--ko);border:1.5px solid var(--ko)}
 .btn[disabled]{opacity:.6;pointer-events:none}
@@ -121,6 +122,7 @@ async function home(){await caricaP();const o=P.operatori,s=P.stato,nuovi=o.filt
   <h3 class="sez">IL PROGRAMMA</h3><div class="tiles">
   <button class="tile" data-az="operatori">${ic('drone','--f-a')}<b>Operatori iscritti</b><small${nuovi?' class="w"':''}>${o.length} ${o.length===1?'operatore':'operatori'}${nuovi?' · '+nuovi+' nuovo':''}</small></button>
   <button class="tile" data-az="stato">${ic('stato','--f-b')}<b>Stato del programma</b><small>${tutto?'tutto funziona':'da controllare'}</small></button>
+  <button class="tile" data-az="problemi">${ic('stato',P.problemi?'--f-c':'--f-b')}<b>Problemi dell’app</b><small${P.problemi?' class="w"':''}>${P.problemi?P.problemi+' da guardare':'nessuno da guardare'}</small></button>
   <a class="tile" href="https://app.quota120.com/" target="_blank" rel="noopener">${ic('web','--f-d')}<b>Apri il programma</b><small>app.quota120.com</small></a></div>
   <h3 class="sez">IL SITO E I CORSI</h3><div class="tiles">
   <button class="tile" data-az="iscritti">${ic('users','--f-b')}<b>Iscritti al corso</b><small>${P.iscritti.n||0} iscritti · ${P.iscritti.nn||0} vogliono le novità</small></button>
@@ -128,6 +130,31 @@ async function home(){await caricaP();const o=P.operatori,s=P.stato,nuovi=o.filt
   <button class="tile" data-az="auto">${ic('cuffie','--f-e')}<b>Ascolta in auto</b><small>solo voce · a schermo spento</small></button>
   <button class="tile" data-az="nuovo">${ic('plus','--f-c')}<b>Nuovo videocorso</b><small>titolo, lezioni, video</small></button>
   <a class="tile" href="/" target="_blank">${ic('web','--f-d')}<b>Vedi il sito</b><small>quota120.com</small></a></div>`}
+/* ---------- Problemi dell'app: errori registrati da soli e messaggi «Qualcosa non funziona?» ---------- */
+let LOG=[],LOGF='';
+const oraL=t=>{const d=new Date(t);return quando(t)+' '+d.toTimeString().slice(0,5)};
+const tel=ua=>{ua=ua||'';const o=/iPhone/.test(ua)?'iPhone':/iPad/.test(ua)?'iPad':/Android/.test(ua)?'Android':/Mac/.test(ua)?'Mac':/Windows/.test(ua)?'PC Windows':/Linux/.test(ua)?'Linux':'altro';
+  const b=/Edg\//.test(ua)?'Edge':/CriOS|Chrome\//.test(ua)?'Chrome':/FxiOS|Firefox\//.test(ua)?'Firefox':/Safari\//.test(ua)?'Safari':'';return o+(b?' · '+b:'')};
+function testoLog(x){return [(x.tipo==='mess'?'MESSAGGIO':'ERRORE')+' · '+new Date(x.at).toLocaleString('it-IT')+(x.n>1?' · '+x.n+' volte (ultima '+new Date(x.ult).toLocaleString('it-IT')+')':''),
+  'Spazio: '+(x.opn||x.op)+' ('+x.op+') · '+(x.chi||'?')+', '+(x.ruolo||''),'Telefono: '+tel(x.ua)+' · schermo '+(x.schermo||'?')+' · rete '+(x.rete||'?'),'Pagina: '+(x.vista||'?'),
+  x.testo?'Ha scritto: '+x.testo:'',x.msg?'Errore: '+x.msg:'',x.stack?'Dettagli:\n'+x.stack:'','Ultime cose fatte:\n'+(x.passi||[]).join('\n'),'User agent: '+(x.ua||'')].filter(Boolean).join('\n')}
+async function problemi(){LOG=await api('/api/admin/log');if(!Array.isArray(LOG))LOG=[];
+  const da=LOG.filter(x=>!x.risolto),err7=LOG.filter(x=>x.tipo==='err'&&giorni(x.ult)<7).reduce((n,x)=>n+(x.n||1),0),mes=LOG.filter(x=>x.tipo==='mess'&&!x.risolto).length;
+  const L=LOG.filter(x=>LOGF==='mess'?x.tipo==='mess'&&!x.risolto:LOGF==='err'?x.tipo==='err'&&!x.risolto:LOGF==='risolto'?x.risolto:true);
+  const f=(k,t)=>`<button type="button" class="${LOGF===k?'on':''}" data-az="logF" data-x="${k}">${t}</button>`;
+  return `<h2 class="t">Problemi dell’app</h2><div class="num"><div><b>${da.length}</b><span>da guardare</span></div><div><b>${err7}</b><span>errori in 7 giorni</span></div><div><b>${mes}</b><span>${mes===1?'messaggio':'messaggi'}</span></div></div>
+  <div class="selc" style="margin:12px 0 8px">${f('','Tutti')}${f('mess','Messaggi')}${f('err','Errori')}${f('risolto','Risolti')}</div>
+  <div class="card">${L.length?L.map(x=>`<div class="lg${x.risolto?' ris':''}"><div class="lg-h"><span class="pill ${x.tipo==='mess'?'ok':x.risolto?'w':'ko'}">${x.tipo==='mess'?'Messaggio':'Errore'}</span><span class="fine">${esc(x.opn||x.op)} · ${x.chi&&x.chi!==x.ruolo?esc(x.chi)+', ':''}${esc(x.ruolo||'')}</span><span class="fine lg-q">${oraL(x.ult||x.at)}${x.n>1?' · '+x.n+' volte':''}${x.risolto?' · risolto':''}</span></div>
+    <b class="lg-m">${x.tipo==='mess'?'«'+esc(x.testo)+'»':esc(x.msg)}</b><div class="fine">${esc(tel(x.ua))} · pagina «${esc(x.vista||'?')}» · ${esc(x.rete||'')}${x.email?' · <a href="mailto:'+esc(x.email)+'?subject=Quota%20120%20%C2%B7%20il%20problema%20che%20ci%20hai%20segnalato">'+esc(x.email)+'</a>':''}</div>
+    <details><summary>${x.tipo==='mess'?'Le ultime cose fatte su quel telefono':'Dettagli tecnici e ultime cose fatte'}</summary><pre>${esc((x.stack?x.stack+'\n\n':'')+(x.passi||[]).join('\n'))}</pre></details>
+    <div class="bar" style="margin-top:8px"><button class="btn sec" type="button" data-az="logCopia" data-x="${esc(x.id)}">Copia per l’assistenza</button><button class="btn sec" type="button" data-az="logRis" data-x="${esc(x.id)}">${x.risolto?'Da guardare di nuovo':'Risolto'}</button></div></div>`).join(''):'<p class="fine">Niente qui: nessun problema registrato.</p>'}</div>
+  <p class="fine" style="margin-top:10px">Gli errori si registrano da soli; i messaggi arrivano anche per email ad assistenza@quota120.com. Con «Copia per l’assistenza» copi tutto il problema da incollare in chat. Niente password, documenti o foto; si cancellano da soli dopo 30 giorni.</p>`}
+AZ.problemi=()=>vai(problemi,'Problemi dell’app');
+AZ.logF=k=>{LOGF=k||'';PILA[PILA.length-1]=[problemi,'Problemi dell’app'];mostra()};
+AZ.logRis=async(id,b)=>{const x=LOG.find(y=>y.id===id);if(!x)return;b.disabled=true;try{await api('/api/admin/log-risolto',{id,on:!x.risolto});mostra()}catch(e){b.disabled=false;alert(e.message)}};
+AZ.logCopia=async(id,b)=>{const x=LOG.find(y=>y.id===id);if(!x)return;const t=testoLog(x);
+  try{await navigator.clipboard.writeText(t);b.textContent='Copiato: incollalo in chat'}catch(e){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');b.textContent='Copiato: incollalo in chat'}catch(e2){b.textContent='Non riuscito'}a.remove()}
+  setTimeout(()=>{b.textContent='Copia per l’assistenza'},2500)};
 AZ.operatori=()=>vai(operatori,'Operatori');AZ.stato=()=>vai(statoP,'Stato del programma');AZ.iscritti=()=>vai(iscritti,'Iscritti');AZ.corsi=()=>vai(corsi,'Videocorsi');AZ.nuovo=()=>vai(nuovo,'Nuovo corso');
 
 /* ---------- Ascolta in auto: solo la voce delle lezioni, di fila ---------- */

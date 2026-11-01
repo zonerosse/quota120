@@ -510,6 +510,30 @@ export class Stato extends DurableObject {
     const url = new URL(request.url), st = this.ctx.storage, p = url.pathname;
     if (p.startsWith("/api/registro/")) return this.registro(request, url, p);
     if (p === "/interno/elenco") return J((await st.get("elenco")) || []);
+    // registro dei problemi dell'app (errori e messaggi «Qualcosa non funziona?»): lo legge l'Admin del sito nel Pannello
+    if (p === "/interno/log" && request.method === "POST") {
+      const { b, op, ip, ua } = await request.json().catch(() => ({}));
+      if (!b || typeof b !== "object") return J({ ok: false });
+      const ora = Date.now(), s = (x, m) => String(x == null ? "" : x).slice(0, m), ch = "logn:" + s(ip, 60) + ":" + Math.floor(ora / 36e5);
+      const n = ((await st.get(ch)) || 0) + 1; await st.put(ch, n); if (n > 40) return J({ ok: false, troppi: true });
+      if (b.tipo === "mess" && n > 6) return J({ ok: false, troppi: true });
+      const tipo = b.tipo === "mess" ? "mess" : "err", fp = tipo === "err" ? "logfp:" + s(op, 40) + ":" + s(b.msg, 160) + "|" + s(b.vista, 40) : "";
+      if (fp) { const f = await st.get(fp); const e = f && await st.get(f.id);
+        if (e && ora - e.ult < 864e5) { e.n = (e.n || 1) + 1; e.ult = ora; e.risolto = false; e.passi = (Array.isArray(b.passi) ? b.passi : []).slice(-30).map(x => s(x, 160)); await st.put(f.id, e); await st.put(fp, { id: f.id, at: ora }); return J({ ok: true }); } }
+      const id = "log:" + String(ora).padStart(14, "0") + ":" + Math.random().toString(36).slice(2, 7);
+      const e = { id, tipo, op: s(op, 40), opn: s(b.opn, 80), chi: s(b.chi, 80), ruolo: s(b.ruolo, 40), testo: s(b.testo, 2000), msg: s(b.msg, 600), stack: s(b.stack, 1500), vista: s(b.vista, 60),
+        rete: s(b.rete, 30), schermo: s(b.schermo, 20), ua: s(ua, 220), email: s(b.email, 120), passi: (Array.isArray(b.passi) ? b.passi : []).slice(-30).map(x => s(x, 160)), at: ora, ult: ora, n: 1 };
+      await st.put(id, e); if (fp) await st.put(fp, { id, at: ora });
+      return J({ ok: true, id });
+    }
+    if (p === "/interno/log") return J([...(await st.list({ prefix: "log:", reverse: true, limit: 300 })).values()]);
+    if (p === "/interno/log/risolto" && request.method === "POST") { const b = await request.json().catch(() => ({})); const e = b.id && String(b.id).startsWith("log:") && await st.get(b.id); if (e) { e.risolto = !!b.on; await st.put(b.id, e); } return J({ ok: !!e }); }
+    if (p === "/interno/log/pulizia") { const ora = Date.now(), via = [];
+      for (const [k, v] of await st.list({ prefix: "log:", limit: 1000 })) { if (ora - (v.ult || v.at) > 30 * 864e5) via.push(k); }
+      for (const [k] of await st.list({ prefix: "logn:", limit: 1000 })) { if (+k.split(":").pop() < Math.floor(ora / 36e5) - 2) via.push(k); }
+      for (const [k, v] of await st.list({ prefix: "logfp:", limit: 1000 })) { if (ora - (v.at || 0) > 2 * 864e5) via.push(k); }
+      for (let i = 0; i < via.length; i += 128) await st.delete(via.slice(i, i + 128));
+      return J({ ok: true, tolti: via.length }); }
     if (p === "/interno/chiave-video") { let k = await st.get("chiave-video"); if (!k) { k = [...crypto.getRandomValues(new Uint8Array(32))].map(x => x.toString(16).padStart(2, "0")).join(""); await st.put("chiave-video", k); } return new Response(k); }
     if (p === "/interno/operatori") { const L = (await st.get("elenco")) || [], out = []; for (const op of L) out.push(Object.assign({ op }, (await st.get("op:" + op)) || {})); return J(out); }
     if (p === "/interno/corsi") {
@@ -1333,6 +1357,7 @@ export default {
     ctx.waitUntil(main.fetch("https://quota120.interno/interno/pulizia").catch(() => {}));
     // gli avvisi di ogni spazio, e la pulizia dei file mai usati (una volta al giorno)
     ctx.waitUntil((async () => {
+      await env.STATO.get(env.STATO.idFromName("registro")).fetch("https://quota120.interno/interno/log/pulizia").catch(() => {});
       const L = await env.STATO.get(env.STATO.idFromName("registro")).fetch("https://quota120.interno/interno/elenco").then(r => r.json()).catch(() => []);
       for (const op of L) { const s = env.STATO.get(env.STATO.idFromName("op:" + op));
         await s.fetch("https://quota120.interno/interno/avvisi", { headers: { "x-q120-op": op } }).catch(() => {});
@@ -1411,9 +1436,12 @@ export default {
         const isc = await reg().fetch(new Request(N + "/interno/iscritti-n")).then(r => r.json()).catch(() => ({}));
         const corsi = await corsiConVideo(env, url, await reg().fetch(new Request(N + "/interno/corsi")).then(r => r.json()), true);
         const lez = corsi.flatMap(c => c.lezioni || []), c = n => !!(env[n] && String(env[n]).trim());
+        const prob = await reg().fetch(new Request(N + "/interno/log")).then(r => r.json()).catch(() => []);
         return J({ operatori: ops.map(o => ({ op: o.op, nome: o.nome, email: o.email, adm: o.adm, at: o.at, piloti: o.piloti || 0, droni: o.droni || 0, voli: o.voli || 0, telefoni: o.telefoni || 0, ultimo: o.ultimo || 0, sospeso: !!o.sospeso })),
-          iscritti: isc, stato: { posta: c("RESEND_API_KEY") || c("BREVO_API_KEY"), mittente: env.MITTENTE || "", dji: c("DJI_API_KEY"), claude: c("ANTHROPIC_API_KEY"), robot: c("TURNSTILE_SECRET"), video: lez.filter(l => l.pronto).length, lezioni: lez.length }, corsi: corsi.map(x => ({ id: x.id, t: x.t, n: (x.lezioni || []).length })) });
+          problemi: prob.filter(x => !x.risolto).length, iscritti: isc, stato: { posta: c("RESEND_API_KEY") || c("BREVO_API_KEY"), mittente: env.MITTENTE || "", dji: c("DJI_API_KEY"), claude: c("ANTHROPIC_API_KEY"), robot: c("TURNSTILE_SECRET"), video: lez.filter(l => l.pronto).length, lezioni: lez.length }, corsi: corsi.map(x => ({ id: x.id, t: x.t, n: (x.lezioni || []).length })) });
       }
+      if (az === "log" && request.method === "GET") return reg().fetch(new Request(N + "/interno/log"));
+      if (az === "log-risolto" && request.method === "POST") return reg().fetch(new Request(N + "/interno/log/risolto", { method: "POST", headers: { "content-type": "application/json" }, body: await request.text() }));
       if (az === "sospendi" && request.method === "POST") { const b = await request.json().catch(() => ({})); if (!SLUG_OK(b.op)) return J({ errore: "operatore" }, 400);
         return env.STATO.get(env.STATO.idFromName("op:" + b.op)).fetch(new Request(N + "/interno/sospendi", { method: "POST", headers: { "x-q120-op": b.op }, body: JSON.stringify({ on: !!b.on }) })); }
       if (az === "esci" && request.method === "POST") { if (ta) await reg().fetch(new Request(I + "esci?t=" + ta, { method: "POST" })); return new Response('{"ok":true}', { headers: { "content-type": "application/json", "set-cookie": "q120a=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax" } }); }
@@ -1469,7 +1497,7 @@ export default {
         const des = priv ? "Quali dati raccolgono Quota 120 e il sito quota120.com, perché, dove finiscono, quali cookie tecnici usano e quali diritti hai secondo il GDPR."
           : "Le condizioni d'uso di Quota 120, il gestionale per operatori di droni: cosa offre la prova gratuita, responsabilità e regole del servizio.";
         const ld = { "@context": "https://schema.org", "@graph": [
-          { "@type": "WebPage", "@id": u + "#page", url: u, name: tit, description: des, inLanguage: "it-IT", isPartOf: { "@id": "https://quota120.com/#web" }, publisher: { "@id": "https://quota120.com/#org" }, dateModified: priv ? "2026-10-30" : "2026-11-01" },
+          { "@type": "WebPage", "@id": u + "#page", url: u, name: tit, description: des, inLanguage: "it-IT", isPartOf: { "@id": "https://quota120.com/#web" }, publisher: { "@id": "https://quota120.com/#org" }, dateModified: "2026-11-01" },
           { "@type": "Organization", "@id": "https://quota120.com/#org", name: "Quota 120", url: "https://quota120.com/", logo: "https://quota120.com/img/logo-512.png", email: "assistenza@quota120.com", areaServed: "IT",
             address: { "@type": "PostalAddress", addressLocality: "Ostellato", addressRegion: "FE", postalCode: "44020", addressCountry: "IT" }, sameAs: ["https://puntowebferrara.com/", "https://app.quota120.com/"],
             contactPoint: { "@type": "ContactPoint", contactType: "customer support", email: "assistenza@quota120.com", availableLanguage: "it" } },
@@ -1507,6 +1535,20 @@ export default {
       j.az = await corsiConVideo(env, url, j.az || [], !!j.adm);
       j.q120 = await corsiConVideo(env, url, tutti, false);
       return J(j);
+    }
+    if (p === "/api/log" && request.method === "POST") {
+      const t = await request.text(); if (t.length > 16000) return J({ errore: "Troppo lungo" }, 413);
+      let b; try { b = JSON.parse(t); } catch (e) { return J({ errore: "dati" }, 400); }
+      const op = String(request.headers.get("x-op") || "").toLowerCase(), opOk = SLUG_OK(op) ? op : "prova";
+      const j = await reg().fetch(new Request("https://quota120.interno/interno/log", { method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ b, op: opOk, ip: request.headers.get("cf-connecting-ip") || "", ua: request.headers.get("user-agent") || "" }) })).then(r => r.json()).catch(() => ({}));
+      if (j.ok && b.tipo === "mess" && j.id) {
+        const E = x => String(x == null ? "" : x).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+        const html = "<p><b>" + E(b.chi || "Qualcuno") + "</b> (" + E(b.ruolo) + ", " + E(b.opn || opOk) + ") ha scritto:</p><blockquote>" + E(b.testo).replace(/\n/g, "<br>") + "</blockquote>"
+          + "<p>Pagina: " + E(b.vista) + " · rete: " + E(b.rete) + (b.email ? " · email: " + E(b.email) : "") + "</p><p>Le ultime cose fatte:</p><pre>" + E((b.passi || []).join("\n")) + "</pre><p>Lo trovi anche nel Pannello › Problemi dell'app.</p>";
+        await mandaMail(env, "assistenza@quota120.com", "Quota 120 · problema segnalato da " + String(b.chi || opOk).slice(0, 60), html, null, b.email || undefined).catch(e => console.error("mail problema:", e && e.message || e));
+      }
+      return J({ ok: !!j.ok });
     }
     if (p.startsWith("/api/")) {
       const op = String(request.headers.get("x-op") || url.searchParams.get("op") || "").toLowerCase();

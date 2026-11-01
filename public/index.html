@@ -1944,6 +1944,26 @@ const PROVA=SLUG==='prova', SPAZIO=!!SLUG&&!PROVA, INGRESSO=!SLUG;
 const KS=SPAZIO?':'+SLUG:'';                                   // i dati sul telefono restano separati per ogni spazio
 const OPQ=SPAZIO?'op='+encodeURIComponent(SLUG)+'&':'';        // per gli indirizzi usati fuori dal programma (calendario, invio voli)
 (function(){ const f=window.fetch.bind(window); window.fetch=(u,o)=>{ if(SPAZIO&&typeof u==='string'&&u.startsWith('/api/')&&!u.startsWith('/api/registro/')){ o=Object.assign({},o||{}); const h=new Headers(o.headers||{}); h.set('x-op',SLUG); o.headers=h; } return f(u,o); }; })();
+/* registro dei problemi: le ultime cose fatte e gli errori, per l'assistenza (niente password, documenti o foto) */
+const LOGP=[], LOG_FATTI={}; let LOG_N=0;
+function logPasso(t){ LOGP.push(new Date().toTimeString().slice(0,8)+' '+String(t).slice(0,150)); if(LOGP.length>30) LOGP.shift(); }
+function logInfo(){ let v='',o='',c='',r=''; try{ v=VISTA||''; o=(OP&&OP.nome)||''; c=(IO&&IO.n)||''; r=ADM?(COME?'Admin (vede come pilota)':'Admin'):'pilota'; }catch(e){}
+  const n=navigator.connection||{}; return {vista:v,opn:o,chi:c,ruolo:r,rete:navigator.onLine?(n.effectiveType||'in rete'):'senza rete',schermo:innerWidth+'x'+innerHeight,passi:LOGP.slice()}; }
+function logManda(o){ try{ return fetch('/api/log',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(Object.assign(logInfo(),o)),keepalive:!o.testo}).then(r=>r.json()).catch(()=>({})); }catch(e){ return Promise.resolve({}); } }
+function logErr(msg,stack){ msg=String(msg||'errore').slice(0,300); logPasso('ERRORE '+msg); if(!navigator.onLine||/ResizeObserver loop/.test(msg)) return;
+  let v=''; try{ v=VISTA; }catch(e){} const k=msg+'|'+v; if(LOG_FATTI[k]||LOG_N>=15) return; LOG_FATTI[k]=1; LOG_N++; logManda({tipo:'err',msg,stack:String(stack||'').slice(0,1500)}); }
+window.addEventListener('error',e=>{ const t=e.target; if(t&&t!==window){ if(t.tagName==='SCRIPT') logErr('File del programma non caricato: '+String(t.src||'').split('?')[0]); return; } logErr(e.message,e.error&&e.error.stack); },true);
+window.addEventListener('unhandledrejection',e=>{ const r=e.reason; if(r&&r.name==='AbortError') return; logErr(r&&r.message?r.message:String(r),r&&r.stack); });
+document.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('button,a,[role=button],summary'); if(!b) return; const q=b.querySelector('b'), t=(b.getAttribute('aria-label')||(q&&q.textContent)||b.textContent||'').replace(/\s+/g,' ').trim().slice(0,60); if(t) logPasso('tocca «'+t+'»'); },true);
+function logSegnala(){ gdSheet(`<h2>Qualcosa non funziona?</h2><p class="gd-sub">Scrivi cosa stavi facendo e cosa è successo. Bastano due righe.</p>
+  <label class="in-l" for="lg-t">Cosa è successo?</label><textarea id="lg-t" rows="4" style="width:100%" placeholder="Es. ho toccato «Salva» nel nuovo lavoro e non è successo niente"></textarea>
+  <div class="nota" style="margin-top:10px">Insieme al messaggio mandiamo le ultime cose fatte su questo telefono: pagine aperte, tasti toccati, errori. Niente password, documenti o foto.</div>
+  <div class="row"><button class="btn sec" type="button" onclick="gdChiudiSheet()">Annulla</button><button class="btn" type="button" id="lg-m" onclick="logMandaMess(this)"><span class="spin"></span>Manda</button></div>`); setTimeout(()=>{ const t=document.getElementById('lg-t'); t&&t.focus(); },60); }
+function logMandaMess(b){ const t=document.getElementById('lg-t'), x=t.value.trim(); if(x.length<3){ t.style.borderColor='var(--ko)'; t.placeholder='Scrivi almeno due parole'; t.focus(); return; }
+  if(!navigator.onLine){ toast('Sei senza rete: riprova quando torna'); return; }
+  b.classList.add('busy'); b.disabled=true; let em=''; try{ em=ADM?(OP.email||''):(((SCHEDEP[(ioPilota()||{}).id]||{}).email)||''); }catch(e){}
+  logManda({tipo:'mess',testo:x.slice(0,2000),email:em}).then(j=>{ if(!j.ok){ b.classList.remove('busy'); b.disabled=false; toast('Non riuscito: riprova tra poco, o scrivi ad assistenza@quota120.com'); return; }
+    gdSheet(`<h2>Ricevuto, grazie</h2><p class="gd-sub">Lo guardiamo e ti rispondiamo${em?' per email a '+ESC(em):''}.</p><div class="row"><button class="btn" type="button" onclick="gdChiudiSheet()">Chiudi</button></div>`); }); }
 if(INGRESSO&&!/[?&]resta/.test(location.search)){ try{ const u=localStorage.getItem('q120Ultimo'); if(u&&/^[a-z0-9-]+$/.test(u)) location.replace('/'+u+location.search); else if(localStorage.getItem('quota120Disp')) location.replace('/prova'+location.search); }catch(e){} }
 const IC = {
   drone:'<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/>',
@@ -3466,7 +3486,7 @@ try{ME=JSON.parse(localStorage.getItem('quota120Disp'+KS)||'null');}catch(e){}
 function meSave(){try{if(ME)localStorage.setItem('quota120Disp'+KS,JSON.stringify(ME));else localStorage.removeItem('quota120Disp'+KS);}catch(e){}}
 function api(m,path,b){if(COME&&m!=='GET'){toast('Sei in «Vedi come un pilota»: qui non si modifica niente');return Promise.resolve({errore:'«Vedi come un pilota»: solo da guardare',_s:0});}
   return fetch(path,{method:m,headers:{'content-type':'application/json','x-disp':ME?ME.id+':'+ME.k:''},body:b?JSON.stringify(b):undefined})
-  .then(r=>r.json().then(j=>{j._s=r.status;return j;}));}
+  .then(r=>r.json().catch(()=>({errore:'Risposta non leggibile'})).then(j=>{j._s=r.status; if(r.status>=500) logErr('Il server non ha risposto ('+r.status+'): '+m+' '+path.split('?')[0],j.errore||''); return j;}));}
 /* «Indietro» torna alla pagina dove eri davvero (storia delle pagine aperte); senza storia, alla pagina «madre» */
 let NAVST=[], NAV_LOG=null, NAV_NO=false;
 (function(){ const b=document.getElementById('back'); if(!b) return; b.removeAttribute('onclick'); b.onclick=null;
@@ -3529,6 +3549,7 @@ function navIndietro(){ if(VISTA==='corsi'&&typeof csIndietro==='function'&&csIn
   setTimeout(()=>window.scrollTo(0,p.y||0),30);
 }
 function vai(v, crumb){
+  try{ logPasso('apre '+(String(crumb||v).replace(/<[^>]*>/g,'').replace(/&rsaquo;|›/g,'›').slice(0,80))); }catch(e){}
   if(!NAV_NO){ if(v==='home') NAVST=[]; else if(typeof VISTA!=='undefined'&&VISTA&&VISTA!==v&&VISTA!=='login'){ NAVST.push({v:VISTA,t:'',crumb:document.getElementById('crumb').innerHTML,log:NAV_LOG,y:window.scrollY}); if(NAVST.length>30) NAVST.shift(); } }
   if(v==='home') disegnaHome();
   document.getElementById('back').onclick=()=>vai('home');
@@ -5890,7 +5911,8 @@ function haAiuto(b){ if(document.querySelector('.ha-menu')) return haAiutoChiudi
     ['--f-flotta','<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8 8l8 8M16 8l-8 8"/>','Guidami in un volo','Tutte le operazioni di un volo, una dopo l’altra, dalle zone D-Flight alla chiusura','guidaVolo()'],
     ['--accent','<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14M12 17.5h.01"/>','Guida di questa pagina','Ti mostra a cosa serve ogni riquadro della Home',ADM&&!COME?'gdStart(\'homeadm\');gdGo()':'gdStart(\'mieilavori\');gdGo()'],
     ['--muted','<path d="M4 5h11a3 3 0 013 3v11H7a3 3 0 01-3-3z"/><path d="M8 9h6M8 13h6"/>','Le parole del drone','D-Flight, ENAC, NOTAM e le altre sigle spiegate','apriParole()'],
-    ['--f-imp','<path d="M4 12h16M4 12a3 3 0 013-3h10a3 3 0 010 6H7a3 3 0 01-3-3z"/>',gdOn()?'Spegni i tasti «Guidami»':'Accendi i tasti «Guidami»',gdOn()?'quando conosci il programma: lo schermo è più pulito':'in ogni pagina torna il tasto con le guide passo passo','gdToggle()']];
+    ['--f-imp','<path d="M4 12h16M4 12a3 3 0 013-3h10a3 3 0 010 6H7a3 3 0 01-3-3z"/>',gdOn()?'Spegni i tasti «Guidami»':'Accendi i tasti «Guidami»',gdOn()?'quando conosci il programma: lo schermo è più pulito':'in ogni pagina torna il tasto con le guide passo passo','gdToggle()'],
+    ['--ko','<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.01"/>','Qualcosa non funziona?','Raccontaci cosa è successo: lo sistemiamo','logSegnala()']];
   const velo=document.createElement('div'); velo.className='ha-menu-velo'; velo.onclick=haAiutoChiudi; document.body.appendChild(velo);
   const m=document.createElement('div'); m.className='ha-menu'; m.innerHTML='<div class="hm-cap">Cosa ti serve?</div>'+V.map(([c,ic,t,d,go])=>`<button type="button" onclick="haAiutoChiudi();${go}"><span class="ico" style="background:var(${c})"><svg viewBox="0 0 24 24">${ic}</svg></span><span><b>${t}</b><small>${d}</small></span></button>`).join('');
   const r=b.getBoundingClientRect(); m.style.top=(Math.max(r.bottom,0)+8)+'px'; m.style.right=Math.max(16,innerWidth-r.right)+'px'; document.body.appendChild(m); }
