@@ -626,12 +626,14 @@ const SLUG_OK = s => /^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/.test(s || "") && !RISER
 const cod6 = () => String(100000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 900000));
 const GIORNI_TOKEN_ADM = 90, GIORNI_TOKEN_CORSO = 365;   // dopo quanti giorni scadono le chiavi dell'Admin del sito e del corso
 const GIORNI_ADMIN = 15;   // l'Admin entrato con l'email resta dentro; se non usa quel telefono per 15 giorni, rifà il codice
-function codiceHtml(nome, nomeOp, codice, iscrizione) {
+function codiceHtml(nome, nomeOp, codice, iscrizione, solo) {
   // nome e operatore li ha scritti chi si iscrive: nella mail niente indirizzi web e niente testi lunghi
   nome = SENZA_LINK(nome, 50); nomeOp = SENZA_LINK(nomeOp, 60);
+  // chi vola da solo: «il tuo spazio» (lo spazio porta il suo nome)
+  const dove = solo ? (iscrizione ? " e creare il tuo spazio" : " nel tuo spazio") : (nomeOp ? " nello spazio di <b>" + esc(nomeOp) + "</b>" : "");
   return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;color:#0F1C26;font-size:15px;line-height:1.5">
     <div style="border-bottom:2px solid #132A3A;padding-bottom:10px;margin-bottom:14px;font-size:20px;font-weight:bold;color:#132A3A">Quota 120</div>
-    ${nome ? "Ciao " + esc(nome) + "," : "Ciao,"} ecco il codice ${iscrizione ? "per confermare l'iscrizione" : "per entrare"}${nomeOp ? " nello spazio di <b>" + esc(nomeOp) + "</b>" : ""}:
+    ${nome ? "Ciao " + esc(nome) + "," : "Ciao,"} ecco il codice ${iscrizione ? "per confermare l'iscrizione" : "per entrare"}${dove}:
     <div style="font-size:32px;font-weight:bold;letter-spacing:.25em;text-align:center;margin:18px 0;color:#0F1C26">${codice.slice(0, 3)} ${codice.slice(3)}</div>
     Vale 15 minuti. Se non sei stato tu, ignora questa email: senza il codice nessuno può entrare.
     <p style="font-size:12.5px;color:#5E6D77;margin-top:18px;border-top:1px solid #E3E8EB;padding-top:10px">Quota 120 · gestionale per operatori di droni · versione di prova gratuita</p></div>`;
@@ -785,8 +787,11 @@ export class Stato extends DurableObject {
       return [so, br].filter(Boolean).join(" · "); };
     // telefoni da dimenticare: usciti, rifiutati o tolti da più di 7 giorni; nella prova anche quelli non usati da 2 giorni
     const pulisciDisp = () => { let n = 0; for (const [i, x] of Object.entries(disp)) {
-      if ((["uscito", "rifiutato", "tolto"].includes(x.stato) && now - (x.visto || 0) > 7 * 864e5) || (PROVA && now - (x.visto || x.at || 0) > 2 * 864e5)) { delete disp[i]; n++; } } return n; };
-    const pub = () => Object.keys(disp).map(id => { const x = disp[id]; return { id, ruolo: x.ruolo, n: x.n, codice: x.codice, stato: x.stato, at: x.at, visto: x.visto, nuovo: !!x.nuovo, pid: x.pid, dev: x.dev || "" }; });
+      if ((["uscito", "rifiutato", "tolto"].includes(x.stato) && now - (x.visto || 0) > 7 * 864e5) || (PROVA && now - (x.visto || x.at || 0) > 2 * 864e5)
+        || (x.stato === "invito" && now - (x.at || 0) > 14 * 864e5)) { delete disp[i]; n++; } } return n; };
+    // inv: il profilo mandato dal link di invito (solo finché aspetta l'approvazione)
+    const pub = () => Object.keys(disp).map(id => { const x = disp[id]; return Object.assign({ id, ruolo: x.ruolo, n: x.n, codice: x.codice, stato: x.stato, at: x.at, visto: x.visto, nuovo: !!x.nuovo, pid: x.pid, dev: x.dev || "" },
+      x.stato === "invito" && x.inv ? { inv: { n: x.inv.n, tel: x.inv.tel, email: x.inv.email, at: x.inv.at } } : {}); });
     const leggiMain = async () => { const row = await st.get("main"); return row ? { row, d: JSON.parse(row.json) } : null; };
     // piloti che ci sono adesso (id → nome e nomi), ricordati finché i dati non cambiano
     const pilotiOra = async () => { const row = await st.get("main"); const ver = row ? row.ver : 0;
@@ -932,8 +937,8 @@ export class Stato extends DurableObject {
       // promemoria dei file già arrivati (per non prenderli due volte) e contatori vecchi
       const via = [], oraH = Math.floor(now / 36e5);
       for (const [kk, did] of await st.list({ prefix: "arrivo:" })) { const t = parseInt(String(did).slice(1, -6), 36); if (!(t > limA)) via.push(kk); }
-      for (const pre of ["car:", "nuovidisp:", "lavlim:"]) for (const [kk] of await st.list({ prefix: pre })) { if (+kk.split(":").pop() < oraH - 1) via.push(kk); }
-      for (const pre of ["dji:", "invia:dest:", "segnmail:", "prova-avvisi:", "bud:"]) for (const [kk] of await st.list({ prefix: pre })) { const g2 = kk.split(":").pop(); if (g2 < giornoUTC() && g2.length === 10) via.push(kk); }
+      for (const pre of ["car:", "nuovidisp:", "lavlim:", "invlim:"]) for (const [kk] of await st.list({ prefix: pre })) { if (+kk.split(":").pop() < oraH - 1) via.push(kk); }
+      for (const pre of ["dji:", "invia:dest:", "segnmail:", "prova-avvisi:", "bud:", "invgio:"]) for (const [kk] of await st.list({ prefix: pre })) { const g2 = kk.split(":").pop(); if (g2 < giornoUTC() && g2.length === 10) via.push(kk); }
       for (let i = 0; i < via.length; i += 128) await st.delete(via.slice(i, i + 128));
       // telefoni: via quelli usciti da 7 giorni (nella prova quelli non usati da 2 giorni)
       if (pulisciDisp()) await st.put("disp", disp);
@@ -1004,6 +1009,37 @@ export class Stato extends DurableObject {
       return J({ ok: true, op: OPN || "prova", opn: OPN ? String(((m0 && m0.d.OP) || {}).nome || OPN).slice(0, 80) : "versione di prova", n: x.n, ruolo: x.ruolo, disp: i2 });
     }
 
+    // ---- link di invito dei piloti (pubblico): il pilota apre /<spazio>/invito/<chiave>, vede solo il nome dell'operatore e manda il suo profilo ----
+    // la chiave (128 bit) sta qui, in «invito»; «Cambia il link» la cambia e la vecchia non vale più. Limiti per rete e per chiave, tetto di richieste in attesa.
+    if (p === "/api/invito/info" || p === "/api/invito/manda") {
+      if (request.method !== "POST") return J({ errore: "Richiesta non valida" }, 405);
+      const txt = await request.text(); if (txt.length > 2000) return J({ errore: "Dati non validi" }, 400);
+      let b; try { b = JSON.parse(txt); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
+      if (!b || typeof b !== "object") return J({ errore: "Dati non validi" }, 400);
+      const ora = Math.floor(now / 36e5), conta = async (k, max) => { const n = (await st.get(k)) || 0; if (n >= max) return true; await st.put(k, n + 1); return false; };
+      const rete = IPR || "x", NON_VALE = () => J({ errore: "Questo link non vale più: chiedi all'azienda il link nuovo." }, 404);
+      if (p === "/api/invito/info") { if (await conta("invlim:i:" + rete + ":" + ora, 60)) return J({ errore: "Troppe richieste: riprova tra un'ora." }, 429); }
+      else if (await conta("invlim:m:" + rete + ":" + ora, 5)) return J({ errore: "Da questa rete sono già stati mandati tanti profili: riprova tra un'ora." }, 429);
+      const inv = PROVA ? null : await st.get("invito"), t = String(b.t || "");
+      if (!inv || !/^[a-f0-9]{32}$/.test(t) || t !== inv.tok) return NON_VALE();
+      const m0 = await leggiMain(), nomeOp = TX(String(((m0 && m0.d.OP) || {}).nome || ""), 120);
+      if (p === "/api/invito/info") return J({ nome: nomeOp });
+      // il profilo: nome, telefono ed email, controllati e accorciati
+      const nome = SENZA_LINK(String(b.n || ""), 80), tel = String(b.tel || "").replace(/[^\d+ ]/g, "").replace(/\s+/g, " ").trim().slice(0, 20), email = minu(b.email).slice(0, 120);
+      if (nome.length < 3 || !/\s/.test(nome) || norm(nome) === "admin") return J({ errore: "Scrivi il tuo nome e cognome." }, 400);
+      if (tel.replace(/\D/g, "").length < 6) return J({ errore: "Scrivi il tuo numero di telefono." }, 400);
+      if (!EMAIL(email)) return J({ errore: "L'email non sembra giusta: controllala." }, 400);
+      const g = giornoUTC();
+      if (await conta("invgio:" + t.slice(0, 12) + ":" + g, 30)) return J({ errore: "Oggi da questo link sono già arrivati tanti profili: riprova domani." }, 429);
+      pulisciDisp();
+      if (Object.values(disp).filter(x => x.stato === "invito").length >= 20) return J({ errore: "L'azienda ha già tanti profili da approvare: riprova tra qualche giorno." }, 429);
+      if (Object.keys(disp).length >= LIM.dispSpazio) return J({ errore: "L'azienda ha troppi telefoni collegati: avvisala." }, 429);
+      const id = rnd(8), k = rnd(18);
+      disp[id] = { k, ruolo: "op", n: nome, pid: null, nuovo: false, codice: cod4(), stato: "invito", at: now, visto: now, app: false, dev: nomeDisp(request.headers.get("user-agent")), inv: { n: nome, tel, email, at: now } };
+      await st.put("disp", disp);
+      return J({ id, k, n: nome, stato: "invito", codice: disp[id].codice, op: nomeOp });
+    }
+
     // ---- da qui serve un dispositivo riconosciuto ----
     // la chiave del telefono arriva solo nell'intestazione X-Disp (mai nell'indirizzo, che finisce nella cronologia e nei registri)
     let id = "", k = "";
@@ -1012,7 +1048,7 @@ export class Stato extends DurableObject {
     if (!me || typeof k !== "string" || me.k !== k) return J({ errore: "dispositivo" }, 401);
     if (me.via === "email" && now - (me.visto || 0) > GIORNI_ADMIN * 86400000) { delete disp[id]; await st.put("disp", disp); return J({ errore: "dispositivo", scaduto: true }, 401); }
     if (now - (me.visto || 0) > 60000 || !me.dev) { me.visto = now; if (!me.dev) me.dev = nomeDisp(request.headers.get("user-agent")); await st.put("disp", disp); }
-    if (me.ruolo === "op" && me.pid == null) { const m0 = await leggiMain(), p0 = m0 && pilotaDi(m0.d, me.n); if (p0) { me.pid = p0.id; await st.put("disp", disp); } }
+    if (me.ruolo === "op" && me.pid == null && me.stato !== "invito") { const m0 = await leggiMain(), p0 = m0 && pilotaDi(m0.d, me.n); if (p0) { me.pid = p0.id; await st.put("disp", disp); } }
     // il pilota tolto dall'Admin non entra più: ogni richiesta controlla che ci sia ancora (se l'Admin l'ha rinominato, il telefono prende il nome nuovo)
     if (me.ruolo === "op" && ["ok", "attesa"].includes(me.stato)) {
       const pi = await pilotiOra(), q = me.pid != null ? pi.id.get(me.pid) : null;
@@ -1108,13 +1144,49 @@ export class Stato extends DurableObject {
         await st.put("blocchi", blocchi); await st.put("disp", disp);
         return J({ ok: true, disp: pub(), blocchi });
       }
-      const x = disp[b.id]; if (!x) return J({ errore: "Dispositivo non trovato" }, 404);
+      const x = Object.prototype.hasOwnProperty.call(disp, b.id) ? disp[b.id] : null; if (!x) return J({ errore: "Dispositivo non trovato" }, 404);
+      if (x.stato === "invito" && b.op === "approva") return J({ errore: "È un pilota nuovo: tocca «Approva» nella sua riga" }, 400);
       if (b.id === id && b.op === "togli") return J({ errore: "Non puoi togliere te stesso" }, 400);
       x.stato = b.op === "approva" ? "ok" : b.op === "rifiuta" ? "rifiutato" : b.op === "togli" ? "tolto" : x.stato;
       if (b.op === "approva") x.app = true;
       if (b.op === "togli" && x.n) await togliCodici(x.n);   // via anche il calendario e l'invio dei voli di quella persona
       await st.put("disp", disp);
       return J({ ok: true, disp: pub(), blocchi });
+    }
+
+    // ---- link di invito: l'Admin lo crea o lo cambia, approva o rifiuta i profili arrivati ----
+    if (p.startsWith("/api/invito/")) {
+      if (!adm) return J({ errore: "Solo l'Admin" }, 403);
+      if (request.method !== "POST") return J({ errore: "Richiesta non valida" }, 405);
+      let b; try { b = await request.json(); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
+      b = b && typeof b === "object" ? b : {};
+      if (p === "/api/invito/link") {
+        if (PROVA) return SPENTA_PROVA();
+        let inv = await st.get("invito");
+        if (!inv || b.cambia) { inv = { tok: rnd(16), at: now }; await st.put("invito", inv); }
+        return J({ tok: inv.tok, at: inv.at });
+      }
+      const x = Object.prototype.hasOwnProperty.call(disp, b.id) ? disp[b.id] : null;
+      if (!x || x.stato !== "invito" || !x.inv) return J({ errore: "Questa richiesta non c'è più" }, 404);
+      if (p === "/api/invito/rifiuta") { x.stato = "rifiutato"; delete x.inv; await st.put("disp", disp); return J({ ok: true, disp: pub(), blocchi }); }
+      if (p === "/api/invito/approva") {
+        const m = await leggiMain(); if (!m) return J({ errore: "Nessun dato" }, 409);
+        const d = m.d, P = d.PILOTI = LISTA(d.PILOTI), S = d.SCHEDEP = d.SCHEDEP && typeof d.SCHEDEP === "object" ? d.SCHEDEP : {}, PE = d.PERM = d.PERM && typeof d.PERM === "object" ? d.PERM : {};
+        const I = x.inv; let q = P.find(z => z && norm(z.nome) === norm(I.n)), esisteva = !!q;
+        if (q && blocchi[q.id]) return J({ errore: q.nome + " è bloccato: sbloccalo prima in Utenti e permessi" }, 409);
+        if (!q) { let pid = now * 10 + Math.floor(Math.random() * 10); while (P.some(z => z && z.id === pid)) pid++;
+          q = { id: pid, nome: I.n, matr: "", att: [], scad: "", ok: true, sts: false, link: true }; P.push(q);
+          S[pid] = { ruolo: "Pilota", tel: I.tel, email: I.email, ore: "0 h", voli: 0, ore90: "0 h", inc: 0, att: {} };
+          PE[pid] = { admin: false, voliTutti: false, flotta: true, documenti: false, clienti: false, prezzi: false, enac: false, agri: false };
+        } else { const sq = S[q.id] = S[q.id] && typeof S[q.id] === "object" ? S[q.id] : { ruolo: "Pilota", ore: "0 h", voli: 0, ore90: "0 h", inc: 0, att: {} };
+          if (!sq.tel) sq.tel = I.tel; if (!sq.email) sq.email = I.email; }
+        await scriviMain(d, m.row.ver + 1);
+        Object.assign(x, { stato: "ok", app: true, pid: q.id, n: q.nome }); delete x.inv; await st.put("disp", disp);
+        // l'email del pilota: gli avvisi partono solo dopo la conferma con il link (la stessa regola degli altri indirizzi)
+        try { await this.chiediConferme(d, url.origin, OPN); } catch (e) { console.error("conferme:", e && e.message || e); }
+        return J({ ok: true, pid: q.id, nome: q.nome, esisteva, ver: m.row.ver + 1, disp: pub(), blocchi });
+      }
+      return J({ errore: "Richiesta sconosciuta" }, 404);
     }
 
     // ---- codice lavoro: il pilota lo scrive e riceve solo cliente, lavoro e luogo (niente importi) ----
@@ -1781,7 +1853,7 @@ Stato.prototype.registro = async function (request, url, p) {
     const codice = cod6();
     await st.put("att:" + email, Object.assign({ codice, scad: now + 15 * 60000, tent: 0, inviato: now }, dati));
     const op = dati.op ? (await st.get("op:" + dati.op)) || {} : {};
-    try { await mandaMail(env, email, "Il tuo codice per Quota 120: " + codice, codiceHtml(dati.nome || op.adm || "", dati.nomeOp || op.nome || "", codice, dati.tipo === "iscrizione")); }
+    try { await mandaMail(env, email, "Il tuo codice per Quota 120: " + codice, codiceHtml(dati.nome || op.adm || "", dati.nomeOp || op.nome || "", codice, dati.tipo === "iscrizione", dati.tipo === "iscrizione" ? !!dati.solo : !!op.solo)); }
     catch (e) { await st.delete("att:" + email); return J({ errore: "Non sono riuscito a mandare l'email: riprova tra poco" }, 502); }
     return J({ ok: true });
   };
@@ -1794,21 +1866,23 @@ Stato.prototype.registro = async function (request, url, p) {
   // iscrizione: dati dell'operatore, poi il codice via email
   if (p === "/api/registro/iscrivi" && POST) {
     if (await troppi("lim:isc:" + ip, 6, 86400000)) return J({ errore: "Troppe iscrizioni da questa rete oggi: riprova domani" }, 429);
-    const b = await corpo(), email = mail(b);
-    const nomeOp = TX(String(b.op || "").replace(/\s+/g, " ").trim(), 80), nome = TX(String(b.nome || "").replace(/\s+/g, " ").trim(), 80), df = TX(String(b.df || "").trim(), 40);
-    if (nomeOp.length < 2) return J({ errore: "Scrivi il nome dell'operatore." }, 400);
+    const b = await corpo(), email = mail(b), solo = b.tipo === "solo";
+    // chi vola da solo: lo spazio porta il suo nome (operatore e pilota sono la stessa persona)
+    const nome = TX(String(b.nome || "").replace(/\s+/g, " ").trim(), 80), nomeOp = solo ? nome : TX(String(b.op || "").replace(/\s+/g, " ").trim(), 80), df = TX(String(b.df || "").trim(), 40);
+    if (!solo && nomeOp.length < 2) return J({ errore: "Scrivi il nome dell'operatore." }, 400);
     if (nome.length < 3) return J({ errore: "Scrivi il tuo nome e cognome." }, 400);
+    if (solo && norm(nome) === "admin") return J({ errore: "Scrivi il tuo nome e cognome." }, 400);
     if (!EMAIL(email)) return J({ errore: "L'email non sembra giusta: controllala." }, 400);
     if (!b.ok) return J({ errore: "Per continuare spunta l'accettazione delle condizioni d'uso e della privacy." }, 400);
-    if (((await st.get("em:" + email)) || []).length) return J({ errore: "Con questa email c'è già uno spazio: torna indietro e tocca Admin per entrare." }, 409);
-    return manda(email, { tipo: "iscrizione", nomeOp, nome, df });
+    if (((await st.get("em:" + email)) || []).length) return J({ errore: solo ? "Con questa email c'è già uno spazio: entra con la tua email, qui sotto." : "Con questa email c'è già uno spazio: torna indietro e tocca «Entra con la tua email»." }, 409);
+    return manda(email, Object.assign({ tipo: "iscrizione", nomeOp, nome, df }, solo ? { solo: true } : {}));
   }
   // iscrizione: un codice nuovo con i dati già controllati (anche dall'anti-robot) la prima volta
   if (p === "/api/registro/rimanda" && POST) {
     if (await troppi("lim:rim:" + ip, 10, 3600000)) return J({ errore: "Troppe richieste: riprova tra un'ora" }, 429);
     const b = await corpo(), email = mail(b), a = EMAIL(email) ? await st.get("att:" + email) : null;
     if (!a || a.tipo !== "iscrizione") return J({ errore: "Il codice è scaduto: torna indietro e rifai l'iscrizione." }, 410);
-    return manda(email, { tipo: "iscrizione", nomeOp: a.nomeOp, nome: a.nome, df: a.df });
+    return manda(email, Object.assign({ tipo: "iscrizione", nomeOp: a.nomeOp, nome: a.nome, df: a.df }, a.solo ? { solo: true } : {}));
   }
   // entrata dell'Admin: il codice arriva all'email dello spazio
   if (p === "/api/registro/codice" && POST) {
@@ -1829,28 +1903,35 @@ Stato.prototype.registro = async function (request, url, p) {
     if (c !== a.codice) { a.tent++; await st.put("att:" + email, a); return J({ errore: "Codice sbagliato: controlla l'ultima email arrivata." }, 403); }
     await st.delete("att:" + email);
     if (a.tipo === "iscrizione") {
-      if (((await st.get("em:" + email)) || []).length) return J({ errore: "Con questa email c'è già uno spazio: tocca Admin per entrare." }, 409);
+      if (((await st.get("em:" + email)) || []).length) return J({ errore: "Con questa email c'è già uno spazio: entra con la tua email." }, 409);
       let base = nomeSpazio(a.nomeOp), op = base, n = 1;
       while (RISERVATI.has(op) || !SLUG_OK(op) || (await st.get("op:" + op))) op = base.slice(0, 34) + "-" + (++n);
       const data = { OP: { nome: a.nomeOp, codice: a.df, resp: a.nome, dfReg: "", dfAbb: "", email, tel: "" } };
+      // chi vola da solo: lo spazio nasce con lui come unico pilota, collegato all'Admin (OP.soloPid), con la stessa email (già confermata)
+      if (a.solo) { const pid = Date.now() * 10 + Math.floor(Math.random() * 10);
+        Object.assign(data.OP, { solo: true, soloPid: pid });
+        data.PILOTI = [{ id: pid, nome: a.nome, matr: "", att: [], scad: "", ok: true, sts: false }];
+        data.SCHEDEP = { [pid]: { ruolo: "Pilota", tel: "", email, ore: "0 h", voli: 0, ore90: "0 h", inc: 0, att: {} } };
+        data.PERM = { [pid]: { admin: false, voliTutti: true, flotta: true, documenti: true, clienti: true, prezzi: false, enac: true, agri: false } }; }
       const r = await spazio(op).fetch("https://q/interno/crea", { method: "POST", headers: { "x-q120-op": op, "content-type": "application/json" }, body: JSON.stringify({ email, data }) });
       if (!r.ok) return J({ errore: "Non sono riuscito a creare lo spazio: riprova." }, 500);
       const dev = await r.json();
-      await st.put("op:" + op, { nome: a.nomeOp, email, adm: a.nome, df: a.df, at: now });
+      await st.put("op:" + op, Object.assign({ nome: a.nomeOp, email, adm: a.nome, df: a.df, at: now }, a.solo ? { solo: true } : {}));
       await st.put("em:" + email, [op]);
       const L = (await st.get("elenco")) || []; L.push(op); await st.put("elenco", L);
       // avviso al titolare di Quota 120: un'azienda nuova ha creato il suo spazio
       const tit = String(this.env.SITO_ADMIN || "").split(",").map(x => x.trim()).filter(EMAIL)[0];
       if (tit) {
         const nomeO = SENZA_LINK(a.nomeOp, 80) || op, chi = SENZA_LINK(a.nome, 80);
-        const html = "<p>Un'azienda nuova ha creato il suo spazio in Quota 120.</p><table cellpadding=\"4\">"
+        const html = "<p>" + (a.solo ? "Una persona che vola da sola ha creato il suo spazio in Quota 120." : "Un'azienda nuova ha creato il suo spazio in Quota 120.") + "</p><table cellpadding=\"4\">"
+          + "<tr><td><b>Tipo</b></td><td>" + (a.solo ? "da solo" : "azienda") + "</td></tr>"
           + "<tr><td><b>Operatore</b></td><td>" + esc(nomeO) + "</td></tr>"
           + "<tr><td><b>Responsabile</b></td><td>" + esc(chi) + "</td></tr>"
           + "<tr><td><b>Email</b></td><td>" + esc(email) + "</td></tr>"
           + "<tr><td><b>Indirizzo dello spazio</b></td><td>app.quota120.com/" + esc(op) + "</td></tr>"
           + "<tr><td><b>Iscritte in tutto</b></td><td>" + L.length + "</td></tr></table>"
           + "<p><a href=\"https://quota120.com/admin/pannello/\">Apri il Pannello</a></p>";
-        try { await mandaMail(this.env, tit, "Quota 120 · nuova azienda iscritta: " + nomeO, html); } catch (e) { console.error("avviso nuova azienda:", e && e.message || e); }
+        try { await mandaMail(this.env, tit, "Quota 120 · " + (a.solo ? "nuovo iscritto da solo: " : "nuova azienda iscritta: ") + nomeO, html); } catch (e) { console.error("avviso nuova azienda:", e && e.message || e); }
       }
       return J(Object.assign({ op, nuovo: true }, dev));
     }
@@ -2122,6 +2203,8 @@ export default {
         return new Response(null, { status: 302, headers: { location: (sq === "prova" ? "https://" + HOST_PROVA + "/" : "/" + sq) + "?q=" + encodeURIComponent(c), "cache-control": "no-store" } }); } }
     // /<spazio> apre il programma; / è l'ingresso; i vecchi indirizzi della prova (/prova) portano alla prova nuova
     const seg = p.replace(/^\/+|\/+$/g, "");
+    // link di invito dei piloti: /<spazio>/invito/<chiave> apre il programma (la pagina chiede al server se la chiave vale)
+    { const mi = p.match(/^\/([a-z0-9-]{3,40})\/invito\/([a-f0-9]{32})\/?$/); if (mi && SLUG_OK(mi[1])) { const ra = await env.ASSETS.fetch(new Request(new URL("/", url), request)); const r2 = new Response(ra.body, ra); r2.headers.set("Referrer-Policy", "no-referrer"); r2.headers.set("x-robots-tag", "noindex"); return r2; } }
     if (seg.toLowerCase() === "prova") return new Response(null, { status: 302, headers: { location: "https://" + HOST_PROVA + "/" + url.search, "cache-control": "no-store" } });
     if (seg && seg !== "corso" && !seg.includes("/") && !seg.includes(".") && SLUG_OK(seg.toLowerCase())) return env.ASSETS.fetch(new Request(new URL("/", url), request));
     return env.ASSETS.fetch(request);
