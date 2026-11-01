@@ -1,6 +1,6 @@
 # Quota 120
 
-> Quota 120 è un gestionale in italiano per operatori di droni in Italia (aziende e piloti singoli): controllo prima del volo con le zone D-Flight, registro dei voli dai file DJI, piloti, droni, batterie, missioni, clienti e richieste ATM. Funziona dal telefono del pilota, anche senza rete. Oggi è in prova gratuita. Quota 120 non è collegato a ENAC, D-Flight, EASA o DJI.
+> Quota 120 è un gestionale in italiano per operatori di droni in Italia (aziende e piloti singoli): controllo prima del volo con le zone D-Flight e il meteo del luogo preso in automatico (vento e raffiche confrontati con il limite del drone), registro dei voli dai file DJI, piloti, droni, batterie, missioni, clienti e richieste ATM. Funziona dal telefono del pilota, anche senza rete. Oggi è in prova gratuita. Quota 120 non è collegato a ENAC, D-Flight, EASA o DJI.
 
 Il sito offre anche corsi gratuiti (A1-A3, A2 e scenari standard STS) con registrazione via email. Il primo prepara l'esame ENAC dell'attestato di pilota UAS A1-A3: 9 video lezioni (una per materia del programma europeo, Regolamento UE 2019/947), legende, domande di fine lezione e una simulazione d'esame come quella ENAC (40 domande in 60 minuti, +2 giusta, 0 vuota, -1 sbagliata, si passa con 60 punti su 80). Il corso non sostituisce il corso e l'esame ufficiali, che sono sul portale ENAC.
 
