@@ -1839,6 +1839,19 @@ Stato.prototype.registro = async function (request, url, p) {
       await st.put("op:" + op, { nome: a.nomeOp, email, adm: a.nome, df: a.df, at: now });
       await st.put("em:" + email, [op]);
       const L = (await st.get("elenco")) || []; L.push(op); await st.put("elenco", L);
+      // avviso al titolare di Quota 120: un'azienda nuova ha creato il suo spazio
+      const tit = String(this.env.SITO_ADMIN || "").split(",").map(x => x.trim()).filter(EMAIL)[0];
+      if (tit) {
+        const nomeO = SENZA_LINK(a.nomeOp, 80) || op, chi = SENZA_LINK(a.nome, 80);
+        const html = "<p>Un'azienda nuova ha creato il suo spazio in Quota 120.</p><table cellpadding=\"4\">"
+          + "<tr><td><b>Operatore</b></td><td>" + esc(nomeO) + "</td></tr>"
+          + "<tr><td><b>Responsabile</b></td><td>" + esc(chi) + "</td></tr>"
+          + "<tr><td><b>Email</b></td><td>" + esc(email) + "</td></tr>"
+          + "<tr><td><b>Indirizzo dello spazio</b></td><td>app.quota120.com/" + esc(op) + "</td></tr>"
+          + "<tr><td><b>Iscritte in tutto</b></td><td>" + L.length + "</td></tr></table>"
+          + "<p><a href=\"https://quota120.com/admin/pannello/\">Apri il Pannello</a></p>";
+        try { await mandaMail(this.env, tit, "Quota 120 · nuova azienda iscritta: " + nomeO, html); } catch (e) { console.error("avviso nuova azienda:", e && e.message || e); }
+      }
       return J(Object.assign({ op, nuovo: true }, dev));
     }
     const r = await spazio(a.op).fetch("https://q/interno/nuovoadmin", { method: "POST", headers: { "x-q120-op": a.op, "content-type": "application/json" }, body: JSON.stringify({ email }) });
