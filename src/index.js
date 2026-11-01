@@ -1164,7 +1164,18 @@ export class Stato extends DurableObject {
         if (PROVA) return SPENTA_PROVA();
         let inv = await st.get("invito");
         if (!inv || b.cambia) { inv = { tok: rnd(16), at: now }; await st.put("invito", inv); }
-        return J({ tok: inv.tok, at: inv.at });
+        return J({ tok: inv.tok, at: inv.at, msg: inv.msg || null });
+      }
+      if (p === "/api/invito/messaggio") {
+        if (PROVA) return SPENTA_PROVA();
+        const inv = await st.get("invito"); if (!inv) return J({ errore: "Prepara prima il link" }, 409);
+        const pul = (v, n) => String(v == null ? "" : v).replace(/\r\n?/g, "\n").replace(/[\u0000-\u0009\u000B-\u001F\u007F]/g, "").trim().slice(0, n);
+        if (b.parti) delete inv.msg;
+        else { const o = pul(b.o, 120).replace(/\n/g, " "), t = pul(b.t, 1500);
+          if (!o || !t) return J({ errore: "Scrivi l'oggetto e il messaggio" }, 400);
+          inv.msg = { o, t }; }
+        await st.put("invito", inv);
+        return J({ ok: true, msg: inv.msg || null });
       }
       const x = Object.prototype.hasOwnProperty.call(disp, b.id) ? disp[b.id] : null;
       if (!x || x.stato !== "invito" || !x.inv) return J({ errore: "Questa richiesta non c'è più" }, 404);
