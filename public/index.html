@@ -888,7 +888,7 @@ details.cp-ok>.checks,details.cp-ok>.cp-in{border-top:1px solid var(--line);padd
 .ml-q.dom{background:var(--accent)}.ml-q.poi{background:var(--line);color:var(--ink)}
 .ml-lav b.t{display:block;font-size:16px}.ml-i{font-size:13.5px;color:var(--muted);margin-top:2px}
 .ml-v{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;margin-top:8px;border-radius:8px;padding:7px 9px}
-.ml-v.ok{background:var(--ok-bg);color:var(--ok)}.ml-v.ko{border:1.5px solid var(--ko);color:var(--ko)}
+.ml-v.ok{background:var(--ok-bg);color:var(--ok)}.ml-v.warn{background:var(--warn-bg);color:var(--warn)}.pl-att{border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:4px}.pl-att .nota{margin-top:8px}.ml-v.ko{border:1.5px solid var(--ko);color:var(--ko)}
 .ml-v svg{width:16px;height:16px;flex:none;margin-top:1px;stroke:currentColor;fill:none;stroke-width:2.6}
 .ml-lav .row{margin-top:10px}.ml-lav .row .btn{text-decoration:none}
 .ml-vuoto{padding:14px;color:var(--muted);font-size:14px}
@@ -4728,6 +4728,22 @@ function plAltro(){ const grp=['flotta','attivita','regole'], out=[], vo=(n,c,d,
   if(puoVedere('Valutazioni del rischio')) out.push(vo('Valutazioni del rischio',RISCHI.length?pl(RISCHI.length,'salvata','salvate'):'si fanno dalla scheda del lavoro','','apriRischi()'));
   out.push(vo('Documenti','attestati, polizze, documenti dei droni','','apriDocumenti()'));
   return out.join(''); }
+/* voli del pilota che aspettano il file DJI (dopo il controllo): «Carica i voli di oggi» li manda come l'invio automatico, e Quota 120 li legge e salva da solo */
+function plAttesa(){ const A=VOLI.filter(v=>v.pilota===IO.n&&v.stato!=='completo'&&!v.letto); if(!A.length||COME) return '';
+  const og=oggi(), so=A.every(v=>v.data===og), ios=/iPhone|iPad/.test(navigator.userAgent); let prima=true; try{ prima=!localStorage.getItem('q120CaricaFatto'); }catch(e){}
+  return `<div class="pl-att" id="pl-att"><div class="ml-v warn" style="margin-top:0"><svg viewBox="0 0 24 24"><path d="M12 7v6M12 16.5v.01"/><circle cx="12" cy="12" r="9"/></svg><span><b>${pl(A.length,'volo','voli')}${so?' di oggi':''}</b> ${A.length===1?'aspetta':'aspettano'} il file DJI</span></div>
+    <button class="btn pl-big" type="button" id="pl-carica" onclick="plCaricaVoli(this)" style="width:100%;margin-top:8px"><span class="spin"></span>${so?'Carica i voli di oggi':'Carica i voli'}</button>
+    ${prima?`<div class="nota">${ios?'Si apre la scelta dei file: tocca <b>Sfoglia</b> › <b>Sul mio iPhone</b> › <b>DJI Fly</b> › <b>FlightRecords</b>, scegli i voli e tocca <b>Apri</b>. Dalla seconda volta di solito l’iPhone riapre già lì.':'Si apre la scelta dei file: cerca la cartella <b>FlightRecord</b> dell’app DJI, scegli i voli e tocca <b>Apri</b>. Più comodo: dall’app DJI usa <b>Condividi › Quota 120</b>.'}</div>`:''}</div>`; }
+function plCaricaVoli(b){ const i=document.createElement('input'); i.type='file'; i.multiple=true; i.accept='.txt,.TXT,text/plain';
+  i.onchange=async()=>{ const F=[...i.files].filter(f=>f&&f.size); if(!F.length) return;
+    if(OFFLINE||!navigator.onLine){ importaRegistri(F); return; }
+    b.classList.add('busy'); b.disabled=true; let ok=0;
+    for(const f of F){ try{ const j=await fetch('/api/arrivi',{method:'POST',headers:{'content-type':'text/plain','x-disp':ME.id+':'+ME.k,'x-nome':encodeURIComponent(f.name),'x-via':/iPhone|iPad/.test(navigator.userAgent)?'iPhone':'a mano'},body:f}).then(r=>r.json()); if(j.ok) ok++; }catch(e){} }
+    try{ localStorage.setItem('q120CaricaFatto','1'); }catch(e){}
+    if(!ok){ b.classList.remove('busy'); b.disabled=false; toast('Non riuscito: controlla la rete e riprova'); return; }
+    try{ await caricaArrivi(); if(puoAuto()) await autoArrivi(); else toast(pl(ok,'volo mandato','voli mandati')+': entrano nel registro appena l’Admin apre Quota 120'); }catch(e){}
+    b.classList.remove('busy'); b.disabled=false; if(VISTA==='home') disegnaHome(); };
+  i.click(); }
 function homeP(){
   const o=new Date(), p=ioPilota(), oggi0=new Date(o.toDateString());
   if(!p) return `<div class="card" style="margin-top:12px"><h2>Il tuo nome non è tra i piloti</h2><div class="nota">Chiedi all’Admin di aggiungerti in Piloti con lo stesso nome con cui entri.</div></div>`;
@@ -4755,7 +4771,7 @@ function homeP(){
   const scK=sc.filter(x=>x.liv==='ko').length, scW=sc.filter(x=>x.liv==='warn').length;
   const scS=scK?{c:pl(scK,'da fare subito','da fare subito'),d:'ko'}:scW?{c:pl(scW,'in scadenza','in scadenza'),d:'warn'}:{c:sc.length?'tutto valido':'attestati, assicurazione, firma',d:''};
   return `<div class="pl-data">${GIORNI[o.getDay()]} ${o.getDate()} ${MESI_L[o.getMonth()]}<b>Ciao ${ESC((IO.n||'').split(' ')[0])}</b></div>
-    <div class="card ml-card pl-oggi" id="h-oggi"><h2>Oggi</h2>${oggiL.length?oggiL.map(lavOggi).join(''):`<div class="ml-vuoto" style="padding:0 0 8px">Nessun lavoro per oggi. Se voli lo stesso, fai il controllo:</div>${form(1)}`}</div>
+    <div class="card ml-card pl-oggi" id="h-oggi"><h2>Oggi</h2>${plAttesa()}${oggiL.length?oggiL.map(lavOggi).join(''):`<div class="ml-vuoto" style="padding:0 0 8px">Nessun lavoro per oggi. Se voli lo stesso, fai il controllo:</div>${form(1)}`}</div>
     ${poi.length?`<div class="card ml-card" id="h-miei"><h2>Prossimi lavori <small>${poi.length}</small></h2>${poi.slice(0,6).map(rigaPoi).join('')}</div>`:''}
     ${oggiL.length?`<details class="pl-det" id="h-senzalav"><summary>Volo senza lavoro <small>una prova, un volo non in elenco</small></summary><div style="padding:0 14px 14px">${form(0)}</div></details>`:''}
     <div class="q2-h3"><span>Il resto</span></div>
@@ -6283,7 +6299,7 @@ function passiVolo(){
     ...ctrlPassi('Sul posto · '),
     {t:'Adesso si vola',p:'Il volo è nel registro «in attesa»: si completa da solo quando arriva il file DJI. Dopo il volo non devi scrivere niente.',w:'Durata, quota, percorso e batteria li scrive il file DJI: non serve scriverli a mano.',el:()=>gdVis('#vlist'),nx:1},
     {t:'Dopo il volo · chiudi DJI Fly',p:'Se l’invio automatico è pronto, chiudendo DJI Fly il volo arriva da solo. Se non l’hai ancora preparato, tocca «Invio automatico dei voli».',w:'Si prepara una volta sola: poi non devi più caricare niente a mano.',el:()=>gdVis('#vl-invio'),nx:1},
-    {t:'Oppure carica il file a mano',p:'«Carica registri DJI» e scegli il volo (iPhone: Sul mio iPhone › DJI Fly › FlightRecords).',w:'Il volo «in attesa» si completa con i dati del file: ore del drone, cicli della batteria e mappa si aggiornano da soli.',el:()=>gdTesto('#v-voli button','Carica registri DJI'),nx:1,opt:1});
+    {t:'Oppure carica il file a mano',p:'In Home, nel riquadro «Oggi», tocca «Carica i voli di oggi» e scegli i voli (iPhone: Sfoglia › Sul mio iPhone › DJI Fly › FlightRecords › Apri).',w:'Il volo «in attesa» si completa con i dati del file: ore del drone, cicli della batteria e mappa si aggiornano da soli.',el:()=>gdTesto('#v-voli button','Carica registri DJI'),nx:1,opt:1});
   if(ADM) S.push(
     {t:'Chiusura · torna al lavoro',p:'Home › «Lavoro e clienti» › «Clienti e lavori» › il lavoro.',w:'Dal lavoro chiudi tutto: «Il lavoro, passo per passo» ti porta dal rapporto per il cliente alla fattura e al pagamento.',vai:()=>LAVCUR&&LAVORI.some(l=>l.id===LAVCUR)?apriLavoro(LAVCUR):apriLavori(),el:()=>doveEl('lavori')||gdVis('#lv-list li[onclick]')||gdVis('#tb-home'),ok:()=>VISTA==='lavoro'},
     {t:'Passo 3 · «Rapporto per il cliente»',p:'Il PDF con voli, mappe, ore e controlli: si manda al cliente. Quando gli hai dato anche foto e video, tocca «Consegnato».',w:'È la prova del lavoro fatto, con i dati del file DJI.',el:()=>gdVis('#lw-rap')||gdVis('#lw-p3'),nx:1},
