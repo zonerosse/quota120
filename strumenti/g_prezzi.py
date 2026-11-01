@@ -17,7 +17,7 @@ main = '''<main><div class="kh">
 <div class="w"><div class="kpill"><b></b>Periodo di lancio</div>
 <h1>Prezzi</h1>
 <p class="lead">Quota 120 oggi è gratis, con tutte le funzioni. Niente carta di credito, niente limiti di piloti o droni.</p>
-<div style="display:flex;gap:12px;flex-wrap:wrap"><a class="kbtn kbp" href="https://app.quota120.com/">Crea il tuo spazio gratis</a><a class="kbtn kbs" href="https://app.quota120.com/prova">Guarda la prova con i dati di esempio</a></div>
+<div style="display:flex;gap:12px;flex-wrap:wrap"><a class="kbtn kbp" href="https://app.quota120.com/">Crea il tuo spazio gratis</a><a class="kbtn kbs" href="https://prova.quota120.com/">Guarda la prova con i dati di esempio</a></div>
 </div></section>
 <section class="cz"><div class="w"><div>
 <p class="kick">Cosa c’è dentro</p><h2 style="font:800 34px/1.1 var(--disp);margin:0;color:var(--ink)">Tutto, per tutti</h2>
@@ -38,7 +38,7 @@ main = '''<main><div class="kh">
 <div><div class="reg"><p class="kick" style="margin-bottom:6px">Periodo di lancio</p><h3 class="pz-p">0 €</h3><p>Tutte le funzioni, piloti e droni senza limite.</p>
 <ul class="pz-ok"><li><b>Nessuna carta di credito</b>ti iscrivi con l’email e basta</li><li><b>Niente addebiti a sorpresa</b>se diventerà a pagamento lo saprai almeno 60 giorni prima, e decidi tu se restare</li><li><b>I dati restano tuoi</b>quando vuoi ti mandiamo una copia di tutto</li></ul>
 <a class="kbtn kbp" href="https://app.quota120.com/" style="margin-top:6px;justify-content:center;width:100%">Crea il tuo spazio gratis</a>
-<p style="margin-top:12px;font-size:14px">Prima vuoi guardarlo? <a href="https://app.quota120.com/prova">Apri la prova con i dati di esempio</a>.</p></div></div>
+<p style="margin-top:12px;font-size:14px">Prima vuoi guardarlo? <a href="https://prova.quota120.com/">Apri la prova con i dati di esempio</a>.</p></div></div>
 </div></section>
 <section class="cz" style="padding:0 0 50px"><div class="w" style="display:block"><div class="disc" style="border-left-color:#1E6B6F;margin-top:0"><b class="t">Raccogliamo pareri e proposte</b><p style="margin:0 0 12px">Quota 120 cresce con chi lo usa: cosa manca, cosa è scomodo, cosa vorresti che facesse da solo. Ogni proposta la leggiamo e ti rispondiamo.</p><a class="kbtn kbp" href="mailto:assistenza@quota120.com?subject=Proposta%20per%20Quota%20120">Mandaci la tua proposta</a></div></div></section>
 <section class="faq" id="domande"><div class="w"><div><p class="kick">Domande</p><h2>Le domande sul prezzo</h2></div>

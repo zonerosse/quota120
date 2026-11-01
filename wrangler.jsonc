@@ -4,8 +4,8 @@
   "compatibility_date": "2025-09-01",
   "workers_dev": true,
   "assets": { "directory": "./public", "binding": "ASSETS", "run_worker_first": true },
-  // il sito su quota120.com (www porta lì), il programma su app.quota120.com
-  "routes": [{ "pattern": "quota120.com", "custom_domain": true }, { "pattern": "www.quota120.com", "custom_domain": true }, { "pattern": "app.quota120.com", "custom_domain": true }],
+  // il sito su quota120.com (www porta lì), il programma su app.quota120.com, la versione di prova (una per visitatore) su prova.quota120.com
+  "routes": [{ "pattern": "quota120.com", "custom_domain": true }, { "pattern": "www.quota120.com", "custom_domain": true }, { "pattern": "app.quota120.com", "custom_domain": true }, { "pattern": "prova.quota120.com", "custom_domain": true }],
   "durable_objects": { "bindings": [{ "name": "STATO", "class_name": "Stato" }] },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Stato"] }],
   "triggers": { "crons": ["5 * * * *"] },

@@ -15,9 +15,12 @@ I dati di esempio sono inventati.
   Lo smistatore mette l'intestazione `x-q120-op` solo lui: un telefono di uno spazio non può leggere un altro spazio.
 - L'Admin di uno spazio entra con la sua email (codice di 6 cifre, vale 15 minuti). Il telefono resta riconosciuto; se non
   lo usa per 15 giorni, rifà il codice. I piloti entrano dall'indirizzo dello spazio con nome e matricola, come prima.
-- `/prova` è la versione di prova con i dati di esempio e il codice Admin 1234 (era la pagina principale).
+- La versione di prova sta su `prova.quota120.com` (separata dall'app vera): ogni visitatore ha la sua (contenitore
+  `demo:<id>`, id casuale nel cookie `q120p`), con i dati di esempio e il codice Admin 1234. Si cancella da sola dopo 6 ore
+  senza usarla o 24 ore dalla nascita (allarme del contenitore); al massimo 20 prove nuove al giorno da ogni rete.
+  I vecchi indirizzi (`app.quota120.com/prova`, `/q/prova/...`) portano lì.
 - `/privacy` e `/condizioni`: informativa e condizioni d'uso, da accettare all'iscrizione.
-- Gli avvisi programmati partono per la prova e per ogni spazio.
+- Gli avvisi programmati partono per ogni spazio (nella prova le email sono spente).
 
 ## Accessi (versione di prova)
 Un solo indirizzo. Si sceglie «Admin» (codice di 4 cifre, nella prova 1234) oppure «Pilota»: il pilota scrive nome e cognome

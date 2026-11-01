@@ -1132,7 +1132,7 @@ input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea{f
     <h2>Non hai ancora Quota 120?</h2>
     <div style="font-size:15px;color:var(--ink2)">Crea lo spazio per il tuo operatore in due minuti. Gratis durante la prova, senza carta di credito.</div>
     <div class="row"><button class="btn ambra" onclick="apriIscrivi()">Crea il tuo spazio gratis</button></div>
-    <div class="row" style="margin-top:12px"><a class="btn sec mini" href="/prova">Guarda la versione di prova con i dati di esempio</a></div>
+    <div class="row" style="margin-top:12px"><a class="btn sec mini" href="https://prova.quota120.com/">Guarda la versione di prova con i dati di esempio</a></div>
   </div>
   <div id="lg-noop" class="card hidden" style="max-width:520px;margin:20px auto 0">
     <h2>Questo indirizzo non esiste</h2>
@@ -1985,12 +1985,26 @@ input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea{f
   <button id="nb-doc" onclick="apriDocumenti()"><svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z"/><path d="M12 17v-6M9 13l3-3 3 3"/></svg>Documenti</button>
 </nav>
 <script>
-/* ---------- quale spazio: /rossi-droni = lo spazio di un operatore, /prova = versione di prova, / = ingresso ---------- */
+/* ---------- quale spazio: /rossi-droni = lo spazio di un operatore, / = ingresso; la versione di prova sta su prova.quota120.com (una per visitatore) ---------- */
 const SLUG=(location.pathname.replace(/^\/+|\/+$/g,'').split('/')[0]||'').toLowerCase();
-const PROVA=SLUG==='prova', SPAZIO=!!SLUG&&!PROVA, INGRESSO=!SLUG;
+const PROVA=location.hostname==='prova.quota120.com'||!!document.querySelector('meta[name="q120-prova"]');   // il segno lo mette il server (anche nelle prove in locale)
+if(!PROVA&&SLUG==='prova') location.replace('https://prova.quota120.com/'+location.search);   // vecchio indirizzo della prova (es. pagina salvata sul telefono)
+const SPAZIO=!PROVA&&!!SLUG&&SLUG!=='prova', INGRESSO=!PROVA&&!SPAZIO;
 const KS=SPAZIO?':'+SLUG:'';                                   // i dati sul telefono restano separati per ogni spazio
-const OPQ=SPAZIO?'op='+encodeURIComponent(SLUG)+'&':'';        // per gli indirizzi usati fuori dal programma (calendario, invio voli)
-(function(){ const f=window.fetch.bind(window); window.fetch=(u,o)=>{ if(SPAZIO&&typeof u==='string'&&u.startsWith('/api/')&&!u.startsWith('/api/registro/')){ o=Object.assign({},o||{}); const h=new Headers(o.headers||{}); h.set('x-op',SLUG); o.headers=h; } return f(u,o); }; })();
+let OPQ=SPAZIO?'op='+encodeURIComponent(SLUG)+'&':'';          // per gli indirizzi usati fuori dal programma (calendario, invio voli); nella prova: quale prova (p=)
+(function(){ const f=window.fetch.bind(window); window.fetch=(u,o)=>{ if(SPAZIO&&typeof u==='string'&&u.startsWith('/api/')&&!u.startsWith('/api/registro/')){ o=Object.assign({},o||{}); const h=new Headers(o.headers||{}); h.set('x-op',SLUG); o.headers=h; }
+  if(!PROVA||typeof u!=='string'||!u.startsWith('/api/')) return f(u,o);
+  // prova personale: il server dice quale è (per calendario e invio dei voli) e se quella di prima è scaduta
+  return f(u,o).then(r=>{ const id=r.headers.get('x-q120-prova-id'); if(id&&/^[a-f0-9]{32}$/.test(id)) OPQ='p='+id+'&';
+    if(r.status===401&&r.headers.get('x-q120-prova-scaduta')==='1'&&u!=='/api/disp/esci'){ provaRinnova(f); return new Promise(()=>{}); }
+    return r; }); }; })();
+/* la prova di prima è scaduta (si cancella da sola dopo qualche ora): se si era Admin se ne apre subito una nuova, poi la pagina riparte */
+let PROVA_RINNOVO=false;
+function provaRinnova(f){ if(PROVA_RINNOVO) return; PROVA_RINNOVO=true;
+  const adm=!!(ME&&ME.n==='Admin'); ME=null; meSave(); try{ localStorage.removeItem('q120Dati'); sessionStorage.setItem('q120ProvaNuova','1'); }catch(e){}
+  if(!adm||!BASE){ location.reload(); return; }
+  f('/api/disp/richiesta',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({ruolo:'adm',pin:'1234',data:JSON.parse(BASE)})}).then(r=>r.json())
+    .then(j=>{ if(j&&j.id&&j.k){ ME={id:j.id,k:j.k,stato:j.stato,codice:j.codice,n:j.n}; meSave(); } }).catch(()=>{}).then(()=>location.reload()); }
 /* registro dei problemi: le ultime cose fatte e gli errori, per l'assistenza (niente password, documenti o foto) */
 const LOGP=[], LOG_FATTI={}; let LOG_N=0;
 function logPasso(t){ LOGP.push(new Date().toTimeString().slice(0,8)+' '+String(t).slice(0,150)); if(LOGP.length>30) LOGP.shift(); }
@@ -2011,7 +2025,9 @@ function logMandaMess(b){ const t=document.getElementById('lg-t'), x=t.value.tri
   b.classList.add('busy'); b.disabled=true; let em=''; try{ em=ADM?(OP.email||''):(((SCHEDEP[(ioPilota()||{}).id]||{}).email)||''); }catch(e){}
   logManda({tipo:'mess',testo:x.slice(0,2000),email:em}).then(j=>{ if(!j.ok){ b.classList.remove('busy'); b.disabled=false; toast('Non riuscito: riprova tra poco, o scrivi ad assistenza@quota120.com'); return; }
     gdSheet(`<h2>Ricevuto, grazie</h2><p class="gd-sub">Lo guardiamo e ti rispondiamo${em?' per email a '+ESC(em):''}.</p><div class="row"><button class="btn" type="button" onclick="gdChiudiSheet()">Chiudi</button></div>`); }); }
-if(INGRESSO&&!/[?&]resta/.test(location.search)){ try{ const u=localStorage.getItem('q120Ultimo'); if(u&&/^[a-z0-9-]+$/.test(u)) location.replace('/'+u+location.search); else if(localStorage.getItem('quota120Disp')) location.replace('/prova'+location.search); }catch(e){} }
+if(INGRESSO&&!/[?&]resta/.test(location.search)){ try{ const u=localStorage.getItem('q120Ultimo'); if(u&&/^[a-z0-9-]+$/.test(u)) location.replace('/'+u+location.search); }catch(e){} }
+// la vecchia prova condivisa stava qui (app.quota120.com/prova): il suo telefono e i suoi dati sul telefono non servono più
+if(!PROVA){ try{ localStorage.removeItem('quota120Disp'); localStorage.removeItem('q120Dati'); }catch(e){} }
 const IC = {
   drone:'<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/>',
   batt:'<rect x="3" y="7" width="16" height="10" rx="2"/><path d="M21 10v4M7 10v4M11 10v4"/>',
@@ -3646,6 +3662,7 @@ function avvio(){
   dz.addEventListener('dragleave',()=>{dz.style.borderColor='';});
   dz.addEventListener('drop',e=>{e.preventDefault();dz.style.borderColor='';const f=e.dataTransfer.files[0];if(f)caricaFile(f,'file');});
   document.getElementById('demo').style.display=PROVA?'':'none';
+  if(PROVA) try{ if(sessionStorage.getItem('q120ProvaNuova')){ sessionStorage.removeItem('q120ProvaNuova'); setTimeout(()=>toast('La prova di prima è scaduta: eccone una nuova'),600); } }catch(e){}
   if(INGRESSO) ME=null;
   if(SPAZIO) try{localStorage.setItem('q120Ultimo',SLUG);}catch(e){}
   if(!ME){ if(QSCAN&&!INGRESSO){ scanPubblico(); return; } mostraIngresso(); return; }
