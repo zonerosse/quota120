@@ -1086,6 +1086,7 @@ input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea{f
 .cs-op{all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;border:1.5px solid var(--bordo,#D3DBE0);border-radius:8px;padding:8px 11px;margin-top:5px;font-size:15px;line-height:1.35}
 .cs-op.g{border-color:var(--ok,#17793F);background:var(--ok-bg,#E4F2EA)}.cs-op.s{border-color:var(--ko,#AE2F28);background:var(--ko-bg,#F8E3E1)}.cs-op.sc{border-color:var(--accent);background:#E3EDF3}
 .cs-esito{border-radius:10px;padding:12px;margin-top:10px;font-size:15px}.cs-esito b{display:block;font-size:22px}.cs-esito.ok{background:var(--ok-bg,#E4F2EA);color:var(--ok,#17793F)}.cs-esito.ko{background:var(--ko-bg,#F8E3E1);color:var(--ko,#AE2F28)}
+.cs-blk{margin-top:12px;padding:0}.cs-blk>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:14px;cursor:pointer}.cs-blk>summary::-webkit-details-marker{display:none}.cs-blk>summary .t{flex:1;min-width:0}.cs-blk>summary b{display:block;font-family:"Barlow Semi Condensed",Barlow,Arial,sans-serif;font-size:19px}.cs-blk>summary small{font-size:14px;color:var(--muted)}.cs-blk .q2-fr{width:20px;height:20px;stroke:var(--muted);fill:none;stroke-width:2;transition:transform .15s;flex:none}.cs-blk[open] .q2-fr{transform:rotate(90deg)}.cs-blk>.in{padding:0 14px 14px}.cs-blk .cs-h{margin:0}.cs-tv{font-size:15px;color:var(--muted);margin:8px 0 0}
 .cs-testo summary{cursor:pointer}.cs-testo p{font-size:15px;color:var(--muted);margin:8px 0 0}
 .cs-au{background:var(--notte,#132A3A)!important;color:#fff;border-color:var(--notte,#132A3A)!important}.cs-ora small{color:#E8C15A;font-weight:700;font-size:12.5px}.cs-ora b{display:block;font-size:18px}
 .cs-au .cs-bar{background:rgba(255,255,255,.18)}.cs-au .cs-bar i{background:#E8C15A}.cs-tm{display:flex;justify-content:space-between;font-size:13px;color:#C9D6DE}
@@ -8444,9 +8445,11 @@ function csCorsoV(id){ const c=csCorso(id); if(!c) return '<div class="card">Cor
 function csLezV(x){ const [id,i]=x.split('|'), c=csCorso(id), l=(c.lezioni||[])[+i]; if(!l) return ''; CS_LEZ={c:id,i:+i}; CS_RIS={};
   const testo=l.testo||(l.scene||[]).map(s=>s.v).filter(Boolean);
   let h=l.pronto?`<video class="cs-vid" controls playsinline preload="metadata" poster="/corso/video/${l.video}.jpg${l.fv||''}" src="/corso/video/${l.video}.mp4${l.fv||''}" onended="csFatta('${id}',${+i})"><track kind="subtitles" srclang="it" label="Italiano" src="/corso/video/${l.video}.vtt${l.fv||''}" default></video>`:`<div class="card" style="font-size:15px;color:var(--muted)">${(l.scene||[]).length||c._az?'Il video è in preparazione: sarà pronto entro domani mattina.':'Questa lezione non ha video.'}</div>`;
-  if((l.leg||[]).length) h+=`<div class="card" style="margin-top:12px"><h2>Legenda</h2><div class="tab"><table class="cs-tab">${l.leg.map(r=>`<tr><td><b>${c._az?ESC(r[0]):r[0]}</b></td><td>${c._az?ESC(r[1]):r[1]}</td></tr>`).join('')}</table></div></div>`;
-  if(l.h&&!c._az) h+=`<div class="card cs-h" style="margin-top:12px">${l.h}</div>`;
-  if(testo.length) h+=`<details class="card cs-testo" style="margin-top:12px"><summary><b>Leggi tutto il testo della lezione</b></summary>${testo.map(t=>`<p>${ESC(t)}</p>`).join('')}</details>`;
+  // sotto il video: legenda, spiegazione e testo della voce, chiusi, ognuno col suo titolo (si aprono con un tocco)
+  const blk=(t,sm,corpo)=>`<details class="card cs-blk"><summary><span class="t"><b>${t}</b><small>${sm}</small></span><svg class="q2-fr" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></summary><div class="in">${corpo}</div></details>`;
+  if((l.leg||[]).length) h+=blk('Legenda',pl(l.leg.length,'parola da sapere','parole da sapere'),`<div class="tab"><table class="cs-tab">${l.leg.map(r=>`<tr><td><b>${c._az?ESC(r[0]):r[0]}</b></td><td>${c._az?ESC(r[1]):r[1]}</td></tr>`).join('')}</table></div>`);
+  if(l.h&&!c._az) h+=blk('La lezione spiegata','da leggere con calma, con gli esempi',`<div class="cs-h">${l.h}</div>`);
+  if(testo.length) h+=blk('Tutto il testo del video','quello che dice la voce, parola per parola',testo.map(t=>`<p class="cs-tv">${ESC(t)}</p>`).join(''));
   if((l.q||[]).length) h+=`<div class="card" style="margin-top:12px"><h2>Prova della lezione</h2>${l.q.map((q,j)=>csDomanda(q,j)).join('')}<div id="cs-ris"></div></div>`;
   else h+=`<div class="row"><button class="btn sec" type="button" onclick="csFatta('${id}',${+i});this.textContent='Segnata come fatta'">Segna come fatta</button></div>`;
   return h; }

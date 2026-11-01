@@ -42,6 +42,7 @@ details.lez>summary:focus-visible,button:focus-visible{outline:3px solid var(--a
 .dentro{padding:0 16px 18px;display:grid;gap:10px}
 .dentro p{margin:0;max-width:65ch}
 .dentro h3{font:700 18px/1.2 var(--disp);margin:10px 0 0}
+.blk{background:var(--soft);border-radius:10px;margin-top:10px}.blk>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:11px 12px;cursor:pointer}.blk>summary::-webkit-details-marker{display:none}.blk>summary .tt{flex:1;min-width:0}.blk>summary b{display:block;font-size:17px}.blk>summary small{font-size:14px;color:var(--ink2)}.blk>summary .fr{transition:transform .15s}.blk[open]>summary .fr{transform:rotate(90deg)}.blk>.in{padding:0 12px 12px}.blk>.in p{margin:6px 0 0}
 .leg{background:var(--soft);border-radius:10px;padding:10px 12px}
 .leg>b{display:block;font-size:14px;letter-spacing:.06em;color:var(--petrolio);margin-bottom:6px}
 .tab{overflow-x:auto}
@@ -194,9 +195,10 @@ function disegna(){
   K=a1?'q120CorsoA1A3':'q120Corso-'+CORSO.id;try{fatte=JSON.parse(localStorage.getItem(K)||'[]')}catch(e){fatte=[]}
   const nq=L.reduce((n,l)=>n+(l.q||[]).length,0);document.getElementById('esame').previousElementSibling.hidden=document.getElementById('esame').hidden=!nq;
   L.forEach(l=>{l.v=l.video||'';l.leg=l.leg||[];l.h=l.h||'';l.q=l.q||[];l.s=l.s||''});
+  const blk=(ti,sm,corpo)=>`<details class="blk"><summary><span class="tt"><b>${ti}</b><small>${sm}</small></span><span class="fr">›</span></summary><div class="in">${corpo}</div></details>`;
   document.getElementById('lezioni').innerHTML=L.map((l,i)=>`<details class="lez" id="lez${i}"><summary><span class="num">${i+1}</span><span class="tt"><b>${esc(l.t)}</b><small>${esc(l.s)}</small></span><span class="st" id="st${i}"></span><span class="fr">›</span></summary>
  <div class="dentro">${l.v?`<div class="vbox"><video class="vid" controls preload="none" playsinline poster="video/${l.v}.jpg" src="video/${l.v}.mp4"><track kind="subtitles" srclang="it" label="Italiano" src="video/${l.v}.vtt" default></video><div class="muto" hidden>${AU_NO}Audio tolto</div></div>
- <div class="vctr"><button type="button" data-au="1"></button><button type="button" data-cc="1"></button></div>`:`<div class="vid-no">Video in preparazione</div>`}${(l.testo||[]).length?`<details class="testo"><summary>Leggi tutto il testo della lezione</summary>${l.testo.map(x=>`<p>${esc(x)}</p>`).join('')}</details>`:''}${l.leg.length?`<div class="leg"><b>LEGENDA</b><div class="tab"><table>${l.leg.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</table></div></div>`:''}${l.h}
+ <div class="vctr"><button type="button" data-au="1"></button><button type="button" data-cc="1"></button></div>`:`<div class="vid-no">Video in preparazione</div>`}${l.leg.length?blk('Legenda',l.leg.length+(l.leg.length===1?' parola da sapere':' parole da sapere'),`<div class="tab"><table>${l.leg.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</table></div>`):''}${l.h?blk('La lezione spiegata','da leggere con calma, con gli esempi',l.h):''}${(l.testo||[]).length?blk('Tutto il testo del video','quello che dice la voce, parola per parola',l.testo.map(x=>`<p>${esc(x)}</p>`).join('')):''}
  ${l.q.length?`<h3>Prova della lezione</h3><p class="nota" style="margin:0">${l.q.length} domande sulla lezione: alla fine vedi quante ne hai prese.</p><div id="pq${i}" style="display:grid;gap:10px">${prova(i)}</div>`:''}
  <div class="riga">${i<L.length-1?`<button type="button" class="btn sec" data-apri="${i+1}">Lezione ${i+2}</button>`:`<button type="button" class="btn sec" data-esame="1">Vai alla simulazione</button>`}<label class="spunta"><input type="checkbox" id="fatta${i}" ${fatte.includes(i)?'checked':''}>Studiata</label></div></div></details>`).join('');
   prog();applicaAV()}
