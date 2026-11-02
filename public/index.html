@@ -7081,6 +7081,7 @@ let ND={qr:false,no:false}, NDL=null;
 const ND_I={nome:0,matr:4};   // posizione dei campi nel modulo di nuovoDrone
 const ND_NO='Non riesco a leggere questo codice: scrivi la matricola a mano';
 const ND_EAN='Questo è il codice a barre del prodotto, non la matricola: inquadra quello con «SN»';
+const ND_ALTRO='Questo codice non è la matricola di un drone: inquadra quello con «SN» sul drone o sulla scatola';
 function ndTesta(){ return lqP()?`<button type="button" class="btn lq-b" id="nd-lq" onclick="ndLeggi(this)"><span class="spin"></span>${lqIc()}Leggi l’etichetta del drone</button>
   <div class="nota">Inquadra il codice sul drone o sulla scatola: matricola e modello si scrivono da soli.</div><div class="nd-esito hidden" id="nd-esito"></div>`:''; }
 // EAN-8, UPC-A (12) o EAN-13 con la cifra di controllo giusta = codice del prodotto (uguale per tutti i droni di quel modello)
@@ -7091,12 +7092,15 @@ function ndDji(x){ const m=/^1581([1-9A-F])([A-Z0-9]+)$/.exec(x); return !!m&&m[
 function ndInterpreta(t){
   const s=String(t||'').trim(); if(!s) return {tipo:'no'};
   if(/d-?flight/i.test(s)||/(^|[^A-Z0-9])ITA-?[A-Z0-9]{8,}/i.test(s)) return {tipo:'qr'};
+  // pagamenti (pagoPA, bonifico SEPA), contatti, Wi-Fi, campi separati da | : non sono matricole
+  if(/^(PAGOPA\||BCD\s|WIFI:|BEGIN:VCARD|MECARD:|MAILTO:|TEL:|SMSTO:|GEO:|MATMSG:)/i.test(s)||s.split('|').length>=3||s.split(';').length>=4) return {tipo:'no',msg:ND_ALTRO};
   let x=s; if(/^https?:\/\//i.test(s)){ try{ const u=new URL(s); x=[...u.searchParams.values()].concat(u.pathname.split('/').reverse()).join(' '); }catch(e){} }
   x=x.toUpperCase().replace(/\b(S\/?N|SN|SERIAL( NO| NUMBER)?|MATRICOLA)\s*[:#]?\s*/g,' ');
   const T=(x.match(/[A-Z0-9]{8,30}/g)||[]).filter(w=>/\d/.test(w));
   if(!T.length) return {tipo:'no'};
-  const w=T.find(ndDji)||T.find(w=>/[A-Z]/.test(w)&&!ndEan(w))||T.find(w=>!ndEan(w));
-  if(!w) return {tipo:'no',msg:ND_EAN};
+  // una matricola ha lettere e numeri: un numero lungo di sole cifre è un codice prodotto, un avviso di pagamento o altro
+  const w=T.find(ndDji)||T.find(w=>/[A-Z]/.test(w)&&!ndEan(w));
+  if(!w) return {tipo:'no',msg:T.some(ndEan)?ND_EAN:ND_ALTRO};
   return {tipo:'sn',sn:w,marca:ndDji(w)?'DJI':''};
 }
 function ndEsito(t,ok){ const e=document.getElementById('nd-esito'); if(!e) return; e.className='nd-esito'+(ok?' ok':''); e.textContent=t; }
