@@ -1993,14 +1993,6 @@ export default {
         await s.fetch("https://quota120.interno/interno/avvisi", { headers: { "x-q120-op": op } }).catch(() => {});
         await s.fetch("https://quota120.interno/interno/pulizia", { headers: { "x-q120-op": op } }).catch(() => {}); }
     })());
-    // Posizionamento dei siti di Paolo: ogni ora si chiede al gestionale DPD di andare avanti con il giro della settimana
-    // (lavora solo se il giro non è finito, se no risponde subito). Qui perché le azioni di GitHub del gestionale sono a pagamento.
-    ctx.waitUntil((async () => {
-      for (let i = 0; i < 8; i++) {
-        const t = await fetch("https://gestionale.delpiccolodiavolo.it/api/public/pos-aggiorna", { method: "POST" }).then(r => r.text()).catch(() => "");
-        if (!t || t.includes('"finito":true') || t.includes('"ok":false')) break;
-      }
-    })());
   },
   async fetch(request, env) {
     let r;
