@@ -129,7 +129,12 @@ async function home(){await caricaP();const o=P.operatori,s=P.stato,nuovi=o.filt
   <button class="tile" data-az="corsi">${ic('play','--f-a')}<b>Videocorsi</b><small>${P.corsi.length} ${P.corsi.length===1?'corso':'corsi'} · ${lez} lezioni</small></button>
   <button class="tile" data-az="auto">${ic('cuffie','--f-e')}<b>Ascolta in auto</b><small>solo voce · a schermo spento</small></button>
   <button class="tile" data-az="nuovo">${ic('plus','--f-c')}<b>Nuovo videocorso</b><small>titolo, lezioni, video</small></button>
-  <a class="tile" href="/" target="_blank">${ic('web','--f-d')}<b>Vedi il sito</b><small>quota120.com</small></a></div>`}
+  <button class="tile" data-az="pos">${ic('web','--f-a')}<b>Posizionamento</b><small>le parole chiave su Google</small></button>
+  <a class="tile" href="/" target="_blank">${ic('web','--f-d')}<b>Vedi il sito</b><small>quota120.com</small></a></div>
+  <div id="pzr" style="margin-top:14px"></div>`+(setTimeout(()=>posUI(()=>{const r=$('#pzr');if(r)PosUI.riquadro(r,'/api/admin/pos',AZ.pos)}),0),'')}
+/* ---------- Posizionamento (02/11/2026): /pos-ui.js uguale in tutti i siti, dati da /api/admin/pos ---------- */
+function posUI(f){if(window.PosUI)return f();const s=document.createElement('script');s.src='/pos-ui.js?v=1';s.onload=f;document.head.appendChild(s)}
+function posP(){setTimeout(()=>posUI(()=>PosUI.scheda($('#pzbox'),'/api/admin/pos')),0);return '<div id="pzbox"></div>'}
 /* ---------- Problemi dell'app: errori registrati da soli e messaggi «Qualcosa non funziona?» ---------- */
 let LOG=[],LOGF='';
 const oraL=t=>{const d=new Date(t);return quando(t)+' '+d.toTimeString().slice(0,5)};
@@ -155,7 +160,7 @@ AZ.logRis=async(id,b)=>{const x=LOG.find(y=>y.id===id);if(!x)return;b.disabled=t
 AZ.logCopia=async(id,b)=>{const x=LOG.find(y=>y.id===id);if(!x)return;const t=testoLog(x);
   try{await navigator.clipboard.writeText(t);b.textContent='Copiato: incollalo in chat'}catch(e){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');b.textContent='Copiato: incollalo in chat'}catch(e2){b.textContent='Non riuscito'}a.remove()}
   setTimeout(()=>{b.textContent='Copia per l’assistenza'},2500)};
-AZ.operatori=()=>vai(operatori,'Operatori');AZ.stato=()=>vai(statoP,'Stato del programma');AZ.iscritti=()=>vai(iscritti,'Iscritti');AZ.corsi=()=>vai(corsi,'Videocorsi');AZ.nuovo=()=>vai(nuovo,'Nuovo corso');
+AZ.operatori=()=>vai(operatori,'Operatori');AZ.pos=()=>vai(posP,'Posizionamento');AZ.stato=()=>vai(statoP,'Stato del programma');AZ.iscritti=()=>vai(iscritti,'Iscritti');AZ.corsi=()=>vai(corsi,'Videocorsi');AZ.nuovo=()=>vai(nuovo,'Nuovo corso');
 
 /* ---------- Ascolta in auto: solo la voce delle lezioni, di fila ---------- */
 const AU=new Audio();AU.preload='metadata';

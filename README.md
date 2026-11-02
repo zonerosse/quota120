@@ -45,3 +45,12 @@ a Claude (Sonnet) e propone tipo, dati e scheda di destinazione; senza la chiave
 ## Prossimi passi
 - Lettura automatica dei registri DJI (serve la chiave sviluppatore DJI, gratuita).
 - PDF compilati per la domanda ENAC, etichette QR dell'inventario, documenti via email.
+
+## Posizionamento dei siti (02/11/2026, anteprime 35-36 approvate)
+- Archivio D1 a parte «posizionamento», binding **POS** nel gestionale DPD e nei pannelli di Verba Manent (/privato/posizionamento),
+  Kennel Manager (/admin → Posizionamento), Quota 120 (/admin/pannello → Posizionamento), Punto Web Ferrara (/admin/posizionamento).
+- Lo riempie solo il gestionale DPD (`functions/_pos.js`, `giro()` a pezzi): ogni lunedì `.github/workflows/posizionamento.yml` chiama
+  `/api/public/pos-aggiorna` finché `finito:true`. Search Console con il collegamento Google del gestionale (vede tutte le proprietà
+  di Paolo), DataForSEO SERP live fino alla 100ª posizione (tetto `POS_CAP` controlli al mese, predefinito 200), volumi delle parole nuove.
+- Pannelli: `_pos-comune.js` / `pos-comune.js` = copia della parte «leggi/parola» di `_pos.js`; `pos-ui.js` = la scheda, uguale in tutti
+  i repository: se cambia, copiarla in tutti. Senza POS il pannello dice «non ancora collegato».

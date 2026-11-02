@@ -1,4 +1,5 @@
 import CORSI_SEME from "./corso_seed.json";
+import { leggi as posLeggi, parola as posParola } from "./pos-comune.js";
 // Quota 120 – gestionale per operatori di droni (prova).
 // Cloudflare Worker: serve i file di «public» e le API /api/*; i dati stanno in un Durable Object (SQLite), niente database da creare.
 //
@@ -2067,6 +2068,12 @@ export default {
       }
       if (az === "iscritti") return reg().fetch(new Request(I + "iscritti?t=" + (ta || "")));
       if (!(ta && await reg().fetch(new Request(I + "ok?t=" + ta)).then(r => r.json()).then(j => j.ok).catch(() => false))) return J({ errore: "Entra di nuovo" }, 401);
+      // Posizionamento (02/11/2026): archivio D1 POS, riempito dal gestionale DPD ogni lunedì; solo quota120.com
+      if (az === "pos") {
+        if (!env.POS) return J({ ok: false, manca: true });
+        try { if (request.method === "POST") { const b = await request.json().catch(() => ({})); return J(await posParola(env.POS, "q", b.parola, !!b.togli)); }
+          return J(await posLeggi(env.POS, "q")); } catch (e) { return J({ ok: false, error: e.message }, 400); }
+      }
       const N = "https://quota120.interno";
       if (az === "corsi" && request.method === "GET") return J(await corsiConVideo(env, url, await reg().fetch(new Request(N + "/interno/corsi")).then(r => r.json()), true));
       if (az === "corsi" && request.method === "POST") {
