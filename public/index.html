@@ -5545,7 +5545,7 @@ function disegnaMeteo(){
 
 /* ---------- zone di volo D-Flight: file ufficiale (formato europeo ED-269 / ED-318) e controllo del punto ---------- */
 let ZONEINFO=null, ZVERD=null, ZAUT='';
-const DFLIGHT_MAPPA='https://www.d-flight.it/web-app/';
+const DFLIGHT_MAPPA='https://www.d-flight.it/new_portal/';   // la pagina d'ingresso del portale: da lì «Accedi ai servizi» e la mappa (il link diretto a /web-app/ non si apriva sui telefoni)
 // apre lo zip (o gzip) e restituisce il testo del file JSON più grande
 async function testoZone(f){
   const u8=new Uint8Array(await f.arrayBuffer()), dec=b=>new TextDecoder().decode(b);
