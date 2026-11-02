@@ -1027,6 +1027,9 @@ button.pl-rg{cursor:pointer}
 </style>
 <style id="no-zoom">/* iPhone: sotto i 16px lo schermo si ingrandisce quando tocchi un campo e la pagina «scivola» di lato */
 input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea{font-size:max(16px,1em)!important}
+/* iPhone: i campi data/ora hanno una larghezza minima loro e uscivano dal riquadro */
+input[type=date],input[type=time],input[type=datetime-local],input[type=month]{-webkit-appearance:none;appearance:none;min-width:0;max-width:100%;box-sizing:border-box;min-height:48px;text-align:left;background:#fff}
+input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and-time-value{text-align:left;min-height:1.4em}
 </style>
 <style id="nv-css">
 .nv-passo{font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:2px}.nv-fine{font-size:14.5px;color:var(--muted)}
