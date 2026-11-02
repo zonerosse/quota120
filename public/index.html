@@ -1065,6 +1065,43 @@ button.pl-rg{cursor:pointer}
 .cf-m.on{border-color:var(--accent);background:var(--sup2,#eef3f7)}
 .cf-pt{background:#fff;border:3px solid #e8c15a;border-radius:50%}
 .iva-gr{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}.iva-gr .btn{width:100%;justify-content:center}
+/* anteprima 132: il pilota sul campo (Home, controllo, voli) */
+.pl-blk{background:var(--ko-bg);border:1.5px solid var(--ko);border-radius:12px;padding:12px 14px;margin-top:12px}
+.pl-blk h2{color:var(--ko);font-size:18px;margin:0 0 4px}
+.pl-blk .pb-r{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid rgba(0,0,0,.07)}
+.pl-blk h2+.pb-r{border-top:0}
+.pl-blk .pb-r .t{flex:1;min-width:0}.pl-blk .pb-r .t b{display:block;font-size:15.5px}.pl-blk .pb-r .t small{display:block;font-size:13px;color:var(--ink2,#3A4A55)}
+.pl-blk .pb-r .btn{flex:none;white-space:nowrap}
+.pl-lk{display:block;width:100%;background:none;border:0;font:inherit;font-size:14.5px;font-weight:700;color:var(--accent);text-align:center;padding:10px 4px 6px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.pl-sl>summary{list-style:none}.pl-sl>summary::-webkit-details-marker{display:none}.pl-sl[open]>summary{text-decoration:none}
+.pl-lk2{display:flex;gap:4px;justify-content:center;flex-wrap:wrap}.pl-lk2 .pl-lk{width:auto;padding:6px 10px;font-size:14px}
+.pl-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+.pl-ti{background:var(--sup,#fff);border:1px solid var(--line);border-radius:12px;padding:10px 6px 9px;text-align:center;font:inherit;font-size:14.5px;font-weight:700;color:var(--ink);cursor:pointer;min-height:76px}
+.pl-ti .sq{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin:0 auto 5px}
+.pl-ti .sq svg{width:19px;height:19px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.pl-ti small{display:block;font-weight:500;font-size:12.5px;color:var(--muted);margin-top:1px;line-height:1.2}
+.pl-ti small.ko{color:var(--ko);font-weight:700}.pl-ti small.warn{color:var(--warn);font-weight:700}
+.pl-ti.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.pl-pan{background:var(--sup,#fff);border:1px solid var(--line);border-radius:12px;margin-top:8px;padding:6px 6px 8px}
+.pl-pan h3{font-size:15px;margin:4px 8px 2px}
+.pl-pan .q2-gv{padding:4px 4px 2px}
+.pl-segn{margin-top:14px;color:var(--ko)!important;border-color:var(--ko)!important;width:100%;justify-content:center;background:var(--sup,#fff)}
+.sem.cp-bl,.sem.cp-bl:has(.light.ko){background:var(--sup,#fff);border:1px solid var(--line)}
+.sem.cp-bl .t{color:var(--ink);font-size:21px}.sem.cp-bl .s{color:var(--ink3)}
+.sem.cp-bl .light.ko{background-color:var(--ko);width:34px;height:34px;border-radius:50%}
+.cp-blk{background:var(--ko-bg);border:1.5px solid var(--ko);border-radius:12px;padding:12px 14px;margin-top:12px}
+.cp-blk h3{color:var(--ko);font-size:17px;margin:0 0 3px}
+.cp-blk .nota{color:var(--ink2,#3A4A55);margin-top:2px}
+.cp-blk .row{margin-top:8px}
+.cp-fix{background:var(--ok-bg);border:1.5px solid var(--ok);border-radius:12px;padding:11px 14px;margin-top:12px;color:var(--ok);font-weight:700;display:flex;gap:8px;align-items:center}
+.cp-fix svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.6;flex:none}
+.cp-avv>summary small{display:block;font-size:13.5px;color:var(--warn);font-weight:700}
+.cp-avv>summary .tx{flex:1;min-width:0}
+.cp-auto1>summary{font-weight:600;font-size:15px}
+.cp-auto1>summary .tx{flex:1;min-width:0}
+.pl-lk.hidden,.vl-pil.hidden{display:none}
+.vl-pil{margin-top:12px}
+.vl-pil .nota{margin-top:6px}
 .iva-cm{border:1px solid var(--line);border-radius:10px;margin-top:12px}.iva-cm summary{padding:10px 12px;font-weight:700;font-size:15.5px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:8px}.iva-cm summary::-webkit-details-marker{display:none}.iva-cm summary small{font-weight:500;color:var(--ink3);font-size:13.5px}.iva-cmc{padding:0 12px 12px}
 </style>
 <style id="no-zoom">/* iPhone: sotto i 16px lo schermo si ingrandisce quando tocchi un campo e la pagina «scivola» di lato */
@@ -1414,7 +1451,11 @@ body.vis-on{overflow:hidden}
       <div><b id="tot-h"></b><span>ore di volo totali (ore:minuti)</span></div>
       <div><b id="tot-m"></b><span>voli questo mese</span></div>
     </div>
-    <div class="card">
+    <div class="vl-pil hidden" id="vl-pil">
+      <button class="btn pl-big" type="button" id="vl-carica" onclick="plCaricaVoli(this)"><span class="spin"></span>Carica i voli di oggi</button>
+      <div class="nota" id="vl-carica-n"></div>
+    </div>
+    <div class="card" id="vl-agg">
       <h2>Aggiungi un volo</h2>
       <div style="font-size:15px;color:var(--muted)">Scegli i file del registro DJI (anche più di uno insieme): data, ore, luogo, quota, drone e batteria si compilano da soli. I voli già caricati vengono saltati.</div>
       <details class="dove" style="margin-top:10px"><summary>Dove trovo i file?</summary><div>
@@ -1431,7 +1472,7 @@ body.vis-on{overflow:hidden}
     </div>
     <div class="card" id="arrivi" style="display:none;margin-top:12px"></div>
     <div class="card" id="coda-off" style="display:none;margin-top:12px"></div>
-    <div class="card" style="margin-top:12px">
+    <div class="card" id="vl-reg" style="margin-top:12px">
       <h2>Scarica il registro</h2>
       <div style="font-size:15px;color:var(--muted)">PDF pronto da firmare per ENAC, assicurazione o cliente; Excel per i tuoi conti.</div>
       <div class="fill" style="margin-top:10px">
@@ -1443,9 +1484,10 @@ body.vis-on{overflow:hidden}
       <div class="row"><button class="btn" onclick="scaricaPdf(this)"><span class="spin"></span>Scarica PDF</button><button class="btn sec" onclick="scaricaExcel(this)"><span class="spin"></span>Scarica Excel</button></div>
     </div>
     <div class="card" style="margin-top:12px">
-      <h2>Ultimi voli</h2>
+      <h2 id="vl-tit">Ultimi voli</h2>
       <ul class="vlist" id="vlist"></ul>
     </div>
+    <button class="pl-lk hidden" type="button" id="vl-mano" onclick="plVoloMano()">Aggiungi un volo a mano</button>
   </div>
 
   <!-- ================= FOTO DEL RIEPILOGO DEL VOLO ================= -->
@@ -2303,7 +2345,7 @@ const TILES = {
 function disegnaHome(){
   const vd=(document.getElementById('h-drone')||{}).value||'', vp=(document.getElementById('h-pilota')||{}).value||'';
   contaRiquadri(); disegnaPannello(); disegnaBenvenuto();
-  { const e=document.getElementById('h-ruolo'); if(e) e.innerHTML=ADM&&!COME?'':(!COME&&ioPilota()?ppCard():''); }
+  { const e=document.getElementById('h-ruolo'); if(e) e.innerHTML=''; }
   { const a=LAVORI.filter(l=>l.stato!=='concluso').length; TILES.attivita[2].c=pl(a,'lavoro aperto','lavori aperti'); }
   { const n=Object.values(SCHEDE).filter(s=>s.man.liv!=='ok').length; TILES.flotta[2].c=n?pl(n,'in scadenza','in scadenza'):'in regola'; TILES.flotta[2].d=n?'warn':''; }
   { const n=TRATT.filter(t=>t.stato!=='ok').length; TILES.regole[3].c=n?pl(n,'da completare','da completare'):'quaderno in regola'; TILES.regole[3].d=n?'warn':''; }
@@ -2379,7 +2421,7 @@ function lavora(b,fn){ b.disabled=true; b.classList.add('busy'); setTimeout(()=>
 
 function verifiche(){
   const d=dSel,p=pSel, L=[];
-  if(!ADM&&p&&p.nome===IO.n&&!(SCHEDEP[p.id]||{}).firma) L.push({l:'La tua firma',s:'ko',d:'Manca: falla in Account › La tua firma (una volta sola, con il dito)'});
+  if(!ADM&&p&&p.nome===IO.n&&!(SCHEDEP[p.id]||{}).firma) L.push({l:'La tua firma',s:'ko',d:'Manca: si fa una volta sola, con il dito («Firma adesso»)'});
   { const sf=droneFermo(d); if(sf) L.push({l:'Drone fermo per una segnalazione',s:'ko',d:sf.data+' · '+(SG_TIPI[sf.tipo]||'')+' · lo sblocca l’Admin'}); }
   // abilitazione pilota per la classe
   const lwC=CTRLINFO&&CTRLINFO.codice?LAVORI.find(x=>x.codice===CTRLINFO.codice):null;
@@ -2481,6 +2523,7 @@ function ctrlRiga(x){
 function disegnaControllo(){
   const L=verifiche(), corpo=document.getElementById('c-corpo');
   const light=document.getElementById('c-light'), t=document.getElementById('c-t'), s=document.getElementById('c-s');
+  light.parentNode.classList.remove('cp-bl');
   const cli=String((CTRLINFO||{}).cliente||'').split(':')[0], chi=(cli?cli+' · ':'')+dSel.nome+' · '+pSel.nome;
   // il pilota ha trovato un guasto nella check list: oggi con questo drone non si vola
   if(CTRLSTOP&&CTRLSTOP.drone===dSel.nome){
@@ -2500,9 +2543,9 @@ function disegnaControllo(){
   const altri=L.filter(x=>!passo(x)&&x.s==='ko'&&x.act&&!x.blocca).length;   // es. zona che chiede l'autorizzazione
   const avvisi=L.filter(x=>x.s==='warn'&&!x.nonBlocca).length+(dfR.s==='warn'?1:0);
   const daFare=mancaP+altri;
-  light.className='light '+(bloc.length?'ko':(daFare||avvisi)?'warn':'ok');
-  t.textContent=bloc.length?'Non si può volare':daFare?'Quasi pronto':avvisi?'Si può volare, con attenzione':'Si può volare';
-  s.textContent=chi+' · '+(bloc.length?pl(bloc.length,'problema','problemi')+' da risolvere':daFare?pl(daFare,'cosa','cose')+' da fare sul posto':avvisi?pl(avvisi,'avviso','avvisi'):'tutto in regola');
+  light.className='light '+(bloc.length?'ko':(daFare||avvisi)?'warn':'ok'); light.parentNode.classList.toggle('cp-bl',!!bloc.length);
+  t.textContent=bloc.length?'Non si vola, per ora':daFare?'Quasi pronto':avvisi?'Si può volare, con attenzione':'Si può volare';
+  s.textContent=chi+' · '+(bloc.length?(bloc.length===1?'1 cosa da sistemare qui sotto':bloc.length+' cose da sistemare qui sotto'):daFare?pl(daFare,'cosa','cose')+' da fare sul posto':avvisi?pl(avvisi,'avviso','avvisi'):'tutto in regola');
   // passi sul posto: uno alla volta (blu), quelli fatti in verde con il risultato
   const cur=!istrOk?-2:!NOTAM.stato?0:!checklistOk?1:-1;
   const st=i=>i===0?(NOTAM.stato?(dfR.s==='ko'?'ko':'fatto'):cur===0?'cur':''):(checklistOk?'fatto':cur===1?'cur':'');
@@ -2518,20 +2561,45 @@ function disegnaControllo(){
   const lw=(CTRLINFO&&CTRLINFO.codice)?LAVORI.find(x=>x.codice===CTRLINFO.codice):null, reg=lw&&lw.dove?vdRegoleHtml(lw,dSel):'';
   const pronto=!bloc.length&&!daFare;
   const invioOk=pSel&&pSel.nome===IO.n&&INVIO&&INVIO.ultimo&&INVIO.ultimo.at;
-  corpo.innerHTML=
-    (att.length?`<div class="card" id="c-att-c"><ul class="checks" id="c-att">${att.map(ctrlRiga).join('')}</ul></div>`:'')+
-    `<details class="card cp-ok" id="c-auto"><summary><span class="cp-vk">${CK_SV}</span>Già controllato da Quota 120: ${auto.length} ${auto.length===1?'cosa':'cose'}<span class="cp-vedi">vedi</span></summary><ul class="checks">${auto.map(ctrlRiga).join('')}</ul></details>`+
+  // anteprima 132: ogni motivo che ferma il volo ha il suo riquadro rosso con il tasto che lo sistema lì; sistemato, diventa verde
+  const FARE=[[/Pilota abilitato/,()=>'Scegli un pilota con l’attestato giusto: tocca «Cambia pilota o drone».'],[/Attestato valido/,()=>'Il pilota deve rinnovare l’attestato; intanto fai volare un altro pilota («Cambia pilota o drone»).'],
+    [/Assicurazione/,()=>io?'Se hai una polizza tua, caricala qui; se no avvisa l’Admin: la inserisce o la rinnova lui.':ADM?'Carica la polizza RC dell’azienda (la quietanza di pagamento).':'Senza polizza RC valida non si vola: l’Admin la inserisce o la rinnova nei dati dell’operatore.'],[/QR/,()=>ADM?'Carica la foto dell’adesivo QR attaccato sul drone (oppure cambia drone).':'Il QR lo sistema l’Admin nella scheda del drone: intanto cambia drone.'],
+    [/Autorizzazione operativa ENAC/,()=>'Con questo drone serve l’autorizzazione operativa ENAC: finché non c’è, usa un altro drone.'],[/Drone fermo/,()=>'Il drone è fermo per una segnalazione: lo sblocca l’Admin da Home › Regole › Segnalazioni. Intanto usa un altro drone.'],
+    [/Zona di volo/,()=>'Qui serve un’autorizzazione della zona: se ce l’hai, tocca «Ho l’autorizzazione»; altrimenti sposta il volo fuori dalla zona.'],[/Meteo/,()=>'Vento oltre il limite del drone: aspetta che cali o rimanda il volo.'],
+    [/D-Flight/,()=>'Un avviso di D-Flight chiude l’area per oggi: sposta il volo o rimandalo.'],[/Valutazione del rischio/,()=>'La valutazione del rischio dice di non volare qui: rivedila con misure in più, o cambia luogo.']];
+  const io=!ADM&&pSel&&pSel.nome===IO.n, dap=pSel?piDaApprovare(pSel):[];
+  let pdId=0; const pdB=()=>`<button class="btn sec" type="button" ${pdId++?'':'id="c-pd"'} onclick="cambiaPD()">Cambia pilota o drone</button>`;
+  const chiave=x=>x.l==='La tua firma'?'firma':/Attestato valido/.test(x.l)?'att':/Assicurazione/.test(x.l)?'rc':/QR/.test(x.l)?'qr':/Pilota abilitato/.test(x.l)?'abil':/ENAC/.test(x.l)?'enac':/Drone fermo/.test(x.l)?'fermo':/Meteo/.test(x.l)?'meteo':x.k==='df'?'df':/rischio/i.test(x.l)?'rischio':x.k||'altro';
+  const blk=x=>{ const k=chiave(x), f=FARE.find(r=>r[0].test(x.l)); let h='Non si vola: '+x.l.charAt(0).toLowerCase()+x.l.slice(1), n=x.d, b='';
+    if(k==='firma'){ h='Non si vola: manca la tua firma'; n='Si fa una volta sola, con il dito.'; b=`<button class="btn" type="button" id="c-firma" onclick="ctrlFix('firma');firmaPilSheet(()=>disegnaControllo())">Firma adesso</button>`; }
+    else if(k==='att'){ h=/^Nessun/.test(x.d)?'Non si vola: manca l’attestato':'Non si vola: l’attestato è scaduto';
+      if(dap.length) n+=' · caricato il '+ESC(dap[0].data||'')+': vale quando l’Admin lo approva';
+      else if(ADM||io) b=`<button class="btn" type="button" id="c-att-car" onclick="ctrlFix('att');plCaricaAtt(${NID(pSel.id)})">Carica l’attestato</button>`;
+      b+=pdB(); }
+    else if(k==='rc'){ h='Non si vola: manca l’assicurazione';
+      if(io) b=`<button class="btn" type="button" id="c-rc-car" onclick="ctrlFix('rc');piPolDoc(${NID(pSel.id)})">Carica la tua polizza</button>`;
+      else if(ADM) b=`<button class="btn" type="button" id="c-rc-car" onclick="ctrlFix('rc');inDoc({k:'operatore',voce:'assicurazione'},'La polizza RC aziendale','Fotografa la quietanza o scegli il PDF')">Carica la polizza</button>`; }
+    else if(k==='qr'){ h='Non si vola: il drone non ha il QR di D-Flight'; if(ADM) b=`<button class="btn" type="button" id="c-qr-car" onclick="ctrlFix('qr');drCarica(${NID(dSel.id)},'qr')">Carica il QR</button>`; b+=pdB(); }
+    else if(k==='abil'||k==='enac'||k==='fermo'){ b=pdB(); }
+    else if(k==='rischio'&&x.act==='rischioV'){ b=`<button class="btn sec" type="button" onclick="apriRischio(${x.lav?NID(x.lav):'null'},${JSA(x.rid)},{luogo:CTRLINFO.luogo,drone:dSel.id})">Apri la valutazione</button>`; }
+    return `<div class="cp-blk" id="c-blk-${k}"><h3>${h}</h3><div class="nota">${n}</div>${k!=='firma'&&f?`<div class="nota"><b>Cosa fare:</b> ${f[1]()}</div>`:''}${b?`<div class="row">${b}</div>`:''}</div>`; };
+  const FIXT={firma:'Firma fatta',att:'Attestato a posto',rc:'Assicurazione a posto',qr:'QR del drone a posto'}, bK=bloc.map(chiave);
+  const fatti=[...CTRLFIX].filter(k=>FIXT[k]&&!bK.includes(k)).map(k=>`<div class="cp-fix" id="c-fix-${k}">${CK_SV}<span>${FIXT[k]}: puoi andare avanti</span></div>`).join('');
+  // le righe con un tasto che non fermano il volo (es. zona con autorizzazione), gli avvisi in una riga chiusa, il resto in una riga sola
+  const ACT=att.filter(x=>!bloc.includes(x)&&x.act&&(x.s==='ko'||x.nonBlocca));
+  const AVV=att.filter(x=>!bloc.includes(x)&&!ACT.includes(x)&&(x.s==='warn'||(x.k==='meteo'&&x.s==='info'&&!x.spin)));
+  const INFO=att.filter(x=>!bloc.includes(x)&&!ACT.includes(x)&&!AVV.includes(x));
+  const auto1=CTRLMET==='carico'?'Meteo: lo sto prendendo dal luogo del volo…':'Meteo, documenti e rischio: li ha già controllati Quota 120';
+  corpo.innerHTML=fatti+bloc.map(blk).join('')+
+    (bloc.length?`<div class="row"><button class="btn sec" type="button" id="c-spiega" onclick="spiegaDaCtrl()">Spiega al cliente perché no</button></div>`:'')+
+    (ACT.length?`<div class="card" id="c-att-c" style="margin-top:12px"><ul class="checks" id="c-att">${ACT.map(ctrlRiga).join('')}</ul></div>`:'')+
+    (AVV.length?`<details class="card cp-ok cp-avv" id="c-avvisi" style="margin-top:12px"><summary><span class="tx">${bloc.length?'Da guardare anche':'Puoi volare, ma guarda'}<small>${pl(AVV.length,'avviso','avvisi')}</small></span><span class="cp-vedi">vedi</span></summary><ul class="checks">${AVV.map(ctrlRiga).join('')}</ul></details>`:'')+
     `<div class="card" id="c-passi"><div class="cp-h"><h2>Da fare sul posto</h2><span>${passiF} di ${totP}</span></div>${P0}${P1}${P2}</div>`+
+    `<details class="card cp-ok cp-auto1" id="c-auto"><summary><span class="cp-vk">${CTRLMET==='carico'?'<span class="spin" style="display:inline-block;width:12px;height:12px;border-width:2px;border-color:rgba(255,255,255,.4);border-top-color:#fff"></span>':CK_SV}</span><span class="tx">${auto1}</span><span class="cp-vedi">vedi</span></summary><ul class="checks">${auto.concat(INFO).map(ctrlRiga).join('')}</ul></details>`+
     `<details class="card cp-ok cp-reg" id="c-regole"><summary>Le regole di oggi e durante il volo<span class="cp-vedi">apri</span></summary><div class="cp-in">${reg?'<h3>Le regole di questo volo</h3>'+reg+'<h3>Durante il volo</h3>':''}<ul class="ck-prom" id="c-durante">${CK_DURANTE.map(t=>'<li>'+t+'</li>').join('')}</ul></div></details>`+
     (bloc.length?'':`<div><button class="btn cp-grande" id="c-btn" ${pronto?'':'disabled'} onclick="salvaVolo(this)"><span class="spin"></span>Si vola: segna il volo nel registro</button>
       <div class="cp-nota" id="c-nota">${pronto?'':(daFare===mancaP?'Il tasto si accende quando hai fatto le '+(mancaP===1?'cose':totP+' cose')+' sul posto. ':'Il tasto si accende quando hai sistemato le righe in alto e fatto le cose sul posto. ')}${invioOk?'Dopo il volo non devi scrivere niente: chiudi DJI Fly e il volo arriva da solo nel registro.':'Dopo il volo non devi scrivere niente qui: poi carica il file del volo da Voli.'}</div></div>`);
-  // perché non si vola: ogni motivo in chiaro, con cosa fare
-  const FARE=[[/Pilota abilitato/,()=>'Scegli un pilota con l’attestato giusto: tocca «Cambia pilota o drone».'],[/Attestato valido/,()=>'Il pilota deve rinnovare l’attestato; intanto fai volare un altro pilota («Cambia pilota o drone»).'],
-    [/Assicurazione/,()=>'Senza polizza RC valida non si vola: l’Admin la inserisce o la rinnova nei dati dell’operatore.'],[/QR/,()=>'Applica sul drone il QR di D-Flight e segnalo nella scheda del drone (oppure cambia drone).'],
-    [/Autorizzazione operativa ENAC/,()=>'Con questo drone serve l’autorizzazione operativa ENAC: finché non c’è, usa un altro drone.'],[/Drone fermo/,()=>'Il drone è fermo per una segnalazione: lo sblocca l’Admin da Home › Regole › Segnalazioni. Intanto usa un altro drone.'],
-    [/Zona di volo/,()=>'Qui serve un’autorizzazione della zona: se ce l’hai, tocca «Ho l’autorizzazione»; altrimenti sposta il volo fuori dalla zona.'],[/Meteo/,()=>'Vento oltre il limite del drone: aspetta che cali o rimanda il volo.'],
-    [/D-Flight/,()=>'Un avviso di D-Flight chiude l’area per oggi: sposta il volo o rimandalo.'],[/Valutazione del rischio/,()=>'La valutazione del rischio dice di non volare qui: rivedila con misure in più, o cambia luogo.'],[/firma/,()=>'Fai la firma in Account › La tua firma: una volta sola, con il dito.']];
-  document.getElementById('c-perche').innerHTML=bloc.length?`<div class="perche"><b>Perché non si vola</b><ol>${bloc.map(x=>{const f=FARE.find(r=>r[0].test(x.l)); return `<li><span class="m">${x.l}</span><span class="d">${x.d}</span>${f?`<span class="f">Cosa fare: ${f[1]()}</span>`:''}</li>`;}).join('')}</ol>${bloc.some(x=>/Pilota abilitato|Attestato valido|ENAC|QR|Drone fermo/.test(x.l))?`<div class="row"><button class="btn sec" onclick="cambiaPD()">Cambia pilota o drone</button></div>`:''}<div class="row"><button class="btn" id="c-spiega" onclick="spiegaDaCtrl()">Spiega al cliente perché no</button></div></div>`:'';
+  document.getElementById('c-perche').innerHTML='';
 }
 /* meteo e zone del luogo: li prende Quota 120 da solo quando si apre il controllo (luogo del lavoro, se no il GPS del telefono) */
 let CTRLMET='', CTRLTOK=0;
@@ -2550,7 +2618,8 @@ function ctrlMeteo(riusa){
   dove.then(pos=>{ if(tok!==CTRLTOK) return; if(!pos) return fine(); MPOS=pos;
     return caricaMeteo().then(()=>{ fine(); }); }).then(ridis).catch(fine);
 }
-function ctrlNuovo(){ zoneOk=false; checklistOk=false; CKRES=''; CKBREVE=''; NOTAM={}; CTRLSTOP=null; CKNO=null; CTRLIST={};
+let CTRLFIX=new Set(); function ctrlFix(k){ CTRLFIX.add(k); }
+function ctrlNuovo(){ CTRLFIX=new Set(); zoneOk=false; checklistOk=false; CKRES=''; CKBREVE=''; NOTAM={}; CTRLSTOP=null; CKNO=null; CTRLIST={};
   if(!ADM&&pSel&&pSel.nome===IO.n&&!INVIO&&!OFFLINE) api('GET','/api/invio/codice').then(j=>{ if(j.codice){ INVIO=j; if(VISTA==='controllo') disegnaControllo(); } }).catch(()=>{}); }
 
 function salvaVolo(b,ok){
@@ -2592,9 +2661,19 @@ function apriVoli(){
       <span class="tag ${s[0]}">${s[1]}</span></li>`;
   }).join('');
   document.getElementById('prog').style.display='none';
+  // anteprima 132: il pilota ha un tasto grande «Carica i voli di oggi» e i suoi voli; aggiunte e registro da scaricare restano all'Admin
+  { const pil=!ADM||!!COME, $=id=>document.getElementById(id); $('vl-pil').classList.toggle('hidden',!pil); $('vl-mano').classList.toggle('hidden',!pil);
+    $('vl-agg').classList.toggle('hidden',pil); $('vl-reg').classList.toggle('hidden',pil); $('vl-tit').textContent=pil&&!permIo().voliTutti?'I miei voli':'Ultimi voli';
+    if(pil){ const ios=/iPhone|iPad/.test(navigator.userAgent), c=cvP()&&CV&&CV.collegata;
+      $('vl-carica-n').innerHTML=c?'L’app prende da sola i voli nuovi dalla cartella <b>'+ESC(CV.nome||'dei voli')+'</b>.':cvP()?'Si apre la scelta dei file: Sfoglia › Sul mio '+APP_DISP+' › DJI Fly › FlightRecords, scegli i voli e tocca Apri. Più comodo: collega la cartella in Account › «Cartella dei voli».'
+        :ios?'Si apre la scelta dei file: Sfoglia › Sul mio iPhone › DJI Fly › FlightRecords, scegli i voli e tocca Apri.':'Si apre la scelta dei file: cerca la cartella FlightRecord dell’app DJI, scegli i voli e tocca Apri.'; } }
   disegnaScarica(); disegnaCoda(); disegnaArrivi();
-  vai('voli','Lavoro &rsaquo; Registro voli');
+  vai('voli',!ADM||COME?'I miei voli':'Lavoro &rsaquo; Registro voli');
 }
+// pilota: «Aggiungi un volo a mano» (casi rari) = la foto del riepilogo o i dati scritti a mano
+function plVoloMano(){ gdSheet(`<h2>Aggiungi un volo a mano</h2><p class="gd-sub">Quando il file del volo non c’è. Di solito basta «Carica i voli di oggi».</p>
+  <div class="in-2"><button class="in-sc" type="button" id="vm-foto" onclick="gdChiudiSheet();apriFotoVolo()"><b>Dalla foto</b><small>schermata del riepilogo del volo</small></button><button class="in-sc" type="button" id="vm-mano" onclick="gdChiudiSheet();manuale()"><b>Scrivo i dati</b><small>data, durata, drone, luogo</small></button></div>
+  <div class="row"><button class="btn sec" type="button" onclick="gdChiudiSheet()">Annulla</button></div>`); }
 
 let voloAperto=null;
 let VOLO_NUOVO=null;
@@ -2824,7 +2903,8 @@ function scDaf(pre,R){ const w=document.getElementById(pre+'-daf-w'); w.style.di
     return `<div class="q2-dr"><span class="p ${CLS(x.liv)}"></span><div class="t${gu?' fx':''}" ${gu?`role="button" onclick="fxVia('${pre}',${i})"`:''}><b>${x.t}</b><small>${x.w||''}</small></div>${b}</div>`; }).join(''); }
 function scSem(pre,liv,t,s){ document.getElementById(pre+'-light').className='light '+liv; document.getElementById(pre+'-t').textContent=t; document.getElementById(pre+'-s').textContent=s; }
 // dopo un documento caricato, un attestato approvato o un telefono approvato: si ridisegna la scheda aperta, senza tornare in cima
-function ridisegnaScheda(){ try{ if(VISTA==='pilota'&&PI_CUR!=null&&PILOTI.some(p=>p.id===PI_CUR)) disegnaPilota(PI_CUR); else if(VISTA==='drone'&&DR_CUR!=null&&DRONI.some(d=>d.id===DR_CUR)) disegnaDrone(DR_CUR); }catch(e){} }
+function ridisegnaScheda(){ try{ if(VISTA==='pilota'&&PI_CUR!=null&&PILOTI.some(p=>p.id===PI_CUR)) disegnaPilota(PI_CUR); else if(VISTA==='drone'&&DR_CUR!=null&&DRONI.some(d=>d.id===DR_CUR)) disegnaDrone(DR_CUR);
+  else if(VISTA==='controllo'&&dSel&&pSel){ dSel=DRONI.find(x=>x.id===dSel.id)||dSel; pSel=PILOTI.find(x=>x.id===pSel.id)||pSel; disegnaControllo(); } else if(VISTA==='account') disegnaAccount(); }catch(e){} }
 
 /* ---------- scheda del drone ---------- */
 const DOCBREVE={qr:'foto del QR',classe:'dichiarazione di classe',manuale:'manuale',fattura:'fattura'};
@@ -5109,13 +5189,13 @@ function plMotivi(V,p){ const tu=[], az=[];
   return r('Tu:',tu)+r('L’azienda:',az.map(x=>x+(/autorizzazione|QR|fermo/.test(x)?' (ci pensa l’Admin)':'')))+'<span class="pl-mot">Avvisa l’Admin: può sistemare o cambiare drone o pilota.</span>'; }
 function plGruppo(id,n,col,ic,st,corpo){ return `<details class="q2-gr" id="${id}" ${HADM_APERTE.has('p:'+id)?'open':''} ontoggle="hadmToggle('p:${id}',this.open)"><summary><span class="sq" style="background:var(${col})"><svg viewBox="0 0 24 24">${ic}</svg></span><span class="tx"><b>${n}</b><small class="${CLS(st.d||'')}">${ESC(st.c)}</small></span><svg class="q2-fr" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></summary>${corpo}</details>`; }
 function plAuto(){ apriCorsi(); let n=0; const t=setInterval(()=>{ n++; let ok=false; try{ ok=!!(CS&&CS.q120&&CS.q120.length&&document.querySelector('#cs-c .cs-list')); }catch(e){} if(ok){ clearInterval(t); csVai(csAuto,'Ascolta in auto'); } else if(n>40) clearInterval(t); },150); }
-/* «Altro» del pilota: le pagine che può aprire (con i suoi permessi), più mappa delle zone, valutazioni del rischio e documenti */
+/* «Altro» del pilota: le pagine che può aprire (con i suoi permessi) e la mappa delle zone; niente Voli e Documenti, che sono già nella barra in basso */
 function plAltro(){ const grp=['flotta','attivita','regole'], out=[], vo=(n,c,d,go)=>`<button type="button" class="q2-vo ${d||''}" onclick="${ESC(go)}"><b>${ESC(n)}</b><small>${ESC(c||'')}</small></button>`;
-  for(const g of grp) for(const t of TILES[g].filter(t=>t.n!=='Piloti'&&puoVedere(t.n))) out.push(vo(t.n,t.c,t.d,`apriPagina('${t.n.replace(/'/g,"\\'")}','${g}')`));
+  for(const g of grp) for(const t of TILES[g].filter(t=>t.n!=='Piloti'&&t.n!=='Registro voli'&&puoVedere(t.n))) out.push(vo(t.n,t.c,t.d,`apriPagina('${t.n.replace(/'/g,"\\'")}','${g}')`));
   out.push(vo('Mappa delle zone',ZONEINFO?'tocchi un punto: quota e regole':'il file delle zone lo carica l’Admin','',"apriMappaZone();document.getElementById('back').onclick=()=>vai('home')"));
   if(puoVedere('Valutazioni del rischio')) out.push(vo('Valutazioni del rischio',RISCHI.length?pl(RISCHI.length,'salvata','salvate'):'si fanno dalla scheda del lavoro','','apriRischi()'));
-  out.push(vo('Documenti','attestati, polizze, documenti dei droni','','apriDocumenti()'));
   return out.join(''); }
+function plAltroSub(){ const n=[]; if(puoVedere('Droni')) n.push('droni'); n.push('zone'); if(puoVedere('Clienti e lavori')) n.push('lavori'); return n.slice(0,2).join(', '); }
 /* ---------- app Quota 120 (iPhone, iPad, Android): pezzi che ci sono solo dentro l'app ----------
    Nell'app su iPhone e iPad il plugin nativo CartellaVoli legge la cartella dei voli di DJI Fly scelta una volta
    e dà solo i file non ancora mandati; i file vanno a /api/arrivi come quelli scelti a mano (stessa strada).
@@ -5190,7 +5270,7 @@ async function plInvia(F,via){ const ok=[];
 async function plDopoInvio(b,ok,msg){
   try{ localStorage.setItem('q120CaricaFatto','1'); }catch(e){}
   try{ await caricaArrivi(); if(puoAuto()) await autoArrivi(); else if(ok&&!msg) toast(pl(ok,'volo mandato','voli mandati')+': entrano nel registro appena l’Admin apre Quota 120'); }catch(e){}
-  b.classList.remove('busy'); b.disabled=false; if(VISTA==='home') disegnaHome(); if(msg) toast(msg); }
+  b.classList.remove('busy'); b.disabled=false; if(VISTA==='home') disegnaHome(); else if(VISTA==='voli') apriVoli(); if(msg) toast(msg); }
 function homeP(){
   const o=new Date(), p=ioPilota(), oggi0=new Date(o.toDateString());
   if(!p) return `<div class="card" style="margin-top:12px"><h2>Il tuo nome non è tra i piloti</h2><div class="nota">Chiedi all’Admin di aggiungerti in Piloti con lo stesso nome con cui entri.</div></div>`;
@@ -5205,10 +5285,10 @@ function homeP(){
     const mail=OP.email?`mailto:${encodeURIComponent(OP.email)}?subject=${encodeURIComponent('Lavoro '+(l.codice||l.cliente)+': così non si vola')}&body=${encodeURIComponent(V.map(x=>'- '+x[0]).join('\n'))}`:OP.tel?'tel:'+String(OP.tel).replace(/\s/g,''):'';
     return `<div class="ml-lav" id="ml-${NID(l.id)}">${g<0?`<span class="ml-q">In corso dal ${ESC(l.data)}</span>`:''}<b class="t">${ESC(l.cliente)} · ${ESC(String(l.titolo||'').toLowerCase())}</b>
       <div class="ml-i">${ESC([l.luogo,d?d.nome:'drone da scegliere',l.codice?'codice '+l.codice:''].filter(Boolean).join(' · '))}</div>
-      ${l.dove&&d?`<details class="ml-reg nv-sig" open><summary>Le regole di oggi</summary>${vdRegoleHtml(l,d)}</details>`:''}
-      ${V.length?`<div class="ml-v ko">${KO}<span><b>Non si vola:</b>${plMotivi(V,p)}</span></div>`:`<div class="ml-v ok">${OK}<span>Drone e documenti a posto: puoi fare il controllo.</span></div>`}
+      ${V.length?`<div class="ml-v ko">${KO}<span><b>Non si vola:</b>${plMotivi(V,p)}</span></div>`:''}
       ${V.length?`<div class="row">${mail?`<a class="btn sec pl-big" href="${mail}">Avvisa l’Admin</a>`:''}</div>`:`<div class="row"><button class="btn pl-big" type="button" onclick="controlloDaLavoro(${NID(l.id)},this)"><span class="spin"></span>Fai il controllo prima del volo</button></div>`}
-      <div class="row pl-due"><button class="btn sec" type="button" onclick="apriMissione(${NID(l.id)})">${l.missione?'Missione':'Pianifica la missione'}</button>${l.luogo?`<button class="btn sec" type="button" onclick="zmLavoro(${NID(l.id)})">Mappa delle zone</button>`:''}</div></div>`; };
+      <div class="pl-lk2"><button class="pl-lk" type="button" onclick="apriMissione(${NID(l.id)})">${l.missione?'La missione':'Pianifica la missione'}</button>${l.luogo?`<button class="pl-lk" type="button" onclick="zmLavoro(${NID(l.id)})">Mappa delle zone</button>`:''}</div>
+      ${l.dove&&d?`<details class="ml-reg nv-sig"><summary>Le regole di oggi</summary>${vdRegoleHtml(l,d)}</details>`:''}</div>`; };
   const rigaPoi=l=>{ const g=gg(l), d=dt(l.data), V=verificaAssegna(l), dr=DRONI.find(x=>x.id===l.drone);
     const q=g==null?'senza data':g===1?'Domani':GIORNI[d.getDay()].slice(0,3)+' '+d.getDate()+' '+MESI_L[d.getMonth()].slice(0,3);
     return `<button type="button" class="pl-rg" onclick="apriLavoro(${NID(l.id)})">${V.length?'<span class="hl ko"></span>':''}<span class="q ${g===1?'dom':''}">${ESC(q)}</span><span class="m"><b>${ESC(l.cliente)} · ${ESC(String(l.titolo||'').toLowerCase())}</b><span>${ESC([String(l.luogo||'').replace(/\s*\(.*\)/,''),dr?dr.nome.replace('DJI ',''):''].filter(Boolean).join(' · '))}${V.length?' · <b style="color:var(--ko);display:inline">così non si vola</b>':''}</span></span><svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>`; };
@@ -5217,17 +5297,37 @@ function homeP(){
   const scH=sc.length?sc.map((x,i)=>`<${x.go?'button type="button"':'div'} class="pl-rg" ${x.go?`onclick="if(!gdDa(PL_FX[${i}])){${ESC(x.go)}}"`:''}><span class="hl ${x.liv==='ok'?'':CLS(x.liv)}"></span><span class="m"><b>${x.t}</b><span>${x.w}</span></span>${x.go?'<svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>':''}</${x.go?'button':'div'}>`).join(''):'';
   const scK=sc.filter(x=>x.liv==='ko').length, scW=sc.filter(x=>x.liv==='warn').length;
   const scS=scK?{c:pl(scK,'da fare subito','da fare subito'),d:'ko'}:scW?{c:pl(scW,'in scadenza','in scadenza'),d:'warn'}:{c:sc.length?'tutto valido':'attestati, assicurazione, firma',d:''};
-  return `<div class="pl-data">${GIORNI[o.getDay()]} ${o.getDate()} ${MESI_L[o.getMonth()]}<b>Ciao ${ESC((IO.n||'').split(' ')[0])}</b></div>${lqHome()}
-    <div class="card ml-card pl-oggi" id="h-oggi"><h2>Oggi</h2>${plAttesa()}${oggiL.length?oggiL.map(lavOggi).join(''):`<div class="ml-vuoto" style="padding:0 0 8px">Nessun lavoro per oggi. Se voli lo stesso, fai il controllo:</div>${form(1)}`}</div>
+  const icS='<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/>', icC='<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3z"/>', icA='<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>';
+  const aperto=['h-scad','h-corsi','h-altro'].find(k=>HADM_APERTE.has('p:'+k))||'';
+  const ti=(id,n,col,ic,st)=>`<button type="button" class="pl-ti ${aperto===id?'on':''}" id="${id}" aria-expanded="${aperto===id}" onclick="plTile('${id}')"><span class="sq" style="background:var(${col})"><svg viewBox="0 0 24 24">${ic}</svg></span>${n}<small class="${CLS(st.d||'')}">${ESC(st.c)}</small></button>`;
+  const pan={'h-scad':`<h3>Le mie scadenze</h3><div style="padding:0 4px">${scH||'<div class="nv-fine" style="padding:6px">Nessuna scadenza da guardare.</div>'}</div>`,
+    'h-corsi':`<h3>Corsi</h3><div class="q2-gv" style="grid-template-columns:repeat(2,minmax(0,1fr))"><button type="button" class="q2-vo" onclick="apriCorsi()"><b>Apri i corsi</b><small>video, legende, prove</small></button><button type="button" class="q2-vo" onclick="plAuto()"><b>Ascolta in auto</b><small>solo voce, a schermo spento</small></button></div>`,
+    'h-altro':`<h3>Altro</h3><div class="q2-gv">${plAltro()}</div>`};
+  return `<div class="pl-data">${GIORNI[o.getDay()]} ${o.getDate()} ${MESI_L[o.getMonth()]}<b>Ciao ${ESC((IO.n||'').split(' ')[0])}</b></div>${plBloccoHtml(p)}${lqHome()}
+    <div class="card ml-card pl-oggi" id="h-oggi"><h2>Oggi</h2>${plAttesa()}${oggiL.length?oggiL.map(lavOggi).join('')+`<details class="pl-sl" id="h-senzalav"><summary class="pl-lk">Volo senza lavoro (una prova)</summary><div style="padding:0 0 10px">${form(0)}</div></details>`:`<div class="ml-vuoto" style="padding:0 0 8px">Nessun lavoro per oggi. Se voli lo stesso, fai il controllo:</div>${form(1)}`}</div>
     ${cvCard()}
     ${poi.length?`<div class="card ml-card" id="h-miei"><h2>Prossimi lavori <small>${poi.length}</small></h2>${poi.slice(0,6).map(rigaPoi).join('')}</div>`:''}
-    ${oggiL.length?`<details class="pl-det" id="h-senzalav"><summary>Volo senza lavoro <small>una prova, un volo non in elenco</small></summary><div style="padding:0 14px 14px">${form(0)}</div></details>`:''}
-    <div class="q2-h3"><span>Il resto</span></div>
-    ${plGruppo('h-scad','Le mie scadenze','--f-persone','<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/>',scS,`<div style="padding:0 6px 8px">${scH||'<div class="nv-fine" style="padding:6px">Nessuna scadenza da guardare.</div>'}</div>`)}
-    ${plGruppo('h-corsi','Corsi','--f-flotta','<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3z"/>',{c:'dell’azienda e di Quota 120 · anche in auto',d:''},`<div class="q2-gv"><button type="button" class="q2-vo" onclick="apriCorsi()"><b>Apri i corsi</b><small>video, legende, prove</small></button><button type="button" class="q2-vo" onclick="plAuto()"><b>Ascolta in auto</b><small>solo voce, a schermo spento</small></button></div>`)}
-    ${plGruppo('h-altro','Altro','--f-imp','<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>',{c:'registro voli, mappa delle zone, documenti',d:''},`<div class="q2-gv">${plAltro()}</div>`)}
-    ${segnHome()}`;
+    <div class="pl-tiles" id="h-tiles-p">${ti('h-scad','Scadenze','--f-persone',icS,scS.d?scS:{c:sc.length?'tutto valido':'nessuna',d:''})}${ti('h-corsi','Corsi','--f-flotta',icC,{c:'anche in auto',d:''})}${ti('h-altro','Altro','--f-imp',icA,{c:plAltroSub(),d:''})}</div>
+    ${aperto?`<div class="pl-pan" id="${aperto}-p">${pan[aperto]}</div>`:''}
+    <button class="btn sec pl-segn" type="button" id="h-segn" onclick="apriSegnala()">Segnala un problema</button>`;
 }
+// i tre riquadri piccoli della Home del pilota: uno aperto alla volta, sotto i riquadri; chiusi di partenza
+function plTile(id){ const on=HADM_APERTE.has('p:'+id); ['h-scad','h-corsi','h-altro'].forEach(k=>HADM_APERTE.delete('p:'+k)); if(!on) HADM_APERTE.add('p:'+id);
+  try{ hadmToggle('p:'+id,!on); }catch(e){} disegnaHome(); if(!on) setTimeout(()=>{ const e=document.getElementById(id+'-p'); e&&e.scrollIntoView({behavior:'smooth',block:'nearest'}); },30); }
+/* Home del pilota: cosa gli impedisce di volare (le voci obbligatorie di Account, come prima), ognuna con il tasto che la fa lì, senza andare in Account */
+function plBlocchi(p){ return p?accVoci(p).filter(v=>!v.ok&&PP_PIL_T[v.k]&&PP_PIL_T[v.k][2]):[]; }
+function plCaricaAtt(id){ const A=Object.entries((SCHEDEP[id]||{}).att||{}).filter(([k,a])=>a);
+  const k=(A.find(([k,a])=>a.scad&&livData(a.scad)==='ko')||A.find(([k,a])=>!a.file)||['A1-A3'])[0]; piCarica(id,k); }
+function plBloccoHtml(p){ const B=plBlocchi(p); if(!B.length) return ''; const dap=piDaApprovare(p);
+  const r=v=>{ let t='',s='',b='';
+    if(v.k==='firma'){ t='La tua firma'; s='una volta sola, con il dito'; b=`<button class="btn mini" type="button" id="hb-firma" onclick="firmaPilSheet()">Firma adesso</button>`; }
+    else if(v.k==='att'){ t='Il tuo attestato'; if(dap.length){ s='caricato il '+ESC(dap[0].data||'')+': vale quando l’Admin lo approva'; } else { s=v.d.charAt(0).toLowerCase()+v.d.slice(1); b=`<button class="btn mini" type="button" id="hb-att" onclick="plCaricaAtt(${NID(p.id)})">Carica</button>`; } }
+    else if(v.k==='rc'){ t='L’assicurazione'; s='nessuna polizza ti copre: se ne hai una tua caricala, se no avvisa l’Admin'; b=`<button class="btn mini" type="button" id="hb-rc" onclick="piPolDoc(${NID(p.id)})">Carica</button>`; }
+    else if(v.k==='df'){ t='Accesso a D-Flight'; s='una volta sola su questo telefono'; b=`<button class="btn mini" type="button" id="hb-df" onclick="ppFai(ppLista().findIndex(x=>x.k==='df'))">Fallo ora</button>`; }
+    else return '';
+    if(COME) b='';   // l'Admin che guarda come il pilota non firma e non carica al suo posto
+    return `<div class="pb-r" id="hb-r-${v.k}"><div class="t"><b>${t}</b><small>${s}</small></div>${b}</div>`; };
+  return `<div class="pl-blk" id="h-blocco"><h2>Prima di volare ti ${B.length===1?'manca 1 cosa':'mancano '+B.length+' cose'}</h2>${B.map(r).join('')}</div>`; }
 const PAROLE={
  dflight:['D-Flight','il sito ufficiale italiano dei droni','È il sito (d-flight.it) dove l’Italia gestisce i droni: registri l’operatore, ricevi i QR da attaccare ai droni, guardi la mappa con le zone dove si vola e gli avvisi del giorno. È una società del gruppo ENAV.','Prima di ogni volo guardi la mappa di D-Flight: ti dice se in quel punto si vola e fino a che altezza.','Enti e siti'],
  enac:['ENAC','Ente Nazionale per l’Aviazione Civile','È l’ente dello Stato che fa le regole per il volo in Italia, droni compresi. Rilascia gli attestati dei piloti e le autorizzazioni per i voli più difficili.','L’attestato A1/A3 lo prendi sul sito di ENAC, con un corso e un quiz online gratuiti.','Enti e siti'],
@@ -5853,8 +5953,9 @@ function doveTocca(nodo,cosa){ if(!cosa) return null; if(cosa.charAt(0)==='#') r
 // il tasto da toccare per arrivarci, nella pagina in cui sei
 function doveEl(k){ const D=DOVE[k]; if(!D) return null;
   if(!ADM||COME){ if(k==='zmappa'&&VISTA==='dflight') return gdVis('#df-b-zmappa'); if(VISTA!=='home') return null; if(k==='account') return gdVis('#chip')||gdVis('#h-pp');
-    { const al=document.getElementById('h-altro'); if(al&&!al.open) return gdVis('#h-altro>summary'); }
-    return gdTesto('#h-altro .q2-vo b',k==='dflight'?'Zone e D-Flight':(D[6]||D[0]))||gdTesto('#h-altro .q2-vo b',D[0]); }
+    if(k==='voli'||k==='documenti') return gdVis(k==='voli'?'#nb-voli':'#nb-doc');
+    if(!document.getElementById('h-altro-p')) return gdVis('#h-altro');
+    return gdTesto('#h-altro-p .q2-vo b',k==='dflight'?'Zone e D-Flight':(D[6]||D[0]))||gdTesto('#h-altro-p .q2-vo b',D[0]); }
   if(k==='account') return gdVis('#chip');
   // da solo il riquadro «Piloti» è «Io pilota»: la tua scheda e la tua firma
   if(SOLO()&&(k==='piloti'||k==='firme')){ if(VISTA==='home') return gdVis('#q2t-piloti'); if(VISTA==='hub'&&HUB_K==='io') return gdVis(k==='firme'?'#q2s-firma':'#q2s-scheda'); }
@@ -5869,14 +5970,15 @@ function doveTesto(k){ const D=DOVE[k]; if(!D) return '';
   if(k==='account') return 'Tocca il tondo con le tue iniziali, in alto a destra.';
   if(!ADM||COME){ const n=k==='dflight'?'Zone e D-Flight':(D[6]||D[0]);
     if(n==='Piloti'||(PERM_RIQ[n]&&!puoVedere(n))||['segnalazioni','check','rich','imp','azienda','opdati','avvisi','ute','studio','firme','telefoni','accesso','multi'].includes(k)) return 'Questa pagina la apre l’Admin, o un pilota a cui l’Admin ha dato il permesso.';
-    return 'Dalla Home apri «Altro» e tocca «'+n+'».'+(VISTA!=='home'||!doveEl(k)?' Oppure tocca «Portami lì».':''); }
+    if(k==='voli'||k==='documenti') return 'Tocca «'+(k==='voli'?'Voli':'Documenti')+'» nella barra in basso.';
+    return 'Dalla Home tocca il riquadro «Altro», poi «'+n+'».'+(VISTA!=='home'||!doveEl(k)?' Oppure tocca «Portami lì».':''); }
   if(D[1]==='bar') return 'Tocca «'+D[0]+'» nella barra in basso.';
   if(D[1]==='aiuto') return 'Tocca «Aiuto» in alto, poi «'+D[2]+'».';
   const C=doveCatena(k).slice(1).map(n=>NAV_NODI[n][0]), ult=D[2]&&D[2].charAt(0)!=='#'?D[2]:(C.length?'':D[0]);
   const L=C.concat(ult?[ult]:[]).concat(k==='invita'?['Gli mando il link']:[]);
   return 'Dalla Home tocca «'+L[0]+'»'+(L.length>1?', poi '+L.slice(1).map(x=>'«'+x+'»').join(', poi '):'')+'.'+altrove; }
 // il passo «dove si trova»: c’è in ogni guida, con «Portami lì»
-const DV=(k,w)=>({get t(){ return 'Apri «'+(DOVE[k][6]&&(!ADM||COME)?DOVE[k][6]:DOVE[k][0])+'»'; },get p(){ return doveTesto(k); },w:w||'Ogni cosa di Quota 120 ha la sua pagina: si parte da lì.',el:()=>doveEl(k),ok:()=>doveOk(k),vai:DOVE[k][4]});
+const DV=(k,w)=>({get t(){ return 'Apri «'+(DOVE[k][6]&&(!ADM||COME)&&k!=='voli'?DOVE[k][6]:DOVE[k][0])+'»'; },get p(){ return doveTesto(k); },w:w||'Ogni cosa di Quota 120 ha la sua pagina: si parte da lì.',el:()=>doveEl(k),ok:()=>doveOk(k),vai:DOVE[k][4]});
 // voci che aprono una finestrella: [pagina dove sta il tasto, tasto, apri]
 const DOVE_AZ={'Codice dell’Admin':['accesso','#az-cod',()=>cambiaCodice()],'Aggiungi pilota':['piloti','#pl-agg',()=>plAggiungi()],'Aggiungi drone':['droni','#dr-agg',()=>nuovoDrone()]};
 const P_TILE=(t,ok,w)=>{ if(DOVE_N[t]) return DV(DOVE_N[t],w); const A=DOVE_AZ[t]; if(!A) return DV('azienda',w);
@@ -5892,13 +5994,13 @@ function ctrlInizio(){ if(ADM&&!COME) return [DV('lavori','Il controllo prima de
     {t:'Tocca «Fai il controllo prima del volo»',p:'Sotto il lavoro di oggi, nel riquadro «Oggi». Se voli senza un lavoro: scegli il drone, scrivi il luogo e tocca il tasto.',w:'Quota 120 controlla da solo attestati, assicurazione, drone, batterie, meteo e zone.',el:()=>gdTesto('#h-oggi button','controllo prima del volo')||gdVis('#h-btn'),ok:ctrlFatto,vai:()=>vai('home')}]; }
 // i passi del controllo prima del volo, uguali in «Controllo», «Un volo» (stessi id della pagina)
 function ctrlPassi(pre){ pre=pre||'';
-  return [{t:pre+'Il semaforo',get p(){ return gdVis('#c-btn')?'In alto: arancione «Quasi pronto» finché non fai le cose sul posto, verde «Si può volare» quando hai finito.':'È rosso: così non si vola. Leggi «Perché non si vola»: se il pilota non è abilitato per quel drone, tocca «Cambia pilota o drone»; se manca un’autorizzazione ENAC, per oggi con quel drone non si vola.'; },w:'Con i dati di esempio alcuni lavori sono fatti apposta per dare rosso: servono a vedere come Quota 120 ti ferma.',el:()=>gdVis('#c-light'),nx:1,vai:()=>GD_LISTE.controllo()},
-    {t:'Già controllato da Quota 120',p:'Attestati, assicurazione, drone, batterie, meteo e zone li ha già guardati Quota 120: tocca «vedi» se vuoi leggerli. Le righe da guardare restano sopra, in vista.',w:'Il meteo lo prende da solo dal luogo del lavoro (o dal GPS): se non arriva, guarda il cielo e il vento sul radiocomando.',el:()=>gdVis('#c-auto'),nx:1},
+  return [{t:pre+'Il semaforo',get p(){ return gdVis('#c-btn')?'In alto: arancione «Quasi pronto» finché non fai le cose sul posto, verde «Si può volare» quando hai finito.':'Così non si vola, per ora: sotto, ogni cosa che ferma il volo ha il suo riquadro rosso con il tasto che la sistema lì (per esempio «Firma adesso», «Carica l’attestato», «Cambia pilota o drone»). Sistemata, il riquadro diventa verde e il controllo va avanti.'; },w:'Con i dati di esempio alcuni lavori sono fatti apposta per dare rosso: servono a vedere come Quota 120 ti ferma.',el:()=>gdVis('#c-light'),nx:1,vai:()=>GD_LISTE.controllo()},
+    {t:'Già controllato da Quota 120',p:'Meteo, documenti e rischio li ha già controllati Quota 120: tocca la riga se vuoi leggerli. Gli avvisi che non fermano il volo (assicurazione in scadenza, manutenzione, batterie) sono nella riga chiusa «Puoi volare, ma guarda».',w:'Il meteo lo prende da solo dal luogo del lavoro (o dal GPS): se non arriva, guarda il cielo e il vento sul radiocomando.',el:()=>gdVis('#c-auto'),nx:1},
     ctrlIstrPasso(),
     {get t(){ return 'Passo '+(ctrlIstr().length?2:1)+' · la mappa D-Flight'; },p:'Tocca «Apri la mappa», guarda il punto del volo, poi «Tutto a posto» oppure «C’è un avviso».',w:'Le zone le sa già Quota 120; gli avvisi del giorno (NOTAM) si vedono solo sulla mappa D-Flight.',el:()=>gdVis('#c-p-df'),ok:()=>!!NOTAM.stato,vai:()=>GD_LISTE.controllo()},
     {get t(){ return 'Passo '+(ctrlIstr().length?3:2)+' · la check list davanti al drone'; },p:'Tocca «Spunta la check list», spunta tutte le voci e tocca «Fatto». Se una voce non va, tocca «non va».',w:'È la prova che drone, posto e pilota sono pronti. Un guasto del drone ferma il volo e avvisa l’Admin da solo.',el:()=>VISTA==='checklist'?gdVis('#ckp-ok'):gdVis('#c-ck')||gdVis('#c-p-ck'),ok:()=>checklistOk||!!CTRLSTOP,vai:()=>GD_LISTE.controllo()},
     {t:pre+'Le regole di oggi',p:'Apri «Le regole di oggi e durante il volo» e leggile prima di decollare.',w:'Quota, distanza dalle persone, cosa fare se qualcosa va storto: niente da spuntare.',el:()=>gdVis('#c-regole'),nx:1,opt:1},
-    {t:'Tocca «Si vola: segna il volo nel registro»',get p(){ return gdVis('#c-btn')?'In fondo alla pagina: si accende quando hai fatto le '+(ctrlIstr().length?3:2)+' cose sul posto.':'Il semaforo è rosso: il tasto non c’è. Leggi «Perché non si vola», risolvi il problema (o cambia drone o pilota) e rifai il controllo: la guida riparte da qui.'; },w:'Il controllo resta scritto nel registro, con ora, meteo, D-Flight e check list.',el:()=>gdVis('#c-btn'),ok:()=>VISTA==='voli'}]; }
+    {t:'Tocca «Si vola: segna il volo nel registro»',get p(){ return gdVis('#c-btn')?'In fondo alla pagina: si accende quando hai fatto le '+(ctrlIstr().length?3:2)+' cose sul posto.':'Il semaforo è rosso: il tasto non c’è. Sistema le cose nei riquadri rossi in alto, con il loro tasto (o cambia drone o pilota): la guida riparte da qui.'; },w:'Il controllo resta scritto nel registro, con ora, meteo, D-Flight e check list.',el:()=>gdVis('#c-btn'),ok:()=>VISTA==='voli'}]; }
 const GV=(t,p,w,q,el,opt)=>Object.assign({t,p,w:w+(q?'<br><b>Quando:</b> '+q:''),el,nx:1},opt?{opt:1}:{});
 // «Portami lì» anche a metà guida: riapre la pagina in cui eri arrivato
 const GD_APRI={};
@@ -5909,7 +6011,7 @@ const GD_LISTE={azp:()=>apriAzp(AZP_K),home:()=>vai('home'),voli:()=>apriVoli(),
 const GUIDES={
  account:{n:'Imposta il tuo account (pilota)',r:'tutti',base:()=>0,done:()=>false,
   get why(){return ADM?{h:'L’account del pilota',p:'Ogni pilota, dal suo telefono, tocca «Account» in alto e completa cinque cose: la firma (per prima), gli attestati, la polizza, l’invio automatico dei voli e i contatti. Tu nella sua scheda vedi cosa manca, in cima, in «Da sistemare».',uses:['Sapere a colpo d’occhio cosa manca a ogni pilota','Documenti già firmati','Avvisi delle scadenze anche al pilota'],tm:'Ci vuole un minuto per guardarla.'}
-    :{h:'Il tuo account',p:'Le cinque cose che servono per volare con Quota 120, in ordine: la tua firma, i tuoi attestati, l’assicurazione, l’invio automatico dei voli e i tuoi contatti. Finché manca qualcosa, in Home c’è l’avviso «Completa il tuo account».',uses:['Documenti dei tuoi voli già firmati','Controllo prima del volo che non ti blocca per un documento mancante','Avvisi delle tue scadenze via email'],tm:'Ci vogliono 5 minuti, una volta sola.'};},
+    :{h:'Il tuo account',p:'Le cinque cose che servono per volare con Quota 120, in ordine: la tua firma, i tuoi attestati, l’assicurazione, l’invio automatico dei voli e i tuoi contatti. Se manca una cosa obbligatoria (firma, attestato, assicurazione), in Home c’è il riquadro rosso «Prima di volare ti manca…» con il tasto per farla subito, lì.',uses:['Documenti dei tuoi voli già firmati','Controllo prima del volo che non ti blocca per un documento mancante','Avvisi delle tue scadenze via email'],tm:'Ci vogliono 5 minuti, una volta sola.'};},
   end:'Fatto. Quando rinnovi un attestato o la polizza, torna in Account e tocca «Carica».',
   get S(){ if(ADM) return [P_PAG('Piloti',['piloti','pilota']),
      {t:'Apri un pilota',p:'Tocca il nome di un pilota.',w:'Ogni pilota ha la sua scheda.',el:()=>gdVis('#plist li'),ok:()=>VISTA==='pilota'},
@@ -5931,7 +6033,12 @@ const GUIDES={
      {t:'Tocca «Salva la firma»',p:'Da ora va da sola nei documenti. Per cambiarla tocca «Rifalla».',w:'Si salva sul server: la trovi anche da un altro computer.',el:()=>gdVis('#ad-firma-c [data-a="salva"]')||gdVis('#ad-firma-c .fi-salvata'),ok:()=>!!(OP.firma&&OP.firma.img),nx:1},
      {t:'Firme nei PDF',p:'Con la spunta i PDF escono firmati; senza, escono con le righe vuote.',w:'Senza spunta quando un ente chiede la firma digitale.',el:()=>gdVis('#ad-firme-sp'),nx:1},
      {t:'Le firme dei piloti',p:'Ogni pilota firma dal suo telefono. Nella scheda del pilota («Contatti e firma») vedi se l’ha fatto.',w:'Sui documenti dei voli serve anche la firma di chi ha volato.',el:()=>gdVis('#ad-firma'),nx:1}];
-   const io=ioPilota(); return [DV('account','La firma è nel tuo account, la prima delle cose che servono per volare.'),
+   const io=ioPilota(), fatta=()=>!!(io&&(SCHEDEP[io.id]||{}).firma);
+   if(io&&!fatta()) return [P_HOME,
+     {t:'Tocca «Firma adesso»',p:'Nel riquadro rosso «Prima di volare ti manca…», in cima alla Home.',w:'La firma si fa lì, senza andare in Account: si apre il riquadro dove firmare.',el:()=>gdIn('#ps-firma')?null:VISTA==='home'?gdVis('#hb-firma'):null,vai:()=>vai('home'),ok:()=>!!gdIn('#ps-firma')||fatta()},
+     {t:'Firma nel riquadro',p:'Con il dito, come sulla carta. Se viene male tocca «Cancella».',w:'È la tua firma sui documenti dei tuoi voli.',el:()=>gdIn('#ps-firma .fi-pad'),ok:fatta,nx:1},
+     {t:'Tocca «Salva la firma»',p:'Fatto: il riquadro rosso nella Home sparisce.',w:'Si salva sul server, la vede anche l’Admin.',el:()=>gdIn('#ps-firma [data-a="salva"]'),ok:fatta,nx:1}];
+   return [DV('account','La firma è nel tuo account, la prima delle cose che servono per volare.'),
      {t:'Firma nel riquadro',p:'Con il dito, come sulla carta. Se viene male tocca «Cancella».',w:'È la tua firma sui documenti dei tuoi voli.',el:()=>gdVis('#ac-firma-c .fi-pad')||gdVis('#ac-firma-c .fi-salvata'),ok:()=>!!(io&&(SCHEDEP[io.id]||{}).firma),nx:1},
      {t:'Tocca «Salva la firma»',p:'Fatto: l’avviso rosso nella Home sparisce.',w:'Si salva sul server, la vede anche l’Admin.',el:()=>gdVis('#ac-firma-c [data-a="salva"]')||gdVis('#ac-firma-c .fi-salvata'),ok:()=>!!(io&&(SCHEDEP[io.id]||{}).firma),nx:1}]; }},
  richiesta:{n:'Richiesta di permesso per una zona (ATM-09 o ATM-05)',r:'adm',base:()=>RICH.length,done:()=>false,
@@ -6031,22 +6138,28 @@ const GUIDES={
  dji:{n:'Volo dal file DJI',r:'tutti',base:()=>VOLI.filter(v=>v.letto).length,done:b=>VOLI.filter(v=>v.letto).length>b,
   why:{h:'Il volo dal file del drone',p:'Il file del registro DJI contiene tutto: data, durata, altezza, percorso, batteria. Quota 120 lo legge e compila il volo da solo.',uses:['Ore del drone e del pilota aggiornate da sole','Cicli della batteria','Mappa del percorso nel rapporto per il cliente'],tm:'Ci vuole un minuto.'},
   end:'Volo salvato: ore, cicli e mappa sono aggiornati.',
-  S:[P_VOLI,{t:'Tocca «Carica registri DJI»',p:'Se non sai dove sono i file, apri «Dove trovo i file?» sopra il tasto.',w:'Si possono scegliere più file insieme: i voli già caricati vengono saltati.',el:()=>gdTesto('#v-voli .btn','Carica registri DJI'),ok:()=>VISTA==='importa'},
-   {t:'Controlla i dati e conferma',p:'Drone, pilota e batteria: se uno non è giusto, sceglilo dal menu.',w:'Il file dice quasi tutto; chi ha volato e quale batteria a volte vanno scelti.',el:()=>gdVis('#im-letto .btn'),ok:()=>VISTA==='voli'}]},
+  get S(){ if(!ADM||COME) return [P_VOLI,{t:'Tocca «Carica i voli di oggi»',p:'Il tasto grande in cima. Si apre la scelta dei file: DJI Fly › FlightRecords, scegli i voli e tocca «Apri».',w:'Si possono scegliere più file insieme: i voli già caricati vengono saltati.',el:()=>gdVis('#vl-carica'),ok:()=>gdToccato('Carica i voli di oggi')},
+   {t:'Quota 120 li legge da solo',p:'Il volo entra in «I miei voli» con data, durata, drone e batteria.',w:'Ore del drone, cicli della batteria e mappa si aggiornano da soli.',el:()=>gdVis('#vlist'),nx:1}];
+   return [P_VOLI,{t:'Tocca «Carica registri DJI»',p:'Se non sai dove sono i file, apri «Dove trovo i file?» sopra il tasto.',w:'Si possono scegliere più file insieme: i voli già caricati vengono saltati.',el:()=>gdTesto('#v-voli .btn','Carica registri DJI'),ok:()=>VISTA==='importa'},
+   {t:'Controlla i dati e conferma',p:'Drone, pilota e batteria: se uno non è giusto, sceglilo dal menu.',w:'Il file dice quasi tutto; chi ha volato e quale batteria a volte vanno scelti.',el:()=>gdVis('#im-letto .btn'),ok:()=>VISTA==='voli'}]; }},
  foto:{n:'Volo dalla foto del riepilogo',r:'tutti',base:()=>VOLI.filter(v=>v.daFoto).length,done:b=>VOLI.filter(v=>v.daFoto).length>b,
   why:{h:'Il volo da una foto',p:'Fai la schermata del riepilogo del volo nell’app DJI (o una foto del radiocomando): Quota 120 la legge e compila il volo.',uses:['Quando il file DJI non è a portata di mano','Da qualsiasi telefono'],tm:'Ci vuole un minuto.'},
   end:'Volo salvato. Se poi carichi anche il file DJI dello stesso volo, lo completa senza contarlo due volte.',
-  S:[P_VOLI,{t:'Tocca «Carica la foto del volo»',p:'Nel riquadro «Aggiungi un volo».',w:'Si apre la spiegazione su quale schermata fare.',el:()=>gdTesto('#v-voli .btn','Carica la foto del volo'),ok:()=>VISTA==='fotovolo'},
+  get S(){ return [P_VOLI,...(!ADM||COME?[{t:'Tocca «Aggiungi un volo a mano»',p:'In fondo alla pagina, sotto i tuoi voli.',w:'Serve quando il file del volo non c’è.',el:()=>gdIn('#vm-foto')?null:gdVis('#vl-mano'),ok:()=>!!gdIn('#vm-foto')||VISTA==='fotovolo'},
+     {t:'Tocca «Dalla foto»',p:'La schermata del riepilogo del volo.',w:'Si apre la spiegazione su quale schermata fare.',el:()=>gdIn('#vm-foto'),ok:()=>VISTA==='fotovolo',vai:()=>{ apriVoli(); plVoloMano(); }}]
+    :[{t:'Tocca «Carica la foto del volo»',p:'Nel riquadro «Aggiungi un volo».',w:'Si apre la spiegazione su quale schermata fare.',el:()=>gdTesto('#v-voli .btn','Carica la foto del volo'),ok:()=>VISTA==='fotovolo'}]),
    {t:'Scegli la foto',p:'Si vedano data, durata e altezza massima.',w:'Quota 120 legge solo quello che c’è scritto: se manca qualcosa lo scrivi tu.',el:()=>gdVis('#fv-istr .btn'),ok:()=>!!gdVis('#fv-letto')},
    {t:'Controlla i dati letti',p:'Quelli con la spunta sono stati letti dalla foto: se uno è sbagliato, toccalo e correggilo.',w:'Il drone viene riconosciuto dal nome nella foto.',el:()=>gdVis('#fv-campi'),nx:1},
-   {t:'Tocca «Salva il volo»',p:'In fondo.',w:'Ore del drone e del pilota si aggiornano da sole.',el:()=>gdVis('#fv-letto .btn'),ok:()=>VISTA==='voli'}]},
+   {t:'Tocca «Salva il volo»',p:'In fondo.',w:'Ore del drone e del pilota si aggiornano da sole.',el:()=>gdVis('#fv-letto .btn'),ok:()=>VISTA==='voli'}]; }},
  mano:{n:'Volo scritto a mano',r:'tutti',base:()=>0,done:()=>false,
   why:{h:'Il volo a mano',p:'Quando non c’è né il file né la foto, il volo si scrive a mano.',uses:['Droni senza registro','Voli vecchi da recuperare'],tm:'Ci vogliono 2 minuti.'},
   end:'Volo salvato nel registro.',
-  S:[P_VOLI,{t:'Tocca «Inserisci a mano»',p:'Nel riquadro «Aggiungi un volo».',w:'Si apre una scheda del volo vuota.',el:()=>gdTesto('#v-voli .btn','Inserisci a mano'),ok:()=>VISTA==='volo'},
+  get S(){ return [P_VOLI,...(!ADM||COME?[{t:'Tocca «Aggiungi un volo a mano»',p:'In fondo alla pagina, sotto i tuoi voli.',w:'Serve quando il file del volo non c’è.',el:()=>gdIn('#vm-mano')?null:gdVis('#vl-mano'),ok:()=>!!gdIn('#vm-mano')||VISTA==='volo'},
+     {t:'Tocca «Scrivo i dati»',p:'Si apre una scheda del volo vuota.',w:'Data, durata, drone e luogo li scrivi tu.',el:()=>gdIn('#vm-mano'),ok:()=>VISTA==='volo',vai:()=>{ apriVoli(); plVoloMano(); }}]
+    :[{t:'Tocca «Inserisci a mano»',p:'Nel riquadro «Aggiungi un volo».',w:'Si apre una scheda del volo vuota.',el:()=>gdTesto('#v-voli .btn','Inserisci a mano'),ok:()=>VISTA==='volo'}]),
    {t:'Scrivi i dati del volo',p:'Data, ora, durata, drone e luogo.',w:'La durata fa salire le ore del drone e del pilota.',el:()=>gdVis('#vo-dati'),nx:1},
-   {t:'Tocca «Salva il volo»',p:'In fondo alla scheda.',w:'Senza Salva il volo non resta.',el:()=>gdTesto('#v-volo .btn','Salva il volo'),ok:()=>VISTA==='voli'}]},
- registro:{n:'Scaricare il registro voli',r:'tutti',base:()=>0,done:()=>false,
+   {t:'Tocca «Salva il volo»',p:'In fondo alla scheda.',w:'Senza Salva il volo non resta.',el:()=>gdTesto('#v-volo .btn','Salva il volo'),ok:()=>VISTA==='voli'}]; }},
+ registro:{n:'Scaricare il registro voli',r:'adm',base:()=>0,done:()=>false,
   why:{h:'Il registro voli',p:'PDF pronto da firmare per ENAC, assicurazione o cliente; Excel per i tuoi conti.',uses:['Controlli ENAC','Assicurazione','Conti di fine mese'],tm:'Ci vogliono 30 secondi.'},
   end:'Fatto: il file è scaricato (sul telefono si apre la condivisione).',
   S:[P_VOLI,{t:'Scegli il periodo',p:'Dal / Al nel riquadro «Scarica il registro».',w:'Entrano solo i voli di quei giorni.',el:()=>gdVis('#rg-da'),nx:1},
@@ -6061,7 +6174,7 @@ const GUIDES={
  segnala:{n:'Segnalare un problema',r:'tutti',base:()=>SEGN.length,done:b=>VISTA==='segnesito',
   why:{h:'Segnalare un problema',p:'Un incidente, un guasto, una perdita del segnale o un aereo vicino si segnalano subito, dal telefono. Quota 120 ti dice se va segnalato per legge, a chi ed entro quando, e ferma il drone finché l’Admin non lo controlla.',uses:['Incidenti e quasi incidenti','Guasti del drone o della batteria','Perdita del segnale, drone volato via'],tm:'Ci vuole un minuto.'},
   end:'Segnalazione inviata: leggi cosa va fatto ed entro quando. L’Admin è già avvisato.',
-  S:[{t:'Tocca «Segnala»',p:'È nella Home (o nella scheda di un volo).',w:'Prima si segnala, meglio è: per legge ci sono 72 ore, per i casi gravi pochi minuti.',el:()=>gdVis('.hsegn .btn')||gdTesto('#h-asp button','Segnala')||gdVis('#vo-segn'),ok:()=>VISTA==='segnala'||VISTA==='segnesito',vai:()=>apriSegnala()},
+  S:[{t:'Tocca «Segnala»',p:'È nella Home, in fondo (o nella scheda di un volo).',w:'Prima si segnala, meglio è: per legge ci sono 72 ore, per i casi gravi pochi minuti.',el:()=>gdVis('#h-segn')||gdVis('.hsegn .btn')||gdTesto('#h-asp button','Segnala')||gdVis('#vo-segn'),ok:()=>VISTA==='segnala'||VISTA==='segnesito',vai:()=>apriSegnala()},
    {t:'Scegli cosa è successo',p:'Dal menu: volato via, perdita del segnale, urto, aereo vicino, guasto, fuori zona.',w:'Dal tipo dipende se va segnalato a ENAC e se anche ad ANSV.',el:()=>gdVis('#sg-tipo'),ok:()=>!!(document.getElementById('sg-tipo')||{}).value},
    {t:'Scegli il drone',p:'Quello del problema.',w:'Il drone resta fermo finché l’Admin non lo sblocca.',el:()=>gdVis('#sg-drone'),ok:()=>!!(document.getElementById('sg-drone')||{}).value},
    {t:'Feriti e danni',p:'Rispondi sì o no.',w:'Se qualcuno si è fatto male è un incidente grave: va avvisata subito ANSV.',el:()=>gdVis('#sg-fer'),nx:1},
@@ -6190,8 +6303,9 @@ const GUIDES={
  invio:{n:'Invio automatico dei voli',r:'tutti',base:()=>0,done:()=>false,
   why:{h:'I voli arrivano da soli',p:'Il telefono del pilota manda a Quota 120 i file dei voli, senza caricarli a mano e senza dare la password DJI a nessuno. Su iPhone partono da soli quando chiudi DJI Fly; su Android con «Condividi › Quota 120».',uses:['Registro voli sempre aggiornato, senza dimenticanze','Ore e cicli di droni e batterie calcolati da soli','Mappa e dati del volo pronti per il rapporto al cliente'],tm:'Si prepara una volta sola: 5 minuti, con il telefono con cui voli.'},
   end:'Fatto. Da adesso, quando chiudi DJI Fly dopo un volo, i voli partono da soli ed entrano nel registro senza che nessuno debba toccare niente.',
-  S:[P_VOLI,
-   {t:'Tocca «Invio automatico dei voli»',p:'Nel riquadro «Aggiungi un volo».',w:'Qui c’è tutto quello che serve per preparare il telefono, una volta sola.',el:()=>gdVis('#vl-invio'),ok:()=>VISTA==='invio'},
+  get S(){ return [...(!ADM||COME?[{t:'Tocca «Account»',p:'È in alto a destra, con le tue iniziali.',w:'L’invio automatico si prepara da qui, una volta sola.',el:()=>gdVis('#chip'),ok:()=>VISTA==='account'||VISTA==='invio',vai:()=>apriAccount()},
+     {t:'«Invio automatico dei voli»: tocca «Imposta»',p:'Nell’elenco «Per volare servono» (se è già fatto il tasto dice «Vedi»).',w:'Qui c’è tutto quello che serve per preparare il telefono, una volta sola.',el:()=>gdVis('#ac-v-inv .btn'),ok:()=>VISTA==='invio',vai:()=>apriAccount()}]
+    :[P_VOLI,{t:'Tocca «Invio automatico dei voli»',p:'Nel riquadro «Aggiungi un volo».',w:'Qui c’è tutto quello che serve per preparare il telefono, una volta sola.',el:()=>gdVis('#vl-invio'),ok:()=>VISTA==='invio'}]),
    {t:'Tocca «iPhone»',p:'Se voli con un telefono Android, tocca «Android» e segui quei passi.',w:'Su iPhone l’invio è automatico. Su Android serve un tocco, perché Android tiene chiusa la cartella dei voli DJI alle altre app.',el:()=>gdVis('#inv-t-iphone'),ok:()=>INV_TAB==='iphone'},
    {t:'Tocca «Copia»',p:'Copia il tuo codice di invio.',w:'Il codice è solo tuo: con questo i voli arrivano con il tuo nome. Non darlo ad altri piloti.',el:()=>gdVis('.inv-cod .btn'),ok:()=>!!window._invCop},
    {t:'Tocca «Prepara il comando rapido»',p:'Si apre l’app Comandi Rapidi, già pronta.',w:'Il comando l’ha preparato l’Admin: tu devi solo aggiungerlo al tuo iPhone.',el:()=>gdVis('#inv-scorc'),ok:()=>!!window._invScorc,opt:1},
@@ -6199,7 +6313,7 @@ const GUIDES={
    {t:'La cartella giusta',p:'Sul mio iPhone › tocca una volta DJI Fly › Apri. Poi «Aggiungi comando rapido».',w:'DJI Fly salva lì un file per ogni volo. Il comando prende solo quelli e li manda.',el:()=>gdVis('#inv-p4'),nx:1},
    {t:'Partenza da sola: quando chiudi DJI Fly',p:'In Comandi Rapidi: Automazioni › Nuova automazione (o +) › App › Scegli › DJI Fly › togli «Viene aperta», metti «Viene chiusa» › Esegui immediatamente › Avanti › sotto «I miei comandi rapidi» tocca «Quota 120 voli».',w:'Così non devi ricordarti niente: finito il volo chiudi DJI Fly e i voli partono subito. Se in campo non c’è rete, partono la volta dopo che chiudi DJI Fly con la rete. Quelli già mandati non vengono rimandati.',el:()=>gdVis('#inv-p5'),nx:1},
    {t:'Prova una volta',p:'Tocca il comando «Quota 120 voli» e rispondi «Consenti sempre».',w:'La prima volta l’iPhone chiede il permesso di mandare i file a Quota 120: con «Consenti sempre» non lo chiede più.',el:()=>gdVis('#inv-p6'),nx:1},
-   {t:'Controlla «Ultimo invio»',p:'Torna qui: con il pallino verde vedi quando è arrivato l’ultimo invio.',w:'Se hai già dei voli nel telefono devono arrivare subito. Se resta grigio e hai volato, ricontrolla il codice o la cartella.',el:()=>gdVis('.inv-stato'),nx:1,opt:1}]},
+   {t:'Controlla «Ultimo invio»',p:'Torna qui: con il pallino verde vedi quando è arrivato l’ultimo invio.',w:'Se hai già dei voli nel telefono devono arrivare subito. Se resta grigio e hai volato, ricontrolla il codice o la cartella.',el:()=>gdVis('.inv-stato'),nx:1,opt:1}]; }},
  rischio:{n:'Valutazione del rischio',r:'tutti',base:()=>0,done:()=>false,
   why:{h:'Prima di un lavoro, una volta per il luogo',p:'Si guarda il posto: che zona è, chi passa, cosa c’è vicino. Da lì nascono i pericoli, ognuno con probabilità e gravità, e le misure che prendi. Alla fine c’è l’esito e un PDF firmato da tenere per ENAC, assicurazione e cliente.',uses:['Sai prima se e come si può volare','Le misure le ritrovi nel controllo prima del volo','In caso di incidente dimostri di aver valutato il rischio'],tm:'Ci vogliono 2 minuti.'},
   end:'Fatto. La valutazione resta nella scheda del lavoro e il controllo prima del volo te la ricorda sul posto.',
@@ -6438,8 +6552,8 @@ function inFirma(){ const prima=OP.firma;
   gdSheet(`<h2>La tua firma</h2><p class="gd-sub">Con il dito (o con il mouse): va da sola su moduli, valutazioni del rischio e rapporti.</p><div id="in-firma"></div><div class="row"><button class="btn sec" onclick="gdChiudiSheet()">Chiudi</button></div>`);
   padFirma('in-firma','resp'); const t=setInterval(()=>{ if(!document.getElementById('in-firma')){ clearInterval(t); return; } if(OP.firma!==prima&&OP.firma&&OP.firma.img){ clearInterval(t); inFine('Firma salvata'); } },400); }
 function inRicorda(ids){ const P=ids.map(id=>PILOTI.find(p=>p.id===id)).filter(Boolean);
-  const msg=n=>encodeURIComponent('Ciao '+n.split(' ')[0]+', apri Quota 120 e fai la tua firma: Account › La tua firma. Si fa una volta sola, con il dito. Grazie!');
-  gdSheet(`<h2>Ricorda la firma ai piloti</h2><p class="gd-sub">Ognuno firma dal suo telefono: Account › La tua firma. Mandagli il promemoria: la riga sparisce quando firmano.</p>
+  const msg=n=>encodeURIComponent('Ciao '+n.split(' ')[0]+', apri Quota 120 e fai la tua firma: in Home tocca «Firma adesso». Si fa una volta sola, con il dito. Grazie!');
+  gdSheet(`<h2>Ricorda la firma ai piloti</h2><p class="gd-sub">Ognuno firma dal suo telefono: in Home tocca «Firma adesso». Mandagli il promemoria: la riga sparisce quando firmano.</p>
     ${P.map(p=>{ const tel=String((SCHEDEP[p.id]||{}).tel||'').replace(/\D/g,''); return `<div class="in-p"><b>${ESC(p.nome)}</b><a class="btn sec mini" target="_blank" rel="noopener" href="https://wa.me/${tel?(tel.length<=10?'39'+tel:tel):''}?text=${msg(p.nome)}">WhatsApp</a></div>`; }).join('')}
     <div class="row"><button class="btn sec" onclick="gdChiudiSheet()">Chiudi</button></div>`); }
 function inVoli(){ const V=VOLI.filter(v=>v.stato!=='completo').slice(0,8);
@@ -6484,7 +6598,7 @@ function ppElenco(){ const {L,F,n}=ppStato();
 function haAiutoChiudi(){ document.querySelectorAll('.ha-menu,.ha-menu-velo').forEach(e=>e.remove()); }
 function haAiuto(b){ if(document.querySelector('.ha-menu')) return haAiutoChiudi();
   const {L,n,i}=ppStato(), ppTxt=i<0?'Tutto fatto: '+n+' su '+L.length+'. Puoi rivederli quando vuoi':'I primi passi per essere in regola: '+n+' su '+L.length+' fatti';
-  const V=[['--ok','<path d="M5 21V4h11l-2 4 2 4H5"/>',ADM&&!COME?'Prepara l’azienda':'Prima di volare',ADM&&!COME?ppTxt:ppTxt.replace('I primi passi per essere in regola','Le cose da fare una volta sola'),i<0?'ppElenco()':`ppFai(${i})`],
+  const V=[['--ok','<path d="M5 21V4h11l-2 4 2 4H5"/>',ADM&&!COME?'Prepara l’azienda':'Il tuo account',ADM&&!COME?ppTxt:ppTxt.replace('I primi passi per essere in regola','Le cose da fare una volta sola'),i<0?'ppElenco()':`ppFai(${i})`],
     ['--f-flotta','<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8 8l8 8M16 8l-8 8"/>','Guidami in un volo','Tutte le operazioni di un volo, una dopo l’altra, dalle zone D-Flight alla chiusura','guidaVolo()'],
     ['--f-attivita','<path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v3h16v-3"/>','Come arrivano i voli','Dal drone al registro: cosa fa da solo Quota 120',"gdStart('arrivano')"],
     ['--accent','<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14M12 17.5h.01"/>','Guida di questa pagina','Ti mostra a cosa serve ogni riquadro della Home',ADM&&!COME?(SOLO()?'gdStart(\'solohome\');gdGo()':'gdStart(\'homeadm\');gdGo()'):'gdStart(\'mieilavori\');gdGo()'],
@@ -6539,15 +6653,16 @@ Object.assign(GUIDES,{
    {t:'Tocca la riga o il suo tasto',p:'Il tasto dice cosa c’è da fare: «Carica», «Scrivi», «Controlla», «Registra»… Toccandolo parte la guida: ti porta nella pagina giusta e ti mostra cosa toccare, con il perché. Approvare un telefono o ricordare la firma si fa subito, con un tocco.',w:'Così non devi cercare la pagina giusta: ci pensa la guida, anche con i tasti «Guidami» spenti.',el:()=>gdVis('#ha-daf .q2-dr button')||gdVis('#ha-daf button'),nx:1},
    {t:'«Vedi tutte»',p:'In Home si vedono le prime righe; qui le apri tutte.',w:'Le meno urgenti stanno sotto, ma ci sono.',el:()=>gdVis('#h-asp a'),nx:1,opt:1}]},
  mieilavori:{n:'La tua Home: i tuoi lavori',r:'pil',base:()=>0,done:()=>false,
-  why:{h:'La Home del pilota',p:'Nella Home vedi solo le tue cose: i lavori di oggi con il tasto del controllo, i prossimi lavori, le tue scadenze.',uses:['Il giorno del volo','Sapere cosa ti aspetta','Non dimenticare una scadenza'],tm:'Un minuto per guardarla.'},
+  why:{h:'La Home del pilota',p:'Nella Home vedi solo le tue cose: se ti manca qualcosa per volare, il lavoro di oggi con il tasto del controllo, i prossimi lavori, le tue scadenze.',uses:['Il giorno del volo','Sapere cosa ti aspetta','Non dimenticare una scadenza'],tm:'Un minuto per guardarla.'},
   end:'Fatto. Ogni mattina ti basta aprire la Home.',
   get S(){ return [P_HOME,
-   {t:'Oggi',p:'Il lavoro di oggi, con luogo e drone. Verde: drone e pilota vanno bene. Rosso: c’è scritto cosa manca, e «Avvisa l’Admin».',w:'Dal lavoro di oggi parte il controllo prima del volo, già compilato.',el:()=>gdVis('#h-oggi'),nx:1},
+   {t:'Prima di volare',p:'Se ti manca una cosa che ferma il volo (firma, attestato, assicurazione) c’è un riquadro rosso in cima, con il tasto che la fa subito: per esempio «Firma adesso». Se non c’è, sei a posto.',w:'Così non scopri sul posto, davanti al cliente, che non puoi volare.',el:()=>gdVis('#h-blocco'),nx:1,opt:1},
+   {t:'Oggi',p:'Il lavoro di oggi, con luogo e drone, e un solo tasto grande: «Fai il controllo prima del volo». Rosso: c’è scritto cosa manca, e «Avvisa l’Admin».',w:'Dal lavoro di oggi parte il controllo prima del volo, già compilato.',el:()=>gdVis('#h-oggi'),nx:1},
    {t:'Prossimi lavori',p:'Tocca un lavoro per vedere tutto: luogo, drone, missione.',w:'Così ti prepari prima: batterie, attrezzatura, permessi.',el:()=>gdVis('#h-miei'),nx:1,opt:1},
-   {t:'Le mie scadenze',p:'Tocca «Le mie scadenze»: attestati, assicurazione, firma. Se una riga ha la freccia, toccala e sistemala.',w:'Con un attestato scaduto il controllo prima del volo ti ferma.',el:()=>gdVis('#h-scad>summary'),nx:1},
-   {t:'Corsi',p:'I corsi dell’azienda e quelli di Quota 120, con «Ascolta in auto».',w:'Ripassi le procedure e le regole anche in macchina.',el:()=>gdVis('#h-corsi>summary'),nx:1,opt:1},
-   {t:'Volo senza lavoro',p:'Se voli per una cosa che non è in elenco: scegli il drone, scrivi il luogo e fai il controllo.',w:'Anche un volo di prova va controllato e registrato.',el:()=>gdVis('#h-senzalav summary'),nx:1,opt:1},
-   {t:'Altro',p:'Registro voli, droni, documenti e le altre pagine che l’Admin ti fa vedere.',w:'Sono chiuse qui per lasciare spazio alle cose di tutti i giorni.',el:()=>gdVis('#h-altro>summary'),nx:1,opt:1}]; }},
+   {t:'Scadenze',p:'Tocca il riquadro «Scadenze»: attestati, assicurazione, voli da completare. Se una riga ha la freccia, toccala e sistemala.',w:'Con un attestato scaduto il controllo prima del volo ti ferma.',el:()=>gdVis('#h-scad'),nx:1},
+   {t:'Corsi',p:'Il riquadro «Corsi»: i corsi dell’azienda e quelli di Quota 120, con «Ascolta in auto».',w:'Ripassi le procedure e le regole anche in macchina.',el:()=>gdVis('#h-corsi'),nx:1,opt:1},
+   {t:'Volo senza lavoro',p:'Sotto il tasto del controllo: «Volo senza lavoro (una prova)». Scegli il drone, scrivi il luogo e fai il controllo.',w:'Anche un volo di prova va controllato e registrato.',el:()=>gdVis('#h-senzalav summary'),nx:1,opt:1},
+   {t:'Altro',p:'Il riquadro «Altro»: droni, mappa delle zone e le altre pagine che l’Admin ti fa vedere. Voli e Documenti sono nella barra in basso.',w:'Sono chiuse qui per lasciare spazio alle cose di tutti i giorni.',el:()=>gdVis('#h-altro'),nx:1,opt:1}]; }},
  nuovo:{n:'Creare un lavoro nuovo',r:'adm',base:()=>0,done:()=>false,
   why:{h:'Il tasto «Nuovo lavoro»',p:'In cima alla Home: apre i passi del lavoro. Un drone o un pilota nuovo si aggiungono dai loro riquadri (Droni, Piloti); un documento dalla barra in basso (Documenti).',uses:['Un cliente ti chiama per un lavoro','Vuoi sapere chi può fare un volo'],tm:'Ci vogliono 10 secondi per arrivare ai passi.'},
   end:'Fatto. Nella stessa riga c’è anche «Cosa vuoi fare?»: scrivi una parola e vai dritto lì.',
@@ -6788,21 +6903,25 @@ function passiVolo(){
   } else { const io=ioPilota(), M=io?accVoci(io).filter(v=>!v.ok):[];
     if(M.length){
       const okV=k=>()=>{const p=ioPilota(); const v=p&&accVoci(p).find(x=>x.k===k); return !!(v&&v.ok);};
-      S.push({t:'Prima di tutto · completa il tuo account',p:'Ti '+(M.length===1?'manca 1 cosa':'mancano '+M.length+' cose')+': '+M.map(v=>v.t.replace(/^(La tua|I tuoi|Il tuo) /,'').toLowerCase()).join(', ')+'. Tocca «Account» in alto a destra.',w:'Senza questi dati il volo non si registra e non si firma come si deve. Si fa una volta: poi questi passi spariscono, e tornano solo se un attestato o la polizza scadono.',el:()=>gdVis('#chip'),vai:()=>apriAccount(),ok:()=>VISTA==='account'||!accMancano(ioPilota())});
+      const ob=M.filter(v=>PP_PIL_T[v.k]&&PP_PIL_T[v.k][2]);
+      if(ob.length<M.length) S.push({t:'Prima di tutto · completa il tuo account',p:'Ti '+(M.length===1?'manca 1 cosa':'mancano '+M.length+' cose')+': '+M.map(v=>v.t.replace(/^(La tua|I tuoi|Il tuo) /,'').toLowerCase()).join(', ')+'.'+(ob.length?' Quelle che fermano il volo le fai dalla Home, con il loro tasto; le altre in «Account», in alto a destra.':' Tocca «Account» in alto a destra.'),w:'Senza questi dati il volo non si registra e non si firma come si deve. Si fa una volta: poi questi passi spariscono, e tornano solo se un attestato o la polizza scadono.',el:()=>ob.length?null:gdVis('#chip'),vai:()=>ob.length?vai('home'):apriAccount(),ok:()=>ob.length?VISTA==='home':VISTA==='account'||!accMancano(ioPilota()),nx:ob.length?1:undefined});
       const T={firma:['La tua firma','Firma nel riquadro con il dito e tocca «Salva la firma».','È obbligatoria: va nei documenti dei tuoi voli.','#ac-firma'],
         att:['I tuoi attestati','Tocca «Carica» e fotografa l’attestato (A1-A3, A2, STS): Quota 120 legge numero e scadenza.','Senza un attestato valido per il drone il controllo prima del volo ti ferma.','#ac-v-att'],
         rc:['L’assicurazione','Nessuna polizza ti copre: se hai una tua polizza tocca «Carica» e fotografa la quietanza, altrimenti avvisa l’Admin.','Senza assicurazione RC valida non si vola.','#ac-v-rc'],
         inv:['L’invio automatico dei voli','Tocca «Imposta» e segui i passi sul telefono che usi con l’app DJI. Se ora non puoi (per esempio sei al computer), tocca «Avanti».','Poi i voli arrivano da soli quando chiudi l’app DJI.','#ac-v-inv'],
         df:['L’accesso a D-Flight','Registrati gratis su D-Flight (se non hai già l’account), apri la mappa, entra, salva la password nel telefono, poi tocca «Fatto: sono entrato».','Senza accesso non vedi la mappa né gli avvisi del giorno.','#ac-df'],
         cont:['I tuoi contatti','Scrivi telefono ed email in «I miei dati» e tocca «Salva».','All’email arrivano gli avvisi delle tue scadenze.','#ac-dati']};
-      M.forEach(v=>{ const x=T[v.k]; if(!x) return; S.push({t:'Account · '+x[0],p:x[1],w:x[2],el:()=>VISTA==='account'?gdVis(x[3]):null,vai:()=>apriAccount(),ok:okV(v.k),nx:v.k==='inv'?1:undefined}); });
+      const HB={firma:['«Firma adesso»: si apre il riquadro, firma con il dito e tocca «Salva la firma».','#hb-firma'],att:['«Carica» e fotografa l’attestato (A1-A3, A2, STS): Quota 120 legge numero e scadenza.','#hb-r-att'],rc:['Se hai una tua polizza tocca «Carica» e fotografa la quietanza, altrimenti avvisa l’Admin.','#hb-r-rc']};
+      M.forEach(v=>{ const x=T[v.k]; if(!x) return; const h=HB[v.k];
+        if(h) S.push({t:'Home · '+x[0],p:'Nel riquadro rosso «Prima di volare» in cima alla Home: '+h[0],w:x[2],el:()=>VISTA==='home'?gdIn('#ps-firma')||gdVis(h[1]):null,vai:()=>vai('home'),ok:okV(v.k)});
+        else S.push({t:'Account · '+x[0],p:x[1],w:x[2],el:()=>VISTA==='account'?gdVis(x[3]):null,vai:()=>apriAccount(),ok:okV(v.k),nx:v.k==='inv'?1:undefined}); });
     }
     S.push(...ctrlInizio()); }
   S.push(
     ...ctrlPassi('Sul posto · '),
     {t:'Adesso si vola',p:'Il volo è nel registro «in attesa»: si completa da solo quando arriva il file DJI. Dopo il volo non devi scrivere niente.',w:'Durata, quota, percorso e batteria li scrive il file DJI: non serve scriverli a mano.',el:()=>gdVis('#vlist'),nx:1},
-    {t:'Dopo il volo · chiudi DJI Fly',p:'Se l’invio automatico è pronto, chiudendo DJI Fly il volo arriva da solo. Se non l’hai ancora preparato, tocca «Invio automatico dei voli».',w:'Si prepara una volta sola: poi non devi più caricare niente a mano.',el:()=>gdVis('#vl-invio'),nx:1},
-    {t:'Oppure carica il file a mano',get p(){ return cvP()?'In Home, nel riquadro «Oggi», tocca «Carica i voli di oggi». Nell’app, con la cartella dei voli collegata (Account › «Cartella dei voli»), i voli nuovi li prende da sola; altrimenti scegli i voli: Sfoglia › Sul mio '+APP_DISP+' › DJI Fly › FlightRecords › Apri.':'In Home, nel riquadro «Oggi», tocca «Carica i voli di oggi» e scegli i voli (iPhone: Sfoglia › Sul mio iPhone › DJI Fly › FlightRecords › Apri).'; },w:'Il volo «in attesa» si completa con i dati del file: ore del drone, cicli della batteria e mappa si aggiornano da soli.',el:()=>gdTesto('#v-voli button','Carica registri DJI'),nx:1,opt:1});
+    {t:'Dopo il volo · chiudi DJI Fly',get p(){ return 'Se l’invio automatico è pronto, chiudendo DJI Fly il volo arriva da solo. Se non l’hai ancora preparato, '+(!ADM||COME?'lo trovi in Account › «Invio automatico dei voli».':'tocca «Invio automatico dei voli».'); },w:'Si prepara una volta sola: poi non devi più caricare niente a mano.',el:()=>gdVis('#vl-invio')||gdVis('#vl-carica'),nx:1},
+    {t:'Oppure carica il file a mano',get p(){ return cvP()?'Tocca «Carica i voli di oggi» (in Voli, o in Home nel riquadro «Oggi»). Nell’app, con la cartella dei voli collegata (Account › «Cartella dei voli»), i voli nuovi li prende da sola; altrimenti scegli i voli: Sfoglia › Sul mio '+APP_DISP+' › DJI Fly › FlightRecords › Apri.':'Tocca «Carica i voli di oggi» (in Voli, o in Home nel riquadro «Oggi») e scegli i voli (iPhone: Sfoglia › Sul mio iPhone › DJI Fly › FlightRecords › Apri).'; },w:'Il volo «in attesa» si completa con i dati del file: ore del drone, cicli della batteria e mappa si aggiornano da soli.',el:()=>gdTesto('#v-voli button','Carica registri DJI')||gdVis('#vl-carica'),nx:1,opt:1});
   if(ADM) S.push(
     {t:'Chiusura · torna al lavoro',p:'«Lavori», nella barra in basso › il lavoro.',w:'Dal lavoro chiudi tutto: «Il lavoro, passo per passo» ti porta dal rapporto per il cliente alla fattura e al pagamento.',vai:()=>LAVCUR&&LAVORI.some(l=>l.id===LAVCUR)?apriLavoro(LAVCUR):apriLavori(),el:()=>doveEl('lavori')||gdVis('#lv-list li[onclick]')||gdVis('#tb-home'),ok:()=>VISTA==='lavoro'},
     {t:'Passo 3 · «Rapporto per il cliente»',p:'Il PDF con voli, mappe, ore e controlli: si manda al cliente. Quando gli hai dato anche foto e video, tocca «Consegnato».',w:'È la prova del lavoro fatto, con i dati del file DJI.',el:()=>gdVis('#lw-rap')||gdVis('#lw-p3'),nx:1},
@@ -7149,11 +7268,11 @@ Object.assign(GUIDES,{
   get end(){ const ok=!!(INVIO&&INVIO.ultimo&&INVIO.ultimo.at); return ok?'Fatto. Il tuo invio automatico funziona: dopo il volo chiudi DJI Fly e basta.':'Fatto. Ora prepara l’invio automatico sul telefono con cui voli: si fa una volta sola.<br><button class="btn mini" style="margin-top:8px" onclick="gdStop();apriInvio();setTimeout(()=>gdStart(\'invio\'),200)">Guidami nell’invio automatico</button>'; },
   S:[{t:'1 · Il drone e DJI Fly',p:'Mentre voli, l’app DJI Fly salva sul telefono un file per ogni volo: data, percorso, quota, batteria, numero di serie del drone.',w:'È la «scatola nera» del volo: tutto quello che serve al registro è già lì dentro.',el:()=>null,nx:1},
    P_VOLI,
-   {t:'2 · Il file arriva a Quota 120',p:'iPhone: con l’invio automatico parte da solo quando chiudi DJI Fly. Android: dall’app File, «Condividi» › Quota 120.',w:'Si prepara una volta sola con «Invio automatico dei voli»: poi non devi più ricordarti niente.',el:()=>gdVis('#vl-invio'),nx:1},
-   {t:'Oppure a mano',p:'«Carica registri DJI» e scegli i file del volo; se il file non c’è, «Carica la foto del volo» con la schermata del riepilogo.',w:'Va bene quando l’invio automatico non è pronto o sei al computer.',el:()=>gdTesto('#v-voli .btn','Carica registri DJI'),nx:1,opt:1},
+   {t:'2 · Il file arriva a Quota 120',get p(){ return 'iPhone: con l’invio automatico parte da solo quando chiudi DJI Fly. Android: dall’app File, «Condividi» › Quota 120.'+(!ADM||COME?' L’invio automatico si prepara in Account.':''); },w:'Si prepara una volta sola con «Invio automatico dei voli»: poi non devi più ricordarti niente.',el:()=>gdVis('#vl-invio')||gdVis('#vl-carica'),nx:1},
+   {t:'Oppure a mano',get p(){ return !ADM||COME?'«Carica i voli di oggi» e scegli i file del volo; se il file non c’è, «Aggiungi un volo a mano» in fondo alla pagina, con la schermata del riepilogo.':'«Carica registri DJI» e scegli i file del volo; se il file non c’è, «Carica la foto del volo» con la schermata del riepilogo.'; },w:'Va bene quando l’invio automatico non è pronto o sei al computer.',el:()=>gdTesto('#v-voli .btn','Carica registri DJI')||gdVis('#vl-carica'),nx:1,opt:1},
    {t:'3 · Quota 120 lo legge da solo',p:'Il pilota dal codice di invio, il drone e la batteria dal numero di serie, il percorso, la quota massima, i cicli e le celle della batteria.',w:'Nessuno deve scrivere niente: i voli normali entrano direttamente negli «Ultimi voli».',el:()=>gdVis('#vlist'),nx:1},
    {t:'4 · Si aggiorna tutto',p:'Ore del drone e del pilota, cicli delle batterie, prossima manutenzione e registro voli si aggiornano da soli.',w:'Il PDF del registro è sempre completo, pronto per ENAC, assicurazione e cliente.',el:()=>null,nx:1},
-   {t:'Prepara l’invio automatico',get p(){ return INVIO&&INVIO.ultimo&&INVIO.ultimo.at?'Il tuo è già pronto: l’ultimo invio è arrivato. Tocca «Avanti».':'Se non l’hai ancora fatto, tocca «Invio automatico dei voli» e segui i passi sul telefono con cui voli.'; },w:'Senza invio automatico i voli si caricano a mano.',el:()=>gdVis('#vl-invio'),ok:()=>VISTA==='invio',nx:1}]}
+   {t:'Prepara l’invio automatico',get p(){ return INVIO&&INVIO.ultimo&&INVIO.ultimo.at?'Il tuo è già pronto: l’ultimo invio è arrivato. Tocca «Avanti».':!ADM||COME?'Se non l’hai ancora fatto: Account (in alto a destra) › «Invio automatico dei voli» › «Imposta», e segui i passi sul telefono con cui voli.':'Se non l’hai ancora fatto, tocca «Invio automatico dei voli» e segui i passi sul telefono con cui voli.'; },w:'Senza invio automatico i voli si caricano a mano.',el:()=>gdVis('#vl-invio')||gdVis('#chip'),ok:()=>VISTA==='invio',nx:1}]}
 });
 FX.fuori=c=>{ const v=()=>VOLI.find(x=>x.id===c.vid)||{}, fatto=()=>!!String(v().note||'').trim();
   return {n:'Volo uscito dai limiti: scrivi perché',end:'Fatto: la nota resta nel volo e la riga sparisce da «Da sistemare».',done:fatto,
@@ -8499,12 +8618,18 @@ function firmaRitaglia(cv){
   const m=8, sw=x1-x0+2*m, sh=y1-y0+2*m, k=Math.min(1,480/sw,160/sh), c=document.createElement('canvas'); c.width=Math.round(sw*k); c.height=Math.round(sh*k);
   c.getContext('2d').drawImage(cv,x0-m,y0-m,sw,sh,0,0,c.width,c.height); return c.toDataURL('image/png');
 }
+/* la firma del pilota fatta sul posto (Home e controllo prima del volo): lo stesso riquadro di Account, in una finestrella; salvata, la finestrella si chiude e chi l'ha aperta si ridisegna */
+function firmaPilSheet(dopo){ const p=ioPilota(); if(!p) return; const prima=(SCHEDEP[p.id]||{}).firma;
+  gdSheet(`<h2>La tua firma</h2><p class="gd-sub">Con il dito, una volta sola: va nei documenti dei tuoi voli.</p><div id="ps-firma"></div><div class="row"><button class="btn sec" type="button" id="ps-chiudi" onclick="gdChiudiSheet()">Annulla</button></div>`);
+  FPAD['ps-firmar']=1; padFirma('ps-firma',p.id);
+  const t=setInterval(()=>{ const f=(SCHEDEP[p.id]||{}).firma; if(!document.getElementById('ps-firma')){ clearInterval(t); return; }
+    if(f&&f!==prima&&f.img){ clearInterval(t); gdChiudiSheet(); if(typeof dopo==='function') dopo(); else if(VISTA==='home') disegnaHome(); } },300); }
 function disegnaFirmaPil(p){
   const el=document.getElementById('pi-firma'); if(!el) return; const io=!ADM&&!COME&&ioPilota()&&ioPilota().id===p.id;
   if(io){ padFirma('pi-firma',p.id); return; }
   const f=(SCHEDEP[p.id]||{}).firma;
   el.innerHTML=f&&f.img?`<div class="fi-salvata"><span class="mark ok">${svg('check')}</span><img src="${ESC(f.img)}" alt="Firma di ${ESC(p.nome)}"><div style="flex:1"><b>Firma salvata</b><br><span class="nota">${f.il?'il '+ESC(f.il)+' · ':''}va nei documenti dei suoi voli</span></div></div>`
-    :`<div class="fi-manca"><b>Manca la firma</b><div class="nota">La fa ${ESC(p.nome.split(' ')[0])} dal suo telefono: tondo con le iniziali in alto › Account › La mia firma. Finché non c’è, nei PDF la sua riga della firma resta vuota.</div></div>`;
+    :`<div class="fi-manca"><b>Manca la firma</b><div class="nota">La fa ${ESC(p.nome.split(' ')[0])} dal suo telefono: in Home trova «Firma adesso». Finché non c’è, nei PDF la sua riga della firma resta vuota.</div></div>`;
 }
 
 /* ---------- richieste di permesso: ATM-09 (aeroporti) e ATM-05 (zone P e R, nulla osta) compilate con i dati di Quota 120 ---------- */
