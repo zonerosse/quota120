@@ -395,7 +395,10 @@ function unisci(full, m, n, docOk, lim) {
   // manutenzioni: i piloti con il permesso «Droni, batterie e manutenzioni» registrano gli interventi
   if (permDi(d, n).flotta && m.SCHEDE && typeof m.SCHEDE === "object") {
     for (const dr of d.DRONI || []) {
-      const x = m.SCHEDE[dr.id] || m.SCHEDE[String(dr.id)], sc = (d.SCHEDE || {})[dr.id]; if (!x || !sc || !Array.isArray(x.storia)) continue;
+      const x = m.SCHEDE[dr.id] || m.SCHEDE[String(dr.id)], sc = (d.SCHEDE || {})[dr.id]; if (!x || !sc) continue;
+      // il QR di D-Flight letto con «Leggi il QR» nell'app: si segna, non si toglie
+      if (!sc.qrLetto && DATA(x.qrLetto)) { sc.qrLetto = DATA(x.qrLetto); dr.qr = true; }
+      if (!Array.isArray(x.storia)) continue;
       const ha = new Set((sc.storia || []).map(r => JSON.stringify(r))), nuovi = [];
       for (const r of x.storia.slice(0, 10)) { if (!Array.isArray(r) || ha.has(JSON.stringify(r))) continue; const p = [DATA(r[0]) || oggi(), TX(r[1], 300)]; if (!/registrato da /.test(p[1])) p[1] += " · registrato da " + n; nuovi.push(p); }
       if (!nuovi.length) continue;
