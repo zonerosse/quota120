@@ -36,7 +36,15 @@ export async function leggi(db, sito) {
   const giri = (await db.prepare("SELECT sett, at, costo, controlli, err, fine FROM pos_giri ORDER BY sett DESC LIMIT 6").all()).results || [];
   const costoMese = giri.filter(x => (x.at || "").startsWith(mese)).reduce((a, x) => a + (x.costo || 0), 0);
   return { ok: true, sito, nome: S.nome, dom: S.dom, chiuso: !!S.chiuso, settimane: sett, parole,
-    gsc: g ? JSON.parse(g.json) : null, ultimo: giri[0] ? { at: giri[0].at, fine: !!giri[0].fine, err: (() => { try { return JSON.parse(giri[0].err || "[]"); } catch (e) { return []; } })() } : null, costoMese: Math.round(costoMese * 100) / 100 };
+    gsc: g ? JSON.parse(g.json) : null, ultimo: giri[0] ? { at: giri[0].at, fine: !!giri[0].fine, err: erroriDi(giri[0].err, S.dom, par.map(p => p.parola)) } : null, costoMese: Math.round(costoMese * 100) / 100 };
+}
+// solo gli errori di questo sito: le sue parole, il suo dominio, e quelli che valgono per tutti (credito, tetto, Google);
+// una parola saltata si dice in parole semplici
+function erroriDi(js, dom, parole) {
+  let L = []; try { L = JSON.parse(js || "[]"); } catch (e) {}
+  return L.filter(x => { const m = /^«(.+?)»: /.exec(x); if (m) return parole.includes(m[1]);
+      const d = /^([a-z0-9.-]+\.[a-z]{2,}): /.exec(x); if (d) return d[1] === dom; return true; })
+    .map(x => x.replace(/^«(.+?)»: .*\(saltata\)$/, "«$1»: Google non ha risposto in tempo, si riprova lunedì prossimo"));
 }
 function settPrima(n) { const d = new Date(); d.setUTCDate(d.getUTCDate() - n * 7); return lunedi(d); }
 export async function parola(db, sito, testo, togli) {
