@@ -4915,22 +4915,81 @@ function plAltro(){ const grp=['flotta','attivita','regole'], out=[], vo=(n,c,d,
   if(puoVedere('Valutazioni del rischio')) out.push(vo('Valutazioni del rischio',RISCHI.length?pl(RISCHI.length,'salvata','salvate'):'si fanno dalla scheda del lavoro','','apriRischi()'));
   out.push(vo('Documenti','attestati, polizze, documenti dei droni','','apriDocumenti()'));
   return out.join(''); }
+/* ---------- app Quota 120 (iPhone, iPad, Android): pezzi che ci sono solo dentro l'app ----------
+   Nell'app su iPhone e iPad il plugin nativo CartellaVoli legge la cartella dei voli di DJI Fly scelta una volta
+   e dà solo i file non ancora mandati; i file vanno a /api/arrivi come quelli scelti a mano (stessa strada).
+   Sul sito e su Android non cambia niente (su Android DJI Fly tiene i voli dove le altre app non leggono). */
+const APP_NAT=(()=>{ try{ return !!(window.Capacitor&&typeof window.Capacitor.isNativePlatform==='function'&&window.Capacitor.isNativePlatform()); }catch(e){ return false; } })();
+const APP_IOS=APP_NAT&&(()=>{ try{ return window.Capacitor.getPlatform()==='ios'; }catch(e){ return false; } })();
+const APP_DISP=/iPad/.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1)?'iPad':'iPhone';
+function cvP(){ try{ return APP_IOS&&window.Capacitor.Plugins&&window.Capacitor.Plugins.CartellaVoli||null; }catch(e){ return null; } }
+let CV=null, CV_ORA=false;   // stato della cartella (dal plugin); CV_ORA: appena collegata, il riquadro resta con la riga verde
+function cvStato(){ const P=cvP(); if(!P) return Promise.resolve(null);
+  return P.statoCartella().then(s=>{ CV=s&&s.collegata?{collegata:true,nome:s.nome||'',voli:s.voli}:{collegata:false}; return CV; }).catch(()=>{ CV={collegata:false}; return CV; }); }
+function cvRidisegna(){ try{ if(VISTA==='home') disegnaHome(); else if(VISTA==='account') disegnaAccount(); }catch(e){} }
+if(cvP()) cvStato().then(cvRidisegna);
+const cvOkI='<svg viewBox="0 0 24 24"><path d="M5 12l4 4 10-10"/></svg>';
+// riquadro in Home del pilota: finché la cartella non è collegata (e, appena collegata, con la riga verde)
+function cvCard(){ if(!cvP()||!CV||(CV.collegata&&!CV_ORA)) return '';
+  return `<div class="card ml-card" id="h-cartella"><h2>Collega i voli di DJI Fly</h2>
+    <div class="nota" style="margin-top:0">Una volta sola: scegli la cartella dove DJI Fly salva i voli. Da lì l’app li prende da sola, senza cercare i file ogni volta.</div>
+    ${CV.collegata?`<div class="ml-v ok" id="cv-ok">${cvOkI}<span>Collegata: ${ESC(CV.nome||'cartella dei voli')}</span></div>`
+      :`<button class="btn pl-big" type="button" id="cv-scegli" onclick="cvScegli(this)" style="width:100%;margin-top:8px"><span class="spin"></span>Scegli la cartella</button>
+    <div class="nota">Il percorso: Sul mio ${APP_DISP} › DJI Fly › FlightRecords</div>`}</div>`; }
+// riga in Account › Il mio telefono
+function cvRiga(){ if(!cvP()) return ''; const c=CV&&CV.collegata;
+  return `<div class="riga-i" id="ac-cv" style="align-items:center"><span>Cartella dei voli<br><small>${c?'Collegata: '+ESC(CV.nome||''):'Non collegata: i voli si scelgono a mano'}</small></span><button class="btn ${c?'sec ':''}mini" type="button" id="ac-cv-b" onclick="cvScegli(this)"><span class="spin"></span>${c?'Cambia':'Scegli'}</button></div>`; }
+function cvScegli(b){ const P=cvP(); if(!P) return; if(b){ b.classList.add('busy'); b.disabled=true; }
+  const fine=()=>{ if(b){ b.classList.remove('busy'); b.disabled=false; } };
+  P.scegliCartella().then(r=>{ fine(); if(!r||r.annullata) return;
+    if(r.collegata){ CV={collegata:true,nome:r.nome||'',voli:r.voli}; CV_ORA=true; cvRidisegna(); toast('Cartella collegata: '+(r.nome||'')); } })
+   .catch(e=>{ fine(); toast((e&&e.message)||'La cartella non si collega: riprova'); }); }
+// «Carica i voli di oggi» con la cartella collegata: solo i file nuovi, dalla data del volo in attesa più vecchio
+function cvB64(s){ const t=atob(s), u=new Uint8Array(t.length); for(let i=0;i<t.length;i++) u[i]=t.charCodeAt(i); return u; }
+async function plCaricaCartella(b){ const P=cvP(); if(!P) return;
+  if(OFFLINE||!navigator.onLine){ toast('Serve la rete per mandare i voli: riprova quando prende'); return; }
+  b.classList.add('busy'); b.disabled=true;
+  const D=VOLI.filter(v=>v.pilota===IO.n&&v.stato!=='completo'&&!v.letto).map(v=>dt(v.data)).filter(Boolean).map(d=>+d);
+  const dopo=(D.length?Math.min(...D):Date.now()-2*864e5)-864e5;   // un giorno di margine (fusi orari, voli dopo mezzanotte)
+  let nuovi=0, gia=0, errore='';
+  try{ for(let giro=0;giro<20;giro++){
+      const r=await P.leggiNuovi({dopo,max:10,maxByte:20000000});
+      if(!r||!r.collegata){ CV={collegata:false}; errore='La cartella dei voli non è più collegata: sceglila di nuovo'; break; }
+      const L=r.file||[]; if(!L.length) break;
+      const F=L.map(x=>{ const f=new File([cvB64(x.base64)],x.nome,{type:'text/plain',lastModified:x.data||Date.now()}); f._chiave=x.chiave; return f; });
+      const ok=await plInvia(F,'app '+APP_DISP);
+      if(ok.length) await P.segnaInviati({chiavi:ok.map(f=>f._chiave)}).catch(()=>{});
+      ok.forEach(f=>f._gia?gia++:nuovi++);
+      if(ok.length<F.length){ errore='Non riuscito: controlla la rete e riprova'; break; }
+      if(!r.altri) break; } }
+  catch(e){ errore=(e&&e.message)||'La cartella dei voli non si apre: sceglila di nuovo'; await cvStato(); }
+  if(!nuovi){ b.classList.remove('busy'); b.disabled=false; toast(errore||(gia?'I voli della cartella erano già arrivati':'Nessun volo nuovo nella cartella'));
+    if(errore||gia) await plDopoInvio(b,0,''); else if(!CV||!CV.collegata) cvRidisegna(); return; }
+  await plDopoInvio(b,nuovi,errore||(puoAuto()?'Trovati e salvati '+pl(nuovi,'volo nuovo','voli nuovi'):'Trovati '+pl(nuovi,'volo nuovo','voli nuovi')+': entrano nel registro appena l’Admin apre Quota 120')); }
 /* voli del pilota che aspettano il file DJI (dopo il controllo): «Carica i voli di oggi» li manda come l'invio automatico, e Quota 120 li legge e salva da solo */
 function plAttesa(){ const A=VOLI.filter(v=>v.pilota===IO.n&&v.stato!=='completo'&&!v.letto); if(!A.length||COME) return '';
   const og=oggi(), so=A.every(v=>v.data===og), ios=/iPhone|iPad/.test(navigator.userAgent); let prima=true; try{ prima=!localStorage.getItem('q120CaricaFatto'); }catch(e){}
   return `<div class="pl-att" id="pl-att"><div class="ml-v warn" style="margin-top:0"><svg viewBox="0 0 24 24"><path d="M12 7v6M12 16.5v.01"/><circle cx="12" cy="12" r="9"/></svg><span><b>${pl(A.length,'volo','voli')}${so?' di oggi':''}</b> ${A.length===1?'aspetta':'aspettano'} il file DJI</span></div>
     <button class="btn pl-big" type="button" id="pl-carica" onclick="plCaricaVoli(this)" style="width:100%;margin-top:8px"><span class="spin"></span>${so?'Carica i voli di oggi':'Carica i voli'}</button>
-    ${prima?`<div class="nota">${ios?'Si apre la scelta dei file: tocca <b>Sfoglia</b> › <b>Sul mio iPhone</b> › <b>DJI Fly</b> › <b>FlightRecords</b>, scegli i voli e tocca <b>Apri</b>. Dalla seconda volta di solito l’iPhone riapre già lì.':'Si apre la scelta dei file: cerca la cartella <b>FlightRecord</b> dell’app DJI, scegli i voli e tocca <b>Apri</b>. Più comodo: dall’app DJI usa <b>Condividi › Quota 120</b>.'}</div>`:''}</div>`; }
-function plCaricaVoli(b){ const i=document.createElement('input'); i.type='file'; i.multiple=true; i.accept='.txt,.TXT,text/plain';
+    ${cvP()&&CV&&CV.collegata?`<div class="nota">L’app prende da sola i voli nuovi dalla cartella <b>${ESC(CV.nome||'dei voli')}</b>.</div>`:prima?`<div class="nota">${cvP()?'Più comodo: collega una volta la cartella dei voli di DJI Fly (riquadro qui sotto) e l’app li prende da sola. Senza cartella si apre la scelta dei file: tocca <b>Sfoglia</b> › <b>Sul mio '+APP_DISP+'</b> › <b>DJI Fly</b> › <b>FlightRecords</b>, scegli i voli e tocca <b>Apri</b>.':ios?'Si apre la scelta dei file: tocca <b>Sfoglia</b> › <b>Sul mio iPhone</b> › <b>DJI Fly</b> › <b>FlightRecords</b>, scegli i voli e tocca <b>Apri</b>. Dalla seconda volta di solito l’iPhone riapre già lì.':'Si apre la scelta dei file: cerca la cartella <b>FlightRecord</b> dell’app DJI, scegli i voli e tocca <b>Apri</b>. Più comodo: dall’app DJI usa <b>Condividi › Quota 120</b>.'}</div>`:''}</div>`; }
+function plCaricaVoli(b){ if(cvP()&&CV&&CV.collegata) return plCaricaCartella(b);
+  const i=document.createElement('input'); i.type='file'; i.multiple=true; i.accept='.txt,.TXT,text/plain';
   i.onchange=async()=>{ const F=[...i.files].filter(f=>f&&f.size); if(!F.length) return;
     if(OFFLINE||!navigator.onLine){ importaRegistri(F); return; }
-    b.classList.add('busy'); b.disabled=true; let ok=0;
-    for(const f of F){ try{ const j=await fetch('/api/arrivi',{method:'POST',headers:{'content-type':'text/plain','x-disp':ME.id+':'+ME.k,'x-nome':encodeURIComponent(f.name),'x-via':/iPhone|iPad/.test(navigator.userAgent)?'iPhone':'a mano'},body:f}).then(r=>r.json()); if(j.ok) ok++; }catch(e){} }
-    try{ localStorage.setItem('q120CaricaFatto','1'); }catch(e){}
+    b.classList.add('busy'); b.disabled=true;
+    const ok=(await plInvia(F,/iPhone|iPad/.test(navigator.userAgent)?'iPhone':'a mano')).length;
     if(!ok){ b.classList.remove('busy'); b.disabled=false; toast('Non riuscito: controlla la rete e riprova'); return; }
-    try{ await caricaArrivi(); if(puoAuto()) await autoArrivi(); else toast(pl(ok,'volo mandato','voli mandati')+': entrano nel registro appena l’Admin apre Quota 120'); }catch(e){}
-    b.classList.remove('busy'); b.disabled=false; if(VISTA==='home') disegnaHome(); };
+    await plDopoInvio(b,ok,''); };
   i.click(); }
+// manda i file dei voli a «Voli arrivati» (/api/arrivi), uno alla volta; dà quelli arrivati (f._gia: c'era già)
+async function plInvia(F,via){ const ok=[];
+  for(const f of F){ try{ const j=await fetch('/api/arrivi',{method:'POST',headers:{'content-type':'text/plain','x-disp':ME.id+':'+ME.k,'x-nome':encodeURIComponent(f.name),'x-via':via},body:f}).then(r=>r.json()); if(j.ok){ f._gia=!!j.gia; ok.push(f); } }catch(e){} }
+  return ok; }
+// dopo l'invio: Quota 120 li legge e salva subito (se può) o li lascia all'Admin; msg: messaggio al posto di quello di sempre
+async function plDopoInvio(b,ok,msg){
+  try{ localStorage.setItem('q120CaricaFatto','1'); }catch(e){}
+  try{ await caricaArrivi(); if(puoAuto()) await autoArrivi(); else if(ok&&!msg) toast(pl(ok,'volo mandato','voli mandati')+': entrano nel registro appena l’Admin apre Quota 120'); }catch(e){}
+  b.classList.remove('busy'); b.disabled=false; if(VISTA==='home') disegnaHome(); if(msg) toast(msg); }
 function homeP(){
   const o=new Date(), p=ioPilota(), oggi0=new Date(o.toDateString());
   if(!p) return `<div class="card" style="margin-top:12px"><h2>Il tuo nome non è tra i piloti</h2><div class="nota">Chiedi all’Admin di aggiungerti in Piloti con lo stesso nome con cui entri.</div></div>`;
@@ -4959,6 +5018,7 @@ function homeP(){
   const scS=scK?{c:pl(scK,'da fare subito','da fare subito'),d:'ko'}:scW?{c:pl(scW,'in scadenza','in scadenza'),d:'warn'}:{c:sc.length?'tutto valido':'attestati, assicurazione, firma',d:''};
   return `<div class="pl-data">${GIORNI[o.getDay()]} ${o.getDate()} ${MESI_L[o.getMonth()]}<b>Ciao ${ESC((IO.n||'').split(' ')[0])}</b></div>
     <div class="card ml-card pl-oggi" id="h-oggi"><h2>Oggi</h2>${plAttesa()}${oggiL.length?oggiL.map(lavOggi).join(''):`<div class="ml-vuoto" style="padding:0 0 8px">Nessun lavoro per oggi. Se voli lo stesso, fai il controllo:</div>${form(1)}`}</div>
+    ${cvCard()}
     ${poi.length?`<div class="card ml-card" id="h-miei"><h2>Prossimi lavori <small>${poi.length}</small></h2>${poi.slice(0,6).map(rigaPoi).join('')}</div>`:''}
     ${oggiL.length?`<details class="pl-det" id="h-senzalav"><summary>Volo senza lavoro <small>una prova, un volo non in elenco</small></summary><div style="padding:0 14px 14px">${form(0)}</div></details>`:''}
     <div class="q2-h3"><span>Il resto</span></div>
@@ -6493,7 +6553,7 @@ function passiVolo(){
     ...ctrlPassi('Sul posto · '),
     {t:'Adesso si vola',p:'Il volo è nel registro «in attesa»: si completa da solo quando arriva il file DJI. Dopo il volo non devi scrivere niente.',w:'Durata, quota, percorso e batteria li scrive il file DJI: non serve scriverli a mano.',el:()=>gdVis('#vlist'),nx:1},
     {t:'Dopo il volo · chiudi DJI Fly',p:'Se l’invio automatico è pronto, chiudendo DJI Fly il volo arriva da solo. Se non l’hai ancora preparato, tocca «Invio automatico dei voli».',w:'Si prepara una volta sola: poi non devi più caricare niente a mano.',el:()=>gdVis('#vl-invio'),nx:1},
-    {t:'Oppure carica il file a mano',p:'In Home, nel riquadro «Oggi», tocca «Carica i voli di oggi» e scegli i voli (iPhone: Sfoglia › Sul mio iPhone › DJI Fly › FlightRecords › Apri).',w:'Il volo «in attesa» si completa con i dati del file: ore del drone, cicli della batteria e mappa si aggiornano da soli.',el:()=>gdTesto('#v-voli button','Carica registri DJI'),nx:1,opt:1});
+    {t:'Oppure carica il file a mano',get p(){ return cvP()?'In Home, nel riquadro «Oggi», tocca «Carica i voli di oggi». Nell’app, con la cartella dei voli collegata (Account › «Cartella dei voli»), i voli nuovi li prende da sola; altrimenti scegli i voli: Sfoglia › Sul mio '+APP_DISP+' › DJI Fly › FlightRecords › Apri.':'In Home, nel riquadro «Oggi», tocca «Carica i voli di oggi» e scegli i voli (iPhone: Sfoglia › Sul mio iPhone › DJI Fly › FlightRecords › Apri).'; },w:'Il volo «in attesa» si completa con i dati del file: ore del drone, cicli della batteria e mappa si aggiornano da soli.',el:()=>gdTesto('#v-voli button','Carica registri DJI'),nx:1,opt:1});
   if(ADM) S.push(
     {t:'Chiusura · torna al lavoro',p:'Home › «Lavoro e clienti» › «Clienti e lavori» › il lavoro.',w:'Dal lavoro chiudi tutto: «Il lavoro, passo per passo» ti porta dal rapporto per il cliente alla fattura e al pagamento.',vai:()=>LAVCUR&&LAVORI.some(l=>l.id===LAVCUR)?apriLavoro(LAVCUR):apriLavori(),el:()=>doveEl('lavori')||gdVis('#lv-list li[onclick]')||gdVis('#tb-home'),ok:()=>VISTA==='lavoro'},
     {t:'Passo 3 · «Rapporto per il cliente»',p:'Il PDF con voli, mappe, ore e controlli: si manda al cliente. Quando gli hai dato anche foto e video, tocca «Consegnato».',w:'È la prova del lavoro fatto, con i dati del file DJI.',el:()=>gdVis('#lw-rap')||gdVis('#lw-p3'),nx:1},
@@ -6848,6 +6908,17 @@ FX_ADM.push('fuori');
   .forEach(([v,k])=>{ const r=GD_SEC.find(x=>x[0]===v); if(r&&!r[2].includes(k)) r[2].push(k); });
 GD_SEC.push(['scan','Etichetta QR',['qrusa']]);
 GD_LISTE.scan=()=>qrProva();
+// guida che c'è solo nell'app su iPhone e iPad: collegare la cartella dei voli di DJI Fly (non parte mai da sola)
+if(cvP()){
+  GUIDES.cartella={n:'Collegare i voli di DJI Fly (app)',r:'pil',base:()=>0,done:()=>false,
+    why:{h:'I voli presi dalla cartella',p:'Nell’app scegli una volta la cartella dove DJI Fly salva i voli. Da lì «Carica i voli di oggi» prende da sola i voli nuovi: niente file da cercare ogni volta.',uses:['Dopo il volo un tocco e basta','Solo i voli nuovi: quelli già mandati non partono di nuovo','Ore, cicli delle batterie e mappa aggiornati da soli'],tm:'Ci vuole un minuto, una volta sola.'},
+    end:'Fatto. Dopo il volo tocca «Carica i voli di oggi» in Home: l’app prende da sola i voli nuovi dalla cartella collegata.',
+    S:[{t:'Tocca «Account»',p:'È in alto a destra, con le tue iniziali.',w:'La cartella dei voli si sceglie e si cambia da qui, nel riquadro «Il mio telefono».',el:()=>gdVis('#chip'),ok:()=>VISTA==='account',vai:()=>apriAccount()},
+     {t:'«Cartella dei voli»: tocca «Scegli»',get p(){ return 'Si apre la scelta delle cartelle: Sul mio '+APP_DISP+' › DJI Fly › FlightRecords, poi «Apri». Se è già collegata il tasto dice «Cambia»: tocca «Avanti».'; },w:'DJI Fly salva lì un file per ogni volo. L’app si ricorda la cartella: non la chiede più.',el:()=>VISTA==='account'?gdVis('#ac-cv-b'):null,vai:()=>apriAccount(),ok:()=>!!(CV&&CV.collegata&&CV_ORA),nx:1},
+     {t:'Controlla «Collegata»',p:'Sotto «Cartella dei voli» c’è il nome della cartella collegata.',w:'Se c’è scritto «Non collegata», tocca di nuovo «Scegli»: senza la cartella i voli si scelgono a mano.',el:()=>VISTA==='account'?gdVis('#ac-cv'):null,vai:()=>apriAccount(),nx:1},
+     {t:'Dopo il volo: «Carica i voli di oggi»',p:'In Home, nel riquadro «Oggi», quando un volo aspetta il file DJI.',w:'L’app manda solo i voli nuovi della cartella e Quota 120 li legge e li salva da solo.',el:()=>gdVis('#pl-carica')||gdVis('#tb-home'),nx:1,opt:1}]};
+  [['home','cartella'],['account','cartella'],['voli','cartella'],['invio','cartella']].forEach(([v,k])=>{ const r=GD_SEC.find(x=>x[0]===v); if(r&&!r[2].includes(k)) r[2].push(k); });
+}
 
 /* ---------- senza rete: si lavora con gli ultimi dati, le modifiche e i file partono quando torna la rete ---------- */
 let OFFLINE=false, T_RETE=0, CODA_OFF=[];
@@ -7908,7 +7979,7 @@ function disegnaAccount(){
     <div class="fld rq-f"><div class="k">Telefono</div><input id="ac-tel" inputmode="tel" value="${ESC(s.tel||'')}" placeholder="es. 333 1234567"></div>
     <div class="fld rq-f"><div class="k">Email (per gli avvisi delle scadenze)</div><input id="ac-email" type="email" inputmode="email" value="${ESC(s.email||'')}" placeholder="es. nome@esempio.it"></div></div>
     <div class="row"><button class="btn" id="ac-salva" type="button" onclick="accSalva(this)"><span class="spin"></span>Salva</button></div>`;
-  document.getElementById('ac-tel-c').innerHTML=`<div class="riga-i"><span>Guida</span><b><a href="#" onclick="gdToggle();disegnaAccount();return false">${gdOn()?'accesa':'spenta'} ›</a></b></div>
+  document.getElementById('ac-tel-c').innerHTML=`${cvRiga()}<div class="riga-i"><span>Guida</span><b><a href="#" onclick="gdToggle();disegnaAccount();return false">${gdOn()?'accesa':'spenta'} ›</a></b></div>
     <div class="riga-i"><span>Modalità sole</span><b><a href="#" onclick="sole(document.getElementById('sole-btn'));disegnaAccount();return false">${document.body.classList.contains('sole')?'accesa':'spenta'} ›</a></b></div>`;
 }
 function accSalva(b){
