@@ -899,7 +899,9 @@ export class Stato extends DurableObject {
         await st.delete(kk);
         if (!(await st.get("main"))) await scriviMain(b.data || {}, 1);
       } else {
-        const m = await leggiMain();
+        let m = await leggiMain();
+        // prova personale: se il visitatore entra subito come pilota, i dati di esempio li prepara il primo ingresso (come per l'Admin)
+        if (!m && PROVA && b.data && typeof b.data === "object" && !Array.isArray(b.data)) { await scriviMain(b.data, 1); m = await leggiMain(); }
         if (!m) return J({ errore: "L'Admin deve ancora preparare il programma: riprova più tardi" }, 409);
         const kk = "operr:" + (IPR || "x"), err = (await st.get(kk)) || { n: 0, t: now };
         if (now - err.t > 900000) { err.n = 0; err.t = now; }
@@ -920,7 +922,7 @@ export class Stato extends DurableObject {
       if (PROVA && ipN && !/^(127\.0\.0\.1|0:0:0:0::\/64)$/.test(ipN)) { const kn = "nuovidisp:" + ipN + ":" + Math.floor(now / 36e5), nn = (await st.get(kn)) || 0;
         if (nn >= 20) return J({ errore: "Troppi ingressi da questa rete: riprova tra un'ora" }, 429); await st.put(kn, nn + 1); }
       if (Object.keys(disp).length >= (PROVA ? LIM.dispProva : LIM.dispSpazio)) return J({ errore: "Ci sono troppi telefoni collegati: l'Admin deve togliere quelli che non si usano più (Piloti › Telefoni collegati)." }, 429);
-      disp[id] = { k, ruolo, n: ruolo === "adm" ? "Admin" : n, pid, nuovo, codice: cod4(), stato: ruolo === "adm" ? "ok" : "attesa", at: now, visto: now, app: ruolo === "adm", dev: nomeDisp(request.headers.get("user-agent")) };
+      disp[id] = { k, ruolo, n: ruolo === "adm" ? "Admin" : n, pid, nuovo, codice: cod4(), stato: ruolo === "adm" || PROVA ? "ok" : "attesa", at: now, visto: now, app: ruolo === "adm", dev: nomeDisp(request.headers.get("user-agent")) };
       await st.put("disp", disp);
       return J({ id, k, n: disp[id].n, stato: disp[id].stato, codice: disp[id].codice, asp: aspetti[disp[id].n] || ASP_BASE });
     }

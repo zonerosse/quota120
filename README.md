@@ -25,9 +25,9 @@ I dati di esempio sono inventati.
 ## Accessi (versione di prova)
 Un solo indirizzo. Si sceglie «Admin» (codice di 4 cifre, nella prova 1234) oppure «Pilota»: il pilota scrive nome e cognome
 e la sua matricola aziendale (maiuscole, spazi e accenti non contano; 5 tentativi sbagliati = 15 minuti di attesa).
-L'elenco dei piloti non si vede mai. Il primo ingresso dell'Admin prepara i dati di esempio (matricole di prova 0412, 0587, 0633).
-Il telefono del pilota resta «In attesa dell'Admin» con un codice: l'Admin lo approva una volta sola (anche «Approva tutti»)
-e da lì il pilota resta dentro. I piloti non hanno «Esci»: per fermarne uno l'Admin usa Blocca in Utenti e permessi.
+L'elenco dei piloti non si vede mai. Il primo ingresso (Admin o pilota) prepara i dati di esempio (matricole di prova 0412, 0587, 0633).
+Nella prova il telefono del pilota entra subito (non c'è un Admin vero che approva). Negli spazi veri resta «In attesa dell'Admin»
+con un codice: l'Admin lo approva una volta sola (anche «Approva tutti») e da lì il pilota resta dentro. I piloti non hanno «Esci»: per fermarne uno l'Admin usa Blocca in Utenti e permessi.
 
 ## Aspetto
 Ognuno sceglie la sua pagina iniziale col tasto Aspetto: Cabina (scura), Plancia (di base) o Flotta. La scelta resta

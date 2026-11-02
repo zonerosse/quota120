@@ -105,7 +105,8 @@
   @media(max-width:560px){#rq-dati .fgrid{grid-template-columns:1fr}}
   .fld{border:1px solid var(--line);border-radius:8px;padding:7px 9px;background:#fafbfc}
   .fld .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;display:flex;align-items:center;gap:5px}
-  .fld .v{font-weight:600;font-size:14px;margin-top:2px}
+  .fld .v{font-weight:600;font-size:14px;margin-top:2px;overflow-wrap:anywhere}
+  .fld{min-width:0}
   .fld .k svg{width:11px;height:11px;stroke:var(--ok);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
   .fill{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   @media(max-width:760px){.fill{grid-template-columns:1fr}}
@@ -505,7 +506,8 @@
   .meteo .fonte{font-size:13px;color:var(--ink3);padding:6px 14px;border-top:1px solid #E3E8EB}
 .gsw .tr{width:34px;height:19px;border-radius:10px;background:#5A7184;position:relative;flex:none}.gsw .tr::after{content:"";position:absolute;top:3px;left:3px;width:13px;height:13px;border-radius:50%;background:#fff;transition:left .2s}
   .gsw.acc .tr{background:#E8C15A}.gsw.acc .tr::after{left:18px}
-  @media(max-width:560px){.gsw>span:first-child{display:none}.gsw{padding:0 8px}}
+  @media(max-width:560px){.gsw{flex-direction:column;gap:3px;padding:0 7px}.gsw>span:first-child{font-size:11.5px;line-height:1}.gsw .tr{width:30px;height:16px}.gsw .tr::after{width:10px;height:10px}.gsw.acc .tr::after{left:17px}}
+  @media(max-width:420px){header{gap:9px}}
   .nav .gd-btn{margin-left:auto;background:#E8C15A;color:#132A3A;border:0;border-radius:8px;padding:8px 14px;font:700 15px "Barlow",Arial,sans-serif;display:inline-flex;gap:7px;align-items:center;cursor:pointer;flex:none}
   .gd-btn svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
   .gd-velo .card{max-width:520px;max-height:calc(100vh - 40px);overflow:auto}.gd-sub{color:var(--ink3);font-size:15px;margin:0 0 6px}
@@ -793,7 +795,7 @@ details.cp-ok>.checks,details.cp-ok>.cp-in{border-top:1px solid var(--line);padd
   .q2-ri{display:flex;gap:10px;align-items:center;width:100%;min-height:58px;background:none;border:0;border-top:1px solid #edf1f4;padding:11px 12px;text-align:left;font:inherit;color:inherit;cursor:pointer}
   .q2-box>.q2-ri:first-child,.q2-bt+.q2-ri{border-top:0}
   .q2-ri .k{flex:1;min-width:0}.q2-ri .k b{display:block;font-size:16.5px;font-weight:600}.q2-ri .k small{font-size:14px;color:var(--muted)}
-  .q2-v{font-size:15.5px;font-weight:700;text-align:right}.q2-v.ok{color:var(--ok)}.q2-ck{width:17px;height:17px;stroke:var(--ok);fill:none;stroke-width:2.6;vertical-align:-3px;margin-right:3px}
+  .q2-v{font-size:15.5px;font-weight:700;text-align:right;min-width:0;max-width:64%;overflow-wrap:anywhere}.q2-v.ok{color:var(--ok)}.q2-ck{width:17px;height:17px;stroke:var(--ok);fill:none;stroke-width:2.6;vertical-align:-3px;margin-right:3px}
   .q2-in{width:100%;font-size:17px!important;padding:12px!important;margin:6px 0 12px}
   .hbtn.q2-aiuto{display:none;background:#E8C15A;color:#132A3A;border-color:#E8C15A;font-weight:700}
   body.adm:not(.come) .hbtn.q2-aiuto,body.op:not(.come) .hbtn.q2-aiuto{display:inline-flex}
@@ -851,6 +853,7 @@ details.cp-ok>.checks,details.cp-ok>.cp-in{border-top:1px solid var(--line);padd
   .fld.ko{border-color:#E8B4AF;background:#FBECEA}.fld.ko input{color:var(--ko)}
   .avviso{border:1px solid var(--bordo);border-left:4px solid var(--warn);border-radius:8px;padding:10px 12px;font-size:15px;margin-top:12px;background:#fff}
   .fill input[type=text]{min-height:48px}
+  .fill input[type=date]{width:100%;min-height:48px;font-size:17px;font-family:inherit;font-weight:500;border:1.5px solid var(--bordo2);border-radius:8px;padding:10px 12px;background:#fff;color:var(--ink)}
 
   /* rapporto per il cliente */
   .spunte{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
@@ -946,6 +949,11 @@ button.pl-rg{cursor:pointer}
 .nav{position:sticky;top:env(safe-area-inset-top);z-index:45;background:var(--pagina,#E8EDF0);flex-wrap:nowrap!important;padding:8px 0;margin-top:0!important;border-bottom:1px solid var(--line);box-shadow:0 6px 8px -8px rgba(19,42,58,.25)}
 .nav .crumb{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nav .crumb a{color:var(--accent);text-decoration:none;border-bottom:1px dotted var(--accent)}
+/* percorso lungo: va su due righe (la pagina sotto, intera); «…» solo sui nomi che non ci stanno */
+.nav .crumb.corto{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:4px;row-gap:1px;white-space:normal;line-height:1.25}
+.nav .crumb.corto>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nav .crumb.corto>.cr-s{flex:none}.nav .crumb.corto>.cr-p{flex:0 1 auto;min-width:1.8em}.nav .crumb.corto>.cr-p:first-child{flex:none}
+.nav .crumb.corto>.cr-q{flex:0 0 auto;max-width:100%}
 .nav .back{flex:none}
 .nav .gd-btn{flex:none}
 @media(max-width:600px){.nav .gd-btn{font-size:0!important;gap:0!important;padding:6px!important;border-radius:50%!important;width:36px;height:36px;justify-content:center}.nav .gd-btn svg{width:22px;height:22px}}
@@ -956,11 +964,15 @@ button.pl-rg{cursor:pointer}
 .df-mini{display:block;width:100%;height:120px;border-radius:10px;margin-top:10px;background:linear-gradient(135deg,#d7e3cc,#c9dbc0);position:relative;overflow:hidden;cursor:pointer;border:1px solid var(--line);padding:0}
 .df-mini i{position:absolute;border-radius:50%;opacity:.35}
 .df-mini span{position:absolute;left:8px;bottom:8px;background:#fff;border-radius:7px;padding:4px 9px;font:600 14px Barlow,Arial,sans-serif;color:var(--accent)}
+.df-det>summary{flex-wrap:nowrap;list-style:none}.df-det>summary::-webkit-details-marker{display:none}
+.df-det>summary .sq{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:none}.df-det>summary .sq svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.df-det>summary .q2-fr{transition:transform .15s}.df-det[open]>summary .q2-fr{transform:rotate(90deg)}
 .pl-det summary .t{flex:1;min-width:0}.pl-det summary .t b{display:block;font-size:15.5px}.pl-det summary .t small{display:block;font-weight:500;color:var(--muted);font-size:13px}
 .st{font-size:12.5px;font-weight:700;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;color:var(--ok)}.st:empty{display:none}.st::before{content:'';width:9px;height:9px;border-radius:50%;background:currentColor}.st.ko{color:var(--ko)}
 .imp-g,.imp-d{background:var(--sup,#fff);border:1px solid var(--line);border-left:5px solid var(--ok);border-radius:12px;margin-top:12px}
 .imp-g.ko,.imp-d.ko{border-left-color:var(--ko)}
 .imp-d{margin-top:6px;border-radius:10px}
+.imp-esci{display:flex;align-items:center;gap:10px;width:100%;padding:9px 12px;font:inherit;color:inherit;text-align:left;cursor:pointer;border-left-color:var(--f-imp,#56616d)}.imp-esci .imp-ic{background:var(--f-imp,#56616d)}.imp-esci .imp-t{flex:1}
 .imp-in{padding:0 8px 10px}
 .imp-g>summary,.imp-d>summary{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;list-style:none}
 .imp-g>summary{padding:12px 14px}
@@ -1234,7 +1246,7 @@ body.vis-on{overflow:hidden}
       <div style="font-size:15px;color:var(--ink2)">Scrivi l’indirizzo dello spazio della tua azienda, il tuo nome e cognome e la matricola aziendale.</div>
       <div class="fill" style="grid-template-columns:1fr;margin-top:8px">
         <div><label for="ip-ind">Indirizzo dello spazio</label><input type="text" id="ip-ind" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="200" placeholder="Es. app.quota120.com/rossi-droni"></div>
-        <div><label for="ip-n">Nome e cognome</label><input type="text" id="ip-n" autocomplete="name" autocapitalize="words" maxlength="80" placeholder="Nome e Cognome"></div>
+        <div><label for="ip-n">Nome e cognome</label><input type="text" id="ip-n" autocomplete="name" autocapitalize="words" maxlength="80" placeholder="Nome e cognome"></div>
         <div><label for="ip-m">Matricola</label><input type="text" id="ip-m" autocomplete="off" autocapitalize="characters" maxlength="40" placeholder="La tua matricola aziendale" onkeydown="if(event.key==='Enter')document.getElementById('ip-ok').click()"></div></div>
       <div class="row"><button class="btn" id="ip-ok" onclick="ingPilota(this)"><span class="spin"></span>Entra</button></div>
       <div class="err" id="ip-err"></div>
@@ -1248,7 +1260,7 @@ body.vis-on{overflow:hidden}
       <div style="font-size:15px;color:var(--ink2)">Per chi vola da solo, per lavoro o per hobby. Sei operatore e pilota insieme.</div>
       <div class="tag ok" style="display:inline-block;margin-top:8px;font-size:13px">Gratis durante la prova</div>
       <div class="fill" style="grid-template-columns:1fr">
-        <div><label for="is2-n">Il tuo nome e cognome</label><input type="text" id="is2-n" autocomplete="name" autocapitalize="words" maxlength="80" placeholder="Nome e Cognome"></div>
+        <div><label for="is2-n">Il tuo nome e cognome</label><input type="text" id="is2-n" autocomplete="name" autocapitalize="words" maxlength="80" placeholder="Nome e cognome"></div>
         <div><label for="is2-e">La tua email</label><input type="text" id="is2-e" autocapitalize="none" spellcheck="false" autocomplete="email" inputmode="email" maxlength="120" placeholder="nome@esempio.it"></div>
         <div><label for="is2-df">Codice operatore D-Flight <span style="font-weight:400;color:var(--muted)">(se lo hai già: comincia con ITA-)</span></label><input type="text" id="is2-df" autocomplete="off" autocapitalize="characters" maxlength="40" placeholder="ITA-rpt…"></div>
       </div>
@@ -1274,7 +1286,7 @@ body.vis-on{overflow:hidden}
       <h2 id="iv-tit">Ti invitano in Quota 120</h2>
       <div style="font-size:15px;color:var(--ink2)">Scrivi il tuo profilo: l’azienda lo controlla e ti fa entrare.</div>
       <div class="fill" style="grid-template-columns:1fr;margin-top:8px">
-        <div><label for="iv-n">Nome e cognome</label><input type="text" id="iv-n" autocomplete="name" autocapitalize="words" maxlength="80" placeholder="Nome e Cognome"></div>
+        <div><label for="iv-n">Nome e cognome</label><input type="text" id="iv-n" autocomplete="name" autocapitalize="words" maxlength="80" placeholder="Nome e cognome"></div>
         <div><label for="iv-tel">Telefono <span style="font-weight:400;color:var(--muted)">(per gli avvisi delle scadenze)</span></label><input type="text" id="iv-tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="333 1234567"></div>
         <div><label for="iv-e">Email</label><input type="text" id="iv-e" autocapitalize="none" spellcheck="false" inputmode="email" autocomplete="email" maxlength="120" placeholder="nome@esempio.it"></div>
         <div id="iv-att"><label>I tuoi attestati <span style="font-weight:400;color:var(--muted)">(facoltativo, anche dopo)</span></label>
@@ -1301,7 +1313,7 @@ body.vis-on{overflow:hidden}
       <div class="fill" style="grid-template-columns:1fr">
         <div><label for="is-op">Nome dell'operatore <span style="font-weight:400;color:var(--muted)">(azienda, o nome e cognome)</span></label><input type="text" id="is-op" autocomplete="organization" placeholder="Es. Rossi Droni Srl"></div>
         <div><label for="is-df">Codice operatore D-Flight <span style="font-weight:400;color:var(--muted)">(se lo hai già)</span></label><input type="text" id="is-df" autocomplete="off" autocapitalize="characters" placeholder="ITA-rpt…"></div>
-        <div><label for="is-n">Il tuo nome e cognome</label><input type="text" id="is-n" autocomplete="name" autocapitalize="words" placeholder="Nome e Cognome"></div>
+        <div><label for="is-n">Il tuo nome e cognome</label><input type="text" id="is-n" autocomplete="name" autocapitalize="words" placeholder="Nome e cognome"></div>
         <div><label for="is-e">La tua email</label><input type="text" id="is-e" autocapitalize="none" spellcheck="false" autocomplete="email" inputmode="email" placeholder="nome@esempio.it"></div>
       </div>
       <label class="spunta-ok"><input type="checkbox" id="is-ok"><span>Ho letto e accetto le <a href="/condizioni" target="_blank">condizioni d'uso</a> e l'<a href="/privacy" target="_blank">informativa sulla privacy</a></span></label>
@@ -1560,7 +1572,7 @@ body.vis-on{overflow:hidden}
     <div class="card">
       <h2>I tuoi droni</h2>
       <ul class="dlist" id="dlist"></ul>
-      <div class="row"><button class="btn sec solo-adm" onclick="nuovoDrone()">Aggiungi drone <span class="privtag"><svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg>Admin</span></button></div>
+      <div class="row"><button class="btn sec solo-adm" onclick="nuovoDrone()">Aggiungi drone</button></div>
     </div>
   </div>
 
@@ -1590,7 +1602,7 @@ body.vis-on{overflow:hidden}
     <div class="card">
       <h2>I tuoi piloti</h2>
       <ul class="dlist" id="plist"></ul>
-      <div class="row no-solo"><button class="btn solo-adm" id="pl-invita" onclick="apriInvita()">Invita i tuoi piloti</button><button class="btn sec solo-adm" onclick="nuovoPilota()">Aggiungi pilota <span class="privtag"><svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg>Admin</span></button></div>
+      <div class="row no-solo"><button class="btn solo-adm" id="pl-invita" onclick="apriInvita()">Invita i tuoi piloti</button><button class="btn sec solo-adm" onclick="nuovoPilota()">Aggiungi pilota</button></div>
     </div>
   </div>
 
@@ -1645,8 +1657,8 @@ body.vis-on{overflow:hidden}
     <details class="imp-d" id="ad-avv"><summary><span class="imp-ic"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></span><span class="imp-t">Avvisi via email</span><span class="st" id="st-avv"></span><svg class="imp-ch" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></summary><div class="imp-c"><div class="nota" id="ad-avv-t"></div><div class="row"><button class="btn sec" onclick="apriAvvisi()">Apri gli avvisi</button></div></div></details>
     <details class="imp-d" id="ad-acc"><summary><span class="imp-ic"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg></span><span class="imp-t">Codice dell’Admin</span><span class="st" id="st-acc"></span><svg class="imp-ch" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></summary><div class="imp-c">
       <div class="allegato"><div class="mark ok"><svg viewBox="0 0 24 24"><path d="M5 12l4 4 10-10"/></svg></div><div class="f"><b>Codice dell'Admin</b><br>4 cifre · serve per entrare come Admin da un telefono o computer nuovo</div><button class="btn sec mini" onclick="cambiaCodice()">Cambia</button></div>
-      <div class="row"><button class="btn sec mini" onclick="esci()">Esci da questo computer</button></div>
     </div></details>
+    <button type="button" class="imp-d imp-esci" id="ad-esci" onclick="esci()"><span class="imp-ic"><svg viewBox="0 0 24 24"><path d="M10 4H5v16h5M14 8l4 4-4 4M18 12H9"/></svg></span><span class="imp-t">Esci da questo computer</span><svg class="imp-ch" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
     <details class="imp-d" id="ad-stu"><summary><span class="imp-ic"><svg viewBox="0 0 24 24"><path d="M4 6h7v13H4zM13 6h7v13h-7z"/></svg></span><span class="imp-t">Studio</span><span class="st" id="st-stu"></span><svg class="imp-ch" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></summary><div class="imp-c"><div class="nota">Lezioni sul gestionale e sulle regole del volo.</div><div class="row"><button class="btn sec" onclick="apriStudio()">Apri lo Studio</button></div></div></details>
     </div></details>
   </div>
@@ -2031,10 +2043,10 @@ body.vis-on{overflow:hidden}
       <div class="row"><button class="btn" id="zn-btn" onclick="scegliZone()"><span class="spin"></span>Carica il file delle zone</button><button class="btn sec" onclick="window.open(DFLIGHT_MAPPA,'_blank')">Apri D-Flight</button></div>
       <div class="prog" id="zn-prog" style="display:none"><span class="spin"></span><span id="zn-prog-t"></span></div>
       <div class="nota">Il file vale circa un mese (le zone cambiano con il ciclo aeronautico). Una settimana prima della scadenza arriva anche la mail di avviso.</div></div></div>
-    <details class="pl-det" id="df-d-dati"><summary><span class="t"><b>I tuoi dati D-Flight</b><small>codice operatore, abbonamento, QR dei droni</small></span><span class="st" id="df-st-dati"></span></summary><div style="padding:0 14px 14px"><div class="fgrid" id="df-op"></div><div id="df-qr" style="margin-top:8px"></div></div></details>
-    <details class="pl-det" id="df-d-sito"><summary><span class="t"><b>Sul sito D-Flight</b><small>mappa ufficiale e avvisi del giorno, profilo, QR</small></span></summary><div class="df-hub" id="df-hub" style="padding:0 14px 14px"></div></details>
-    <details class="pl-det" id="df-d-notam"><summary><span class="t"><b>Avvisi del giorno (NOTAM)</b><small>cosa sono e dove si guardano</small></span></summary><div style="padding:0 14px 14px" id="df-notam"></div></details>
-    <details class="pl-det" id="df-d-storia"><summary><span class="t"><b>Controlli D-Flight prima dei voli</b><small>chi ha guardato D-Flight, quando e cosa ha trovato</small></span><span class="st ok" id="df-st-storia"></span></summary>
+    <details class="pl-det df-det" id="df-d-dati"><summary><span class="sq" style="background:var(--f-regole)"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg></span><span class="t"><b>I tuoi dati D-Flight</b><small>codice operatore, abbonamento, QR dei droni</small></span><span class="st" id="df-st-dati"></span><svg class="q2-fr" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></summary><div style="padding:0 14px 14px"><div class="fgrid" id="df-op"></div><div id="df-qr" style="margin-top:8px"></div></div></details>
+    <details class="pl-det df-det" id="df-d-sito"><summary><span class="sq" style="background:var(--f-regole)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg></span><span class="t"><b>Sul sito D-Flight</b><small>mappa ufficiale e avvisi del giorno, profilo, QR</small></span><svg class="q2-fr" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></summary><div class="df-hub" id="df-hub" style="padding:0 14px 14px"></div></details>
+    <details class="pl-det df-det" id="df-d-notam"><summary><span class="sq" style="background:var(--f-regole)"><svg viewBox="0 0 24 24"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg></span><span class="t"><b>Avvisi del giorno (NOTAM)</b><small>cosa sono e dove si guardano</small></span><svg class="q2-fr" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></summary><div style="padding:0 14px 14px" id="df-notam"></div></details>
+    <details class="pl-det df-det" id="df-d-storia"><summary><span class="sq" style="background:var(--f-regole)"><svg viewBox="0 0 24 24"><path d="M9 5h10M9 12h10M9 19h10"/><path d="M4 5l1 1 2-2M4 12l1 1 2-2M4 19l1 1 2-2"/></svg></span><span class="t"><b>Controlli D-Flight prima dei voli</b><small>chi ha guardato D-Flight, quando e cosa ha trovato</small></span><span class="st ok" id="df-st-storia"></span><svg class="q2-fr" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></summary>
       <div style="padding:0 14px 14px"><ul class="storia" id="df-zone"></ul></div></details>
   </div>
 
@@ -2705,7 +2717,7 @@ function apriDroni(){
     const s=SCHEDE[d.id], st=statoDrone(d);
     return `<li onclick="apriDrone(${NID(d.id)},'droni')">
       <div class="ico" style="background:var(--f-flotta)">${svg('drone')}</div>
-      <div class="main"><div class="a">${ESC(d.nome)}</div><div class="b">Classe ${ESC(s.classe)} · ${ESC(s.ore)} · ${ESC(s.voli)} voli${d.chi?' · <b style="color:var(--accent)">'+ESC(chiTesto(d).replace('Ce l’ha','ce l’ha'))+'</b>':''}</div></div>
+      <div class="main"><div class="a">${ESC(d.nome)}</div><div class="b">${/^senza classe/i.test(s.classe||'')?ESC(s.classe):'Classe '+ESC(s.classe)} · ${ESC(s.ore)} · ${ESC(s.voli)} voli${d.chi?' · <b style="color:var(--accent)">'+ESC(chiTesto(d).replace('Ce l’ha','ce l’ha'))+'</b>':''}</div></div>
       <span class="tag ${CLS(st)}">${ESC(LIVTXT[st])}</span></li>`;
   }).join('');
   document.getElementById('dr-lqr-w').innerHTML=lqBtn('dr-lqr');   // solo nell'app
@@ -3474,7 +3486,7 @@ let INV=[
 ];
 function apriInvent(){
   document.getElementById('iv-list').innerHTML=INV.map(k=>`<div class="gruppo" style="padding-top:14px">${ESC(k.kit)}</div>`+
-    k.ogg.map(o=>`<details class="batt"${o[2]!=='ok'?' open':''}><summary>
+    k.ogg.map(o=>`<details class="batt"><summary>
       <div class="ico" style="background:var(--f-flotta)">${svg('invent')}</div>
       <div class="main"><div class="a">${ESC(o[1])}</div><div class="b">${ESC(o[0])}</div></div>
       <span class="tag ${CLS(o[2])}">${o[2]==='ok'?'A posto':'Da riordinare'}</span>${chev}</summary>
@@ -3507,7 +3519,7 @@ function apriDflight(){
     `<div class="df-tip">${DF_ENTRA()}</div>`;
   const chk='<svg viewBox="0 0 24 24">'+IC.check+'</svg>';
   if(ADM&&!COME) document.getElementById('df-d-dati').open=true;
-  document.getElementById('df-op').innerHTML=(ADM&&!COME?`<div class="q2-box" style="grid-column:1/-1;margin:0 0 4px">${q2RigaOp('codice')+q2RigaOp('dfReg')+q2RigaOp('dfAbb')}</div>`:'')+(ADM&&!COME?[]:[['Codice operatore',cod?OP.codice:'da inserire',cod],['Registrato il',OP.dfReg||'—',!!OP.dfReg,!OP.dfReg],['Abbonamento',OP.dfAbb?'fino al '+OP.dfAbb:'da inserire',abb==='ok']]).concat([['QR sui droni',qrOk+' su '+DRONI.length,qrOk===DRONI.length],['File delle zone',ZONEINFO?'del '+ZONEINFO.data+(zg!=null&&zg<=7?' · da aggiornare':''):'da caricare',!!ZONEINFO&&!(zg!=null&&zg<=7)]])
+  document.getElementById('df-op').innerHTML=(ADM&&!COME?`<div class="q2-box" style="grid-column:1/-1;margin:0 0 4px">${q2RigaOp('codice')+q2RigaOp('dfReg')+q2RigaOp('dfAbb')}</div>`:'')+(ADM&&!COME?[]:[['Codice operatore',cod?OP.codice:'da inserire',cod],['Registrato il',OP.dfReg||'—',!!OP.dfReg,!OP.dfReg],['Abbonamento',OP.dfAbb?'fino al '+OP.dfAbb:'da inserire',abb==='ok']]).concat([['QR sui droni',qrOk+' su '+DRONI.length,qrOk===DRONI.length]])
     .map(x=>`<div class="fld"><div class="k">${x[2]?chk:''}${x[0]}</div><div class="v" style="${x[2]?'':x[3]?'color:var(--muted);font-weight:500':'color:var(--ko)'}">${ESC(x[1])}</div></div>`).join('');
   document.getElementById('df-qr').innerHTML=DRONI.filter(d=>!d.qr).map(d=>`<div class="allegato"><div class="mark warn">${svg('esc')}</div><div class="f"><b>${ESC(d.nome)}</b><br>QR da applicare</div><button class="btn sec mini" onclick="apriDrone(${NID(d.id)},'droni')">Scheda</button></div>`).join('');
   document.getElementById('df-notam').innerHTML=`<div style="font-size:15px">Si vedono sulla <b>mappa D-Flight</b>: nel controllo prima del volo il pilota la apre e segna cosa ha trovato. Come controllo in più c’è anche una mappa non ufficiale, senza account e in inglese.</div>
@@ -3769,7 +3781,8 @@ function contaRiquadri(){
   TILES.flotta[1].c=pl(BATT.length,'batteria','batterie'); TILES.flotta[1].d=BATT.some(b=>bGuarda(b))?'warn':'';
   TILES.flotta[0].d=DRONI.some(d=>SCHEDE[d.id]&&SCHEDE[d.id].man&&statoDrone(d)!=='ok')?(DRONI.some(d=>SCHEDE[d.id]&&statoDrone(d)==='ko')?'ko':'warn'):'';
   TILES.attivita[0].c=pl(PILOTI.length,'pilota','piloti'); TILES.attivita[0].d=PILOTI.some(p=>statoPilota(p)!=='ok')?'warn':'';
-  TILES.attivita[1].c=pl(VOLI.length,'volo','voli'); TILES.attivita[1].d=VOLI.some(v=>v.stato!=='completo'&&(ADM||v.pilota===IO.n))?'warn':'';
+  { const inc=VOLI.filter(v=>v.stato!=='completo'&&(ADM||v.pilota===IO.n)).length;   // giallo solo col problema scritto
+    TILES.attivita[1].c=inc?pl(inc,'volo da completare','voli da completare'):pl(VOLI.length,'volo','voli'); TILES.attivita[1].d=inc?'warn':''; }
   TILES.regole[0].d=DRONI.some(d=>d.cat==='specific')&&!AUT_ENAC.agricola?'ko':'';
   TILES.regole[1].d=OP.dfAbb&&giorni(OP.dfAbb)<60?'warn':'';
   TILES.regole[2].c=pl(CAMPI.length,'campo','campi');
@@ -3830,7 +3843,9 @@ function crumbLinks(){
   const nome=t=>t==='Home Admin'?'Home':t;
   const pezzo=(t,i)=>i===parti.length-1?`<b>${ESC(t)}</b>`:CRUMB_F[i]?`<a href="#" onclick="crumbVai(${i});return false">${ESC(nome(t))}</a>`:`<span>${ESC(t)}</span>`;
   el.innerHTML=parti.map(pezzo).join(' › ')+tieni; el.classList.remove('corto');
-  if(el.scrollWidth>el.clientWidth+2&&parti.length>2){ el.innerHTML=pezzo(parti[0],0)+' › <a href="#" class="cr-tre" onclick="crumbMenu(event);return false">…</a> › '+pezzo(parti[parti.length-1],parti.length-1)+tieni; el.classList.add('corto'); }
+  // troppo lungo: Home › genitore vero (toccabile) › pagina; i nomi lunghi si accorciano con «…», la pagina resta leggibile
+  if(el.scrollWidth>el.clientWidth&&parti.length>2){ const n=parti.length, cr=(t,i)=>`<span class="cr-p">${pezzo(t,i)}</span>`, se='<span class="cr-s">›</span>';
+    el.innerHTML=cr(parti[0],0)+se+cr(parti[n-2],n-2)+se+`<span class="cr-q">${pezzo(parti[n-1],n-1)}</span>`+tieni; el.classList.add('corto'); }
 }
 function crumbVai(i){ const f=CRUMB_F[i]; document.querySelectorAll('.cr-menu').forEach(x=>x.remove()); if(f) f(); }
 function crumbMenu(e){ document.querySelectorAll('.cr-menu').forEach(x=>x.remove());
@@ -3982,8 +3997,8 @@ function scegliRuolo(r){
   }
   // il pilota scrive nome e matricola: l'elenco dei piloti non si vede mai
   f.innerHTML=`<div class="fill" style="grid-template-columns:1fr">
-      <div><label for="lg-n">Nome e cognome</label><input type="text" id="lg-n" autocomplete="name" autocapitalize="words" placeholder="Nome e Cognome" onkeydown="if(event.key==='Enter')document.getElementById('lg-m').focus()"></div>
-      <div><label for="lg-m">Matricola</label><input type="text" id="lg-m" autocomplete="off" autocapitalize="characters" placeholder="La tua matricola Aziendale" onkeydown="if(event.key==='Enter')document.getElementById('lg-ok').click()"></div></div>
+      <div><label for="lg-n">Nome e cognome</label><input type="text" id="lg-n" autocomplete="name" autocapitalize="words" placeholder="Nome e cognome" onkeydown="if(event.key==='Enter')document.getElementById('lg-m').focus()"></div>
+      <div><label for="lg-m">Matricola</label><input type="text" id="lg-m" autocomplete="off" autocapitalize="characters" placeholder="La tua matricola aziendale" onkeydown="if(event.key==='Enter')document.getElementById('lg-ok').click()"></div></div>
     <div class="row"><button class="btn" id="lg-ok" onclick="richiesta('op',this)"><span class="spin"></span>Entra</button></div><div class="err" id="lg-err"></div>`;
   setTimeout(()=>document.getElementById('lg-n').focus(),50);
 }
@@ -4002,7 +4017,7 @@ function richiesta(r,b){
   const err=document.getElementById('lg-err'), mostra=t=>{err.innerHTML=t;err.style.display='block';};
   err.style.display='none';
   if(r==='adm'){body.pin=document.getElementById('lg-pin').value.trim();body.data=JSON.parse(BASE);}
-  else{ body.n=document.getElementById('lg-n').value; body.matr=document.getElementById('lg-m').value;
+  else{ body.n=document.getElementById('lg-n').value; body.matr=document.getElementById('lg-m').value; if(PROVA&&BASE) body.data=JSON.parse(BASE);   // prova: il primo ingresso prepara i dati di esempio
     if(!body.n.trim()||!body.matr.trim()){mostra('Scrivi nome e cognome e la tua matricola.');return;} }
   b.disabled=true;b.classList.add('busy');
   api('POST','/api/disp/richiesta',body).then(j=>{
@@ -4172,7 +4187,7 @@ function nuovoPilota(){
     PERM[id]={admin:false,voliTutti:false,flotta:true,documenti:false,clienti:false,prezzi:false,enac:false,agri:false};
     ricalcola(); apriPilota(id); toast('Ora carica i suoi attestati da Documenti');};
   f.check=v=>PILOTI.some(p=>normM(p.nome)===normM(v.nome))?'C’è già un pilota con questo nome':(d=>d?'Questa matricola è già di '+d.nome:'')(matrDoppia(v.matr));
-  modulo('Nuovo pilota',[{k:'nome',l:'Nome e cognome',req:1,p:'Nome e Cognome'},{k:'matr',l:'Matricola aziendale (serve per entrare)',req:1},{k:'ruolo',l:'Ruolo',t:'sel',o:['Pilota','Pilota agricolo','Osservatore'],v:'Pilota',req:1}],f);
+  modulo('Nuovo pilota',[{k:'nome',l:'Nome e cognome',req:1,p:'Nome e cognome'},{k:'matr',l:'Matricola aziendale (serve per entrare)',req:1},{k:'ruolo',l:'Ruolo',t:'sel',o:['Pilota','Pilota agricolo','Osservatore'],v:'Pilota',req:1}],f);
 }
 function nuovoDrone(){
   const f=v=>{const id=nuovoId(), spec=v.cat==='specific';
@@ -4557,7 +4572,7 @@ function disegnaPannello(){
     {i:svg('pilota'),n:'Utenti e permessi',c:'chi vede cosa',go:"apriAdmin('ad-ute')"},
     {i:svg('pilota'),n:'Aggiungi pilota',c:'nuovo utente',go:'nuovoPilota()'},
     {i:svg('drone'),n:'Aggiungi drone',c:'nuovo drone',go:'nuovoDrone()'},
-    {i:'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>',n:'Avvisi via email',c:AVVISI.adm&&AVVISI.adm.email?(AVVISI.adm.on===false?'spenti':'attivi'):'da impostare',d:AVVISI.adm&&AVVISI.adm.email?'':'warn',go:'apriAvvisi()'},
+    {i:'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>',n:'Avvisi via email',c:AVVISI.adm&&AVVISI.adm.email?(AVVISI.adm.on===false?'spenti':'attivi'):avAdmDef()?'email pronta: tocca Salva':'da impostare',d:AVVISI.adm&&AVVISI.adm.email?'':'warn',go:'apriAvvisi()'},
     {i:svg('dflight'),n:'Dati dell’operatore',c:OP.resp?(OP.nome||'').replace(/ \(dati di esempio\)/,''):'da completare',d:OP.resp?'':'warn',go:"apriAdmin('ad-op')"},
     {i:'<svg viewBox="0 0 24 24"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg>',n:'Zone di volo',c:ZONEINFO?'aggiornate al '+ZONEINFO.data:'da caricare',d:!ZONEINFO||livZone()!=='ok'?'warn':'',go:'apriZone()'},
     (()=>{const ap=SEGN.filter(x=>x.stato==='aperta'&&x.liv!=='facolt'), fe=SEGN.filter(x=>x.fermo).length; return {i:'<svg viewBox="0 0 24 24"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg>',n:'Segnalazioni',c:ap.length?pl(ap.length,'da segnalare','da segnalare'):fe?pl(fe,'drone fermo','droni fermi'):'nessuna aperta',d:ap.length?'ko':fe?'warn':'',go:'apriSegnalazioni()'};})(),
@@ -4602,21 +4617,25 @@ function indHome(){ if(!ppNuovo()||SOLO()) return '';
   return `<div class="card ind-home" id="h-ind"><h2>L’indirizzo del tuo spazio</h2><div class="ind-piloti">${ESC(indPiloti())}</div>
     <div class="row"><button type="button" class="btn sec mini" onclick="copiaInd()">Copia</button><button type="button" class="btn sec mini" onclick="waInd()">WhatsApp</button><button type="button" class="btn sec mini" onclick="apriInvita()">Invita i piloti</button></div></div>`; }
 let PIN_INI=false;
+// email già nota dell'Admin (quella con cui entra, o quella dei dati dell'azienda): proposta negli avvisi finché non ne salva una
+// (gli avvisi partono lo stesso solo verso indirizzi confermati: lo decide il server)
+function avAdmDef(){ const v=[(AVVISI&&AVVISI.adm||{}).email,IO&&IO.email,OP.email].find(x=>x&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(x).trim())); return v?String(v).trim():''; }
 function statiImp(){ if(!document.getElementById('ad-g')) return;
   const S=(k,ok,t)=>{ const e=document.getElementById('st-'+k); if(!e) return ok; e.className='st'+(ok?' ok':' ko'); e.textContent=t; const d=e.closest('details'); if(d) d.classList.toggle('ko',!ok); return ok; };
   const att=DISP.filter(x=>x.stato==='attesa').length;
   const opM=[!OP.nome,!OP.codice||/x{3}/i.test(OP.codice),!OP.resp,!OP.dfReg,!OP.dfAbb,!OP.email,!OP.tel].filter(Boolean).length;
   const av=AVVISI&&AVVISI.adm&&AVVISI.adm.email&&AVVISI.adm.on!==false;
   const r=[S('tel',!att,att?pl(att,'da approvare','da approvare'):'a posto'),S('op',!opM,opM?pl(opM,'da completare','da completare'):'a posto'),S('firma',!!(OP.firma&&OP.firma.img),OP.firma&&OP.firma.img?'a posto':'da fare'),
-    S('ute',PILOTI.length>0,PILOTI.length?'a posto':'aggiungi un pilota'),S('avv',!!av,av?'a posto':'email da inserire'),S('acc',!PIN_INI,PIN_INI?'da cambiare':'a posto'),
+    S('ute',PILOTI.length>0,PILOTI.length?'a posto':'aggiungi un pilota'),S('avv',!!av,av?'a posto':avAdmDef()?'da attivare: tocca Salva':'email da inserire'),S('acc',!PIN_INI,PIN_INI?'da cambiare':'a posto'),
     S('stu',true,stuFatte().length+' su '+LEZIONI.length+' fatte')];
   const n=r.filter(x=>!x).length; S('g',!n,n?n+' da sistemare':'a posto');
-  const t=document.getElementById('ad-avv-t'); if(t) t.textContent=av?'Le scadenze arrivano a '+AVVISI.adm.email+', ogni mattina alle '+(AVVISI.ora||7)+'.':'Scrivi l’email dove ricevere le scadenze (attestati, polizze, manutenzioni, abbonamento).';
+  const t=document.getElementById('ad-avv-t'); if(t) t.textContent=av?'Le scadenze arrivano a '+AVVISI.adm.email+', ogni mattina alle '+(AVVISI.ora||7)+'.':avAdmDef()?'Le scadenze possono arrivare a '+avAdmDef()+': apri e tocca «Salva» per attivare gli avvisi.':'Scrivi l’email dove ricevere le scadenze (attestati, polizze, manutenzioni, abbonamento).';
 }
 function apriAdmin(sez,apri){
   if(!ADM) return;
   disegnaDisp(); disegnaPermAdm(apri); disegnaDatiOp(false); padFirma('ad-firma-c','resp'); document.getElementById('ad-firme-sp').innerHTML=spuntaFirme(); statiImp();
-  vai('admin','Impostazioni');
+  // Telefoni e firme stanno nel gruppo Piloti: il percorso lo dice (prima mostrava «Ufficio › Impostazioni» anche arrivando da Piloti)
+  vai('admin',{'ad-tel':'Piloti &rsaquo; Telefoni collegati','ad-firma':'Piloti &rsaquo; Le firme'}[sez]||'Impostazioni');
   if(sez){ const g=document.getElementById('ad-g'); if(g) g.open=true; const e=document.getElementById(sez); if(e&&e.tagName==='DETAILS') e.open=true; setTimeout(()=>{ e&&e.scrollIntoView({behavior:'smooth',block:'start'}); },60); }
 }
 function disegnaPermAdm(apri){
@@ -5199,8 +5218,9 @@ const PP_PIL_T={firma:['La tua firma','con il dito, una volta sola',1,'#ac-firma
   df:['Un account su D-Flight','gratis: serve per guardare la mappa prima di volare',0,'#ac-df','Registrati gratis su d-flight.it (se non hai già l’account), apri la mappa, entra e salva la password nel telefono. Poi tocca «Fatto: sono entrato».','Prima di ogni volo guardi la mappa: dice se lì si vola e se ci sono avvisi del giorno.','dflight'],
   cont:['Telefono e email','per ricevere gli avvisi delle tue scadenze',0,'#ac-dati','Scrivi telefono ed email in «I miei dati» e tocca «Salva».','Ti arriva una mail prima che scada l’attestato o l’assicurazione.'],
   inv:['L’invio automatico dei voli','così i voli arrivano da soli quando chiudi l’app DJI',0,'#ac-v-inv','Tocca «Imposta» e segui i passi sul telefono che usi con l’app DJI.','Non dovrai più caricare i voli a mano.']};
-function ppPil(){ return ['firma','att','rc','df','cont','inv'].map(k=>{ const x=PP_PIL_T[k]; return {k,t:x[0],w:x[1],ob:x[2],sg:x[6],ok:()=>ppAcc(k),S:[{t:x[0],p:x[4],w:x[5],el:()=>VISTA==='account'?gdVis(x[3]):null,vai:()=>apriAccount(),ok:()=>ppAcc(k)}]}; })
-  .concat([{k:'volo',t:'Prova un volo con la guida',w:'il controllo prima del volo, passo per passo',ok:()=>VOLI.some(v=>v.pilota===IO.n),guida:'unvolo'}]); }
+// stessa lista (e stesso conto) di Account › «Per volare servono»: le voci vengono da accVoci
+function ppPil(){ const p=ioPilota(); return (p?accVoci(p).map(v=>v.k).filter(k=>PP_PIL_T[k]):[]).map(k=>{ const x=PP_PIL_T[k]; return {k,t:x[0],w:x[1],ob:x[2],sg:x[6],ok:()=>ppAcc(k),S:[{t:x[0],p:x[4],w:x[5],el:()=>VISTA==='account'?gdVis(x[3]):null,vai:()=>apriAccount(),ok:()=>ppAcc(k)}]}; })
+; }
 function ppLista(){ return ADM&&!COME?(SOLO()?ppSolo():PP_ADM):ioPilota()?ppPil():[]; }
 function ppProssimo(){ return ppLista().findIndex(x=>!x.ok()); }
 function ppFai(i){
@@ -5795,7 +5815,7 @@ const GUIDES={
      {t:'Da sistemare',p:'In cima alla scheda ci sono solo le cose che mancano, con il tasto per farle. Firma, D-Flight e invio dei voli li completa lui dal suo telefono, in «Account».',w:'Se manca la firma o un attestato, è qui che lo vedi subito.',el:()=>gdVis('#pi-daf-w'),nx:1,opt:1},
      {t:'Firma, contatti e D-Flight',p:'Tocca il gruppo per aprirlo: spunta verde fatto, rossa da fare.',w:'Il riassunto del gruppo diventa rosso quando dentro manca qualcosa.',el:()=>gdVis('#pg-firma'),nx:1}];
    return [{t:'Tocca «Account»',p:'È in alto a destra, con le tue iniziali. Il pallino rosso vuol dire che manca qualcosa.',w:'Qui ci sono tutte le cose che servono per volare.',el:()=>gdVis('#chip'),ok:()=>VISTA==='account',vai:()=>apriAccount()},
-     {t:'Per volare servono',p:'Cinque cose in ordine. Verde: fatto. Rosso: da fare.',w:'La barra ti dice a che punto sei.',el:()=>gdVis('#ac-voci'),nx:1},
+     {t:'Per volare servono',p:'Le cose da fare, in ordine. Verde: fatto. Rosso: da fare.',w:'La barra ti dice a che punto sei.',el:()=>gdVis('#ac-voci'),nx:1},
      {t:'1 · La tua firma',p:'Firma nel riquadro con il dito e tocca «Salva la firma».',w:'È la prima cosa: va nei documenti dei tuoi voli, ed è obbligatoria.',el:()=>gdVis('#ac-firma'),ok:()=>{const p=ioPilota();return !!(p&&(SCHEDEP[p.id]||{}).firma);},nx:1},
      {t:'2 · I tuoi attestati',p:'«Vedi» apre la tua scheda. «Carica»: fotografa l’attestato, Quota 120 legge numero e scadenza.',w:'Senza l’attestato giusto il controllo prima del volo ti ferma.',el:()=>gdVis('#ac-v-att'),nx:1},
      {t:'3 · Assicurazione RC',p:'Di solito ti copre la polizza aziendale. Se hai una tua polizza, «Carica» la quietanza.',w:'Senza assicurazione valida non si vola.',el:()=>gdVis('#ac-v-rc'),nx:1},
@@ -8293,8 +8313,8 @@ function disegnaAccount(){
   document.getElementById('ac-dati').innerHTML=`<div class="fgrid">
     <div class="fld"><div class="k">Nome e cognome</div><div class="v">${ESC(p.nome)}</div></div>
     <div class="fld"><div class="k">Matricola (la cambia l’Admin)</div><div class="v">${ESC(p.matr||'—')}</div></div>
-    <div class="fld rq-f"><div class="k">Telefono</div><input id="ac-tel" inputmode="tel" value="${ESC(s.tel||'')}" placeholder="es. 333 1234567"></div>
-    <div class="fld rq-f"><div class="k">Email (per gli avvisi delle scadenze)</div><input id="ac-email" type="email" inputmode="email" value="${ESC(s.email||'')}" placeholder="es. nome@esempio.it"></div></div>
+    <div class="fld rq-f" style="grid-column:1/-1"><div class="k">Telefono</div><input id="ac-tel" inputmode="tel" value="${ESC(s.tel||'')}" placeholder="es. 333 1234567"></div>
+    <div class="fld rq-f" style="grid-column:1/-1"><div class="k">Email (per gli avvisi delle scadenze)</div><input id="ac-email" type="email" inputmode="email" value="${ESC(s.email||'')}" placeholder="es. nome@esempio.it"></div></div>
     <div class="row"><button class="btn" id="ac-salva" type="button" onclick="accSalva(this)"><span class="spin"></span>Salva</button></div>`;
   document.getElementById('ac-tel-c').innerHTML=`${cvRiga()}<div class="riga-i"><span>Guida</span><b><a href="#" onclick="gdToggle();disegnaAccount();return false">${gdOn()?'accesa':'spenta'} ›</a></b></div>
     <div class="riga-i"><span>Modalità sole</span><b><a href="#" onclick="sole(document.getElementById('sole-btn'));disegnaAccount();return false">${document.body.classList.contains('sole')?'accesa':'spenta'} ›</a></b></div>`;
@@ -8965,7 +8985,7 @@ function apriAvvisi(){
     <div class="main"><div class="a">${ESC(nome)}</div><div class="b">${cosa}<span id="av-cf-${ESC(id)}"></span></div></div>
     <input type="email" id="av-e-${ESC(id)}" value="${q(email)}" placeholder="${adm?'la tua email':'email del pilota'}" autocomplete="off">
     <label class="interr" title="Avvisi accesi o spenti"><input type="checkbox" id="av-on-${ESC(id)}" ${on?'checked':''}><span></span></label></li>`;
-  document.getElementById('av-chi').innerHTML=riga('adm','A','Tu, Admin','tutte le scadenze: piloti, assicurazione, D-Flight, manutenzioni',(A.adm||{}).email,(A.adm||{}).on!==false,true)+
+  document.getElementById('av-chi').innerHTML=riga('adm','A','Tu, Admin','tutte le scadenze: piloti, assicurazione, D-Flight, manutenzioni',avAdmDef(),(A.adm||{}).on!==false,true)+
     PILOTI.map(p=>{const c=(A.piloti||{})[p.id]||{}, pe=(SCHEDEP[p.id]||{}).email||'';return riga(p.id,iniziali(p.nome),p.nome,'solo le sue: attestati e patentino'+(!c.email&&pe?' · email scritta dal pilota':''),c.email||pe,c.on!==undefined?!!c.on:!!pe,false);}).join('');
   const G=A.giorni||[60,30,7,0];
   document.getElementById('av-giorni').innerHTML=[60,30,7,0].map(g=>`<label><input type="checkbox" value="${g}" ${G.includes(g)?'checked':''}>${g?g+' giorni':'il giorno stesso'}</label>`).join('');
@@ -9411,13 +9431,14 @@ let NV={};
 function nuovoLavoro(){ NV={}; nvDisegna(); vai('nvolo','Lavori &rsaquo; Nuovo lavoro'); }
 function nvScegli(k,v){ const ord=['dove','perche','d','p']; if(k==='dove') delete NV.sperim; if(v==null) delete NV[k]; else NV[k]=v; ord.slice(ord.indexOf(k)+1).forEach(x=>delete NV[x]); if(k==='dove'&&v!=null&&VD.find(x=>x.k===v).agri) NV.perche='-'; nvDisegna(true); }
 function nvDisegna(scorri){
-  const D=VD.find(x=>x.k===NV.dove), conP=D&&!D.agri, P=conP?VP.find(x=>x.k===NV.perche):null, tot=conP?5:4; let n=1, cur=false;
+  const D=VD.find(x=>x.k===NV.dove), conP=D&&!D.agri, P=conP?VP.find(x=>x.k===NV.perche):null, tot=5; let n=1, cur=false;   // 5 passi sempre: nei voli agricoli il «perché» si segna da solo
   const fatto=(tit,val,k)=>`<div class="card nv-card nv-fatto"><div class="nv-sc"><span class="nv-ok"><svg viewBox="0 0 24 24"><path d="M5 12l4 4 10-10"/></svg></span><span class="m"><small>Passo ${n++} · ${tit}</small><b>${ESC(val)}</b></span><button type="button" class="btn sec mini" onclick="nvScegli('${k}',null)">Cambia</button></div></div>`;
   const passo=(t,f)=>{ const id=cur?'':' id="nv-cur"'; cur=true; return `<div class="card nv-card"${id}><div class="nv-passo">Passo ${n++} di ${tot}</div><h2>${t}</h2>${f?`<div class="nv-fine">${f}</div>`:''}`; };
   const scelta=(arr,k)=>arr.map(x=>`<button type="button" class="nv-dove" onclick="nvScegli('${k}','${x.k}')">${vdIco(x.i,x.col)}<span><b>${ESC(x.t)}</b><small>${ESC(x.s)}</small></span></button>`).join('');
   let h='';
   if(D) h+=fatto('Dove si vola',D.t,'dove'); else h+=passo('Dove si vola?','Tocca il caso giusto: le regole e le sigle le sistema Quota 120.')+scelta(VD,'dove')+'</div>';
   if(D&&conP){ if(P) h+=fatto('Perché si vola',P.t,'perche'); else h+=passo('Perché si vola?','Tocca lo scopo: Quota 120 sa quale camera serve e cosa preparare.')+scelta(VP,'perche')+'</div>'; }
+  else if(D) h+=`<div class="card nv-card nv-fatto"><div class="nv-sc"><span class="nv-ok"><svg viewBox="0 0 24 24"><path d="M5 12l4 4 10-10"/></svg></span><span class="m"><small>Passo ${n++} · Perché si vola</small><b>Lavoro agricolo</b></span></div></div>`;
   const pronto2=D&&(!conP||P), d=pronto2&&DRONI.find(x=>String(x.id)===String(NV.d));
   if(pronto2){
     if(d) h+=fatto('Drone',d.nome,'d');
