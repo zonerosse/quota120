@@ -8,6 +8,8 @@
   "routes": [{ "pattern": "quota120.com", "custom_domain": true }, { "pattern": "www.quota120.com", "custom_domain": true }, { "pattern": "app.quota120.com", "custom_domain": true }, { "pattern": "prova.quota120.com", "custom_domain": true }],
   "durable_objects": { "bindings": [{ "name": "STATO", "class_name": "Stato" }] },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Stato"] }],
+  // archivio del Posizionamento (lo riempie il gestionale DPD)
+  "d1_databases": [{ "binding": "POS", "database_name": "posizionamento", "database_id": "e862ed68-f4c5-4168-ab71-bc4a8c81d6d6" }],
   "triggers": { "crons": ["5 * * * *"] },
   // mittente degli avvisi e indirizzo che riceve le risposte (non sono segreti); le chiavi stanno nei segreti di Cloudflare
   "vars": { "MITTENTE": "avvisi@quota120.com", "RISPOSTE": "assistenza@quota120.com", "SITO_ADMIN": "zonerosse@gmail.com" },
