@@ -74,7 +74,34 @@ video.vid{display:block}
 a{color:var(--accent)}
 @media(max-width:640px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.g2{grid-template-columns:1fr}.sc .mini{width:96px}td.e{white-space:normal}}
 @media (prefers-reduced-motion:reduce){.spin{animation:none}}
-</style></head><body>
+</style><style>/* sottotitoli a karaoke (03/11/2026, Paolo): una riga sola SOTTO il video, la parola detta si illumina; il video resta libero */
+.kara{overflow:hidden;white-space:nowrap;background:#0b1220;color:#64748b;font:600 18px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:9px 14px;border-radius:0 0 12px 12px;margin-top:-4px;min-height:1.5em;position:relative}
+.kara[hidden]{display:none}.kara .kr{display:inline-block;transition:transform .35s ease;will-change:transform}
+.kara .kr span{margin-right:.32em}.kara .kr .d{color:#e2e8f0}.kara .kr .o{color:#fbbf24}
+@media (prefers-reduced-motion:reduce){.kara .kr{transition:none}}
+</style>
+<script>
+/* Kara(video): legge i sottotitoli del <track> (nascosti, mai sopra il video) e li scrive in una riga sotto, a karaoke.
+   Le parole si illuminano in proporzione al tempo della frase (la voce è sintetica e costante). */
+window.Kara=window.Kara||function(v){if(!v||v._kara)return;var tr=v.querySelector('track');if(!tr)return;v._kara=1;
+ var t=tr.track;t.mode='hidden';var box=document.createElement('div');box.className='kara';box.setAttribute('aria-hidden','true');box.innerHTML='<div class="kr"></div>';
+ var dopo=v.parentNode&&v.parentNode.classList&&v.parentNode.classList.contains('vbox')?v.parentNode:v;dopo.after(box);var kr=box.firstChild,cur=null,W=[],tot=0,raf=0;
+ if(window.KARA_SPENTO)box.hidden=true;
+ // le frasi le leggo io dal file dei sottotitoli (l'iPhone a volte non carica il <track> nascosto)
+ var C=null;function tc(x){var p=x.trim().split(':').map(parseFloat);return p.length==3?p[0]*3600+p[1]*60+p[2]:p[0]*60+p[1]}
+ fetch(tr.getAttribute('src'),{credentials:'same-origin'}).then(function(r){return r.text()}).then(function(s){C=[];s.replace(/\r/g,'').split(/\n\n+/).forEach(function(b){var m=/([\d:.]+)\s*-->\s*([\d:.]+)[^\n]*\n([\s\S]+)/.exec(b);if(m)C.push({startTime:tc(m[1]),endTime:tc(m[2]),text:m[3].trim()})});disegna()}).catch(function(){});
+ function trova(tm){var c=C&&C.length?C:t.cues;if(!c)return null;for(var i=0;i<c.length;i++)if(c[i].startTime<=tm&&tm<c[i].endTime+.25)return c[i];return null}
+ function disegna(){var tm=v.currentTime,c=trova(tm);if(c!==cur){cur=c;if(c){var p=String(c.text).replace(/<[^>]+>/g,'').split(/\s+/).filter(Boolean);kr.innerHTML=p.map(function(w){return '<span>'+w.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</span>'}).join('');W=[].slice.call(kr.children);tot=p.reduce(function(a,w){return a+w.length+1},0);kr.style.transform='translateX(0)'}else if(!v.paused){}}
+  if(!cur||!W.length)return;var f=Math.max(0,Math.min(1,(tm-cur.startTime)/Math.max(.2,cur.endTime-cur.startTime))),acc=0,o=-1;
+  for(var i=0;i<W.length;i++){var l=(W[i].textContent.length+1)/tot;W[i].className=acc+l<=f?'d':(acc<=f?'o':'');if(acc<=f)o=i;acc+=l}
+  var ow=o>=0?W[o]:W[0],max=Math.max(0,kr.scrollWidth-box.clientWidth+28),x=Math.min(max,Math.max(0,ow.offsetLeft-box.clientWidth*.3));kr.style.transform='translateX('+(-x)+'px)'}
+ function giro(){disegna();if(!v.paused&&!v.ended)raf=requestAnimationFrame(giro)}
+ v.addEventListener('play',function(){cancelAnimationFrame(raf);giro()});v.addEventListener('seeked',disegna);v.addEventListener('timeupdate',function(){if(v.paused)disegna()});
+ tr.addEventListener('load',disegna);t.addEventListener('cuechange',disegna);disegna()};
+window.KaraTutti=function(r){[].slice.call((r||document).querySelectorAll('video')).forEach(function(v){if(v.querySelector('track'))window.Kara(v)})};
+document.addEventListener('play',function(e){if(e.target&&e.target.tagName==='VIDEO')window.Kara(e.target)},true);
+</script>
+</head><body>
 <header><svg class="lg" viewBox="0 0 120 120" aria-hidden="true"><rect width="120" height="120" rx="26" fill="#1E6B6F"/><rect x="18" y="24" width="84" height="7" rx="3.5" fill="#E8C15A"/><g transform="translate(60 72)" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round"><path d="M-22-14l44 28M22-14l-44 28"/><circle cx="-24" cy="-16" r="9"/><circle cx="24" cy="-16" r="9"/><circle cx="-24" cy="16" r="9"/><circle cx="24" cy="16" r="9"/></g></svg>
 <span><b>Quota 120</b><small>Pannello Admin del sito</small></span>
 <span class="dx"><a href="https://app.quota120.com/" target="_blank" rel="noopener">Programma</a><button id="esci" type="button">Esci</button></span></header>
@@ -294,7 +321,7 @@ AZ.lezione=x=>{const [cid,lid]=x.split('|'),l=corsoDi(cid).lezioni.find(y=>y.id=
 function lezione(x){const [cid,lid]=x.split('|'),c=corsoDi(cid),i=c.lezioni.findIndex(y=>y.id===lid),l=c.lezioni[i];
   LEZ={cid,lid,t:l.t,s:l.s||'',scene:JSON.parse(JSON.stringify(l.scene||[])),q:JSON.parse(JSON.stringify(l.q||[]))};
   return `<h2 class="t">Lezione ${i+1} · ${esc(l.t)}</h2>
-  ${l.pronto?`<video class="vid" controls preload="metadata" playsinline poster="/corso/video/${esc(l.video)}.jpg" src="/corso/video/${esc(l.video)}.mp4"><track kind="subtitles" srclang="it" label="Italiano" src="/corso/video/${esc(l.video)}.vtt" default></video>`:`<div class="vid">${(l.scene||[]).length?'Video in preparazione: pronto pochi minuti dopo il salvataggio':'Ancora nessun video'}</div>`}
+  ${l.pronto?`<video class="vid" controls preload="metadata" playsinline poster="/corso/video/${esc(l.video)}.jpg" src="/corso/video/${esc(l.video)}.mp4"><track kind="subtitles" srclang="it" label="Italiano" src="/corso/video/${esc(l.video)}.vtt"></video>`:`<div class="vid">${(l.scene||[]).length?'Video in preparazione: pronto pochi minuti dopo il salvataggio':'Ancora nessun video'}</div>`}
   <div class="card g2"><div><label for="lt">Titolo della lezione</label><input type="text" id="lt" value="${esc(l.t)}"></div><div><label for="ls">Sottotitolo</label><input type="text" id="ls" value="${esc(l.s||'')}"></div></div>
   <div class="card"><h3>SCENE DEL VIDEO</h3><p class="fine">Ogni scena è quello che si vede e quello che dice la voce. Cambia i testi, poi «Salva e rifai il video».</p><div id="scene"></div>
   <div class="bar"><button class="btn sec" type="button" data-az="scenaPiu">+ Aggiungi una scena</button></div></div>
