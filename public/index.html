@@ -1098,6 +1098,27 @@ input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea{f
 .cs-cmd{display:flex;justify-content:center;gap:10px;margin-top:12px}.cs-cmd button{all:unset;cursor:pointer;min-width:46px;height:46px;border-radius:23px;border:1.5px solid rgba(255,255,255,.3);display:grid;place-items:center;font-weight:700;font-size:15px;color:#fff}.cs-cmd button.play{min-width:62px;height:62px;border-radius:31px;background:#E8C15A;color:#132A3A;border:0;font-size:20px}
 .cs-sc,.cs-dom{border:1px solid var(--bordo,#D3DBE0);border-radius:10px;padding:10px;margin-top:8px}.cs-sc summary{cursor:pointer}
 .cs-sc input,.cs-sc textarea,.cs-dom input,.cs-dom textarea,.cs-dom select,#v-corsi .fld input,#v-corsi .fld textarea{width:100%;box-sizing:border-box;font:inherit;font-size:15px;border:1.5px solid var(--bordo,#D3DBE0);border-radius:8px;padding:8px 10px;background:var(--sup,#fff);color:inherit}
+/* app: visore di documenti, stampe ed etichette (anteprima 127) e «Leggi QR» (anteprima 128) · solo dentro l'app */
+.vis{position:fixed;inset:0;z-index:99990;background:#fff;display:flex;flex-direction:column}
+.vis[hidden]{display:none}
+.vis-h{background:var(--notte,#132A3A);color:#fff;display:flex;align-items:center;gap:10px;padding:8px 12px;padding-top:calc(8px + env(safe-area-inset-top))}
+.vis-h .vis-ind{font:inherit;font-weight:700;font-size:15px;min-height:40px;padding:0 12px;border-radius:9px;border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;cursor:pointer;flex:none}
+.vis-h b{flex:1;min-width:0;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vis-c{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;background:var(--pagina,#E8EDF0);padding:12px}
+.vis-c img{display:block;width:100%;max-width:900px;height:auto;background:#fff;border:1px solid var(--bordo,#D3DBE0);margin:0 auto 10px}
+.vis-fg{max-width:900px;margin:0 auto;background:#fff;border:1px solid var(--bordo,#D3DBE0);overflow:hidden}
+.vis-fg iframe{display:block;width:100%;height:420px;border:0;background:#fff;transform-origin:0 0}
+.vis-c embed{display:block;width:100%;height:100%;min-height:70vh;border:0}
+.vis-msg{max-width:560px;margin:24px auto;background:#fff;border:1px solid var(--bordo,#D3DBE0);border-radius:10px;padding:14px;font-size:15px;color:var(--ink2,#3A4A55)}
+.vis-f{padding:10px 12px calc(10px + env(safe-area-inset-bottom));border-top:1px solid var(--bordo,#D3DBE0);background:#fff}
+.vis-f .btn{width:100%;justify-content:center;min-height:46px;font-size:16px}
+.vis-ss-t{display:inline-flex;align-items:center;gap:8px}
+.vis-f .btn svg,.lq-b svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+body.vis-on{overflow:hidden}
+.btn.lq-b{width:100%;justify-content:center;min-height:46px;font-size:16px}
+.q2-dr>.spin{display:none;border-color:rgba(61,95,128,.3);border-top-color:var(--accent);margin-left:auto;flex:none}.q2-dr.busy>.spin{display:inline-block}
+.lq-home{margin:10px 0 12px}.lq-home .nota{margin-top:6px}
+#dr-lqr-w .lq-b{margin:0 0 10px}
 </style>
 </head>
 <body>
@@ -1499,6 +1520,7 @@ input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea{f
 
   <!-- ================= ELENCO DRONI ================= -->
   <div id="v-droni" class="hidden ro">
+    <div id="dr-lqr-w"></div>
     <div class="card">
       <h2>I tuoi droni</h2>
       <ul class="dlist" id="dlist"></ul>
@@ -2651,6 +2673,7 @@ function apriDroni(){
       <div class="main"><div class="a">${ESC(d.nome)}</div><div class="b">Classe ${ESC(s.classe)} · ${ESC(s.ore)} · ${ESC(s.voli)} voli${d.chi?' · <b style="color:var(--accent)">'+ESC(chiTesto(d).replace('Ce l’ha','ce l’ha'))+'</b>':''}</div></div>
       <span class="tag ${CLS(st)}">${ESC(LIVTXT[st])}</span></li>`;
   }).join('');
+  document.getElementById('dr-lqr-w').innerHTML=lqBtn('dr-lqr');   // solo nell'app
   vai('droni','Flotta &rsaquo; Droni');
 }
 function trendBatt(voli, bid) {
@@ -4294,6 +4317,7 @@ function docApprova(id){ const x=(DOCS||[]).find(d=>d.id===id&&d.daApprovare); i
 // i file si scaricano con la chiave del telefono nell'intestazione, mai nell'indirizzo (che resta nella cronologia e nei registri)
 function scaricaDoc(id){ return fetch('/api/doc/file?d='+encodeURIComponent(id),{headers:{'x-disp':ME.id+':'+ME.k}}).then(r=>{ if(!r.ok) throw new Error('file '+r.status); return r.blob(); }); }
 function apriFile(id){
+  if(APP_NAT) return visDoc(id);   // dentro l'app non c'è la finestra nuova: si apre il visore
   const w=window.open('','_blank');   // la finestra si apre subito (al tocco), il file arriva un attimo dopo
   try{ if(w) w.document.write('<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Quota 120</title></head><body style="font-family:Arial,sans-serif;padding:24px;color:#1f2a36">Apro il documento…</body></html>'); }catch(e){}
   scaricaDoc(id).then(b=>{ const u=URL.createObjectURL(b);
@@ -4421,13 +4445,15 @@ function confermaDoc(b){
 
 /* ---------- stampe (preventivo e scheda del trattamento) ---------- */
 function stampa(titolo,corpo){
-  const w=window.open('','_blank'); if(!w){toast('Il browser ha bloccato la finestra di stampa');return;}
-  w.document.write(`<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><title>${ESC(titolo)}</title><style>
+  const doc=fine=>`<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><title>${ESC(titolo)}</title><style>
     body{font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#1f2a36;margin:32px;font-size:14px}
     h1{font-size:20px;margin:0 0 4px} .m{color:#5f6b78;font-size:13px} table{width:100%;border-collapse:collapse;margin-top:16px}
     th,td{border-bottom:1px solid #d9dee4;padding:7px 4px;text-align:left} td.r,th.r{text-align:right} .tot td{font-weight:700;border-bottom:0}
     .box{border:1px solid #d9dee4;border-radius:8px;padding:10px 12px;margin-top:14px}</style></head><body>${corpo}
-    <script>setTimeout(()=>print(),300)<\/script></body></html>`);
+    ${fine}</body></html>`;
+  if(APP_NAT){ visHtml(titolo,doc('')); return; }   // nell'app: visore con «Stampa o salva» (niente stampa automatica)
+  const w=window.open('','_blank'); if(!w){toast('Il browser ha bloccato la finestra di stampa');return;}
+  w.document.write(doc('<script>setTimeout(()=>print(),300)<\/script>'));
   w.document.close();
 }
 function stampaPreventivo(id){
@@ -4628,7 +4654,7 @@ function homeAdm(todo){
   const tutte=HADM_APERTE.has('_daf'), N=3;
   const daf=righe.length?righe.map((r,i)=>!tutte&&i>=N?'':r).join(''):'<div class="q2-dr"><span class="p ok"></span><div class="t"><b>Tutto in regola</b><small>niente da sistemare</small></div></div>';
   const tiles=q2Gruppi(fr), lavH=q2Prossimi();
-  return `<div class="q2-sal"><div><b>${ESC((OP.nome||'Quota 120').replace(/ \(dati di esempio\)/,''))}</b><span>${GIORNI[o.getDay()].toLowerCase()} ${o.getDate()} ${MESI_L[o.getMonth()]} · Admin</span></div><button type="button" class="q2-nuovo" id="q2-nuovo" onclick="nuovoLavoro()"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Nuovo lavoro</button></div>
+  return `<div class="q2-sal"><div><b>${ESC((OP.nome||'Quota 120').replace(/ \(dati di esempio\)/,''))}</b><span>${GIORNI[o.getDay()].toLowerCase()} ${o.getDate()} ${MESI_L[o.getMonth()]} · Admin</span></div><button type="button" class="q2-nuovo" id="q2-nuovo" onclick="nuovoLavoro()"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Nuovo lavoro</button></div>${lqHome()}
     ${ppBarra()}${SOLO()?soloCtrl():''}
     <div class="q2-cerca"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="q2-q" type="search" placeholder="Cosa vuoi fare? Es. codice, polizza" oninput="q2Cerca(this.value)" autocomplete="off"></div><div class="q2-ris" id="q2-ris"></div>
     ${lavH}
@@ -5016,7 +5042,7 @@ function homeP(){
   const scH=sc.length?sc.map((x,i)=>`<${x.go?'button type="button"':'div'} class="pl-rg" ${x.go?`onclick="if(!gdDa(PL_FX[${i}])){${ESC(x.go)}}"`:''}><span class="hl ${x.liv==='ok'?'':CLS(x.liv)}"></span><span class="m"><b>${x.t}</b><span>${x.w}</span></span>${x.go?'<svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>':''}</${x.go?'button':'div'}>`).join(''):'';
   const scK=sc.filter(x=>x.liv==='ko').length, scW=sc.filter(x=>x.liv==='warn').length;
   const scS=scK?{c:pl(scK,'da fare subito','da fare subito'),d:'ko'}:scW?{c:pl(scW,'in scadenza','in scadenza'),d:'warn'}:{c:sc.length?'tutto valido':'attestati, assicurazione, firma',d:''};
-  return `<div class="pl-data">${GIORNI[o.getDay()]} ${o.getDate()} ${MESI_L[o.getMonth()]}<b>Ciao ${ESC((IO.n||'').split(' ')[0])}</b></div>
+  return `<div class="pl-data">${GIORNI[o.getDay()]} ${o.getDate()} ${MESI_L[o.getMonth()]}<b>Ciao ${ESC((IO.n||'').split(' ')[0])}</b></div>${lqHome()}
     <div class="card ml-card pl-oggi" id="h-oggi"><h2>Oggi</h2>${plAttesa()}${oggiL.length?oggiL.map(lavOggi).join(''):`<div class="ml-vuoto" style="padding:0 0 8px">Nessun lavoro per oggi. Se voli lo stesso, fai il controllo:</div>${form(1)}`}</div>
     ${cvCard()}
     ${poi.length?`<div class="card ml-card" id="h-miei"><h2>Prossimi lavori <small>${poi.length}</small></h2>${poi.slice(0,6).map(rigaPoi).join('')}</div>`:''}
@@ -6782,18 +6808,20 @@ function qrGruppo(d){ const E=qrEtichette(d.id);
     <div class="row"><button type="button" class="btn" id="dr-qr-st" onclick="stampaQR(this,[${NID(d.id)}])"><span class="spin"></span>Stampa le etichette</button><button type="button" class="btn sec" id="dr-qr-tutti" onclick="stampaQR(this,DRONI.map(x=>x.id))"><span class="spin"></span>Tutti i droni</button></div>
     <div class="nv-nota">Non è il QR di D-Flight: quello resta, è obbligatorio. Questo serve solo a voi, per aprire subito la scheda giusta.</div></div>`); }
 // foglio A4 da stampare: tre etichette per riga, QR + nome + tipo
-function stampaQR(b,ids){
-  const E=[].concat(...ids.map(qrEtichette)); if(!E.length){ toast('Non ci sono droni'); return; }
-  const w=window.open('','_blank'); if(!w){ toast('Il browser ha bloccato la finestra di stampa'); return; }
-  w.document.write('<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><title>Etichette QR</title></head><body style="font-family:Arial,sans-serif;padding:24px">Preparo le etichette…</body></html>');
-  b.disabled=true; b.classList.add('busy'); const fine=()=>{ b.disabled=false; b.classList.remove('busy'); };
-  caricaQR().then(()=>{ fine();
-    w.document.open(); w.document.write(`<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Etichette QR · Quota 120</title><style>
+const qrFoglio=(E,fine)=>`<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Etichette QR · Quota 120</title><style>
       @page{size:A4;margin:10mm} *{box-sizing:border-box} body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#0F1C26}
       .g{display:grid;grid-template-columns:repeat(3,1fr);gap:4mm} .e{border:1px dashed #9FAEB8;border-radius:3mm;padding:4mm 2mm;text-align:center;break-inside:avoid;page-break-inside:avoid}
       .e svg{width:38mm;height:38mm;display:block;margin:0 auto 2mm} .e b{display:block;font-size:12pt} .e span{font-size:10pt;color:#3A4A55}
       @media screen{body{padding:12px}}</style></head><body><div class="g">${E.map(x=>`<div class="e">${qrSvg(qrUrl(x.c))}<b>${ESC(x.nome)}</b><span>${ESC(x.tipo)}</span></div>`).join('')}</div>
-      <script>setTimeout(()=>print(),400)<\/script></body></html>`); w.document.close();
+      ${fine}</body></html>`;
+function stampaQR(b,ids){
+  const E=[].concat(...ids.map(qrEtichette)); if(!E.length){ toast('Non ci sono droni'); return; }
+  if(APP_NAT) return visQR(b,E);   // nell'app: il foglio si apre nel visore
+  const w=window.open('','_blank'); if(!w){ toast('Il browser ha bloccato la finestra di stampa'); return; }
+  w.document.write('<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><title>Etichette QR</title></head><body style="font-family:Arial,sans-serif;padding:24px">Preparo le etichette…</body></html>');
+  b.disabled=true; b.classList.add('busy'); const fine=()=>{ b.disabled=false; b.classList.remove('busy'); };
+  caricaQR().then(()=>{ fine();
+    w.document.open(); w.document.write(qrFoglio(E,'<script>setTimeout(()=>print(),400)<\/script>')); w.document.close();
   }).catch(()=>{ fine(); try{ w.close(); }catch(e){} toast('Niente rete: riprova tra poco'); });
 }
 // chi ha il drone: «Ce l'ha Mario Rossi da oggi 15:20»
@@ -6918,6 +6946,140 @@ if(cvP()){
      {t:'Controlla «Collegata»',p:'Sotto «Cartella dei voli» c’è il nome della cartella collegata.',w:'Se c’è scritto «Non collegata», tocca di nuovo «Scegli»: senza la cartella i voli si scelgono a mano.',el:()=>VISTA==='account'?gdVis('#ac-cv'):null,vai:()=>apriAccount(),nx:1},
      {t:'Dopo il volo: «Carica i voli di oggi»',p:'In Home, nel riquadro «Oggi», quando un volo aspetta il file DJI.',w:'L’app manda solo i voli nuovi della cartella e Quota 120 li legge e li salva da solo.',el:()=>gdVis('#pl-carica')||gdVis('#tb-home'),nx:1,opt:1}]};
   [['home','cartella'],['account','cartella'],['voli','cartella'],['invio','cartella']].forEach(([v,k])=>{ const r=GD_SEC.find(x=>x[0]===v); if(r&&!r[2].includes(k)) r[2].push(k); });
+}
+
+/* ---------- app: visore di documenti, stampe ed etichette (anteprima 127) ----------
+   Dentro l'app la «finestra nuova» del sito non c'è: documenti, stampe ed etichette QR si aprono in un visore
+   a tutto schermo, con «← Indietro» e «Stampa o salva» (la scelta del telefono: Stampa, Salva su File, Mail, WhatsApp…).
+   Pezzo nativo StampaSalva: condividiFile({nome,mime,base64}), htmlInPdf({html,nome}) → {base64}, pdfPagine({base64,larghezza,max}).
+   Sul sito non cambia niente: apriFile, stampa e stampaQR usano la finestra nuova come sempre. */
+function capP(n){ try{ const C=window.Capacitor; if(!APP_NAT||!C) return null; if(typeof C.isPluginAvailable==='function'&&!C.isPluginAvailable(n)) return null; return C.Plugins&&C.Plugins[n]||null; }catch(e){ return null; } }
+function ssP(){ return capP('StampaSalva'); }
+function lqP(){ return capP('LeggiQR'); }
+let VIS=null;   // {t, nome, mime, blob, url:[]} per i documenti; {t, nome, html} per stampe ed etichette
+function visBusy(b,on){ if(!b||!b.classList) return; if(on&&!b.querySelector('.spin')) b.insertAdjacentHTML(b.tagName==='BUTTON'?'afterbegin':'beforeend','<span class="spin"></span>'); b.classList.toggle('busy',!!on); if(b.tagName==='BUTTON') b.disabled=!!on; }
+function visBottone(){ try{ const e=window.event, t=e&&e.target; return t&&t.closest?t.closest('button,[role="button"]'):null; }catch(x){ return null; } }
+const visNome=(t,est)=>(String(t||'Quota 120').replace(/[\\/:*?"<>|\n\r\t]+/g,' ').replace(/\s+/g,' ').trim().slice(0,80)||'Quota 120')+(est?'.'+est:'');
+function visEls(){ if(document.getElementById('vis')) return;
+  const v=document.createElement('div'); v.id='vis'; v.className='vis'; v.hidden=true; v.setAttribute('role','dialog'); v.setAttribute('aria-modal','true'); v.setAttribute('aria-labelledby','vis-t');
+  v.innerHTML=`<div class="vis-h"><button type="button" class="vis-ind" id="vis-ind" onclick="visChiudi()">&larr; Indietro</button><b id="vis-t"></b></div>
+    <div class="vis-c" id="vis-c"></div>
+    <div class="vis-f"><button type="button" class="btn" id="vis-ss" onclick="visStampa(this)"><span class="spin"></span><span class="vis-ss-t"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 8l5-5 5 5"/><rect x="4" y="13" width="16" height="8" rx="2"/></svg>Stampa o salva</span></button></div>`;
+  document.body.appendChild(v);
+  // Android: il tasto «indietro» del telefono torna indietro nella cronologia → chiude il visore
+  window.addEventListener('popstate',()=>{ const e=document.getElementById('vis'); if(e&&!e.hidden) visVia(); }); }
+// guida dentro il visore: sul telefono il fumetto sta in fondo, il visore si alza sopra il fumetto
+function visGd(sel){ const v=document.getElementById('vis'); if(!visAperto()) return null; const e=gdVis(sel), t=document.getElementById('gdTip');
+  v.style.bottom=e&&t&&t.classList.contains('dock')?(t.offsetHeight+24)+'px':''; return e; }
+function visAperto(){ const e=document.getElementById('vis'); return !!(e&&!e.hidden); }
+function visApri(){ visEls(); const v=document.getElementById('vis'); document.getElementById('vis-t').textContent=VIS.t; v.hidden=false; document.body.classList.add('vis-on');
+  document.getElementById('vis-c').scrollTop=0; try{ if(!(history.state&&history.state.q120vis)) history.pushState({q120vis:1},''); }catch(e){} }
+function visChiudi(){ try{ if(history.state&&history.state.q120vis){ history.back(); setTimeout(()=>{ if(visAperto()) visVia(); },400); return; } }catch(e){} visVia(); }
+function visVia(){ const v=document.getElementById('vis'); if(v){ v.hidden=true; v.style.bottom=''; document.getElementById('vis-c').innerHTML=''; } document.body.classList.remove('vis-on');
+  ((VIS&&VIS.url)||[]).forEach(u=>{ try{ URL.revokeObjectURL(u); }catch(e){} }); VIS=null; }
+function visB64(blob){ return new Promise((ok,no)=>{ const r=new FileReader(); r.onload=()=>ok(String(r.result).replace(/^data:[^,]*,/,'')); r.onerror=()=>no(r.error); r.readAsDataURL(blob); }); }
+function visBlob(b64,mime){ const t=atob(b64), u=new Uint8Array(t.length); for(let i=0;i<t.length;i++) u[i]=t.charCodeAt(i); return new Blob([u],{type:mime}); }
+const visMsg=t=>`<div class="vis-msg">${t}</div>`;
+// documento caricato (PDF o foto): si scarica con la chiave del telefono e si mostra nel visore
+function visDoc(id,b){ b=b||visBottone(); if(b&&b.classList.contains('busy')) return; visBusy(b,1);
+  fetch('/api/doc/file?d='+encodeURIComponent(id),{headers:{'x-disp':ME.id+':'+ME.k}})
+   .then(r=>{ if(!r.ok) throw new Error('file '+r.status); const m=/filename="([^"]+)"/.exec(r.headers.get('content-disposition')||''); return r.blob().then(blob=>({blob,nome:m?m[1]:''})); })
+   .then(({blob,nome})=>{ const mime=blob.type||'application/octet-stream', est=/pdf/.test(mime)?'pdf':/png/.test(mime)?'png':/jpe?g/.test(mime)?'jpg':/webp/.test(mime)?'webp':/hei[cf]/.test(mime)?'heic':/text/.test(mime)?'txt':'';
+      const t=(nome.replace(/\.[A-Za-z0-9]{2,4}$/,'').replace(/_+/g,' ').trim())||'Documento';
+      VIS={t,nome:/\.[A-Za-z0-9]{2,4}$/.test(nome)?nome:visNome(t,est),mime,blob,url:[]}; return visMostraDoc(); })
+   .catch(()=>toast('Il documento non si apre: controlla la rete e riprova'))
+   .finally(()=>visBusy(b,0)); }
+async function visMostraDoc(){ const V=VIS, c=()=>document.getElementById('vis-c');
+  if(/^image\/(jpeg|png|webp|gif)$/.test(V.mime)){ const u=URL.createObjectURL(V.blob); V.url.push(u); visApri(); c().innerHTML=`<img src="${u}" alt="${ESC(V.t)}">`; return; }
+  if(/pdf/.test(V.mime)){ const P=ssP();
+    if(P&&P.pdfPagine){ try{ const r=await P.pdfPagine({base64:await visB64(V.blob),larghezza:1200,max:20}); const L=(r&&r.pagine)||[];
+        if(L.length){ visApri(); c().innerHTML=L.map((x,i)=>`<img src="data:image/jpeg;base64,${x.base64}" alt="Pagina ${i+1}">`).join('')+(r.totale>L.length?visMsg('Qui vedi le prime '+L.length+' pagine su '+r.totale+': con «Stampa o salva» hai il documento intero.'):''); return; } }catch(e){} }
+    const u=URL.createObjectURL(V.blob); V.url.push(u); visApri();
+    // iPhone e iPad mostrano il PDF da soli; su Android serve l'app aggiornata
+    c().innerHTML=APP_IOS?`<embed src="${u}" type="application/pdf">`:visMsg('Per vedere il PDF qui aggiorna l’app Quota 120. Intanto con «Stampa o salva» puoi aprirlo, salvarlo o mandarlo.'); return; }
+  visApri(); c().innerHTML=visMsg('Questo file non si vede qui dentro: con «Stampa o salva» puoi salvarlo o mandarlo.'); }
+// stampe ed etichette: la pagina dentro un riquadro a sé (i suoi stili non toccano Quota 120), senza la stampa automatica
+function visHtml(titolo,html){ VIS={t:titolo,nome:visNome(titolo,'pdf'),html:String(html).replace(/<script[\s\S]*?<\/script>/gi,'')}; visApri();
+  const c=document.getElementById('vis-c'); c.innerHTML='<div class="vis-fg"><iframe id="vis-if" title="'+ESC(titolo)+'" sandbox="allow-same-origin"></iframe></div>';
+  const f=document.getElementById('vis-if'), fg=f.parentNode;
+  const misura=()=>{ try{ const d=f.contentDocument; if(!d||!d.documentElement) return; const W=fg.clientWidth; f.style.width=W+'px'; f.style.transform='';
+      const sw=Math.max(W,d.documentElement.scrollWidth), s=W/sw; if(sw>W){ f.style.width=sw+'px'; f.style.transform='scale('+s+')'; }
+      const h=d.documentElement.scrollHeight; f.style.height=h+'px'; fg.style.height=Math.ceil(h*s)+'px'; }catch(e){} };
+  f.onload=()=>{ misura(); setTimeout(misura,300); }; f.srcdoc=VIS.html; }
+function visQR(b,E){ b.disabled=true; b.classList.add('busy'); const fine=()=>{ b.disabled=false; b.classList.remove('busy'); };
+  caricaQR().then(()=>{ fine(); visHtml('Etichette QR',qrFoglio(E,'')); }).catch(()=>{ fine(); toast('Niente rete: riprova tra poco'); }); }
+// PDF fatto nella pagina (se il pezzo nativo non c'è o non riesce): A4, i tagli di pagina non spezzano etichette e righe
+function visPdfWeb(html){ return caricaPdfLib().then(()=>new Promise((ok,no)=>{
+  const f=document.createElement('iframe'); f.setAttribute('sandbox','allow-same-origin'); f.setAttribute('aria-hidden','true');
+  f.style.cssText='position:fixed;left:-10000px;top:0;width:794px;height:1123px;border:0;background:#fff'; document.body.appendChild(f);
+  const via=e=>{ f.remove(); e?no(e):0; };
+  f.onload=()=>{ const d=f.contentDocument; setTimeout(()=>{ const B=d.body, W=210, H=297, m=10, pw=W-2*m, ph=H-2*m;
+      const tagli=[...d.querySelectorAll('.e,tr,.box,.blocco,h1,h2,h3,h4,p,li,pre,table')].map(e=>{ const r=e.getBoundingClientRect(); return [r.top,r.bottom]; });
+      html2canvas(B,{scale:2,backgroundColor:'#ffffff',windowWidth:794}).then(cv=>{ const {jsPDF}=window.jspdf, pdf=new jsPDF({unit:'mm',format:'a4'}), k=cv.width/B.scrollWidth, pxMm=cv.width/pw, pag=Math.floor(ph*pxMm);
+        for(let y=0,pg=0;y<cv.height-2;pg++){ let fino=Math.min(cv.height,y+pag);
+          if(fino<cv.height){ const dentro=tagli.filter(([a,z])=>a*k<fino&&z*k>fino&&a*k>y+pag*0.3); if(dentro.length) fino=Math.min(...dentro.map(([a])=>Math.floor(a*k))); }
+          const h=fino-y, c=document.createElement('canvas'); c.width=cv.width; c.height=h; const g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,c.width,h); g.drawImage(cv,0,y,cv.width,h,0,0,cv.width,h);
+          if(pg) pdf.addPage(); pdf.addImage(c.toDataURL('image/jpeg',0.92),'JPEG',m,m,pw,h/pxMm); y=fino; }
+        via(); ok(pdf.output('blob')); }).catch(via); },250); };
+  f.srcdoc=html; })); }
+async function visStampa(b){ if(!VIS||b.classList.contains('busy')) return; const V=VIS, P=ssP(); visBusy(b,1);
+  try{ let b64='', mime=V.mime, nome=V.nome;
+    if(V.html){ mime='application/pdf';
+      if(P&&P.htmlInPdf){ try{ const r=await P.htmlInPdf({html:V.html,nome}); b64=r&&r.base64||''; }catch(e){ b64=''; } }
+      if(!b64) b64=await visB64(await visPdfWeb(V.html)); }
+    else b64=await visB64(V.blob);
+    if(P&&P.condividiFile){ await P.condividiFile({nome,mime,base64:b64,titolo:V.t}); return; }
+    // app di prima, senza il pezzo nativo: la condivisione del browser, se c'è
+    const file=new File([visBlob(b64,mime)],nome,{type:mime});
+    if(navigator.canShare&&navigator.canShare({files:[file]})) await navigator.share({files:[file],title:V.t}).catch(()=>{});
+    else toast('Per stampare o salvare aggiorna l’app Quota 120');
+  }catch(e){ toast('Non riesco a preparare il file: riprova'); }
+  finally{ visBusy(b,0); } }
+
+/* ---------- app: «Leggi QR» (anteprima 128) ----------
+   Pezzo nativo LeggiQR: apri({titolo,indietro,suggerimento}) apre la fotocamera a tutto schermo; ogni QR letto arriva con l'evento «letto»;
+   avviso({testo}) scrive un messaggio sopra la fotocamera (che resta aperta); chiudi() la chiude; «chiuso» quando si tocca «Indietro». */
+const LQ_NO='Questo QR non è un’etichetta dei tuoi droni';
+function lqIc(){ return '<svg viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 011-1h3M16 4h3a1 1 0 011 1v3M20 16v3a1 1 0 01-1 1h-3M8 20H5a1 1 0 01-1-1v-3"/><path d="M8 12h8"/></svg>'; }
+function lqBtn(id){ return lqP()?`<button type="button" class="btn lq-b" id="${id}" onclick="lqApri(this)"><span class="spin"></span>${lqIc()}Leggi QR</button>`:''; }
+function lqHome(){ return lqP()?`<div class="lq-home">${lqBtn('h-lqr')}<div class="nota">Inquadra l’etichetta di un drone o di una batteria.</div></div>`:''; }
+let LQ=null;
+// dal testo del QR al codice dell'etichetta (d<id> o b<id>), solo se è un'etichetta di QUESTO spazio (stesso indirizzo di qrUrl)
+function lqCodice(t){ try{ const u=new URL(String(t||'').trim()), q=u.pathname.split('/').filter(Boolean);
+    if(u.host!==location.host||q.length!==3||q[0]!=='q'||q[1].toLowerCase()!==(SLUG||'prova').toLowerCase()||!/^[db]./.test(q[2])) return '';
+    return scanCosa(q[2])?q[2]:''; }catch(e){ return ''; } }
+function lqLetto(t){ const P=lqP(); if(!P||!LQ||!LQ.aperto) return; const c=lqCodice(t);
+  if(!c){ P.avviso({testo:LQ_NO}).catch(()=>{}); return; }
+  LQ.aperto=false; Promise.resolve(P.chiudi()).catch(()=>{}).then(()=>apriScan(c)); }
+async function lqApri(b){ const P=lqP(); if(!P||(b&&b.classList.contains('busy'))) return; visBusy(b,1);
+  try{ if(!LQ){ await P.addListener('letto',x=>lqLetto(x&&x.testo)); await P.addListener('chiuso',()=>{ if(LQ) LQ.aperto=false; }); LQ={aperto:false}; }
+    LQ.aperto=true; await P.apri({titolo:'Leggi QR',indietro:'← Indietro',suggerimento:'Inquadra il QR dell’etichetta: si apre da solo.'}); }
+  catch(e){ if(LQ) LQ.aperto=false; toast((e&&e.message)||'La fotocamera non si apre: riprova'); }
+  finally{ visBusy(b,0); } }
+
+/* ---------- guide che ci sono solo nell'app (non partono mai da sole) ---------- */
+if(lqP()){
+  GUIDES.leggiqr={n:'Leggere un’etichetta QR (app)',r:'tutti',base:()=>0,done:()=>false,
+    why:{h:'«Leggi QR»: l’etichetta si apre da sola',p:'Nell’app tocchi «Leggi QR» e inquadri l’etichetta di un drone o di una batteria: si apre subito la sua scheda, già con il tuo nome. Non serve la fotocamera del telefono né toccare collegamenti.',uses:['Quando prendi un drone dalla sede','Quando lo riporti','Quando trovi un guasto o una batteria gonfia'],tm:'Ci vogliono 10 secondi.'},
+    end:'Fatto. Se il QR non è un’etichetta dei tuoi droni, l’app lo dice e la fotocamera resta aperta: «← Indietro» la chiude.',
+    S:[{t:'Il tasto «Leggi QR»',p:'In Home, sotto il saluto. C’è anche in cima alla pagina Droni.',w:'È sempre a portata di mano: un tocco e si apre la fotocamera.',el:()=>gdVis('#h-lqr')||gdVis('#dr-lqr'),nx:1,vai:()=>vai('home')},
+     {t:'Inquadra l’etichetta',p:'Tocca «Leggi QR» e inquadra il QR sul drone o sulla batteria: si apre da solo, senza toccare niente.',w:'La prima volta il telefono chiede il permesso di usare la fotocamera: tocca «Consenti», una volta sola.',el:()=>null,nx:1},
+     {t:'Se il QR non è dei tuoi droni',p:'Compare «'+LQ_NO+'» e la fotocamera resta aperta. «← Indietro» la chiude.',w:'Così non apri per sbaglio la scheda di un altro operatore o un sito qualsiasi.',el:()=>null,nx:1},
+     {t:'La scheda dell’etichetta',p:'«Lo prendo io» (o «Lo riconsegno»), «Segnala un guasto», «Apri la scheda».',w:'È la stessa pagina che si apre dall’etichetta, ma dentro l’app.',el:()=>gdVis('#sc-stato'),nx:1,vai:()=>qrProva()}]};
+  [['home','leggiqr'],['droni','leggiqr'],['hub:droni','leggiqr'],['drone','leggiqr'],['scan','leggiqr']].forEach(([v,k])=>{ const r=GD_SEC.find(x=>x[0]===v); if(r&&!r[2].includes(k)) r[2].push(k); });
+  { const s=(GUIDES.qrusa.S||[]).find(x=>x.t==='Inquadra l’etichetta'); if(s){ s.p='Nell’app tocca «Leggi QR» (in Home o in Droni) e inquadra il QR sul drone o sulla batteria: la scheda si apre da sola.'; s.w='Niente collegamenti da toccare: l’app riconosce le etichette dei tuoi droni.'; } }
+}
+if(APP_NAT){
+  GUIDES.stampasalva={n:'Stampare o salvare un documento (app)',r:'tutti',base:()=>0,done:()=>false,
+    why:{h:'Documenti, stampe ed etichette dentro l’app',p:'Nell’app documenti, stampe ed etichette QR si aprono in un visore, senza uscire. Da lì «Stampa o salva» apre la scelta del telefono: Stampa, Salva su File, Mail, WhatsApp.',uses:['Mandare la polizza o un attestato a chi te lo chiede','Stampare un preventivo o le etichette QR','Salvare un PDF sul telefono'],tm:'Ci vuole 1 minuto.'},
+    end:'Fatto. «← Indietro» chiude il visore e torni dove eri (su Android anche il tasto «indietro» del telefono).',
+    S:[{t:'Apri un documento',p:'Per esempio in Documenti tocca un documento. Oppure «Stampa» in un preventivo, o «Stampa le etichette» nella scheda di un drone.',w:'Tutto quello che sul sito si apre in una finestra nuova, nell’app si apre qui.',el:()=>visAperto()?null:(VISTA==='documenti'?gdVis('.ds-r'):null),ok:()=>visAperto(),vai:()=>apriDocumenti()},
+     {t:'Il visore',p:'Il documento si vede qui: scorri per vederlo tutto.',w:'Controlli che sia quello giusto prima di mandarlo.',el:()=>visGd('#vis-c'),nx:1},
+     {t:'«Stampa o salva»',p:'Si apre la scelta del telefono: Stampa, Salva su File, Mail, WhatsApp.',w:'Le stampe e le etichette diventano un PDF A4, pronto da stampare o da mandare.',el:()=>visGd('#vis-ss .vis-ss-t'),nx:1},
+     {t:'«← Indietro»',p:'Chiude il visore e torni dove eri.',w:'Il documento resta in Quota 120: lo riapri quando vuoi.',el:()=>visGd('#vis-ind'),ok:()=>!visAperto(),nx:1}]};
+  [['documenti','stampasalva'],['home','stampasalva'],['preventivi','stampasalva'],['preventivo','stampasalva'],['drone','stampasalva']].forEach(([v,k])=>{ const r=GD_SEC.find(x=>x[0]===v); if(r&&!r[2].includes(k)) r[2].push(k); });
+  { const s=(GUIDES.qrstampa.S||[]).find(x=>x.t==='Tocca «Stampa le etichette»'); if(s) s.p='Il foglio A4 si apre nell’app, tre etichette per riga: tocca «Stampa o salva» per stamparlo su un foglio di adesivi.'; }
+  { const s=GUIDES.prev&&Array.isArray(GUIDES.prev.S)&&GUIDES.prev.S.find(y=>y.t==='Stampa e segna inviato'); if(s) s.p='«Stampa o salva in PDF»: si apre nell’app, poi «Stampa o salva» per mandarlo; infine «Segna inviato».'; }
 }
 
 /* ---------- senza rete: si lavora con gli ultimi dati, le modifiche e i file partono quando torna la rete ---------- */
