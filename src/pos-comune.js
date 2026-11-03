@@ -14,7 +14,8 @@ const T = [
   "CREATE TABLE IF NOT EXISTS pos_gsc (sito TEXT, sett TEXT, json TEXT, PRIMARY KEY (sito, sett))",
   "CREATE TABLE IF NOT EXISTS pos_giri (sett TEXT PRIMARY KEY, at TEXT, costo REAL, controlli INTEGER, err TEXT, fine INTEGER)",
 ];
-export async function posTabelle(db) { for (const q of T) await db.prepare(q).run(); }
+export async function posTabelle(db) { for (const q of T) await db.prepare(q).run();
+  for (const c of ["imp INTEGER", "clic INTEGER"]) try { await db.prepare("ALTER TABLE pos_misure ADD COLUMN " + c).run(); } catch (e) {} }
 // lunedì della settimana (ora italiana circa: si guarda il giorno UTC)
 export function lunedi(d = new Date()) { const x = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())); x.setUTCDate(x.getUTCDate() - ((x.getUTCDay() + 6) % 7)); return x.toISOString().slice(0, 10); }
 const pulisci = p => String(p || "").toLowerCase().replace(/\s+/g, " ").trim().slice(0, 80);
@@ -24,19 +25,19 @@ export async function leggi(db, sito) {
   const S = SITI[sito]; if (!S) throw new Error("sito sconosciuto");
   await posTabelle(db);
   const par = (await db.prepare("SELECT parola, vol, aggiunta FROM pos_parole WHERE sito=? ORDER BY aggiunta, parola").bind(sito).all()).results || [];
-  const mis = (await db.prepare("SELECT parola, sett, pos, url FROM pos_misure WHERE sito=? AND sett >= ? ORDER BY sett").bind(sito, settPrima(9)).all()).results || [];
+  const mis = (await db.prepare("SELECT parola, sett, pos, url, imp, clic FROM pos_misure WHERE sito=? AND sett >= ? ORDER BY sett").bind(sito, settPrima(9)).all()).results || [];
   const sett = [...new Set(mis.map(m => m.sett))].slice(-8);
   const parole = par.map(p => {
     const st = sett.map(s => { const m = mis.find(x => x.parola === p.parola && x.sett === s); return m ? m.pos : null; });
     const ult = [...mis].reverse().find(x => x.parola === p.parola);
-    return { parola: p.parola, vol: p.vol, storia: st, url: ult && ult.url || "", nuova: !ult };
+    return { parola: p.parola, vol: p.vol, storia: st, url: ult && ult.url || "", nuova: !ult, imp: ult ? ult.imp || 0 : 0, clic: ult ? ult.clic || 0 : 0 };
   });
   const g = await db.prepare("SELECT sett, json FROM pos_gsc WHERE sito=? ORDER BY sett DESC LIMIT 1").bind(sito).first();
   const mese = new Date().toISOString().slice(0, 7);
   const giri = (await db.prepare("SELECT sett, at, costo, controlli, err, fine FROM pos_giri ORDER BY sett DESC LIMIT 6").all()).results || [];
   const costoMese = giri.filter(x => (x.at || "").startsWith(mese)).reduce((a, x) => a + (x.costo || 0), 0);
   return { ok: true, sito, nome: S.nome, dom: S.dom, chiuso: !!S.chiuso, settimane: sett, parole,
-    gsc: g ? JSON.parse(g.json) : null, ultimo: giri[0] ? { at: giri[0].at, fine: !!giri[0].fine, err: erroriDi(giri[0].err, S.dom, par.map(p => p.parola)) } : null, costoMese: Math.round(costoMese * 100) / 100 };
+    gsc: g ? (({ qp, ...x }) => x)(JSON.parse(g.json)) : null, ultimo: giri[0] ? { at: giri[0].at, fine: !!giri[0].fine, err: erroriDi(giri[0].err, S.dom, par.map(p => p.parola)) } : null, costoMese: Math.round(costoMese * 100) / 100 };
 }
 // solo gli errori di questo sito: le sue parole, il suo dominio, e quelli che valgono per tutti (credito, tetto, Google);
 // una parola saltata si dice in parole semplici
