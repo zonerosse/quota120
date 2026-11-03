@@ -2088,9 +2088,8 @@ document.addEventListener('play',function(e){if(e.target&&e.target.tagName==='VI
     <details class="q2-gr vl-gr lw-gr" id="lw-istr-c"><summary><span class="tx"><b>Istruzioni per il pilota</b><small id="lw-istr-n"></small></span><svg class="q2-fr" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></summary>
       <div class="vl-gin"><div class="cf-sub" id="lw-istr-s"></div><div id="lw-istr"></div></div></details>
     <details class="q2-gr vl-gr lw-gr" id="lw-vr"><summary><span class="tx"><b>Voli e rapporto</b><small id="lw-vr-s"></small></span><svg class="q2-fr" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></summary>
-      <div class="vl-gin"><ul class="dlist" id="lw-voli"></ul><div id="lw-vr-az"></div></div></details>
-    <details class="q2-gr vl-gr lw-gr" id="lw-ft"><summary><span class="tx"><b>Fattura e pagamento</b><small id="lw-ft-s"></small></span><svg class="q2-fr" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></summary>
-      <div class="vl-gin"><div id="lw-ft-c"></div></div></details>
+      <div class="vl-gin"><ul class="dlist" id="lw-voli"></ul><div id="lw-vr-az"></div>
+        <div class="h131-sub" id="lw-ft"><b>Fattura e pagamento</b><small id="lw-ft-s"></small><div id="lw-ft-c"></div></div></div></details>
     <details class="q2-gr vl-gr lw-gr" id="lw-det"><summary><span class="tx"><b>Dati del lavoro</b><small id="lw-det-s"></small></span><svg class="q2-fr" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></summary>
       <div class="vl-gin"><div class="fgrid" id="lw-dati"></div><div id="lw-dati-az"></div></div></details>
   </div>
@@ -3612,7 +3611,7 @@ function apriLavoro(id){
   istrDisegna(l);   // istruzioni per il pilota (le scrive l'Admin)
 
   // 5. voli e rapporto
-  $('lw-vr-s').textContent=(vv.length?pl(vv.length,'volo','voli')+' · '+hm(min):'0 voli')+' · '+(l.rapporto?'rapporto n. '+l.rapporto.n+(l.consegna?' · consegnato':''):l.consegna?'materiale consegnato':'il rapporto per il cliente si fa da qui');
+  $('lw-vr-s').className=''; $('lw-vr-s').textContent=(vv.length?pl(vv.length,'volo','voli')+' · '+hm(min):'0 voli')+' · '+(l.rapporto?'rapporto n. '+l.rapporto.n+(l.consegna?' · consegnato':''):l.consegna?'materiale consegnato':'il rapporto per il cliente si fa da qui');
   $('lw-voli').innerHTML = vv.length ? vv.map(v=>`<li onclick="apriVolo(${NID(v.id)})"><div class="main"><div class="a">${ESC(v.data)} · ${ESC(v.drone)}</div><div class="b">${ESC(v.pilota)} · ${ESC(v.luogo)}${v.min?' · '+ESC(v.min)+' min':''}</div></div><span class="tag ${STATO[v.stato][0]}">${STATO[v.stato][1]}</span></li>`).join('')
     : '<li style="cursor:default"><div class="b">Ancora nessun volo. Quando arriva il file DJI con il codice di questo lavoro, il volo compare qui.</div></li>';
   $('lw-vr-az').innerHTML=(!chiuso&&puoRap?opRiga({id:'lw-rap',ic:'rap',t:l.rapporto?'Rifai il rapporto':'Rapporto per il cliente',s:'il PDF con voli, mappe, ore e controlli',f:rapF}):'')+
@@ -3626,6 +3625,7 @@ function apriLavoro(id){
     else if(l.fatt){ s='fattura n. '+l.fatt.n+' · '+(sc<0?'scaduta da '+pl(-sc,'giorno','giorni'):'scadenza '+(l.scad||'')); sw=sc!=null&&sc<0?'ko':''; }
     else { s=(vv.length||chiuso?'da fatturare · ':'dopo il volo · ')+euro(c.imp)+(iva?' + IVA':''); sw=vv.length||chiuso?'warn':''; }
     $('lw-ft-s').textContent=s; $('lw-ft-s').className=sw;
+    $('lw-vr-s').textContent+=' · '+s; $('lw-vr-s').className=sw;
     F.push(opRiga({id:'pt-dati',ic:'doc',t:'Dati per la fattura',s:l.fatt?'fattura n. '+ESC(l.fatt.n)+' del '+ESC(l.fatt.data)+' · '+euro(c.tot):'cosa scrivere in fattura · '+euro(c.imp)+(iva?' + IVA':''),k:'g',f:`apriFattura(${I})`}));
     if(!l.fatt&&!l.pagato) F.push(opRiga({id:'pt-fatta',ic:'pen',t:'Fattura fatta',s:'scrivi numero e data: parte il conto alla rovescia del pagamento',f:`fatturaFatta(${I})`}));
     if(!l.pagato) F.push(opRiga({id:'pt-pagato',ic:'eur',t:'Segna pagato',s:l.fatt?(sc<0?'scaduto da '+pl(-sc,'giorno','giorni')+' · scadenza '+ESC(l.scad):'scadenza '+ESC(l.scad||'')+(sc!=null&&sc>=0?' (tra '+pl(sc,'giorno','giorni')+')':'')):'quando il cliente ti paga',sw:sc!=null&&sc<0?'ko':'',k:l.fatt?'':'g',f:`segnaPagato(${I},this)`}));
@@ -6433,11 +6433,11 @@ const GUIDES={
   S:[DV('lavori','Lì, nella riga «Soldi», c’è il colpo d’occhio: da fatturare, da incassare, scaduto.'),
    {t:'Guarda «Soldi»',p:'In fondo alla pagina Lavori: da fatturare, da incassare e scaduto in una riga; dentro, chi e quanto.',w:'Lo scaduto in rosso è la prima cosa da sistemare.',el:()=>VISTA==='lavori'?gdVis('#lv-soldi>summary'):null,nx:1,opt:1},
    {t:'Apri un lavoro',p:'Tocca un lavoro dentro «Soldi» o nell’elenco dei lavori: accanto c’è a che punto è.',w:'Ogni lavoro è una pratica con i suoi passi.',el:()=>gdVis('#lv-soldi-d li[onclick]')||gdVis('#lv-list li[onclick]'),ok:()=>['lavoro','fattura'].includes(VISTA)},
-   {t:'Leggi il lavoro',p:'In cima quando, dove, drone e pilota; poi «Prima del volo». Sotto, chiusi con il loro riassunto: «Voli e rapporto», «Fattura e pagamento», «Dati del lavoro». Arancio o rosso: c’è qualcosa da fare.',w:'Voli e rapporto si collegano da soli grazie al codice lavoro.',el:()=>gdVis('#lw-chi-c')||gdVis('#lw-testa'),nx:1},
+   {t:'Leggi il lavoro',p:'In cima quando, dove, drone e pilota; poi «Prima del volo». Sotto, chiusi con il loro riassunto: «Voli e rapporto» (con dentro fattura e pagamento), «Dati del lavoro». Arancio o rosso: c’è qualcosa da fare.',w:'Voli e rapporto si collegano da soli grazie al codice lavoro.',el:()=>gdVis('#lw-chi-c')||gdVis('#lw-testa'),nx:1},
    {t:'Tocca «Dati per la fattura»',p:'Si apre il riepilogo con voci, imponibile, IVA e totale.',w:'Lo copi nel programma di fatturazione o lo mandi al commercialista.',el:()=>gdVis('#pt-dati'),vai:()=>{ if(LAVCUR&&LAVORI.some(l=>l.id===LAVCUR)) apriFattura(LAVCUR); else apriLavori(); },ok:()=>VISTA==='fattura',opt:1},
    {t:'Copia o scarica i dati',p:'«Copia il testo» o «Scarica PDF». Con «Dati del cliente» scrivi P. IVA, codice destinatario e PEC una volta sola.',w:'Così la prossima fattura a quel cliente è già completa.',el:()=>gdVis('#ft-c .row'),nx:1,opt:1},
-   {t:'Quando hai fatto la fattura, segnala',p:'Torna al lavoro e, nel gruppo «Fattura e pagamento», tocca «Fattura fatta»: numero, data e giorni per il pagamento.',w:'Da lì parte il conto alla rovescia del pagamento, con l’avviso via email se scade.',el:()=>gdVis('#pt-fatta'),nx:1,opt:1},
-   {t:'Quando il cliente paga, tocca «Segna pagato»',p:'Nel gruppo «Fattura e pagamento». Se tarda, «Promemoria al cliente» ti prepara il messaggio.',w:'Il lavoro passa a «pagato» e sparisce dal da incassare.',el:()=>gdVis('#pt-pagato'),nx:1,opt:1}]},
+   {t:'Quando hai fatto la fattura, segnala',p:'Torna al lavoro e, nel gruppo «Voli e rapporto», sotto «Fattura e pagamento», tocca «Fattura fatta»: numero, data e giorni per il pagamento.',w:'Da lì parte il conto alla rovescia del pagamento, con l’avviso via email se scade.',el:()=>gdVis('#pt-fatta'),nx:1,opt:1},
+   {t:'Quando il cliente paga, tocca «Segna pagato»',p:'Nel gruppo «Voli e rapporto», sotto «Fattura e pagamento». Se tarda, «Promemoria al cliente» ti prepara il messaggio.',w:'Il lavoro passa a «pagato» e sparisce dal da incassare.',el:()=>gdVis('#pt-pagato'),nx:1,opt:1}]},
  prev:{n:'Fare un preventivo',r:'adm',base:()=>PREV.length,done:()=>false,
   why:{h:'Il preventivo',p:'Scrivi le voci del lavoro con quantità e prezzo: Quota 120 fa i conti (IVA o prestazione occasionale) e prepara il PDF. Quando il cliente accetta, il preventivo diventa un lavoro con il suo codice.',uses:['PDF da mandare al cliente','Lavoro con codice per i piloti','Dati per la fattura alla fine'],tm:'Ci vogliono 3 minuti.'},
   end:'Fatto. Quando il cliente accetta, tocca «Accettato: crea il lavoro»: nasce la pratica con il suo codice.',
@@ -7162,7 +7162,7 @@ function passiVolo(){
   if(ADM) S.push(
     {t:'Chiusura · torna al lavoro',p:'«Lavori», nella barra in basso › il lavoro.',w:'Dal lavoro chiudi tutto: «Voli e rapporto» per il cliente, poi «Fattura e pagamento».',vai:()=>LAVCUR&&LAVORI.some(l=>l.id===LAVCUR)?apriLavoro(LAVCUR):apriLavori(),el:()=>doveEl('lavori')||gdVis('#lv-list li[onclick]')||gdVis('#tb-home'),ok:()=>VISTA==='lavoro'},
     {t:'Voli e rapporto · «Rapporto per il cliente»',p:'Nel gruppo «Voli e rapporto»: il PDF con voli, mappe, ore e controlli: si manda al cliente. Quando gli hai dato anche foto e video, tocca «Consegnato».',w:'È la prova del lavoro fatto, con i dati del file DJI.',el:()=>gdVis('#lw-rap')||gdVis('#lw-vr'),nx:1},
-    {t:'Fattura e pagamento',p:'Nel gruppo «Fattura e pagamento»: «Dati per la fattura», poi «Fattura fatta»; quando il cliente paga, «Segna pagato».',w:'Con il pagamento il lavoro passa da solo tra i conclusi.',el:()=>gdVis('#lw-ft'),nx:1,opt:1});
+    {t:'Fattura e pagamento',p:'Nel gruppo «Voli e rapporto», sotto «Fattura e pagamento»: «Dati per la fattura», poi «Fattura fatta»; quando il cliente paga, «Segna pagato».',w:'Con il pagamento il lavoro passa da solo tra i conclusi.',el:()=>gdVis('#lw-ft'),nx:1,opt:1});
   return S;
 }
 function gdStart(k){
