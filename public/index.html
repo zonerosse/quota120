@@ -3440,7 +3440,9 @@ function lvStato(l){
     if(manca.length===mot.length) return ['warn',manca.map(t=>t.replace(/^Mancano /,'manca ')).join(', ')];
     const t=mot.find(t=>!/^Mancano /.test(t)); return ['ko',t+(mot.length>1?' (e altre '+(mot.length-1)+')':'')]; }
   if(!dt(l.data)) return ['warn','manca la data'];
-  if(!voliLavoro(l).length&&!rischioPer(l.id,l.luogo)) return ['warn','manca la valutazione del rischio'];
+  // la valutazione del rischio scritta è obbligatoria solo in categoria specifica (Reg. UE 2019/947 art. 11, autorizzazione ENAC);
+  // in categoria aperta basta il controllo della zona prima del volo, quindi lì niente pallino arancione
+  { const dr=DRONI.find(x=>x.id===l.drone); if(dr&&dr.cat==='specific'&&!voliLavoro(l).length&&!rischioPer(l.id,l.luogo)) return ['warn','manca la valutazione del rischio (categoria specifica)']; }
   return ['ok','']; }
 function lvRiga(l){ const fin=l.stato==='concluso', A=ADM&&!COME, p=PILOTI.find(x=>x.id===l.pilota);
   let liv, riga;
