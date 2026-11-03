@@ -32,6 +32,9 @@ export async function leggi(db, sito) {
     const ult = [...mis].reverse().find(x => x.parola === p.parola);
     return { parola: p.parola, vol: p.vol, storia: st, url: ult && ult.url || "", nuova: !ult, imp: ult ? ult.imp || 0 : 0, clic: ult ? ult.clic || 0 : 0 };
   });
+  // in ordine di visibilità (Paolo, 03/11/2026): prima chi compare di più, poi la posizione migliore, poi le ricerche al mese
+  const ult = p => { const s = p.storia || []; return s.length ? s[s.length - 1] : null; };
+  parole.sort((a, b) => (b.imp || 0) - (a.imp || 0) || ((ult(a) || 999) - (ult(b) || 999)) || ((b.vol || 0) - (a.vol || 0)));
   const g = await db.prepare("SELECT sett, json FROM pos_gsc WHERE sito=? ORDER BY sett DESC LIMIT 1").bind(sito).first();
   const mese = new Date().toISOString().slice(0, 7);
   const giri = (await db.prepare("SELECT sett, at, costo, controlli, err, fine FROM pos_giri ORDER BY sett DESC LIMIT 6").all()).results || [];
@@ -52,7 +55,9 @@ export async function parola(db, sito, testo, togli) {
   if (!SITI[sito]) throw new Error("sito sconosciuto");
   const p = pulisci(testo); if (p.length < 2) throw new Error("parola vuota");
   await posTabelle(db);
-  if (togli) { await db.prepare("DELETE FROM pos_parole WHERE sito=? AND parola=?").bind(sito, p).run(); return { ok: true }; }
+  // una parola tolta resta segnata come tolta (sito «-xx»), così non torna più nemmeno se cambia l'elenco di partenza (03/11/2026)
+  if (togli) { await db.batch([db.prepare("DELETE FROM pos_parole WHERE sito=? AND parola=?").bind(sito, p), db.prepare("INSERT OR IGNORE INTO pos_parole (sito, parola, vol, aggiunta) VALUES (?,?,0,?)").bind("-" + sito, p, new Date().toISOString())]); return { ok: true }; }
+  await db.prepare("DELETE FROM pos_parole WHERE sito=? AND parola=?").bind("-" + sito, p).run();
   const n = await db.prepare("SELECT COUNT(*) n FROM pos_parole WHERE sito=?").bind(sito).first();
   if ((n && n.n) >= 30) throw new Error("Al massimo 30 parole per sito: togline una prima.");
   await db.prepare("INSERT OR IGNORE INTO pos_parole (sito, parola, vol, aggiunta) VALUES (?,?,NULL,?)").bind(sito, p, new Date().toISOString()).run();

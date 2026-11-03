@@ -160,7 +160,7 @@ async function home(){await caricaP();const o=P.operatori,s=P.stato,nuovi=o.filt
   <a class="tile" href="/" target="_blank">${ic('web','--f-d')}<b>Vedi il sito</b><small>quota120.com</small></a></div>
   <div id="pzr" style="margin-top:14px"></div>`+(setTimeout(()=>posUI(()=>{const r=$('#pzr');if(r)PosUI.riquadro(r,'/api/admin/pos',AZ.pos)}),0),'')}
 /* ---------- Posizionamento (02/11/2026): /pos-ui.js uguale in tutti i siti, dati da /api/admin/pos ---------- */
-function posUI(f){if(window.PosUI)return f();const s=document.createElement('script');s.src='/pos-ui.js?v=2';s.onload=f;document.head.appendChild(s)}
+function posUI(f){if(window.PosUI)return f();const s=document.createElement('script');s.src='/pos-ui.js?v=20261103b';s.onload=f;document.head.appendChild(s)}
 function posP(){setTimeout(()=>posUI(()=>PosUI.scheda($('#pzbox'),'/api/admin/pos')),0);return '<div id="pzbox"></div>'}
 /* ---------- Problemi dell'app: errori registrati da soli e messaggi «Qualcosa non funziona?» ---------- */
 let LOG=[],LOGF='';
