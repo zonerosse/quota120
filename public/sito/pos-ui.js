@@ -54,7 +54,7 @@
     if (!D.chiuso && g) h += `<div class="pz-b"><h2>${ic('cerca', 'v')}Da Google, ultime 4 settimane</h2><p class="pz-da">Search Console · dal ${pd(g.dal)} al ${pd(g.al)} · confronto con le 4 settimane prima</p><div class="pz-n4">
       <div class="pz-n"><small>Clic</small><b>${nf(g.tot.c, 0)}</b>${fr(g.tot.c, g.prev.c)}</div><div class="pz-n"><small>Volte che sei comparso</small><b>${nf(g.tot.i, 0)}</b>${fr(g.tot.i, g.prev.i)}</div>
       <div class="pz-n"><small>Chi ti vede e clicca</small><b>${nf(g.tot.ctr)}%</b>${fr(g.tot.ctr, g.prev.ctr)}</div><div class="pz-n"><small>Posizione media</small><b>${g.tot.pos ? nf(g.tot.pos) : '–'}</b>${g.tot.pos ? fr(g.tot.pos, g.prev.pos, 1) : ''}</div></div></div>`;
-    h += `<div class="pz-b"><h2>${ic('ch')}Le tue parole chiave</h2><p class="pz-da">Le parole scelte da te · posizione vera su Google Italia, controllata ogni lunedì (DataForSEO)</p><div class="pz-tw"><table>
+    h += `<div class="pz-b"><h2>${ic('ch')}Le tue parole chiave</h2><p class="pz-da">Le parole che seguiamo · posizione vera su Google Italia, controllata ogni lunedì (DataForSEO)</p><div class="pz-tw"><table>
       <tr><th>Parola</th><th class="r hm">Ricerche al mese</th><th class="r">Oggi</th><th class="r hm">Lun. prima</th><th class="hm">Ultime 8 settimane</th><th>Dove sei</th><th></th></tr>
       ${D.parole.map(p => { const st = p.storia || [], o = st.length ? st[st.length - 1] : null, pr = st.length > 1 ? st[st.length - 2] : null, d = o && pr ? pr - o : 0;
         return `<tr><td><b style="color:var(--pzD)">${e(p.parola)}</b>${p.url && o ? `<br><span class="pz-pg">${e(p.url)}</span>` : ''}</td><td class="r hm">${p.vol == null ? '…' : nf(p.vol, 0)}</td>
