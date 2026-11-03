@@ -51,6 +51,17 @@ function erroriDi(js, dom, parole) {
     .map(x => x.replace(/^«(.+?)»: .*\(saltata\)$/, "«$1»: Google non ha risposto in tempo, si riprova lunedì prossimo"));
 }
 function settPrima(n) { const d = new Date(); d.setUTCDate(d.getUTCDate() - n * 7); return lunedi(d); }
+// la posizione di una parola dalle ricerche di Search Console (qp = {ricerca: [clic, comparso, posizione, pagina]}): la parola e le
+// ricerche della stessa famiglia, che contengono tutte le sue parole anche al plurale (03/11/2026). Torna [clic, comparso, posizione, pagina] o null.
+export function misuraDa(qp, parola) {
+  const rad = w => { w = w.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); return w.length > 5 ? w.slice(0, w.length - 1) : w; };
+  const vuote = new Set(["di", "del", "della", "per", "il", "lo", "la", "un", "una", "a", "e", "in", "da", "con", "come"]);
+  const sp = t => String(t).toLowerCase().split(/[^a-z0-9àèéìòù'-]+/).filter(w => w && !vuote.has(w)).map(rad);
+  const tk = sp(parola); if (!tk.length) return null; let x = null;
+  for (const q in qp || {}) { const qs = sp(q); if (tk.every(w => qs.includes(w))) { const r = qp[q]; x = x || [0, 0, 0, "", 0];
+    x[0] += r[0]; x[1] += r[1]; x[2] += r[2] * r[1]; if (r[1] > x[4]) { x[4] = r[1]; x[3] = r[3]; } } }
+  return x ? [x[0], x[1], x[1] ? Math.round(x[2] / x[1] * 10) / 10 : 0, x[3]] : null;
+}
 export async function parola(db, sito, testo, togli) {
   if (!SITI[sito]) throw new Error("sito sconosciuto");
   const p = pulisci(testo); if (p.length < 2) throw new Error("parola vuota");
@@ -59,7 +70,11 @@ export async function parola(db, sito, testo, togli) {
   if (togli) { await db.batch([db.prepare("DELETE FROM pos_parole WHERE sito=? AND parola=?").bind(sito, p), db.prepare("INSERT OR IGNORE INTO pos_parole (sito, parola, vol, aggiunta) VALUES (?,?,0,?)").bind("-" + sito, p, new Date().toISOString())]); return { ok: true }; }
   await db.prepare("DELETE FROM pos_parole WHERE sito=? AND parola=?").bind("-" + sito, p).run();
   const n = await db.prepare("SELECT COUNT(*) n FROM pos_parole WHERE sito=?").bind(sito).first();
-  if ((n && n.n) >= 30) throw new Error("Al massimo 30 parole per sito: togline una prima.");
+  if ((n && n.n) >= 50) throw new Error("Al massimo 50 parole per sito: togline una prima.");
   await db.prepare("INSERT OR IGNORE INTO pos_parole (sito, parola, vol, aggiunta) VALUES (?,?,NULL,?)").bind(sito, p, new Date().toISOString()).run();
+  // la posizione c'è subito, dai dati di Google di questa settimana (senza aspettare lunedì)
+  const sett = lunedi(), r = await db.prepare("SELECT json FROM pos_gsc WHERE sito=? AND sett=?").bind(sito, sett).first();
+  if (r) { let qp = {}; try { qp = JSON.parse(r.json).qp || {}; } catch (e) {} const x = misuraDa(qp, p);
+    await db.prepare("INSERT OR REPLACE INTO pos_misure (sito, parola, sett, pos, url, imp, clic) VALUES (?,?,?,?,?,?,?)").bind(sito, p, sett, x && x[1] ? x[2] : 0, x ? x[3] : "", x ? x[1] : 0, x ? x[0] : 0).run(); }
   return { ok: true };
 }
