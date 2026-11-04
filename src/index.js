@@ -310,6 +310,8 @@ function vista(d, n) {
   v.DOCS = (d.DOCS || []).filter(x => docVisibile(d, x, n));
   v.ZONEINFO = d.ZONEINFO || null;
   if (d.CHECK) v.CHECK = d.CHECK;
+  // manuale delle operazioni (anteprima 138): ai piloti solo l'ultima revisione firmata o il PDF caricato, da leggere (niente firma, niente bozze)
+  v.MANUALE = manualePub(d);
   // valutazioni del rischio: le sue e quelle dei lavori assegnati a lui (tutte con il permesso «clienti»); gli indirizzi a cui sono state mandate no
   const suoiLav = new Set((d.LAVORI || []).filter(l => me && l.pilota === me.id).map(l => l.id));
   v.RISCHI = (d.RISCHI || []).filter(r => P.clienti || r.firma === n || (r.lav != null && suoiLav.has(r.lav)))
@@ -318,11 +320,19 @@ function vista(d, n) {
   v.SEGN = (d.SEGN || []).map(x => x.pilota === n ? x : (x.fermo ? { id: x.id, drone: x.drone, data: x.data, tipo: x.tipo, fermo: true } : null)).filter(Boolean);
   return v;
 }
+// il manuale delle operazioni che vedono i piloti: l'ultima revisione firmata (o il PDF caricato dall'Admin)
+function manualePub(d) {
+  const M = d.MANUALE && typeof d.MANUALE === "object" ? d.MANUALE : {}, R = LISTA(M.rev), r = R.length ? R[R.length - 1] : null;
+  const car = M.car && typeof M.car === "object" && M.car.doc ? { doc: TX(M.car.doc, 40), data: TX(M.car.data, 10) } : null;
+  return { modo: M.modo === "car" ? "car" : r ? "q120" : car ? "car" : "", rev: r ? [{ n: +r.n || 1, data: TX(r.data, 10), chi: TX(r.chi, 80), scen: LISTA(r.scen).slice(0, 6).map(x => TX(x, 10)), doc: TX(r.doc, 40), pag: +r.pag || 0 }] : [], car };
+}
+const manualeDocs = d => { const P = manualePub(d); return [P.rev.length ? P.rev[0].doc : "", P.car ? P.car.doc : ""].filter(Boolean); };
 function docVisibile(d, doc, n) {
   const P = permDi(d, n), me = pilotaDi(d, n);
   if (doc.dapid != null ? !!me && me.id === doc.dapid : doc.da === n) return true;   // chi l'ha caricato (con l'id del pilota, se c'è)
   if (doc.dest && doc.dest.k === "pilota") return (me && doc.dest.id === me.id) || !!P.documenti;
   if (doc.dest && doc.dest.k === "drone") return !!P.flotta;
+  if (doc.dest && doc.dest.k === "operatore" && doc.dest.voce === "manuale") return true;   // il manuale delle operazioni: tutti i piloti lo devono conoscere
   return !!P.enac;
 }
 // quello che manda l'operatore n: si prendono solo i suoi voli e le sue verifiche delle zone, ripuliti
@@ -456,6 +466,8 @@ function applicaDoc(d, doc) {
     if (s.voce === "assicurazione") { d.ASSIC = Object.assign(d.ASSIC || {}, { scad: DATA(c.scadenza) || (d.ASSIC || {}).scad, ok: true, doc: doc.id }); }
     if (s.voce === "autorizzazione") { d.AUT_ENAC = Object.assign(d.AUT_ENAC || {}, { agricola: true, doc: doc.id }); if (d.DOMANDA) d.DOMANDA.stato = "approvata"; }
     if (s.voce === "dflight") { d.OP = Object.assign(d.OP || {}, { dfDoc: doc.id }); if (DATA(c.scadenza)) d.OP.dfAbb = c.scadenza; }
+    // il manuale delle operazioni caricato dall'Admin (anteprima 138): diventa quello in uso
+    if (s.voce === "manuale") { d.MANUALE = Object.assign(d.MANUALE && typeof d.MANUALE === "object" ? d.MANUALE : {}, { modo: "car", car: { doc: doc.id, data: doc.data } }); }
   }
   return d;
 }
@@ -1665,7 +1677,7 @@ export class Stato extends DurableObject {
       const did = url.searchParams.get("d") || "", info = await st.get("docinfo:" + did);
       if (!info) return J({ errore: "Documento non trovato" }, 404);
       if (!adm) { const m = await leggiMain(), doc = m && (m.d.DOCS || []).find(x => x.id === did); const suoVolo = m && (m.d.VOLI || []).some(v => v.docLog === did && (v.pilota === me.n || permDi(m.d, me.n).voliTutti));
-        if (!(mio(info) || suoVolo || (doc && docVisibile(m.d, doc, me.n)))) return J({ errore: "Non puoi vederlo" }, 403); }
+        if (!(mio(info) || suoVolo || (doc && docVisibile(m.d, doc, me.n)) || (m && manualeDocs(m.d).includes(did)))) return J({ errore: "Non puoi vederlo" }, 403); }
       const parti = []; for (let i = 0; i < info.pezzi; i++) parti.push(await st.get("doc:" + did + ":" + i));
       return new Response(new Blob(parti, { type: info.mime }), { headers: { "content-type": info.mime, "cache-control": "private, no-store",
         "content-disposition": "inline; filename=\"" + info.nome.replace(/[^\w.\- ]/g, "_") + "\"" } });
