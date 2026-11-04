@@ -11353,8 +11353,10 @@ function pxCaricaXls(){ if(window.XLSX) return Promise.resolve(); if(LIBXLS) ret
   LIBXLS=new Promise((ok,no)=>{ const s=document.createElement('script'); s.src='/lib/xlsx.core.min.js'; s.onload=ok; s.onerror=e=>{ LIBXLS=null; no(e); }; document.head.appendChild(s); }); return LIBXLS; }
 function pxSeriale(n,d1904){ const t=new Date((d1904?Date.UTC(1904,0,1):Date.UTC(1899,11,30))+Math.floor(n+1e-7)*864e5); return PX_FD(new Date(t.getUTCFullYear(),t.getUTCMonth(),t.getUTCDate())); }
 function pxOraSer(n){ const m=Math.round(n*1440); return Math.floor(m/60)+':'+PX_P2(m%60); }
-function pxNumero(n,tipo,d1904){ if(!isFinite(n)) return ''; if(tipo==='d') return n>=1?pxSeriale(n,d1904):pxOraSer(n%1); if(tipo==='t') return pxOraSer(n); return String(+n.toPrecision(12)); }
-function pxTipoFmt(id,fmt){ if((id>=14&&id<=17)||id===22||(id>=27&&id<=36)||(id>=50&&id<=58)) return 'd'; if((id>=18&&id<=21)||(id>=45&&id<=47)) return 't';
+function pxNumero(n,tipo,d1904){ if(!isFinite(n)) return ''; if(/^z\d+$/.test(tipo||'')) return String(Math.round(n)).padStart(+tipo.slice(1),'0'); if(tipo==='p0') return '0'+String(Math.round(n)); if(tipo==='d') return n>=1?pxSeriale(n,d1904):pxOraSer(n%1); if(tipo==='t') return pxOraSer(n); return String(+n.toPrecision(12)); }
+function pxTipoFmt(id,fmt){ const fz=String(fmt[id]||'');
+  // formato con gli zeri davanti (es. 00000000000 o "0"#): si rimettono, come li mostra Excel
+  if(/^0{2,}$/.test(fz)) return 'z'+fz.length; if(/^("0"|\\0)[0#]+$/.test(fz)) return 'p0'; if((id>=14&&id<=17)||id===22||(id>=27&&id<=36)||(id>=50&&id<=58)) return 'd'; if((id>=18&&id<=21)||(id>=45&&id<=47)) return 't';
   const f=fmt[id]; if(!f) return ''; const s=f.replace(/"[^"]*"|\\.|\[[^\]]*\]/g,''); if(/[dy]/i.test(s)) return 'd'; if(/\[(h+|m+|s+)\]/i.test(f)||/[hs]/i.test(s)) return 't'; return ''; }
 function pxColN(ref){ const m=/^([A-Z]+)/i.exec(ref||''); if(!m) return -1; let n=0; for(const c of m[1].toUpperCase()) n=n*26+c.charCodeAt(0)-64; return n-1; }
 var pxTag=(d,n)=>d?[...d.getElementsByTagNameNS('*',n)]:[];
@@ -11392,7 +11394,7 @@ async function pxOds(z){ const f=z.file('content.xml'); if(!f) throw new Error('
 function pxSheetJS(buf){ const X=window.XLSX, wb=X.read(new Uint8Array(buf),{type:'array',cellDates:false,cellNF:true}), d1904=!!(wb.Workbook&&wb.Workbook.WBProps&&wb.Workbook.WBProps.date1904);
   return wb.SheetNames.map(n=>{ const ws=wb.Sheets[n], rg=ws['!ref']?X.utils.decode_range(ws['!ref']):null, righe=[]; if(!rg) return {nome:n,righe};
     for(let r=rg.s.r;r<=Math.min(rg.e.r,6000);r++){ const row=[]; for(let c=0;c<=Math.min(rg.e.c,200);c++){ const cell=ws[X.utils.encode_cell({r,c})]; let x='';
-        if(cell){ if(cell.t==='n'){ const z=cell.z||''; const tp=z&&X.SSF.is_date(z)?(/[dy]/i.test(z.replace(/"[^"]*"|\[[^\]]*\]/g,''))?'d':'t'):''; x=pxNumero(cell.v,tp,d1904); }
+        if(cell){ if(cell.t==='n'){ const z=cell.z||''; const tp=z&&X.SSF.is_date(z)?(/[dy]/i.test(z.replace(/"[^"]*"|\[[^\]]*\]/g,''))?'d':'t'):''; x=!tp&&/^0{2,}$|^("0"|\\0)/.test(z)?X.SSF.format(z,cell.v):pxNumero(cell.v,tp,d1904); }
           else if(cell.t==='b') x=cell.v?'sì':'no'; else if(cell.t==='d') x=PX_FD(cell.v); else if(cell.t!=='e') x=cell.v==null?'':String(cell.v); }
         row[c]=x.trim(); } righe[r]=row; }
     return {nome:n,righe}; }); }
@@ -11436,6 +11438,12 @@ function pxMancano(){ const ty=PX_T[PX.tipo], u=new Set(Object.values(PX.map)); 
 
 /* ---------- controllo di ogni riga ---------- */
 function pxValori(r){ const o={}; Object.keys(PX.map).forEach(i=>{ const k=PX.map[i]; if(k) o[k]=String(r.raw[i]==null?'':r.raw[i]).trim(); }); return Object.assign(o,r.fix); }
+// telefono italiano arrivato come numero (lo zero davanti perso): cellulari 3xx a 10 cifre, fissi con lo 0; 39… senza «+» = +39
+function pxTel(s){ const t=String(s==null?'':s).trim(); if(!t) return {v:''}; if(!/^\d+$/.test(t)) return {v:t};
+  if(/^39\d{9,10}$/.test(t)&&/^[03]/.test(t.slice(2))) return {v:'+39 '+t.slice(2)};
+  if(/^3\d{9}$/.test(t)||/^0\d{5,10}$/.test(t)) return {v:t};
+  if(/^[1-24-9]\d{4,9}$/.test(t)) return {v:'0'+t};
+  return {dub:'Telefono che non capisco: «'+t+'» (lunghezza strana)'}; }
 var pxEmailOk=e=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 function pxControlla(){ const ty=PX.tipo, visti=[], nomi={}, matrUsate=[], oggiD=new Date(); oggiD.setHours(23,59,59,0);
   PX.righe.forEach(r=>{ const o=pxValori(r); r.esito='ok'; r.msg=''; r.nota=''; r.dub=null; r.v={};
@@ -11443,7 +11451,7 @@ function pxControlla(){ const ty=PX.tipo, visti=[], nomi={}, matrUsate=[], oggiD
     if(r.salta){ r.esito='salta'; return; }
     if(ty==='droni'){ const nome=(o.nome||'').trim(); if(!nome) return dub({k:'txt',f:'nome',m:'Manca la marca e il modello',ph:'es. DJI Mini 4 Pro'});
       const matr=(o.matr||'').toUpperCase(), g=matr&&pxDroni().find(d=>d.matr&&d.matr.toUpperCase()===matr);
-      if(g) return dop('c’è già: '+g.nome+' (stessa matricola)'); if(matr&&visti.includes(matr)) return dop('due volte nel file (stessa matricola)'); if(matr) visti.push(matr);
+      if(g&&!pxIncompleto(g.id)) return dop('c’è già: '+g.nome+' (stessa matricola)'); if(matr&&visti.includes(matr)) return dop('due volte nel file (stessa matricola)'); if(matr) visti.push(matr);
       const acq=o.acq?pxData(o.acq):''; if(o.acq&&!acq) return dub({k:'txt',f:'acq',m:'Data di acquisto che non capisco: «'+o.acq+'»',v:o.acq,ph:'gg/mm/aaaa'});
       let cl=String(o.classe||'').trim(); const c=/^(?:classe\s*)?c\s*([0-6])$/i.exec(cl);
       if(c) cl='C'+c[1]; else if(/agric/i.test(cl)) cl='Senza classe agricolo'; else if(/^senza|nessuna|^no\b|legacy/i.test(cl)) cl='Senza classe';
@@ -11452,6 +11460,9 @@ function pxControlla(){ const ty=PX.tipo, visti=[], nomi={}, matrUsate=[], oggiD
       const pg=pesoG(o.peso), agri=cl==='Senza classe agricolo', classe=agri?'Senza classe':cl;
       if(classe==='Senza classe'&&!pg) return dub({k:'txt',f:'peso',m:'Peso al decollo: serve per un drone senza classe (decide la categoria)',v:o.peso||'',ph:'es. 1375 g oppure 6,5 kg'});
       const cat=catDaClasse(classe,o.peso,agri);
+      if(g){ r.v={nome:g.nome,matr:o.matr||'',classe,agri,peso:pg?pxPesoT(pg):'',acq:acq||'',cat,rid:o.rid||'',sens:[],ore:pxOreFile(o.ore),completa:g.id};
+        r.v.sens=/niente|nessun|spargi/i.test(o.sens||'')||(agri&&!o.sens)?[]:['foto'].concat(/termic|thermal|termo/i.test(String(o.sens||'')+' '+nome)?['termica']:[]).concat(/multisp/i.test(String(o.sens||'')+' '+nome)?['multi']:[]);
+        r.nota='completa «'+g.nome+'», creato con i voli'; return; }
       let n=nome, k=2; const tutti=DRONI.map(d=>d.nome.toLowerCase()); while(tutti.includes(n.toLowerCase())||nomi[n.toLowerCase()]) n=nome+' '+(k++); nomi[n.toLowerCase()]=1;
       if(n!==nome) r.nota=(r.nota?r.nota+' · ':'')+'nome «'+n+'»: c’è già un '+nome;
       if(cat==='specific') r.nota=(r.nota?r.nota+' · ':'')+'categoria specifica: serve l’autorizzazione ENAC';
@@ -11463,6 +11474,7 @@ function pxControlla(){ const ty=PX.tipo, visti=[], nomi={}, matrUsate=[], oggiD
       const tp=pxTrovaPil(nome); if(tp&&pxN(tp.nome).split(' ').sort().join()===pxN(nome).split(' ').sort().join()) return dop('c’è già: '+tp.nome);
       if(visti.includes(pxN(nome).split(' ').sort().join())) return dop('due volte nel file'); visti.push(pxN(nome).split(' ').sort().join());
       if(o.email&&!pxEmailOk(o.email)) return dub({k:'txt',f:'email',m:'L’email non sembra giusta: «'+o.email+'»',v:o.email});
+      const tl=pxTel(o.tel); if(tl.dub) return dub({k:'txt',f:'tel',m:tl.dub,v:o.tel,ph:'es. 0532 123456'}); o.tel=tl.v;
       const S={}; for(const [f,l] of [['a13s','A1-A3'],['a2s','A2'],['stss','STS-01']]){ if(o[f]){ const d=pxData(o[f]); if(!d) return dub({k:'txt',f,m:'Scadenza dell’attestato '+l+' che non capisco: «'+o[f]+'»',v:o[f],ph:'gg/mm/aaaa'}); S[l]=d; } }
       let matr=String(o.matr||'').trim(); if(matr){ const g=PILOTI.find(p=>p.matr&&pxN(p.matr)===pxN(matr)); if(g||matrUsate.includes(pxN(matr))) return dub({k:'txt',f:'matr',m:'La matricola '+matr+' è già '+(g?'di '+g.nome:'di un altro pilota del file')+': ne serve una diversa',v:'',ph:'matricola aziendale'}); }
       else { matr=pxMatrNuova(matrUsate); r.nota='matricola aziendale '+matr+' (proposta: serve per entrare)'; }
@@ -11473,6 +11485,7 @@ function pxControlla(){ const ty=PX.tipo, visti=[], nomi={}, matrUsate=[], oggiD
     if(ty==='clienti'){ const nome=(o.nome||'').trim(); if(!nome) return dub({k:'txt',f:'nome',m:'Manca il nome del cliente'});
       if(CLIENTI.some(c=>pxN(c)===pxN(nome))) return dop('c’è già'); if(visti.includes(pxN(nome))) return dop('due volte nel file'); visti.push(pxN(nome));
       if(o.email&&!pxEmailOk(o.email)) return dub({k:'txt',f:'email',m:'L’email non sembra giusta: «'+o.email+'»',v:o.email});
+      const tl=pxTel(o.tel); if(tl.dub) return dub({k:'txt',f:'tel',m:tl.dub,v:o.tel,ph:'es. 0532 123456'}); o.tel=tl.v;
       let piva='', cf=String(o.cf||'').replace(/\s/g,'').toUpperCase();
       for(const f of ['pivacf','piva']){ const x=String(o[f]||'').replace(/\s/g,'').replace(/^IT(?=\d{11}$)/i,'').toUpperCase(); if(!x) continue;
         if(/^\d{11}$/.test(x)) piva=x; else if(/^[A-Z0-9]{16}$/.test(x)) cf=x; else return dub({k:'txt',f,m:/^\d+$/.test(x)?'Partita IVA di '+x.length+' cifre: ne servono 11':'Partita IVA o codice fiscale che non capisco: «'+x+'»',v:x}); }
@@ -11613,7 +11626,7 @@ function pxCreaGr(k,gi){ const d=(PX.gruppi||[])[gi]; if(!d) return;
 
 /* 5 · importa: tutto in un colpo, con il salvataggio di sempre (PUT /api/stato dell'Admin) */
 function pxSchedaDrone(classe,v,file){ const cat=v.cat==='specific';
-  return {marca:'',classe,peso:v.peso||'—',cat:cat?'Specific':'Open',acq:v.acq||'—',ore:v.ore?pxHM(v.ore):'0 h',voli:0,rid:v.rid||'—',
+  return {marca:'',classe,peso:v.peso||'—',cat:cat?'Specific':'Open',acq:v.acq||'—',ore:'0 h',voli:0,primaMin:Math.max(0,Math.round(+v.ore||0)),primaVoli:0,rid:v.rid||'—',
     man:{prox:'Primo controllo generale a 50 ore',mancano:'50 ore',perc:0,liv:'ok'},storia:[[oggi(),'Importato dal file '+file]],doc:{qr:false,classe:false,manuale:false,fattura:false}}; }
 function pxNuovoDrone(v,file){ const id=pxId(), classe=v.classe||'';
   DRONI.push({id,nome:v.nome,classe,cat:v.cat||'open',qr:false,manut:'ok',batt:'ok',sens:v.sens||['foto']}); MATR[v.nome]=v.matr||'';
@@ -11623,9 +11636,37 @@ function pxNuovoPilota(v){ const id=pxId();
   const att={}; Object.keys(v.att||{}).forEach(k=>{ att[k]={num:k==='A1-A3'?v.num||'':'',ril:'',scad:v.att[k]}; }); if(v.num&&!att['A1-A3']) att['A1-A3']={num:v.num,ril:'',scad:''};
   SCHEDEP[id]={ruolo:v.ruolo||'Pilota',tel:v.tel||'',email:v.email||'',ore:'0 h',voli:0,ore90:'0 h',inc:0,att};
   PERM[id]={admin:false,voliTutti:false,flotta:true,documenti:false,clienti:false,prezzi:false,enac:false,agri:false}; return id; }
+
+/* ORE E VOLI CONTATI UNA VOLTA SOLA (una sola regola, per droni e piloti): le «ore di prima di Quota 120» e i voli importati da un file
+   raccontano la stessa storia, quindi conta il più grande dei due; i voli registrati nel programma si aggiungono.
+   totale = max(ore di prima, somma dei voli importati) + voli del programma; uguale per il numero dei voli e per il conto della manutenzione.
+   SCHEDE/SCHEDEP .ore e .voli restano il totale che leggono tutte le pagine (scheda, Home, manutenzione, ispezione, PDF, server):
+   ogni importazione e ogni annullamento li sposta solo della differenza della parte «storica» (pxRiallinea). Il server fa lo stesso (storico()). */
+function pxStor(k,id){ const s=(k==='d'?SCHEDE:SCHEDEP)[id]||{}, o=(k==='d'?DRONI:PILOTI).find(x=>String(x.id)===String(id)); if(!o) return {m:0,n:0,m90:0};
+  const l90=new Date(); l90.setHours(0,0,0,0); l90.setDate(l90.getDate()-90); let m=0,n=0,m90=0;
+  for(const v of VOLI) if(v&&v.imp&&(k==='d'?v.drone:v.pilota)===o.nome){ m+=+v.min||0; n++; if(dt(v.data)>=l90) m90+=+v.min||0; }
+  return {m:Math.max(+s.primaMin||0,m),n:Math.max(+s.primaVoli||0,n),m90}; }
+function pxFoto(){ const F={}; DRONI.forEach(d=>F['d'+d.id]=pxStor('d',d.id)); PILOTI.forEach(p=>F['p'+p.id]=pxStor('p',p.id)); return F; }
+// manutenzione: «sotto» tiene i minuti oltre la scadenza, così un annullamento torna esattamente al punto di prima
+function pxManSposta(man,dm){ if(!man||!dm) return; const R=pxMinDi(man.mancano)-(+man.sotto||0), R2=R-dm;
+  if(R2>0){ man.mancano=pxOreDi(R2); delete man.sotto; } else { man.mancano='da fare subito'; man.sotto=-R2; }
+  man.liv=R2<=0?'ko':R2<=300?'warn':dm<0?'ok':man.liv==='ko'?'warn':man.liv; }
+function pxRiallinea(F){
+  for(const [k,L,S] of [['d',DRONI,SCHEDE],['p',PILOTI,SCHEDEP]]) for(const o of L){ const s=S[o.id]; if(!s) continue;
+    const a=pxStor(k,o.id), b=F[k+o.id]||{m:0,n:0,m90:0}, dm=a.m-b.m, dn=a.n-b.n, d90=a.m90-b.m90; if(!dm&&!dn&&!d90) continue;
+    const H=m=>m>0?pxHM(m):'0 h';   // zero come lo scrive il programma
+    s.ore=H(pxMinDi(s.ore)+dm); s.voli=Math.max(0,(+s.voli||0)+dn);
+    if(k==='d') pxManSposta(s.man,dm); else if(d90) s.ore90=H(pxMinDi(s.ore90)+d90); } }
+// un drone creato da un'importazione di voli («Crealo») e mai completato: il file dei droni lo completa invece di saltarlo
+function pxIncompleto(id){ const d=DRONI.find(x=>x.id===id); return !!d&&!d.classe&&IMPORTI.some(b=>!b.via&&(b.creD||[]).includes(id)); }
 function pxApplica(){ const ty=PX.tipo, ok=PX.righe.filter(r=>r.esito==='ok'), at=Date.now(), file=PX.file.nome;
-  const B={id:pxId(),tipo:ty,file:String(file).slice(0,120),at,n:ok.length,ids:[],creP:[],creD:[],dop:PX.righe.filter(r=>r.esito==='dop').length,fuori:PX.righe.filter(r=>r.esito==='dub').length,dr:{},pi:{},man:{}};
-  if(ty==='droni') ok.forEach(r=>B.ids.push(pxNuovoDrone(r.v,file)));
+  const B={id:pxId(),tipo:ty,file:String(file).slice(0,120),at,n:ok.length,ids:[],creP:[],creD:[],compl:[],dop:PX.righe.filter(r=>r.esito==='dop').length,fuori:PX.righe.filter(r=>r.esito==='dub').length}, F=pxFoto();
+  if(ty==='droni') ok.forEach(r=>{ const v=r.v; if(!v.completa) return B.ids.push(pxNuovoDrone(v,file));
+    // completa il drone creato dai voli: si tiene com'era, per l'annullamento
+    const d=DRONI.find(x=>x.id===v.completa), sc=SCHEDE[d.id]=SCHEDE[d.id]||pxSchedaDrone('da completare',{},file);
+    B.compl.push({id:d.id,d:{classe:d.classe,cat:d.cat,sens:d.sens},s:{classe:sc.classe,peso:sc.peso,cat:sc.cat,acq:sc.acq,rid:sc.rid,primaMin:sc.primaMin,primaVoli:sc.primaVoli},m:MATR[d.nome]});
+    Object.assign(d,{classe:v.classe,cat:v.cat,sens:v.sens}); Object.assign(sc,{classe:v.classe,peso:v.peso||'—',cat:v.cat==='specific'?'Specific':'Open',acq:v.acq||'—',rid:v.rid||'—',primaMin:Math.max(0,Math.round(+v.ore||0)),primaVoli:0});
+    if(v.matr) MATR[d.nome]=v.matr; (sc.storia=sc.storia||[]).push([oggi(),'Completato dal file '+file]); });
   if(ty==='piloti') ok.forEach(r=>B.ids.push(pxNuovoPilota(r.v)));
   if(ty==='clienti') ok.forEach(r=>{ const v=r.v; CLIENTI.push(v.nome); const o={}; ['ref','tel','email','ind','piva','cf','sdi','pec'].forEach(k=>{ if(String(v[k]||'').trim()) o[k]=String(v[k]).trim(); }); if(Object.keys(o).length) CLIDATI[v.nome]=o; B.ids.push(v.nome); });
   if(ty==='voli'){
@@ -11634,17 +11675,10 @@ function pxApplica(){ const ty=PX.tipo, ok=PX.righe.filter(r=>r.esito==='ok'), a
     const nota='importato dal file '+B.file+' il '+oggi(), o90=new Date(); o90.setHours(0,0,0,0); o90.setDate(o90.getDate()-90);
     ok.forEach(r=>{ const v=r.v, id=pxId();
       VOLI.push({id,data:v.data,ora:v.ora||'',drone:v.drone,pilota:v.pilota,luogo:v.luogo||'',min:v.min,cat:v.cat,cliente:v.cliente||'',note:(v.note?v.note+' · ':'')+nota,stato:'completo',ctrl:false,amano:true,imp:{file:B.file,at,batch:B.id}});
-      B.ids.push(id);
-      const d=DRONI.find(x=>x.nome===v.drone), p=PILOTI.find(x=>x.nome===v.pilota);
-      if(d){ const x=B.dr[d.id]=B.dr[d.id]||{m:0,n:0}; x.m+=v.min; x.n++; }
-      if(p){ const x=B.pi[p.id]=B.pi[p.id]||{m:0,n:0,m90:0}; x.m+=v.min; x.n++; if(dt(v.data)>=o90) x.m90+=v.min; } });
-    // ore e voli di ogni drone e di ogni pilota, e il conto per la manutenzione (come per i voli letti dal file DJI)
-    Object.keys(B.dr).forEach(id=>{ const s=SCHEDE[id], x=B.dr[id]; if(!s) return; const prima=s.man?JSON.stringify(s.man):'';
-      s.ore=pxHM(pxMinDi(s.ore)+x.m); s.voli=(+s.voli||0)+x.n;
-      if(s.man){ const rr=pxMinDi(s.man.mancano)-x.m; s.man.mancano=rr>0?pxOreDi(rr):'da fare subito'; s.man.liv=rr<=0?'ko':rr<=300?'warn':s.man.liv==='ko'?'warn':s.man.liv; B.man[id]=[prima,JSON.stringify(s.man)]; } });
-    Object.keys(B.pi).forEach(id=>{ const s=SCHEDEP[id], x=B.pi[id]; if(!s) return; s.ore=pxHM(pxMinDi(s.ore)+x.m); s.voli=(+s.voli||0)+x.n; if(x.m90) s.ore90=pxHM(pxMinDi(s.ore90)+x.m90); });
+      B.ids.push(id); });
     VOLI.sort((a,b)=>{ const k=v=>{ const d=dt(v.data); return (d?d.getTime():0)+(/^\d{1,2}:\d{2}$/.test(v.ora||'')?(+v.ora.split(':')[0]*60+ +v.ora.split(':')[1])*6e4:0); }; return k(b)-k(a); });
   }
+  pxRiallinea(F);   // ore, voli e manutenzione di droni e piloti: solo la differenza della parte storica
   IMPORTI.push(B); if(IMPORTI.length>60){ const i=IMPORTI.findIndex(x=>x.via); IMPORTI.splice(i>=0?i:0,1); }
   ricalcola(); return B; }
 // aspetta che il salvataggio di sempre sia arrivato al server
@@ -11687,7 +11721,7 @@ function pxPFatto(){ const b=IMPORTI.find(x=>x.id===PX.ultimo); if(!b) return px
       ${Object.keys(P).sort((a,c)=>P[c]-P[a]).slice(0,4).map(k=>`<div class="px-li"><span class="tx">${ESC(k)}</span><b>+ ${pxHM(P[k])}</b></div>`).join('')}
       <div class="px-box">Ogni volo porta la nota «importato dal file ${ESC(b.file)} il ${PX_FD(new Date(b.at))}». Il registro dei voli si conserva almeno 3 anni (UAS.SPEC.050).</div></div>`; }
   if(b.tipo==='piloti') L.push('gli attestati hanno numero e scadenza: la foto dell’attestato la trovi da caricare in «Da sistemare»');
-  if(b.tipo==='droni'&&b.ids.some(id=>(DRONI.find(d=>d.id===id)||{}).cat==='specific')) L.push('per i droni in categoria specifica in «Da sistemare» trovi l’autorizzazione ENAC');
+  if(b.tipo==='droni'&&b.ids.concat((b.compl||[]).map(x=>x.id)).some(id=>(DRONI.find(d=>d.id===id)||{}).cat==='specific')) L.push('per i droni in categoria specifica in «Da sistemare» trovi l’autorizzazione ENAC');
   if(b.tipo==='droni') L.push('foto del QR D-Flight e documenti di ogni drone: da allegare nella sua scheda');
   if(L.length) h+=`<div class="card px-c1">${L.map(x=>`<div class="px-li"><span class="tx">${ESC(x)}</span></div>`).join('')}</div>`;
   const tot=PX_ORD.map(t=>[t,pxFatti(t)]).filter(x=>x[1]);
@@ -11707,15 +11741,16 @@ async function pxAnnulla(btn){ const b=IMPORTI.find(x=>x.id===PX.ultimo); if(!b|
   btn.disabled=true; btn.classList.add('busy'); btn.querySelector('.px-bt').textContent='Annullo…';
   if(JSON.stringify(stato())!==LASTJ) await pxSalva();
   const b2=IMPORTI.find(x=>x.id===PX.ultimo); if(!b2||b2.via){ pxRidisegna(); return; }
-  if(b2.tipo==='droni') b2.ids.forEach(pxTogliDrone);
+  const F=pxFoto();
+  if(b2.tipo==='droni'){ b2.ids.forEach(pxTogliDrone);
+    (b2.compl||[]).forEach(x=>{ const d=DRONI.find(y=>y.id===x.id), sc=SCHEDE[x.id]; if(!d||!sc) return; Object.assign(d,x.d); Object.keys(x.s).forEach(k=>{ if(x.s[k]===undefined) delete sc[k]; else sc[k]=x.s[k]; }); if(x.m!==undefined) MATR[d.nome]=x.m; }); }
   if(b2.tipo==='piloti') b2.ids.forEach(pxTogliPilota);
   if(b2.tipo==='clienti') b2.ids.forEach(n=>{ const i=CLIENTI.indexOf(n); if(i>=0) CLIENTI.splice(i,1); delete CLIDATI[n]; });
   if(b2.tipo==='voli'){ const S=new Set(b2.ids); VOLI=VOLI.filter(v=>!(S.has(v.id)&&v.imp&&v.imp.batch===b2.id));
-    Object.keys(b2.dr||{}).forEach(id=>{ const s=SCHEDE[id], x=b2.dr[id]; if(!s) return; s.ore=pxHM(Math.max(0,pxMinDi(s.ore)-x.m)); s.voli=Math.max(0,(+s.voli||0)-x.n);
-      const mm=(b2.man||{})[id]; if(mm&&mm[0]&&s.man&&JSON.stringify(s.man)===mm[1]) s.man=JSON.parse(mm[0]); });
-    Object.keys(b2.pi||{}).forEach(id=>{ const s=SCHEDEP[id], x=b2.pi[id]; if(!s) return; s.ore=pxHM(Math.max(0,pxMinDi(s.ore)-x.m)); s.voli=Math.max(0,(+s.voli||0)-x.n); if(x.m90) s.ore90=pxHM(Math.max(0,pxMinDi(s.ore90)-x.m90)); });
+    pxRiallinea(F);
     (b2.creD||[]).forEach(id=>{ const d=DRONI.find(x=>x.id===id); if(d&&!VOLI.some(v=>v.drone===d.nome)&&!LAVORI.some(l=>l.drone===id)) pxTogliDrone(id); });
     (b2.creP||[]).forEach(id=>{ const p=PILOTI.find(x=>x.id===id); if(p&&!VOLI.some(v=>v.pilota===p.nome)&&!LAVORI.some(l=>l.pilota===id)) pxTogliPilota(id); }); }
+  if(b2.tipo!=='voli') pxRiallinea(F);
   b2.via=true; b2.viaAt=Date.now(); ricalcola();
   await pxSalva(); PX.conf=false; pxRidisegna(); toast('Importazione annullata'); }
 

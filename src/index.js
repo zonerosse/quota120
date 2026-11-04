@@ -210,6 +210,18 @@ function togliVolo(d, v) {
   if (sp) { sp.ore = giu(sp.ore, min); sp.voli = Math.max(0, (+sp.voli || 0) - 1); sp.ore90 = giu(sp.ore90, min); }
   return d;
 }
+// anteprima 140: le «ore di prima di Quota 120» e i voli importati da un file contano una volta sola (il più grande dei due), più i voli del programma.
+// È la stessa regola della pagina (pxStor / pxRiallinea): .ore e .voli restano il totale, si spostano solo della differenza della parte storica.
+function storico(d, k, o) { const s = ((k === "d" ? d.SCHEDE : d.SCHEDEP) || {})[o.id] || {}, l90 = new Date(); l90.setHours(0, 0, 0, 0); l90.setDate(l90.getDate() - 90); let m = 0, n = 0, m90 = 0;
+  for (const v of LISTA(d.VOLI)) if (v && v.imp && (k === "d" ? v.drone : v.pilota) === o.nome) { m += +v.min || 0; n++; const x = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(v.data || ""); if (x && new Date(+x[3], +x[2] - 1, +x[1]) >= l90) m90 += +v.min || 0; }
+  return { m: Math.max(+s.primaMin || 0, m), n: Math.max(+s.primaVoli || 0, n), m90 }; }
+function riallinea(d, k, o, b) { const s = ((k === "d" ? d.SCHEDE : d.SCHEDEP) || {})[o.id]; if (!s) return; const a = storico(d, k, o), dm = a.m - b.m, dn = a.n - b.n, d90 = a.m90 - b.m90;
+  const H = m => m > 0 ? hDi(m) : "0 h";
+  s.ore = H(minDi(s.ore) + dm); s.voli = Math.max(0, (+s.voli || 0) + dn);
+  if (k === "p") { if (d90) s.ore90 = H(minDi(s.ore90) + d90); return; }
+  const man = s.man; if (!man || !dm) return; const R = minDi(man.mancano) - (+man.sotto || 0) - dm;
+  if (R > 0) { man.mancano = oreDi(R); delete man.sotto; } else { man.mancano = "da fare subito"; man.sotto = -R; }
+  man.liv = R <= 0 ? "ko" : R <= 300 ? "warn" : dm < 0 ? "ok" : man.liv === "ko" ? "warn" : man.liv; }
 // i campi di un volo letto dal registro, ripuliti
 function pulisciLetto(v) {
   return { letto: !!v.letto, quotaMax: NUM(v.quotaMax, 0, 9999), oltre120: NUM(v.oltre120, 0, 99999), km: NUM(v.km, 0, 9999), velMax: NUM(v.velMax, 0, 999),
@@ -1627,7 +1639,10 @@ export class Stato extends DurableObject {
       const m = await leggiMain(); if (!m) return J({ errore: "Nessun dato" }, 409);
       const d = m.d, v = (d.VOLI || []).find(x => x.id === +b.id);
       if (!v) return J({ errore: "Volo non trovato" }, 404);
+      // volo importato da un file (anteprima 140): ore e voli si spostano solo della differenza della parte storica
+      const dI = v.imp && (d.DRONI || []).find(x => x.nome === v.drone), pI = v.imp && (d.PILOTI || []).find(x => x.nome === v.pilota), bD = dI && storico(d, "d", dI), bP = pI && storico(d, "p", pI);
       togliVolo(d, v); d.VOLI.splice(d.VOLI.indexOf(v), 1); await st.delete("trk:" + v.id);
+      if (dI) riallinea(d, "d", dI, bD); if (pI) riallinea(d, "p", pI, bP);
       await scriviMain(d, m.row.ver + 1);
       await togliSeLiberi([v.docLog, v.fotoDoc], d);   // i file del volo, se non li usa nient'altro
       return J({ ok: true, ver: m.row.ver + 1 });
