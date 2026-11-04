@@ -327,6 +327,56 @@ function manualePub(d) {
   return { modo: M.modo === "car" ? "car" : r ? "q120" : car ? "car" : "", rev: r ? [{ n: +r.n || 1, data: TX(r.data, 10), chi: TX(r.chi, 80), scen: LISTA(r.scen).slice(0, 6).map(x => TX(x, 10)), doc: TX(r.doc, 40), pag: +r.pag || 0 }] : [], car };
 }
 const manualeDocs = d => { const P = manualePub(d); return [P.rev.length ? P.rev[0].doc : "", P.car ? P.car.doc : ""].filter(Boolean); };
+
+/* ---------- area del cliente (anteprima 139): un link privato per ogni cliente ----------
+   La chiave del link (192 bit, crypto.getRandomValues) si cerca SOLO per impronta SHA-256 («cli:h:<impronta>» → nome del cliente).
+   La chiave in chiaro resta nella scheda dell'area («cli:aree», fuori dai dati dello spazio) solo perché l'Admin possa ricopiare il link:
+   esce dal server soltanto verso l'Admin. «Cambia il link» e «Spegni» tolgono l'impronta vecchia: il link vecchio non apre più niente. */
+const sha256h = async s => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(s))))].map(x => x.toString(16).padStart(2, "0")).join("");
+const CLI_TIPI = ["Rilievo o foto aeree", "Ispezione (tetti, ponti, impianti)", "Video", "Trattamento agricolo", "Altro"];
+const CLI_VEDE0 = { rap: true, forn: true, soldi: false, rich: true };
+const CLI_ANNO = 365 * 864e5;
+const CLI_TOK = t => /^[a-f0-9]{48}$/.test(t || "");
+// quello che riceve la pagina del cliente: solo i SUOI lavori; importi solo con «Preventivi e fatture»; dei piloti solo nome e attestati
+function clientePub(d, nome, a, rap, rich) {
+  const OP = d.OP || {}, V = Object.assign({}, CLI_VEDE0, a.vede || {}), nomeOp = TX(String(OP.nome || "").replace(/\s*\(dati di esempio\)\s*$/i, ""), 120);
+  const codOk = c => !!(c && !/x{3}/i.test(String(c))), VOLI = LISTA(d.VOLI), suoi = LISTA(d.LAVORI).filter(l => l && l.cliente === nome);
+  const nv = l => VOLI.filter(v => v && ((v.codLav && l.codice && v.codLav === l.codice) || (typeof v.cliente === "string" && v.cliente.startsWith(l.cliente)))).length;
+  const out = { cliente: TX(nome, 120), az: { nome: nomeOp, sede: TX(OP.sede, 80), tel: TX(OP.tel, 40), email: EMAIL(OP.email) ? TX(OP.email, 120) : "" },
+    vede: { rap: !!V.rap, forn: !!V.forn, soldi: !!V.soldi, rich: !!V.rich } };
+  out.lavori = suoi.slice(0, 500).map(l => { const r = V.rap && rap[String(l.id)];
+    return { id: l.id, titolo: TX(l.titolo, 120), tipo: TX(l.tipo, 40), data: DATA(l.data), luogo: TX(l.luogo, 120), st: l.stato === "concluso" ? "fatto" : l.stato === "incorso" ? "corso" : "prog", nv: nv(l), rap: r ? { n: TX(r.n, 20), data: DATA(r.data) } : null }; });
+  if (V.soldi) {
+    out.prev = LISTA(d.PREV).filter(p => p && p.cliente === nome && p.stato !== "bozza").slice(0, 200).map(p => ({ id: p.id, titolo: TX(p.titolo, 120), data: DATA(p.data), luogo: TX(p.luogo, 120),
+      stato: ["inviato", "accettato", "rifiutato"].includes(p.stato) ? p.stato : "inviato", regime: p.regime === "iva" ? "iva" : "occ", voci: LISTA(p.voci).slice(0, 40).map(v => [TX(v && v[0], 160), NUM(v && v[1], 0, 1e6), NUM(v && v[2], 0, 1e7)]) }));
+    out.fatt = suoi.filter(l => l.fatt && typeof l.fatt === "object").map(l => ({ id: l.id, titolo: TX(l.titolo, 120), n: TX(l.fatt.n, 30), data: DATA(l.fatt.data), scad: DATA(l.scad), pagato: !!l.pagato, tot: NUM(l.importo, 0, 1e8) }));
+  }
+  if (V.forn) {
+    const S = d.SCHEDEP || {}, PA = d.PATENTINO || {}, docs = LISTA(d.DOCS).filter(x => x && !x.daApprovare && !x.rifiutato), ad = docs.find(x => x.id === (d.ASSIC || {}).doc);
+    const did = new Map(LISTA(d.DRONI).filter(x => x && x.nome).map((x, i) => [x.id, i + 1]));
+    out.forn = { op: { nome: nomeOp, codice: codOk(OP.codice) ? TX(OP.codice, 40) : "", resp: TX(OP.resp, 80), sede: TX(OP.sede, 80), dfReg: DATA(OP.dfReg), dfAbb: DATA(OP.dfAbb), pec: TX(OP.pec, 120), email: EMAIL(OP.email) ? TX(OP.email, 120) : "", tel: TX(OP.tel, 40) },
+      assic: { scad: DATA((d.ASSIC || {}).scad), num: TX(ad && ad.dati && ad.dati.numero, 40) }, aut: { agricola: !!(d.AUT_ENAC || {}).agricola, scad: DATA((d.AUT_ENAC || {}).scad) }, dom: PAROLA((d.DOMANDA || {}).stato, 20),
+      docs: docs.filter(x => (x.dest || {}).k === "operatore" && ["autorizzazione", "dflight"].includes(x.dest.voce)).slice(0, 30).map(x => ({ tipo: TX(x.tipo, 80), dest: { k: "operatore", voce: x.dest.voce }, data: DATA(x.data), dati: { numero: TX(x.dati && x.dati.numero, 40), scadenza: DATA(x.dati && x.dati.scadenza) } })),
+      piloti: LISTA(d.PILOTI).filter(p => p && p.nome).slice(0, 100).map((p, i) => { const s = S[p.id] || {}, A = {};
+        for (const [k, x] of Object.entries(s.att && typeof s.att === "object" ? s.att : {}).slice(0, 12)) if (x && typeof x === "object") A[TX(k, 30)] = { num: TX(x.num, 40), scad: DATA(x.scad) };
+        return { id: i + 1, nome: TX(p.nome, 80), att: A, pat: TX(PA[p.id], 60), pol: s.polizza && DATA(s.polizza.scad) ? { scad: DATA(s.polizza.scad) } : null }; }),
+      droni: LISTA(d.DRONI).filter(x => x && x.nome).slice(0, 100).map(x => ({ id: did.get(x.id), nome: TX(x.nome, 80), classe: TX(x.classe, 30), cat: x.cat === "specific" ? "specific" : "open", qr: !!x.qr, matr: TX((d.MATR || {})[x.nome], 40) })),
+      batt: LISTA(d.BATT).filter(b => b && b.nome).slice(0, 200).map(b => ({ nome: TX(b.nome, 60), drone: did.get(b.drone) || 0, cicli: b.cicli == null ? null : NUM(b.cicli, 0, 1e5), stato: PAROLA(b.stato, 12) })) };
+  }
+  out.rich = LISTA(rich).filter(r => r.cliente === nome).slice(0, 10).map(r => ({ tipo: TX(r.tipo, 60), dove: TX(r.dove, 160), at: +r.at || 0, stato: r.stato === "prev" ? "prev" : "nuova" }));
+  return out;
+}
+// l'area vale? (accesa, non scaduta, il cliente c'è ancora)
+const cliViva = (a, d, nome) => !!(a && a.on && a.tok && (+a.scad || 0) > Date.now() && LISTA(d.CLIENTI).includes(nome));
+function cliCodiceHtml(nomeOp, cliente, codice) {
+  nomeOp = SENZA_LINK(nomeOp, 60); cliente = SENZA_LINK(cliente, 60);
+  return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;color:#0F1C26;font-size:15px;line-height:1.5">
+    <div style="border-bottom:2px solid #132A3A;padding-bottom:10px;margin-bottom:14px;font-size:20px;font-weight:bold;color:#132A3A">${esc(nomeOp || "Quota 120")}</div>
+    Ecco il codice per aprire l'area del cliente${cliente ? " di <b>" + esc(cliente) + "</b>" : ""}:
+    <div style="font-size:32px;font-weight:bold;letter-spacing:.25em;text-align:center;margin:18px 0;color:#0F1C26">${codice.slice(0, 3)} ${codice.slice(3)}</div>
+    Vale 15 minuti. Se non l'hai chiesto tu, ignora questa email: senza il codice la pagina non si apre.
+    <p style="font-size:12.5px;color:#5E6D77;margin-top:18px;border-top:1px solid #E3E8EB;padding-top:10px">Pagina privata${nomeOp ? " di " + esc(nomeOp) : ""} · fatta con Quota 120</p></div>`;
+}
 function docVisibile(d, doc, n) {
   const P = permDi(d, n), me = pilotaDi(d, n);
   if (doc.dapid != null ? !!me && me.id === doc.dapid : doc.da === n) return true;   // chi l'ha caricato (con l'id del pilota, se c'è)
@@ -955,8 +1005,8 @@ export class Stato extends DurableObject {
       // promemoria dei file già arrivati (per non prenderli due volte) e contatori vecchi
       const via = [], oraH = Math.floor(now / 36e5);
       for (const [kk, did] of await st.list({ prefix: "arrivo:" })) { const t = parseInt(String(did).slice(1, -6), 36); if (!(t > limA)) via.push(kk); }
-      for (const pre of ["car:", "nuovidisp:", "lavlim:", "invlim:"]) for (const [kk] of await st.list({ prefix: pre })) { if (+kk.split(":").pop() < oraH - 1) via.push(kk); }
-      for (const pre of ["dji:", "invia:dest:", "segnmail:", "prova-avvisi:", "bud:", "invgio:"]) for (const [kk] of await st.list({ prefix: pre })) { const g2 = kk.split(":").pop(); if (g2 < giornoUTC() && g2.length === 10) via.push(kk); }
+      for (const pre of ["car:", "nuovidisp:", "lavlim:", "invlim:", "clilim:"]) for (const [kk] of await st.list({ prefix: pre })) { if (+kk.split(":").pop() < oraH - 1) via.push(kk); }
+      for (const pre of ["dji:", "invia:dest:", "segnmail:", "prova-avvisi:", "bud:", "invgio:", "clirq:", "clicod:"]) for (const [kk] of await st.list({ prefix: pre })) { const g2 = kk.split(":").pop(); if (g2 < giornoUTC() && g2.length === 10) via.push(kk); }
       for (let i = 0; i < via.length; i += 128) await st.delete(via.slice(i, i + 128));
       // telefoni: via quelli usciti da 7 giorni (nella prova quelli non usati da 2 giorni)
       if (pulisciDisp()) await st.put("disp", disp);
@@ -1056,6 +1106,95 @@ export class Stato extends DurableObject {
       disp[id] = { k, ruolo: "op", n: nome, pid: null, nuovo: false, codice: cod4(), stato: "invito", at: now, visto: now, app: false, dev: nomeDisp(request.headers.get("user-agent")), inv: { n: nome, tel, email, at: now } };
       await st.put("disp", disp);
       return J({ id, k, n: nome, stato: "invito", codice: disp[id].codice, op: nomeOp });
+    }
+
+    // ---- area del cliente (pubblica, anteprima 139): il cliente apre /<spazio>/cliente/<chiave>; la chiave arriva nel corpo (POST), mai nell'indirizzo delle API ----
+    if (LOCALE(this.env, request) && p === "/interno/cli-invecchia" && request.method === "POST") {   // solo per le prove in locale: l'area scade
+      const b = await request.json().catch(() => ({})), A = (await st.get("cli:aree")) || {}; if (!A[b.cliente]) return J({ ok: false });
+      A[b.cliente].scad = now - 1000; await st.put("cli:aree", A); return J({ ok: true }); }
+    if (p.startsWith("/api/cliente/")) {
+      if (request.method !== "POST") return J({ errore: "Richiesta non valida" }, 405);
+      const txt = await request.text(); if (txt.length > 4000) return J({ errore: "Dati non validi" }, 400);
+      let b; try { b = JSON.parse(txt); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
+      if (!b || typeof b !== "object" || Array.isArray(b)) return J({ errore: "Dati non validi" }, 400);
+      const ora = Math.floor(now / 36e5), rete = IPR || "x", g = giornoUTC();
+      const conta = async (k, max) => { const n = (await st.get(k)) || 0; if (n >= max) return true; await st.put(k, n + 1); return false; };
+      const NO = () => J({ errore: "link", testo: "Questo link non è più attivo. Chiedi un link nuovo a chi te l'ha mandato." }, 404);
+      // anteprima dell'Admin («Guarda come la vede il cliente»): telefono dell'Admin riconosciuto, niente visita registrata, niente codice
+      const [i0, k0] = String(request.headers.get("x-disp") || "").split(":"), xa = Object.prototype.hasOwnProperty.call(disp, i0) ? disp[i0] : null;
+      const ant = !!b.ant && !!xa && !!k0 && xa.k === k0 && xa.ruolo === "adm" && xa.stato === "ok" && !(xa.via === "email" && now - (xa.visto || 0) > GIORNI_ADMIN * 864e5);
+      if (b.ant && !ant) return J({ errore: "Anteprima solo per l'Admin" }, 403);
+      // tetti per rete: le chiavi sbagliate fermano la rete per un'ora (niente tentativi a raffica)
+      if (!ant) { if ((await st.get("clilim:x:" + rete + ":" + ora) || 0) >= 15) return J({ errore: "Troppe richieste: riprova tra un'ora." }, 429);
+        if (await conta("clilim:i:" + rete + ":" + ora, 150)) return J({ errore: "Troppe richieste: riprova tra un'ora." }, 429); }
+      const t = String(b.t || ""), h = CLI_TOK(t) ? await sha256h(t) : "", nome = h ? await st.get("cli:h:" + h) : null;
+      const A = nome ? (await st.get("cli:aree")) || {} : {}, a = nome ? A[nome] : null, m0 = await leggiMain(), d0 = m0 ? m0.d : {};
+      if (!a || a.tok !== t || !cliViva(a, d0, nome)) { if (!ant) await conta("clilim:x:" + rete + ":" + ora, 1e9); return NO(); }
+      const ce = minu(((d0.CLIDATI || {})[nome] || {}).email), nomeOp = TX(String((d0.OP || {}).nome || "").replace(/\s*\(dati di esempio\)\s*$/i, ""), 120);
+      // con «Chiedi anche un codice»: il telefono del cliente deve essere già passato dal codice via email (chiave del dispositivo, 1 anno)
+      const dk = /^[a-f0-9]{32}$/.test(b.dk || "") ? await sha256h(b.dk) : "", devOk = !a.cod || ant || (dk && a.dev && now - (+a.dev[dk] || 0) < CLI_ANNO);
+      const mask = e => { const [u, dm] = String(e).split("@"); return u.slice(0, 1) + "•••@" + dm; };
+      if (p === "/api/cliente/codice") {
+        if (!a.cod || !EMAIL(ce)) return J({ errore: "Per questa pagina non serve il codice" }, 400);
+        if (PROVA) return SPENTA_PROVA();
+        const hh = h.slice(0, 12);
+        if (await conta("clilim:c:" + hh + ":" + ora, 3) || await conta("clicod:" + hh + ":" + g, 8)) return J({ errore: "Ti abbiamo già mandato tanti codici: guarda nella posta (anche nello spam) o riprova più tardi." }, 429);
+        if (!(await this.puoMandare())) return J({ errore: "Oggi non riesco a mandare altre email: riprova domani." }, 429);
+        const c = cod6();
+        await this.ctx.blockConcurrencyWhile(async () => { const A2 = (await st.get("cli:aree")) || {}; if (A2[nome] && A2[nome].tok === t) { A2[nome].codice = { h: await sha256h(h + ":" + c), at: now, n: 0 }; await st.put("cli:aree", A2); } });
+        try { await mandaMail(this.env, ce, "Il codice per l'area del cliente" + (nomeOp ? " · " + SENZA_LINK(nomeOp, 60) : ""), cliCodiceHtml(nomeOp, nome, c)); }
+        catch (e) { console.error("codice cliente:", e && e.message || e); return J({ errore: "La posta non è partita: riprova tra poco." }, 502); }
+        return J({ ok: true, email: mask(ce) });
+      }
+      if (p === "/api/cliente/verifica") {
+        if (!a.cod) return J({ errore: "Per questa pagina non serve il codice" }, 400);
+        if (await conta("clilim:v:" + rete + ":" + ora, 20)) return J({ errore: "Troppi tentativi: riprova tra un'ora." }, 429);
+        const c = String(b.c || "").replace(/\D/g, ""), cc = a.codice;
+        if (!cc || now - (+cc.at || 0) > 15 * 6e4 || (cc.n || 0) >= 5) return J({ errore: "Il codice è scaduto: chiedine uno nuovo." }, 400);
+        if (c.length !== 6 || (await sha256h(h + ":" + c)) !== cc.h) { await this.ctx.blockConcurrencyWhile(async () => { const A2 = (await st.get("cli:aree")) || {}; if (A2[nome] && A2[nome].codice) { A2[nome].codice.n = (A2[nome].codice.n || 0) + 1; await st.put("cli:aree", A2); } });
+          return J({ errore: "Codice sbagliato: controllalo." }, 403); }
+        const nk = rnd(16), nh = await sha256h(nk);
+        await this.ctx.blockConcurrencyWhile(async () => { const A2 = (await st.get("cli:aree")) || {}, x = A2[nome]; if (!x || x.tok !== t) return;
+          const D = Object.entries(x.dev || {}).filter(([, v]) => now - v < CLI_ANNO).sort((p1, p2) => p2[1] - p1[1]).slice(0, 19); x.dev = Object.fromEntries(D.concat([[nh, now]])); delete x.codice; await st.put("cli:aree", A2); });
+        return J({ ok: true, dk: nk });
+      }
+      if (!devOk) return J({ codice: true, az: nomeOp, cliente: TX(nome, 120), email: EMAIL(ce) ? mask(ce) : "" });
+      const R = (await st.get("cli:rich")) || [];
+      if (p === "/api/cliente/info") {
+        if (!ant && now - (+a.vista || 0) > 60000) await this.ctx.blockConcurrencyWhile(async () => { const A2 = (await st.get("cli:aree")) || {}; if (A2[nome] && A2[nome].tok === t) { A2[nome].vista = now; await st.put("cli:aree", A2); } });
+        return J(Object.assign(clientePub(d0, nome, a, (await st.get("cli:rap")) || {}, R), { ant }));
+      }
+      if (p === "/api/cliente/rapporto") {
+        const l = LISTA(d0.LAVORI).find(x => x && String(x.id) === String(b.lav) && x.cliente === nome), r = l && (Object.assign({}, CLI_VEDE0, a.vede).rap) ? ((await st.get("cli:rap")) || {})[String(l.id)] : null;
+        const info = r && await st.get("docinfo:" + r.did); if (!info) return J({ errore: "Il rapporto non c'è" }, 404);
+        const parti = []; for (let i = 0; i < (+info.pezzi || 0); i++) { const x = await st.get("doc:" + r.did + ":" + i); if (x) parti.push(new Uint8Array(x)); }
+        const nf = ("Rapporto " + String(l.titolo || "lavoro") + " " + String(l.data || "").replace(/\//g, "-")).replace(/[^\w àèéìòù'-]+/gi, " ").replace(/\s+/g, " ").trim().slice(0, 90) + ".pdf";
+        return new Response(new Blob(parti), { headers: { "content-type": "application/pdf", "cache-control": "no-store", "x-robots-tag": "noindex", "content-disposition": "attachment; filename*=UTF-8''" + encodeURIComponent(nf) } });
+      }
+      if (p === "/api/cliente/richiesta") {
+        if (!Object.assign({}, CLI_VEDE0, a.vede).rich) return J({ errore: "Le richieste da questa pagina sono spente" }, 403);
+        if (ant) return J({ errore: "Nell'anteprima la richiesta non parte: è solo da guardare." }, 400);
+        const tipo = CLI_TIPI.includes(b.tipo) ? b.tipo : "", dove = SENZA_LINK(String(b.dove || ""), 160), iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(b.entro || "");
+        const entro = DATA(b.entro) || (iso ? iso[3] + "/" + iso[2] + "/" + iso[1] : ""), note = TX(b.note, 600, true).trim();
+        if (!tipo) return J({ errore: "Scegli che lavoro serve." }, 400);
+        if (dove.length < 2) return J({ errore: "Scrivi dove." }, 400);
+        if (await conta("clilim:r:" + rete + ":" + ora, 10)) return J({ errore: "Troppe richieste da questa rete: riprova tra un'ora." }, 429);
+        if (await conta("clirq:" + h.slice(0, 12) + ":" + g, 5)) return J({ errore: "Oggi da questa pagina sono già partite 5 richieste: riprova domani, oppure scrivi direttamente all'azienda." }, 429);
+        if (R.filter(x => x.stato !== "chiusa" && x.stato !== "prev").length >= 100) return J({ errore: "L'azienda ha già tante richieste da guardare: scrivile direttamente." }, 429);
+        const x = { id: "r" + now.toString(36) + rnd(3), cliente: nome, tipo, dove, entro, note, at: now, stato: "nuova" };
+        await this.ctx.blockConcurrencyWhile(async () => { const R2 = (await st.get("cli:rich")) || []; R2.unshift(x); await st.put("cli:rich", R2.slice(0, 200)); });
+        // email all'Admin: solo a un indirizzo verificato (avvisi confermati o l'email con cui entra), dentro il tetto delle email dello spazio; mai nella prova
+        if (!PROVA) { try { const Av = ((d0.AVVISI || {}).adm) || {}, { ok: conf } = await this.confermate(), cr = (await st.get("creato")) || {};
+          const dest = EMAIL(Av.email) && Av.on !== false && conf.has(minu(Av.email)) ? Av.email.trim() : EMAIL(cr.email) ? String(cr.email).trim() : "";
+          if (dest && await this.puoMandare()) {
+            const html = `<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;color:#0F1C26;font-size:15px;line-height:1.45"><div style="border-bottom:2px solid #132A3A;padding-bottom:10px;margin-bottom:14px;font-size:20px;font-weight:bold;color:#132A3A">Quota 120</div>
+              <p><b>${esc(SENZA_LINK(nome, 80))}</b> ti chiede un lavoro dalla sua area del cliente:</p>
+              <p><b>${esc(tipo)}</b><br>Dove: ${esc(dove)}${entro ? "<br>Entro il " + esc(entro) : ""}</p>${note ? "<p>" + esc(SENZA_LINK(note, 600)) + "</p>" : ""}
+              <p>La trovi in Quota 120, nella Home in «Da sistemare»: con un tocco diventa un preventivo.</p><a href="${(await st.get("origine")) || BASEURL}" style="display:inline-block;background:#1D5C7C;color:#fff;border-radius:8px;padding:12px 18px;font-weight:bold;text-decoration:none">Apri Quota 120</a></div>`;
+            await mandaMail(this.env, dest, "Nuova richiesta da " + SENZA_LINK(nome, 80), html); } } catch (e) { console.error("richiesta cliente:", e && e.message || e); } }
+        return J({ ok: true });
+      }
+      return J({ errore: "Richiesta sconosciuta" }, 404);
     }
 
     // ---- da qui serve un dispositivo riconosciuto ----
@@ -1216,6 +1355,56 @@ export class Stato extends DurableObject {
         return J({ ok: true, pid: q.id, nome: q.nome, esisteva, ver: m.row.ver + 1, disp: pub(), blocchi });
       }
       return J({ errore: "Richiesta sconosciuta" }, 404);
+    }
+
+    // ---- area del cliente (anteprima 139): solo l'Admin la crea, la cambia, la spegne e sceglie cosa vede il cliente ----
+    if (p === "/api/clienti/rapporto" && request.method === "POST") {
+      if (!adm) return J({ errore: "Solo l'Admin" }, 403);
+      if ((request.headers.get("content-type") || "").split(";")[0].trim().toLowerCase() !== "application/pdf") return J({ errore: "Solo PDF" }, 415);
+      const buf = await request.arrayBuffer(); if (!buf.byteLength || buf.byteLength > MAXDOC) return J({ errore: "Il PDF supera i 10 MB" }, 413);
+      if (String.fromCharCode(...new Uint8Array(buf.slice(0, 4))) !== "%PDF") return J({ errore: "Non è un PDF" }, 415);
+      const m = await leggiMain(), ids = String(url.searchParams.get("lav") || "").split(",").slice(0, 50), L = LISTA(m && m.d.LAVORI).filter(l => l && ids.includes(String(l.id)));
+      if (!L.length) return J({ errore: "Lavoro non trovato" }, 404);
+      { const no = await puoCaricare("clirap", buf.byteLength); if (no) return J({ errore: NO_CARICA[no] }, no === "pieno" ? 413 : 429); }
+      const did = await salvaFile(buf, { mime: "application/pdf", nome: TX(url.searchParams.get("n") || "Rapporto.pdf", 120), da: "Admin", confermato: true, cli: true });
+      const Rp = (await st.get("cli:rap")) || {}, vecchi = [];
+      for (const l of L) { const k = String(l.id); if (Rp[k] && Rp[k].did !== did) vecchi.push(Rp[k].did); Rp[k] = { did, n: TX(url.searchParams.get("num"), 20), data: oggi(), at: now }; }
+      await st.put("cli:rap", Rp);
+      const usati = new Set(Object.values(Rp).map(x => x.did)); for (const v of [...new Set(vecchi)]) if (!usati.has(v)) await togliFile(v);
+      return J({ ok: true });
+    }
+    if (p.startsWith("/api/clienti/")) {
+      if (!adm) return J({ errore: "Solo l'Admin" }, 403);
+      if (request.method !== "POST") return J({ errore: "Richiesta non valida" }, 405);
+      let b; try { b = await request.json(); } catch (e) { return J({ errore: "Dati non validi" }, 400); }
+      b = b && typeof b === "object" ? b : {};
+      const m = await leggiMain(), d = m ? m.d : {}, pubA = async () => J({ ok: true, cli: await this.cliAdmin() });
+      if (p === "/api/clienti/rich") {
+        let x = null; await this.ctx.blockConcurrencyWhile(async () => { const R = (await st.get("cli:rich")) || []; x = R.find(r => r.id === b.id) || null; if (!x) return;
+          if (b.op === "prev") { x.stato = "prev"; x.prev = b.prev; } else if (b.op === "togli") x.stato = "chiusa"; else if (b.op === "vista" && x.stato === "nuova") x.vista = now; await st.put("cli:rich", R); });
+        if (!x) return J({ errore: "Questa richiesta non c'è più" }, 404);
+        return pubA();
+      }
+      if (p !== "/api/clienti/area") return J({ errore: "Richiesta sconosciuta" }, 404);
+      const nome = String(b.cliente || ""); if (!LISTA(d.CLIENTI).includes(nome)) return J({ errore: "Cliente non trovato" }, 404);
+      let err = null;
+      await this.ctx.blockConcurrencyWhile(async () => {
+        const A = (await st.get("cli:aree")) || {}, a = A[nome];
+        const nuovoTok = async x => { if (x.h) await st.delete("cli:h:" + x.h); x.tok = rnd(24); x.h = await sha256h(x.tok); x.at = now; x.scad = now + CLI_ANNO; x.dev = {}; delete x.codice; await st.put("cli:h:" + x.h, nome); };
+        if (b.op === "crea") { const x = a || { vede: Object.assign({}, CLI_VEDE0), cod: false }; if (!cliViva(x, d, nome)) { x.on = true; delete x.vista; await nuovoTok(x); } A[nome] = x; }
+        else if (!a || !a.on) { err = "L'area del cliente è spenta: tocca la riga per accenderla"; return; }
+        else if (b.op === "cambia") await nuovoTok(a);
+        else if (b.op === "spegni") { if (a.h) await st.delete("cli:h:" + a.h); a.on = false; delete a.tok; delete a.h; delete a.codice; a.dev = {}; a.off = now; }
+        else if (b.op === "vede") { if (!["rap", "forn", "soldi", "rich"].includes(b.k)) { err = "Dati non validi"; return; } a.vede = Object.assign({}, CLI_VEDE0, a.vede, { [b.k]: !!b.on }); }
+        else if (b.op === "codice") {
+          if (b.on && PROVA) { err = "Nella versione di prova le email sono spente: il codice si prova nel tuo spazio."; return; }
+          if (b.on && !EMAIL(((d.CLIDATI || {})[nome] || {}).email)) { err = "Per il codice serve l’email del cliente: scrivila in «Dati del cliente»."; return; }
+          a.cod = !!b.on; a.dev = {}; delete a.codice; }
+        else { err = "Richiesta sconosciuta"; return; }
+        await st.put("cli:aree", A);
+      });
+      if (err) return J({ errore: err }, 400);
+      return pubA();
     }
 
     // ---- codice lavoro: il pilota lo scrive e riceve solo cliente, lavoro e luogo (niente importi) ----
@@ -1500,7 +1689,7 @@ export class Stato extends DurableObject {
       if (!m) return J({ vuoto: true });
       // emailOk (solo Admin): per ogni indirizzo degli avvisi, true = confermato, "inviata" = gli abbiamo mandato l'email di conferma, false = non ancora
       const statoEmail = async d => { if (!OPN) return {}; const { ok, C } = await this.confermate(), out = {}; for (const a of destAvvisi(d, true)) out[a] = ok.has(a) ? true : C[a] && C[a].inviato ? "inviata" : false; return out; };
-      const { row } = m, io = { r: me.ruolo, n: me.n, id, asp: aspetti[me.n] || ASP_BASE, email: me.via === "email" ? me.email : "" }, extra = adm ? { disp: pub(), blocchi, pinIniziale: !!OPN && !(await st.get("pin")), emailOk: await statoEmail(m.d) } : {};
+      const { row } = m, io = { r: me.ruolo, n: me.n, id, asp: aspetti[me.n] || ASP_BASE, email: me.via === "email" ? me.email : "" }, extra = adm ? { disp: pub(), blocchi, pinIniziale: !!OPN && !(await st.get("pin")), emailOk: await statoEmail(m.d), cli: await this.cliAdmin(PROVA) } : {};
       if (request.method === "GET") {
         if (adm && !/localhost|127\.0\.0\.1/.test(url.origin) && (await st.get("origine")) !== BASEURL) await st.put("origine", BASEURL);
         // l'Admin guarda il programma come lo vede un pilota (solo lettura)
@@ -1735,6 +1924,18 @@ Stato.prototype.avvisi = async function (prova, origine) {
   // si segnano come mandate solo le scadenze arrivate davvero a qualcuno (le altre riprovano il giorno dopo)
   if (!prova && mandate.size) { for (const k of mandate) inviati[k] = oggi.data; await st.put("avvisi:inviati", inviati); }
   return Object.assign({ ok: true, mandate: esiti, righe: righe.length }, errori.length ? { nonMandate: errori } : {}, saltati.length ? { saltati: saltati.length } : {});
+};
+// area del cliente: quello che vede l'Admin (le aree con il link, le richieste arrivate). Nella prova: un cliente di esempio con l'area già accesa
+Stato.prototype.cliAdmin = async function (prova) {
+  const st = this.ctx.storage, now = Date.now();
+  if (prova && !(await st.get("cli:seme"))) { await st.put("cli:seme", 1);
+    const row = await st.get("main"); let d = {}; try { d = row ? JSON.parse(row.json) : {}; } catch (e) {}
+    const nome = "Comune di Ostellato", A = (await st.get("cli:aree")) || {};
+    if (LISTA(d.CLIENTI).includes(nome) && !A[nome]) { const tok = rnd(24), h = await sha256h(tok);
+      A[nome] = { on: true, tok, h, at: now, scad: now + CLI_ANNO, vede: Object.assign({}, CLI_VEDE0), cod: false, dev: {}, vista: now - 23 * 36e5 }; await st.put("cli:h:" + h, nome); await st.put("cli:aree", A); } }
+  const A = (await st.get("cli:aree")) || {}, R = (await st.get("cli:rich")) || [];
+  return { aree: Object.fromEntries(Object.entries(A).map(([n, a]) => [n, { on: !!a.on, tok: a.on ? a.tok || "" : "", scad: +a.scad || 0, at: +a.at || 0, cod: !!a.cod, vede: Object.assign({}, CLI_VEDE0, a.vede), vista: +a.vista || 0, off: +a.off || 0 }])),
+    rich: R.filter(x => x.stato !== "chiusa").slice(0, 60) };
 };
 // tetti di tutti gli spazi insieme, nel registro (dji, mail, provabyte, iscr): true = si può (se il registro non risponde, si va avanti)
 Stato.prototype.tetto = async function (tipo, n = 1, rendi = false) {
@@ -1991,6 +2192,16 @@ function stessoSito(request, env) {
   return locale;   // senza nessuna delle due intestazioni (prove a mano in locale)
 }
 
+// la pagina dell'area del cliente: il programma stesso (la pagina chiede al server se la chiave vale), noindex, senza referrer
+async function paginaCliente(env, url, request, prova) {
+  const ra = await env.ASSETS.fetch(new Request(new URL("/", url), request));
+  if (!/^text\/html/i.test(ra.headers.get("content-type") || "")) return ra;
+  let t = await ra.text(); if (prova) t = t.replace('<meta charset="utf-8">', '<meta charset="utf-8"><meta name="q120-prova" content="1">');
+  t = t.replace('<meta charset="utf-8">', '<meta charset="utf-8"><meta name="robots" content="noindex, nofollow">');
+  const h = new Headers(ra.headers); h.delete("content-length"); h.delete("etag");
+  h.set("x-robots-tag", "noindex, nofollow"); h.set("cache-control", "no-store"); h.set("x-q120-cornice", "1");
+  return new Response(t, { status: 200, headers: h });
+}
 export default {
   async scheduled(evento, env, ctx) {
     // la vecchia prova condivisa ("main", non si apre più ai visitatori): solo la pulizia dei file.
@@ -2015,11 +2226,12 @@ export default {
     if (r.status === 101) return r;
     if (h !== "quota120.com") {
       // il programma (app.quota120.com): niente pagine dentro altri siti, script solo da qui (più Turnstile), collegamenti solo ai servizi che usa
-      const x = new Response(r.body, r);
+      // (la pagina dell'area del cliente si può mostrare solo dentro il programma stesso: l'anteprima dell'Admin)
+      const x = new Response(r.body, r), cornice = x.headers.get("x-q120-cornice") === "1"; x.headers.delete("x-q120-cornice");
       x.headers.set("X-Content-Type-Options", "nosniff");
-      x.headers.set("X-Frame-Options", "DENY");
-      x.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-      if (/^text\/html/i.test(x.headers.get("content-type") || "")) x.headers.set("Content-Security-Policy", CSP_APP);
+      x.headers.set("X-Frame-Options", cornice ? "SAMEORIGIN" : "DENY");
+      x.headers.set("Referrer-Policy", cornice ? "no-referrer" : "strict-origin-when-cross-origin");
+      if (/^text\/html/i.test(x.headers.get("content-type") || "")) x.headers.set("Content-Security-Policy", cornice ? CSP_APP.replace("frame-ancestors 'none'", "frame-ancestors 'self'") : CSP_APP);
       return x;
     }
     const x = new Response(r.body, r);
@@ -2239,6 +2451,8 @@ export default {
     // /<spazio> apre il programma; / è l'ingresso; i vecchi indirizzi della prova (/prova) portano alla prova nuova
     const seg = p.replace(/^\/+|\/+$/g, "");
     // link di invito dei piloti: /<spazio>/invito/<chiave> apre il programma (la pagina chiede al server se la chiave vale)
+    // area del cliente: /<spazio>/cliente/<chiave> apre la pagina del cliente (fuori dai motori di ricerca; si può mostrare dentro il programma, per l'anteprima dell'Admin)
+    { const mc = p.match(/^\/([a-z0-9-]{3,40})\/cliente\/([a-f0-9]{48})\/?$/); if (mc && SLUG_OK(mc[1])) return paginaCliente(env, url, request, false); }
     { const mi = p.match(/^\/([a-z0-9-]{3,40})\/invito\/([a-f0-9]{32})\/?$/); if (mi && SLUG_OK(mi[1])) { const ra = await env.ASSETS.fetch(new Request(new URL("/", url), request)); const r2 = new Response(ra.body, ra); r2.headers.set("Referrer-Policy", "no-referrer"); r2.headers.set("x-robots-tag", "noindex"); return r2; } }
     if (seg.toLowerCase() === "prova") return new Response(null, { status: 302, headers: { location: "https://" + HOST_PROVA + "/" + url.search, "cache-control": "no-store" } });
     if (seg && seg !== "corso" && !seg.includes("/") && !seg.includes(".") && SLUG_OK(seg.toLowerCase())) return env.ASSETS.fetch(new Request(new URL("/", url), request));
@@ -2323,6 +2537,7 @@ export default {
     // etichette QR della prova: aprono la prova sulla scheda dell'etichetta
     { const mq = p.match(/^\/q\/[A-Za-z0-9-]{3,40}\/([db][A-Za-z0-9_%.-]{1,80})\/?$/);
       if (mq) { let c = mq[1]; try { c = decodeURIComponent(c); } catch (e) {} return new Response(null, { status: 302, headers: { location: "/?q=" + encodeURIComponent(c), "cache-control": "no-store" } }); } }
+    if (/^\/cliente\/[a-f0-9]{48}\/?$/.test(p)) return paginaCliente(env, url, request, true);   // l'area del cliente di esempio (vale solo in questa prova)
     const seg = p.replace(/^\/+|\/+$/g, "");
     if (seg.toLowerCase() === "prova") return new Response(null, { status: 302, headers: { location: "/" + url.search, "cache-control": "no-store" } });
     // gli spazi veri stanno su app.quota120.com
