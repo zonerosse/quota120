@@ -78,6 +78,17 @@ la doppia verifica è spenta (non nella prova). Ogni parte ha la sua guida (part
   se cambia il testo, alzare `ACC_VER` (e `SIC_ACC_DATA`/`SIC_ACC_CAMBI`) e l'Admin lo riaccetta. «Più tardi» = riquadro giallo.
 - **Sicurezza in breve**: PDF di una pagina con lo stato vero; «Manda per email» passa da `/api/doc/invia` (stessi limiti).
 
+### Dati nell'Unione europea (anteprima 142)
+- Tutti i contenitori (`main`, `registro`, `op:<spazio>`, `copie:<spazio>`, `demo:<id>`) vivono nella zona **eu** di Cloudflare
+  (`env.STATO.jurisdiction("eu")`, funzione `sto()` in src/index.js). Ogni chiamata nuova deve passare da `sto(env, nome)`.
+- Trasloco (una volta sola, dal cron): `trasloco()` mette in attesa i nuovi, gira la strada (`eu:via` nel vecchio registro), chiude ogni vecchio
+  contenitore, copia tutte le chiavi a pezzi e apre il nuovo. Durante il passaggio lo spazio risponde 503 «riprova tra un minuto».
+  Se si ferma a metà, il cron dopo riprende da dove era. I vecchi contenitori si svuotano da soli dopo 7 giorni (`trasPulisci`);
+  il vecchio registro tiene solo `eu:*` (serve a `euInit` per sapere che la strada è girata).
+- In locale workerd non conosce le zone: con POSTA_FINTA la zona europea si imita con i nomi `eu|…`; `/interno/eu-confronta?n=<nome>`
+  confronta vecchio e nuovo chiave per chiave.
+- L'accordo sui dati è passato alla versione 2 (archivio e copie nell'Unione europea): gli Admin lo riaccettano.
+
 ### Copie di sicurezza
 - Lo spazio è un Durable Object con archivio **SQLite** (`new_sqlite_classes` in wrangler.jsonc): la piattaforma permette il ripristino a un
   momento qualsiasi degli ultimi 30 giorni (Point-in-time recovery dei Durable Objects SQLite). In Quota 120 non c'è ancora un comando che lo usa.

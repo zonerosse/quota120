@@ -17,7 +17,37 @@ import { DurableObject } from "cloudflare:workers";
 // impronta delle scene di una lezione: il nome del video cambia quando cambiano le scene
 // video dei corsi delle aziende: si aprono solo con la firma che dà il programma a chi è dentro (vale 1-2 giorni)
 let CHIAVE_V = null;
-async function chiaveVideo(env) { if (!CHIAVE_V) { const k = await env.STATO.get(env.STATO.idFromName("registro")).fetch(new Request("https://quota120.interno/interno/chiave-video")).then(r => r.text()); CHIAVE_V = await crypto.subtle.importKey("raw", new TextEncoder().encode(k), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]); } return CHIAVE_V; }
+// anteprima 142: i dati delle aziende restano nell'Unione europea. Ogni contenitore vive nella zona «eu» di Cloudflare;
+// quelli nati prima ci vengono spostati una volta sola dal trasloco (vedi trasloco()). Finché il trasloco non parte si usa la zona di prima.
+let EU_ON = false, EU_T = 0;
+// nelle prove in locale (POSTA_FINTA) workerd non conosce le zone: la zona europea si imita con i nomi «eu|…»
+function stoEU(env, n) { if (env.POSTA_FINTA) return env.STATO.get(env.STATO.idFromName("eu|" + n));
+  const N = env.STATO.jurisdiction("eu"); return N.get(N.idFromName(n)); }
+const stoVecchio = (env, n) => env.STATO.get(env.STATO.idFromName(n));
+const sto = (env, n) => EU_ON ? stoEU(env, n) : stoVecchio(env, n);
+async function euInit(env) { if (EU_ON || Date.now() - EU_T < 20000) return; EU_T = Date.now();
+  try { const s = await stoVecchio(env, "registro").euStato(); if (s && s.via) EU_ON = true; } catch (e) { console.error("euInit:", e && e.message || e); } }
+// il trasloco: main, ogni spazio, le sue copie e per ultimo il registro. Il vecchio si chiude (risponde «riprova tra un minuto»),
+// i dati passano a pezzi nel nuovo, il nuovo si apre. Si può ripetere: chi è già spostato si salta. I vecchi si svuotano dopo 7 giorni.
+async function trasloco(env) {
+  const R = stoVecchio(env, "registro"), s = await R.euInizia(); if (s.occupato) return s;
+  const ops = await R.euElenco(), nomi = ["main", ...ops.map(o => "op:" + o), ...ops.map(o => "copie:" + o), "registro"], fatti = s.fatti || {}, resta = nomi.filter(x => !fatti[x]);
+  // prima tutti i nuovi si mettono «in attesa» (rispondono «riprova tra un minuto»), poi si gira la strada verso la zona europea
+  for (const x of resta) await stoEU(env, x).euPrepara();
+  await R.euGira(); EU_ON = true;
+  let n = 0;
+  for (const x of resta) { const A = stoVecchio(env, x), B = stoEU(env, x); await A.euChiudi();
+    let dopo = null, k = 0; for (;;) { const P = await A.euPagina(dopo); if (P.v.length) await B.euMetti(P.v); k += P.v.length; if (P.fine) break; dopo = P.dopo; }
+    await B.euFine({ chiavi: k, at: Date.now() }); await R.euSegna(x, k); n++; }
+  await R.euSegna("*fine", n); return { ok: true, spostati: n };
+}
+async function trasPulisci(env) {
+  const R = stoVecchio(env, "registro"), s = await R.euStato();
+  if (!s.fine || s.pulito || Date.now() - s.fine < 7 * 864e5) return;
+  for (const x of Object.keys(s.fatti || {})) if (x !== "registro" && x !== "*fine") await stoVecchio(env, x).euPulisci().catch(e => console.error("pulisci " + x + ":", e && e.message || e));
+  await R.euPulisci();
+}
+async function chiaveVideo(env) { if (!CHIAVE_V) { const k = await sto(env, ("registro")).fetch(new Request("https://quota120.interno/interno/chiave-video")).then(r => r.text()); CHIAVE_V = await crypto.subtle.importKey("raw", new TextEncoder().encode(k), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]); } return CHIAVE_V; }
 async function firmaV(env, nome, exp) { const s = await crypto.subtle.sign("HMAC", await chiaveVideo(env), new TextEncoder().encode(nome + "|" + exp)); return [...new Uint8Array(s)].slice(0, 16).map(x => x.toString(16).padStart(2, "0")).join(""); }
 async function vh(scene) { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(scene || []))); return [...new Uint8Array(b)].slice(0, 5).map(x => x.toString(16).padStart(2, "0")).join(""); }
 async function corsiConVideo(env, url, corsi, adm) {
@@ -724,7 +754,7 @@ function nomeSpazio(nome) {
 
 /* ---------- anteprima 141: Sicurezza e dati (doppia verifica, scarico di tutti i dati, accordo art. 28, copie di sicurezza) ---------- */
 // versione dell'accordo sul trattamento dei dati: se cambia il testo (nella pagina), si alza qui e l'Admin lo riaccetta
-const ACC_VER = 1;
+const ACC_VER = 2;   // 2: archivio e copie di sicurezza nell'Unione europea (anteprima 142)
 const ACC_RUOLI = ["Legale rappresentante", "Titolare", "Amministratore delegato", "Persona con delega"];
 const COPIE_GIORNI = 30;                       // copie giornaliere tenute (poi si cancellano da sole)
 const RIP_ATTESA = 3 * 864e5;                  // «Ho perso telefono e codici»: la doppia verifica si toglie non prima di 3 giorni
@@ -852,6 +882,7 @@ Dentro ci sono dati personali di piloti e clienti: tieni questo file in un posto
 export class Stato extends DurableObject {
   // ogni errore imprevisto torna come JSON (mai la pagina d'errore di Cloudflare)
   async fetch(request) {
+    if (await this.euGate()) return J({ errore: "Stiamo aggiornando questo spazio: riprova tra un minuto." }, 503);
     try { return await this.gestisci(request); }
     catch (e) {
       if (e && e.pieno) return J({ errore: "Spazio pieno: i dati di questo spazio hanno raggiunto il limite. Elimina voli o documenti vecchi, oppure scrivi all'assistenza." }, 413);
@@ -860,11 +891,37 @@ export class Stato extends DurableObject {
   }
   // versione di prova personale: allo scadere (6 ore ferma o 24 ore dalla nascita) si cancella tutto, file compresi
   async alarm() {
+    if (await this.euGate()) return;
     const st = this.ctx.storage, c = await st.get("prova:creato"); if (!c) return;
     const v = (await st.get("prova:visto")) || c, scad = Math.min(c + PROVA_MAX, v + PROVA_FERMA);
     if (Date.now() >= scad - 1000) await this.provaCancella(); else await st.setAlarm(scad);
   }
   async provaCancella() { const st = this.ctx.storage; await st.deleteAlarm(); await st.deleteAll(); this.PIL = null; }
+  /* ---------- anteprima 142: trasloco nella zona europea (lo chiamano solo trasloco() e trasPulisci(), mai dall'esterno) ---------- */
+  constructor(ctx, env) { super(ctx, env);
+    if (!EU_ON && !ctx.id.equals(env.STATO.idFromName("registro"))) ctx.blockConcurrencyWhile(() => euInit(env)); }
+  async euGate() { if (this.EUG === undefined) { const m = await this.ctx.storage.get(["eu:spostato", "eu:atteso"]); this.EUG = !!(m.get("eu:spostato") || m.get("eu:atteso")); } return this.EUG; }
+  async euStato() { const st = this.ctx.storage; return { via: (await st.get("eu:via")) || 0, fatti: (await st.get("eu:fatti")) || {}, fine: (await st.get("eu:fine")) || 0, pulito: (await st.get("eu:pulito")) || 0 }; }
+  async euInizia() { const st = this.ctx.storage, now = Date.now(), s = await this.euStato();
+    if (s.fine) return Object.assign(s, { occupato: true });
+    const c = (await st.get("eu:corre")) || 0; if (now - c < 10 * 6e4) return Object.assign(s, { occupato: true });
+    await st.put("eu:corre", now); return s; }
+  async euGira() { const st = this.ctx.storage; if (!(await st.get("eu:via"))) await st.put("eu:via", Date.now()); return true; }
+  async euElenco() { return (await this.ctx.storage.get("elenco")) || []; }
+  async euSegna(x, k) { const st = this.ctx.storage, F = (await st.get("eu:fatti")) || {}; F[x] = { at: Date.now(), chiavi: k };
+    await st.put("eu:fatti", F); if (x === "*fine") { await st.put("eu:fine", Date.now()); await st.delete("eu:corre"); } return true; }
+  async euChiudi() { this.EUG = true; await this.ctx.storage.put("eu:spostato", Date.now()); return true; }
+  async euPagina(dopo) { const L = await this.ctx.storage.list(Object.assign({ limit: 40 }, dopo ? { startAfter: dopo } : {})), v = []; let peso = 0, ult = dopo;
+    for (const [k, x] of L) { ult = k; if (k.startsWith("eu:")) continue;
+      const b = x instanceof ArrayBuffer || ArrayBuffer.isView(x) ? x.byteLength : JSON.stringify(x === undefined ? null : x).length;
+      if (v.length && peso + b > 8e6) return { v, dopo: v[v.length - 1][0], fine: false }; v.push([k, x]); peso += b; }
+    return { v, dopo: ult, fine: L.size < 40 }; }
+  async euPrepara() { const st = this.ctx.storage; this.EUG = true; await st.deleteAlarm(); await st.deleteAll(); await st.put("eu:atteso", Date.now()); return true; }
+  async euMetti(L) { const st = this.ctx.storage; for (let i = 0; i < L.length; i += 100) await st.put(Object.fromEntries(L.slice(i, i + 100))); return L.length; }
+  async euFine(meta) { const st = this.ctx.storage; await st.delete("eu:atteso"); await st.put("eu:arrivato", meta); this.EUG = false; return true; }
+  async euPulisci() { const st = this.ctx.storage, via = await st.get("eu:via"), F = await st.get("eu:fatti"), fine = await st.get("eu:fine");
+    await st.deleteAlarm(); await st.deleteAll(); this.EUG = true; await st.put("eu:spostato", Date.now());
+    if (via) await st.put({ "eu:via": via, "eu:fatti": F || {}, "eu:fine": fine || 0, "eu:pulito": Date.now() }); return true; }
   /* ---------- anteprima 141: contenitore delle copie di sicurezza di uno spazio («copie:<spazio>»). Lo chiama solo lo spazio, mai dall'esterno.
      cg:<etichetta> → informazioni della copia · cv:<etichetta>:<chiave> → i dati di quel giorno · cd:<doc> e cdp:<doc>:<n> → i documenti, salvati una volta sola ---------- */
   async copiaInizia(et) { const st = this.ctx.storage, K = [...(await st.list({ prefix: "cv:" + et + ":" })).keys()];
@@ -1048,7 +1105,7 @@ export class Stato extends DurableObject {
         disp2[did] = nd + 1; await st.put("claude:giorno", { g, n: n + 1, disp: disp2 });
       });
       if (no) return no;
-      const tutti = await this.env.STATO.get(this.env.STATO.idFromName("registro")).fetch(new Request("https://quota120.interno/interno/claude-conta" + (PROVA ? "?prova=1" : ""), { method: "POST" })).then(r => r.json()).catch(() => ({ ok: true }));
+      const tutti = await sto(this.env, ("registro")).fetch(new Request("https://quota120.interno/interno/claude-conta" + (PROVA ? "?prova=1" : ""), { method: "POST" })).then(r => r.json()).catch(() => ({ ok: true }));
       if (!tutti.ok) { await rendiClaude(did, false); return J({ errore: tutti.prova ? "Oggi le letture con l'intelligenza artificiale della versione di prova sono finite: riprova domani, oppure iscriviti per avere il tuo spazio." : "Oggi le letture con l'intelligenza artificiale sono finite per tutti: riprova domani, oppure scrivi i dati a mano." }, 429); }
       return null; };
     // Claude non ha risposto (occupato o rete): la lettura prenotata torna indietro (anche nel conto di tutti, se «anche»)
@@ -1056,7 +1113,7 @@ export class Stato extends DurableObject {
       const g = giornoUTC();
       await this.ctx.blockConcurrencyWhile(async () => { const c = (await st.get("claude:giorno")) || {}; if (c.g !== g) return;
         c.n = Math.max(0, (c.n || 0) - 1); c.disp = c.disp || {}; c.disp[did] = Math.max(0, (c.disp[did] || 0) - 1); await st.put("claude:giorno", c); });
-      if (anche) await this.env.STATO.get(this.env.STATO.idFromName("registro")).fetch(new Request("https://quota120.interno/interno/claude-rendi" + (PROVA ? "?prova=1" : ""), { method: "POST" })).catch(() => {}); };
+      if (anche) await sto(this.env, ("registro")).fetch(new Request("https://quota120.interno/interno/claude-rendi" + (PROVA ? "?prova=1" : ""), { method: "POST" })).catch(() => {}); };
     // spazio occupato dai file caricati (byte): si tiene il conto; la prima volta si somma tutto
     const usoFile = async () => { let u = await st.get("uso:byte"); if (typeof u !== "number") { u = 0; for (const [, i] of await st.list({ prefix: "docinfo:" })) u += +(i && i.size) || 0; await st.put("uso:byte", u); } return u; };
     const contaFile = async delta => { const u = await usoFile(); await st.put("uso:byte", Math.max(0, u + delta)); };
@@ -1258,7 +1315,7 @@ export class Stato extends DurableObject {
     // ripristino di una copia (lo chiede il titolare dal Pannello): prima si fa una copia di adesso; accessi, telefoni e sicurezza restano quelli di adesso
     if (p === "/interno/copia-ripristina" && request.method === "POST") {
       if (PROVA) return J({ errore: "solo per gli spazi" }, 400);
-      const b = await request.json().catch(() => ({})), et = String(b.et || ""), B = this.env.STATO.get(this.env.STATO.idFromName("copie:" + OPN));
+      const b = await request.json().catch(() => ({})), et = String(b.et || ""), B = sto(this.env, ("copie:" + OPN));
       if (!(await B.copiaElenco()).some(x => x.et === et)) return J({ errore: "Copia non trovata" }, 404);
       const prima = await this.copiaFai(OPN, giornoUTC() + "-prima-del-ripristino-" + String(now).slice(-6));
       const V = []; let dopo = null;
@@ -1275,7 +1332,7 @@ export class Stato extends DurableObject {
     }
     // Pannello del titolare: copie e richiesta «ho perso telefono e codici» (mai i dati dello spazio)
     if (p === "/interno/sic-pannello") {
-      const R = await st.get("sic:rip"), B = OPN ? this.env.STATO.get(this.env.STATO.idFromName("copie:" + OPN)) : null;
+      const R = await st.get("sic:rip"), B = OPN ? sto(this.env, ("copie:" + OPN)) : null;
       return J({ tfa: !!(await st.get("sic:tfa")), rip: R ? { stato: R.stato, at: R.at, sblocco: R.sblocco, cod: R.cod, dev: R.dev, fatta: R.fatta || 0, annullata: R.annullata || 0 } : null,
         copie: B ? await B.copiaElenco() : [], ultima: (await st.get("copia:ultima")) || null, ripristino: (await st.get("copia:ripristino")) || null, email: await sicEmailAdm() });
     }
@@ -1293,7 +1350,7 @@ export class Stato extends DurableObject {
       const b = await request.json().catch(() => ({}));
       if (b.op === "accVer") { const A = await st.get("sic:acc"); if (A) { A.ver = +b.ver; await st.put("sic:acc", A); } return J({ ok: !!A }); }
       if (b.op === "ripVecchia") { const R = await st.get("sic:rip"); if (R) { R.at -= RIP_ATTESA + 60000; R.sblocco -= RIP_ATTESA + 60000; await st.put("sic:rip", R); } return J({ ok: !!R }); }
-      if (b.op === "copie") return J(OPN ? await this.env.STATO.get(this.env.STATO.idFromName("copie:" + OPN)).copiaElenco() : []);
+      if (b.op === "copie") return J(OPN ? await sto(this.env, ("copie:" + OPN)).copiaElenco() : []);
       if (b.op === "chiavi") return J([...(await st.list({ prefix: b.pre || "sic:" })).keys()]);
       return J({ errore: "op?" }, 400);
     }
@@ -2300,7 +2357,7 @@ export class Stato extends DurableObject {
 
 // anteprima 141: la copia di sicurezza di uno spazio (tutti i dati e i documenti), nel suo contenitore «copie:<spazio>»
 Stato.prototype.copiaFai = async function (op, et) {
-  const st = this.ctx.storage, B = this.env.STATO.get(this.env.STATO.idFromName("copie:" + op)), now = Date.now();
+  const st = this.ctx.storage, B = sto(this.env, ("copie:" + op)), now = Date.now();
   await B.copiaInizia(et);
   // tutto tranne i pezzi dei documenti (vanno a parte, una volta sola), gli scarichi da 24 ore e le informazioni sulle copie
   const L = [...(await st.list({ end: "doc:" })), ...(await st.list({ start: "doc;" }))].filter(([k]) => !k.startsWith("sic:exp") && !k.startsWith("copia:"));
@@ -2382,7 +2439,7 @@ Stato.prototype.cliAdmin = async function (prova) {
 };
 // tetti di tutti gli spazi insieme, nel registro (dji, mail, provabyte, iscr): true = si può (se il registro non risponde, si va avanti)
 Stato.prototype.tetto = async function (tipo, n = 1, rendi = false) {
-  return this.env.STATO.get(this.env.STATO.idFromName("registro")).fetch(new Request("https://quota120.interno/interno/conta", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ tipo, n, rendi }) }))
+  return sto(this.env, ("registro")).fetch(new Request("https://quota120.interno/interno/conta", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ tipo, n, rendi }) }))
     .then(r => r.json()).then(j => !!j.ok).catch(() => true);
 };
 // una email automatica in più (avvisi, prova degli avvisi, segnalazioni, conferme): tetto dello spazio e di tutti, prenotato prima
@@ -2448,7 +2505,7 @@ Stato.prototype.registro = async function (request, url, p) {
   const corpo = async () => { try { return await request.json(); } catch (e) { return {}; } };
   const troppi = async (k, max, ms) => { const r = (await st.get(k)) || { n: 0, t: now }; if (now - r.t > ms) { r.n = 0; r.t = now; } r.n++; await st.put(k, r); return r.n > max; };
   const mail = b => String(b.email || "").trim().toLowerCase();
-  const spazio = op => env.STATO.get(env.STATO.idFromName("op:" + op));
+  const spazio = op => sto(env, ("op:" + op));
   // corso A1-A3: registrazione con email e codice (cc:<email> in attesa · ce:<email> iscritto · ct:<chiave> → email)
   // Admin del sito (quota120.com/admin): solo l'email in SITO_ADMIN · ac:<email> codice in attesa · at:<chiave> → entrato
   const tok = () => [...crypto.getRandomValues(new Uint8Array(20))].map(x => x.toString(16).padStart(2, "0")).join("");
@@ -2647,15 +2704,18 @@ async function paginaCliente(env, url, request, prova) {
 }
 export default {
   async scheduled(evento, env, ctx) {
+    await euInit(env);
+    await trasloco(env).catch(e => console.error("trasloco:", e && e.stack || e));
+    ctx.waitUntil(trasPulisci(env).catch(e => console.error("trasloco, pulizia:", e && e.message || e)));
     // la vecchia prova condivisa ("main", non si apre più ai visitatori): solo la pulizia dei file.
     // Le prove personali (demo:<id>) non passano di qui: si cancellano da sole con l'allarme del loro contenitore.
-    const main = env.STATO.get(env.STATO.idFromName("main"));
+    const main = sto(env, ("main"));
     ctx.waitUntil(main.fetch("https://quota120.interno/interno/pulizia").catch(() => {}));
     // gli avvisi di ogni spazio, e la pulizia dei file mai usati (una volta al giorno)
     ctx.waitUntil((async () => {
-      await env.STATO.get(env.STATO.idFromName("registro")).fetch("https://quota120.interno/interno/log/pulizia").catch(() => {});
-      const L = await env.STATO.get(env.STATO.idFromName("registro")).fetch("https://quota120.interno/interno/elenco").then(r => r.json()).catch(() => []);
-      for (const op of L) { const s = env.STATO.get(env.STATO.idFromName("op:" + op));
+      await sto(env, ("registro")).fetch("https://quota120.interno/interno/log/pulizia").catch(() => {});
+      const L = await sto(env, ("registro")).fetch("https://quota120.interno/interno/elenco").then(r => r.json()).catch(() => []);
+      for (const op of L) { const s = sto(env, ("op:" + op));
         await s.fetch("https://quota120.interno/interno/avvisi", { headers: { "x-q120-op": op } }).catch(() => {});
         await s.fetch("https://quota120.interno/interno/pulizia", { headers: { "x-q120-op": op } }).catch(() => {});
         // anteprima 141: la copia di sicurezza di ogni giorno (una volta al giorno: le altre ore si salta)
@@ -2664,6 +2724,7 @@ export default {
   },
   async fetch(request, env) {
     let r;
+    await euInit(env);
     try { r = await this.smista(request, env); }
     catch (e) { console.error("smista:", e && e.stack || e); return J({ errore: "Errore interno" }, 500); }
     // quota120.com: intestazioni di sicurezza su tutte le risposte del sito
@@ -2696,7 +2757,7 @@ export default {
     const host = (LOCALE(env, request) && request.headers.get("x-prova-host")) || url.hostname;   // l'intestazione vale solo nelle prove in locale (localhost)
     const IPC = ipCliente(request, env);   // la rete del visitatore: va ai contenitori nell'intestazione interna x-q120-ip
     if (host === "www.quota120.com") return Response.redirect("https://quota120.com" + p + url.search, 301);
-    const reg = () => env.STATO.get(env.STATO.idFromName("registro"));
+    const reg = () => sto(env, ("registro"));
     // video dei corsi: niente percorsi codificati (%) o con barre doppie, che potrebbero aggirare il controllo della firma qui sotto
     if (/^\/corso\/+video\//i.test(p) && (p.includes("%") || !p.startsWith("/corso/video/"))) return new Response("Indirizzo non valido", { status: 400, headers: { "content-type": "text/plain; charset=utf-8" } });
     if (p.startsWith("/corso/video/az-") || (p.startsWith("/corso/video/") && url.searchParams.has("s"))) {
@@ -2718,7 +2779,7 @@ export default {
       const tit = ta && await reg().fetch(new Request("https://quota120.interno/api/registro/adm-ok?t=" + ta)).then(x => x.json()).then(j => j.ok).catch(() => false);
       if (!tit) return u.searchParams.get("prova") === "1" ? J({ errore: "Solo per l'Admin del sito: entra da quota120.com/admin" }, 401) : J({ ok: true });
       if (u.searchParams.get("prova") !== "1") { u.searchParams.delete("prova"); u.searchParams.delete("finta"); }
-      const r = await env.STATO.get(env.STATO.idFromName("main")).fetch(new Request(u.toString())).then(x => x.json()).catch(() => ({}));
+      const r = await sto(env, ("main")).fetch(new Request(u.toString())).then(x => x.json()).catch(() => ({}));
       return J({ ok: true, ...r, worker: { RESEND_API_KEY: c("RESEND_API_KEY"), ANTHROPIC_API_KEY: c("ANTHROPIC_API_KEY"), DJI_API_KEY: c("DJI_API_KEY") } });
     }
     // prova.quota120.com: solo la versione di prova, una per visitatore (separata dall'app vera)
@@ -2753,7 +2814,7 @@ export default {
       }
       if (az === "panoramica") {
         const ops = await reg().fetch(new Request(N + "/interno/operatori")).then(r => r.json()).catch(() => []);
-        for (const o of ops) Object.assign(o, await env.STATO.get(env.STATO.idFromName("op:" + o.op)).fetch(new Request(N + "/interno/riepilogo", { headers: { "x-q120-op": o.op } })).then(r => r.json()).catch(() => ({})));
+        for (const o of ops) Object.assign(o, await sto(env, ("op:" + o.op)).fetch(new Request(N + "/interno/riepilogo", { headers: { "x-q120-op": o.op } })).then(r => r.json()).catch(() => ({})));
         const isc = await reg().fetch(new Request(N + "/interno/iscritti-n")).then(r => r.json()).catch(() => ({}));
         const corsi = await corsiConVideo(env, url, await reg().fetch(new Request(N + "/interno/corsi")).then(r => r.json()), true);
         const lez = corsi.flatMap(c => c.lezioni || []), c = n => !!(env[n] && String(env[n]).trim());
@@ -2763,13 +2824,13 @@ export default {
       }
       // anteprima 141: copie di sicurezza e richieste «ho perso telefono e codici» di uno spazio (mai i suoi dati)
       if (az === "sic" && request.method === "GET") { const op = String(url.searchParams.get("op") || ""); if (!SLUG_OK(op)) return J({ errore: "operatore" }, 400);
-        return env.STATO.get(env.STATO.idFromName("op:" + op)).fetch(new Request(N + "/interno/sic-pannello", { headers: { "x-q120-op": op } })); }
+        return sto(env, ("op:" + op)).fetch(new Request(N + "/interno/sic-pannello", { headers: { "x-q120-op": op } })); }
       if ((az === "sic-approva" || az === "ripristina") && request.method === "POST") { const b = await request.json().catch(() => ({})); if (!SLUG_OK(b.op)) return J({ errore: "operatore" }, 400);
-        return env.STATO.get(env.STATO.idFromName("op:" + b.op)).fetch(new Request(N + (az === "ripristina" ? "/interno/copia-ripristina" : "/interno/sic-approva"), { method: "POST", headers: { "x-q120-op": b.op, "content-type": "application/json" }, body: JSON.stringify({ et: String(b.et || "") }) })); }
+        return sto(env, ("op:" + b.op)).fetch(new Request(N + (az === "ripristina" ? "/interno/copia-ripristina" : "/interno/sic-approva"), { method: "POST", headers: { "x-q120-op": b.op, "content-type": "application/json" }, body: JSON.stringify({ et: String(b.et || "") }) })); }
       if (az === "log" && request.method === "GET") return reg().fetch(new Request(N + "/interno/log"));
       if (az === "log-risolto" && request.method === "POST") return reg().fetch(new Request(N + "/interno/log/risolto", { method: "POST", headers: { "content-type": "application/json" }, body: await request.text() }));
       if (az === "sospendi" && request.method === "POST") { const b = await request.json().catch(() => ({})); if (!SLUG_OK(b.op)) return J({ errore: "operatore" }, 400);
-        return env.STATO.get(env.STATO.idFromName("op:" + b.op)).fetch(new Request(N + "/interno/sospendi", { method: "POST", headers: { "x-q120-op": b.op }, body: JSON.stringify({ on: !!b.on }) })); }
+        return sto(env, ("op:" + b.op)).fetch(new Request(N + "/interno/sospendi", { method: "POST", headers: { "x-q120-op": b.op }, body: JSON.stringify({ on: !!b.on }) })); }
       if (az === "video" && request.method === "POST") { const b = await request.json().catch(() => ({})); if (!SLUG_OK(b.op)) return J({ errore: "operatore" }, 400);
         return reg().fetch(new Request(N + "/interno/op-video", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ op: b.op, on: !!b.on }) })); }
       if (az === "esci" && request.method === "POST") { if (ta) await reg().fetch(new Request(I + "esci?t=" + ta, { method: "POST" })); return new Response('{"ok":true}', { headers: { "content-type": "application/json", "set-cookie": "q120a=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Strict" } }); }
@@ -2803,7 +2864,7 @@ export default {
       // corsi delle aziende: i video si fanno solo per gli spazi approvati dal titolare (Pannello › Operatori › «Video del corso approvati»),
       // dentro i tetti (corsi, lezioni, scene, caratteri della voce per lezione e per azienda); gli altri arrivano segnati «non approvato» e si saltano
       for (const op of ops) { const info = await reg().fetch(new Request("https://quota120.interno/interno/op-info?op=" + op)).then(r => r.json()).catch(() => ({}));
-        const az = await env.STATO.get(env.STATO.idFromName("op:" + op)).fetch(new Request("https://quota120.interno/interno/corsi-az", { headers: { "x-q120-op": op } })).then(r => r.json()).catch(() => []);
+        const az = await sto(env, ("op:" + op)).fetch(new Request("https://quota120.interno/interno/corsi-az", { headers: { "x-q120-op": op } })).then(r => r.json()).catch(() => []);
         if (!Array.isArray(az)) continue; let voce = 0;
         for (const c of az.slice(0, LIM.corsi)) for (const l of LISTA(c.lezioni).slice(0, LIM.lezioni)) { const sc = LISTA(l.scene).slice(0, LIM.scene); if (!sc.length || !c.tok) continue;
           const nv = sc.reduce((a, x) => a + String((x && (x.v || x.t)) || "").length, 0); voce += nv;
@@ -2856,7 +2917,7 @@ export default {
       if (!p.startsWith("/admin") && ra.headers.get("x-robots-tag")) { const r2 = new Response(ra.body, ra); r2.headers.delete("x-robots-tag"); return r2; }
       return ra;
     }
-    const main = () => env.STATO.get(env.STATO.idFromName("main"));
+    const main = () => sto(env, ("main"));
     // nessuno da fuori può dire di essere uno spazio: l'intestazione la mette solo questo smistatore
     const pulita = (op) => { const r = new Request(request); for (const k of ["x-q120-op", "x-q120-prova", "x-q120-prova-nuova", "x-q120-ip"]) r.headers.delete(k); if (op) r.headers.set("x-q120-op", op); if (IPC) r.headers.set("x-q120-ip", IPC); return r; };
     // registro: da fuori solo quello che chiamano le pagine dell'app (iscrizione e entrata dell'Admin dello spazio);
@@ -2876,22 +2937,26 @@ export default {
       const op = String(request.headers.get("x-op") || url.searchParams.get("op") || "").toLowerCase();
       // la vecchia prova condivisa ("main") non si apre più: la prova sta su prova.quota120.com
       if (!SLUG_OK(op)) return J({ errore: !op || op === "prova" ? PROVA_ALTROVE : "operatore" }, !op || op === "prova" ? 410 : 404);
-      return this.corsi(env, url, env.STATO.get(env.STATO.idFromName("op:" + op)).fetch(pulita(op)));
+      return this.corsi(env, url, sto(env, ("op:" + op)).fetch(pulita(op)));
     }
     if (p === "/api/log" && request.method === "POST") {
       // chi è entrato nel programma (x-disp valido nel suo spazio) ha la sua riserva: lo spazio lo dice il server, non la pagina
       const op = String(request.headers.get("x-op") || "").toLowerCase(), xd = request.headers.get("x-disp") || "";
-      const aut = SLUG_OK(op) && /^[a-f0-9]{16}:[a-f0-9]{36}$/.test(xd) ? await env.STATO.get(env.STATO.idFromName("op:" + op)).fetch(new Request("https://quota120.interno/interno/chi-disp", { headers: { "x-q120-op": op, "x-disp": xd } })).then(r => r.json()).catch(() => null) : null;
+      const aut = SLUG_OK(op) && /^[a-f0-9]{16}:[a-f0-9]{36}$/.test(xd) ? await sto(env, ("op:" + op)).fetch(new Request("https://quota120.interno/interno/chi-disp", { headers: { "x-q120-op": op, "x-disp": xd } })).then(r => r.json()).catch(() => null) : null;
       return this.log(request, env, op, aut && aut.ok ? aut : null);
     }
     if (p.startsWith("/api/")) {
       const op = String(request.headers.get("x-op") || url.searchParams.get("op") || "").toLowerCase();
       if (!op || op === "prova") return J({ errore: PROVA_ALTROVE }, 410);
       if (!SLUG_OK(op)) return J({ errore: "operatore" }, 404);
-      return env.STATO.get(env.STATO.idFromName("op:" + op)).fetch(pulita(op));
+      return sto(env, ("op:" + op)).fetch(pulita(op));
     }
+    if (p === "/interno/eu-confronta" && LOCALE(env, request)) {   // solo per le prove in locale: il vecchio e il nuovo hanno le stesse chiavi e gli stessi valori?
+      const n = url.searchParams.get("n") || "", tutto = async S => { const out = {}; let dopo = null; for (;;) { const P = await S.euPagina(dopo); for (const [k, v] of P.v) out[k] = v instanceof ArrayBuffer || ArrayBuffer.isView(v) ? "bin:" + [...new Uint8Array(await crypto.subtle.digest("SHA-256", v))].map(x => x.toString(16).padStart(2, "0")).join("") : JSON.stringify(v); if (P.fine) break; dopo = P.dopo; } return out; };
+      const a = await tutto(stoVecchio(env, n)), b = await tutto(stoEU(env, n)), K = new Set([...Object.keys(a), ...Object.keys(b)]), diversi = [...K].filter(k => a[k] !== b[k]);
+      return J({ n, vecchio: Object.keys(a).length, nuovo: Object.keys(b).length, diversi: diversi.slice(0, 20), stato: await stoVecchio(env, "registro").euStato() }); }
     if (p.startsWith("/interno/") && LOCALE(env, request)) {   // solo per le prove in locale (POSTA_FINTA=1 e localhost)
-      const q = url.searchParams.get("do") || "", stub = q === "registro" ? env.STATO.get(env.STATO.idFromName("registro")) : SLUG_OK(q) ? env.STATO.get(env.STATO.idFromName("op:" + q)) : main();
+      const q = url.searchParams.get("do") || "", stub = q === "registro" ? sto(env, ("registro")) : SLUG_OK(q) ? sto(env, ("op:" + q)) : main();
       return stub.fetch(pulita(SLUG_OK(q) ? q : ""));
     }
     // etichette QR di droni e batterie: /q/<spazio>/d<id> (drone) o /q/<spazio>/b<id> (batteria) aprono il programma dello spazio sulla scheda dell'etichetta
@@ -2913,7 +2978,7 @@ export default {
   async corsi(env, url, risposta) {
     const r = await risposta; if (!r.ok) return r;
     const j = await r.json();
-    const tutti = await env.STATO.get(env.STATO.idFromName("registro")).fetch(new Request("https://quota120.interno/interno/corsi")).then(x => x.json()).catch(() => []);
+    const tutti = await sto(env, ("registro")).fetch(new Request("https://quota120.interno/interno/corsi")).then(x => x.json()).catch(() => []);
     j.az = await corsiConVideo(env, url, j.az || [], !!j.adm);
     j.q120 = await corsiConVideo(env, url, tutti, false);
     return J(j);
@@ -2925,7 +2990,7 @@ export default {
     let b; try { b = JSON.parse(t); } catch (e) { return J({ errore: "dati" }, 400); }
     if (!b || typeof b !== "object" || Array.isArray(b)) return J({ errore: "dati" }, 400);
     const opOk = SLUG_OK(op) ? op : "prova";
-    const j = await env.STATO.get(env.STATO.idFromName("registro")).fetch(new Request("https://quota120.interno/interno/log", { method: "POST", headers: { "content-type": "application/json" },
+    const j = await sto(env, ("registro")).fetch(new Request("https://quota120.interno/interno/log", { method: "POST", headers: { "content-type": "application/json" },
       body: JSON.stringify({ b, op: opOk, aut: aut || null, ip: ipCliente(request, env), ua: request.headers.get("user-agent") || "" }) })).then(r => r.json()).catch(() => ({}));
     if (j.ok && b.tipo === "mess" && j.id && j.mail) {
       const E = x => String(x == null ? "" : x).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -2950,14 +3015,14 @@ export default {
     if (p === "/api/log" && request.method === "POST") {
       // telefono riconosciuto nella sua prova personale (cookie q120p + x-disp): ha la sua riserva nel registro dei problemi
       const idp = cookie("q120p"), xd = request.headers.get("x-disp") || "";
-      const aut = idp && /^[a-f0-9]{16}:[a-f0-9]{36}$/.test(xd) ? await env.STATO.get(env.STATO.idFromName("demo:" + idp)).fetch(new Request("https://quota120.interno/interno/chi-disp", { headers: { "x-q120-prova": "1", "x-disp": xd } })).then(r => r.json()).catch(() => null) : null;
+      const aut = idp && /^[a-f0-9]{16}:[a-f0-9]{36}$/.test(xd) ? await sto(env, ("demo:" + idp)).fetch(new Request("https://quota120.interno/interno/chi-disp", { headers: { "x-q120-prova": "1", "x-disp": xd } })).then(r => r.json()).catch(() => null) : null;
       return this.log(request, env, "prova", aut && aut.ok ? Object.assign(aut, { op: "prova" }) : null);
     }
     const BISCOTTO = id => "q120p=" + id + "; Path=/; Max-Age=" + PROVA_MAX / 1000 + "; Secure; HttpOnly; SameSite=Lax";
     const VIA = "q120p=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax";
     const conBiscotto = (r, v, idProva) => { const x = new Response(r.body, r); if (v) x.headers.append("set-cookie", v); if (idProva) x.headers.set("x-q120-prova-id", idProva); return x; };
     if (p.startsWith("/api/")) {
-      const stub = id => env.STATO.get(env.STATO.idFromName("demo:" + id));
+      const stub = id => sto(env, ("demo:" + id));
       // calendario e invio dei voli arrivano da altre app (senza cookie): la prova è nell'indirizzo (?p=)
       const fuori = p === "/api/cal.ics" || p === "/api/invio";
       let id = cookie("q120p"); const dalBiscotto = !!id;
@@ -2976,14 +3041,14 @@ export default {
       } else if (!crea) return request.headers.get("x-disp") ? PROVA_SCADUTA() : J({ errore: "dispositivo" }, 401);   // telefono di una prova che non c'è più
       // una prova nuova: al massimo LIM.provaNuoveIp al giorno da ogni rete
       const ip = IPC || (locale ? "" : "x");   // rete del visitatore (IPv6: il /64)
-      const ok = await env.STATO.get(env.STATO.idFromName("registro")).fetch(new Request("https://quota120.interno/interno/prova-nuova", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ip }) })).then(r => r.json()).catch(() => ({ ok: false }));
+      const ok = await sto(env, ("registro")).fetch(new Request("https://quota120.interno/interno/prova-nuova", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ip }) })).then(r => r.json()).catch(() => ({ ok: false }));
       if (!ok.ok) return J({ errore: ok.rete ? "Oggi da questa rete sono già state aperte " + LIM.provaNuoveIp + " versioni di prova: riprova domani, oppure crea il tuo spazio gratis su app.quota120.com." : "Oggi sono state aperte troppe versioni di prova: riprova domani, oppure crea il tuo spazio gratis su app.quota120.com." }, 429);
       const nuovo = rnd(16);
       return conBiscotto(await manda(nuovo, true), BISCOTTO(nuovo));
     }
     if (p.startsWith("/interno/") && locale) {   // solo per le prove in locale: ?prova=<id> apre il contenitore di quella prova
       const q = url.searchParams.get("prova") || "", r = pulita(); r.headers.set("x-q120-prova", "1");
-      return ID_PROVA(q) ? env.STATO.get(env.STATO.idFromName("demo:" + q)).fetch(r) : J({ errore: "prova?" }, 400);
+      return ID_PROVA(q) ? sto(env, ("demo:" + q)).fetch(r) : J({ errore: "prova?" }, 400);
     }
     // etichette QR della prova: aprono la prova sulla scheda dell'etichetta
     { const mq = p.match(/^\/q\/[A-Za-z0-9-]{3,40}\/([db][A-Za-z0-9_%.-]{1,80})\/?$/);
