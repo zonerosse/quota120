@@ -56,7 +56,7 @@ a Claude (Sonnet) e propone tipo, dati e scheda di destinazione; senza la chiave
   i repository: se cambia, copiarla in tutti. Senza POS il pannello dice «non ancora collegato».
 
 ## Sicurezza e dati (05/11/2026, anteprima 141 approvata)
-Azienda › «Sicurezza e dati» (solo Admin), con cinque righe; in Home › «Da sistemare» una riga finché l'accordo non è accettato e una finché
+Azienda › «Sicurezza e dati» (solo Admin), con sei righe (con «Impronta o viso», anteprima 143); in Home › «Da sistemare» una riga finché l'accordo non è accettato e una finché
 la doppia verifica è spenta (non nella prova). Ogni parte ha la sua guida (parte solo se la avvii, o toccando la riga) e una lezione nello Studio.
 - **Doppia verifica** (TOTP, RFC 6238: HMAC-SHA1, 6 cifre, 30 s, si accetta ±1 passo): QR `otpauth://` e chiave da scrivere a mano; un codice
   già usato non vale di nuovo (si tiene l'ultimo passo usato). 10 codici di riserva `XXXX-XXXX`, una volta sola, salvati come impronta SHA-256 con sale.
@@ -77,6 +77,21 @@ la doppia verifica è spenta (non nella prova). Ogni parte ha la sua guida (part
 - **Accordo sul trattamento dei dati (art. 28)**: versione nel codice (`ACC_VER` in src/index.js; il testo è in public/index.html, `SIC_ART`):
   se cambia il testo, alzare `ACC_VER` (e `SIC_ACC_DATA`/`SIC_ACC_CAMBI`) e l'Admin lo riaccetta. «Più tardi» = riquadro giallo.
 - **Sicurezza in breve**: PDF di una pagina con lo stato vero; «Manda per email» passa da `/api/doc/invia` (stessi limiti).
+
+### Impronta o viso: passkey dell'Admin (anteprima 143)
+- Azienda › Sicurezza e dati › «Impronta o viso» (solo Admin, non va in «Da sistemare»). Aggiungere: con la doppia verifica se è attiva
+  (`/api/sic/pk/nuova`), poi `navigator.credentials.create` (residentKey e userVerification «required», attestation «none», ES256 e RS256,
+  excludeCredentials), poi `/api/sic/pk/salva`; il nome si cambia con `/api/sic/pk/nome`; togliere con `/api/sic/pk/togli` (doppia verifica se attiva).
+  Al massimo 10 (`PK_MAX`); a ogni passkey aggiunta un'email di avviso all'Admin.
+- Nello spazio: `pk:list` (ID della credenziale, chiave pubblica JWK, contatore, rpId, date), `pk:uid`, `pk:nuova` (sfida di 5 minuti).
+  Nel registro: indice `pkc:<id>` → spazio (si aggiorna quando si aggiunge o si toglie) e le sfide d'ingresso `pks:<sfida>` (5 minuti, una volta sola).
+- Ingresso senza email (discoverable credential): `/api/registro/pk-sfida`, poi `navigator.credentials.get`, poi `/api/registro/pk-entra`: il registro consuma la sfida e trova
+  lo spazio; lo spazio (`/interno/pk-entra`) controlla origine (app.quota120.com, prova.quota120.com, localhost solo in locale), rpIdHash, UP, UV, firma
+  (ECDSA P-256 con firma DER → raw, RSASSA-PKCS1-v1_5 SHA-256) e contatore, tutto con crypto.subtle e un CBOR minimo scritto qui.
+  Poi è come dopo email + doppia verifica: stessa chiave di telefono, stesse regole dei 15 giorni, email di avviso. 5 errori per rete = 15 minuti.
+  Nella prova si entra dal proprio contenitore (`/api/pk/sfida`, `/api/pk/entra`).
+- «Esci da tutti» non tocca le passkey; il recupero «ho perso telefono e codici», chiuso dall'assistenza, le toglie tutte. Pannello del titolare ›
+  Operatori › scheda › Sicurezza: quante sono e «Togli tutte le passkey». Il ripristino di una copia lascia le passkey di adesso.
 
 ### Dati nell'Unione europea (anteprima 142)
 - Tutti i contenitori (`main`, `registro`, `op:<spazio>`, `copie:<spazio>`, `demo:<id>`) vivono nella zona **eu** di Cloudflare

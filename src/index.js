@@ -789,6 +789,73 @@ const giornoRoma = t => new Intl.DateTimeFormat("it-IT", { timeZone: "Europe/Rom
 const mailBox = (corpo, piede) => `<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;color:#0F1C26;font-size:15px;line-height:1.5"><div style="border-bottom:2px solid #132A3A;padding-bottom:10px;margin-bottom:14px;font-size:20px;font-weight:bold;color:#132A3A">Quota 120</div>${corpo}<p style="font-size:12.5px;color:#5E6D77;margin-top:18px;border-top:1px solid #E3E8EB;padding-top:10px">${piede || "Ricevi questa email perché sei l'Admin di questo spazio su Quota 120."}</p></div>`;
 const mailTasto = (href, t) => `<a href="${esc(href, 600)}" style="display:inline-block;background:#1D5C7C;color:#fff;border-radius:8px;padding:12px 18px;font-weight:bold;text-decoration:none">${t}</a>`;
 
+/* ---------- anteprima 143: entrare con impronta o viso (passkey WebAuthn, solo l'Admin) ----------
+   Sul telefono resta la chiave segreta; qui si salvano solo la chiave pubblica (JWK) e l'ID della credenziale.
+   La verifica è tutta qui, con crypto.subtle: CBOR minimo, chiave COSE (ES256 / RS256), firma, origine, rpIdHash, UP, UV, contatore. */
+const PK_MAX = 10;                     // passkey al massimo per spazio
+const PK_SFIDA = 5 * 60000;            // una sfida vale 5 minuti e si usa una volta sola
+const PK_ORIGINI = ["https://app.quota120.com", "https://prova.quota120.com"];
+const PK_ID = /^[A-Za-z0-9_-]{16,1400}$/;   // ID della credenziale in base64url (al massimo 1023 byte)
+const b64u = u8 => b64(u8).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const ub64u = s => { s = String(s == null ? "" : s); if (!/^[A-Za-z0-9_-]*$/.test(s)) throw new Error("base64url");
+  return Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4)), c => c.charCodeAt(0)); };
+// CBOR (RFC 8949), solo quello che serve a WebAuthn: interi, byte, testo, liste, mappe, etichette, semplici. Restituisce [valore, posizione dopo]
+function cbor(u, i = 0, prof = 0) {
+  if (prof > 16 || i >= u.length) throw new Error("cbor");
+  const b = u[i++], mt = b >> 5, ai = b & 31; let n;
+  const serve = k => { if (i + k > u.length) throw new Error("cbor"); };
+  if (ai < 24) n = ai; else if (ai === 24) { serve(1); n = u[i]; i += 1; } else if (ai === 25) { serve(2); n = (u[i] << 8) | u[i + 1]; i += 2; }
+  else if (ai === 26) { serve(4); n = ((u[i] << 24) >>> 0) + (u[i + 1] << 16) + (u[i + 2] << 8) + u[i + 3]; i += 4; }
+  else if (ai === 27) { serve(8); n = 0; for (let k = 0; k < 8; k++) n = n * 256 + u[i + k]; i += 8; } else throw new Error("cbor");
+  if (mt === 0) return [n, i];
+  if (mt === 1) return [-1 - n, i];
+  if (mt === 2) { serve(n); return [u.slice(i, i + n), i + n]; }
+  if (mt === 3) { serve(n); return [new TextDecoder().decode(u.slice(i, i + n)), i + n]; }
+  if (mt === 4) { if (n > 1000) throw new Error("cbor"); const a = []; for (let k = 0; k < n; k++) { const [v, j] = cbor(u, i, prof + 1); a.push(v); i = j; } return [a, i]; }
+  if (mt === 5) { if (n > 1000) throw new Error("cbor"); const m = new Map(); for (let k = 0; k < n; k++) { const [kk, j] = cbor(u, i, prof + 1), [v, j2] = cbor(u, j, prof + 1); m.set(kk, v); i = j2; } return [m, i]; }
+  if (mt === 6) return cbor(u, i, prof + 1);
+  return [ai === 20 ? false : ai === 21 ? true : ai === 22 ? null : undefined, i];
+}
+// chiave COSE → JWK (solo ES256 su P-256 e RS256)
+function pkJwk(m) {
+  if (!(m instanceof Map)) return null;
+  const kty = m.get(1), alg = m.get(3);
+  if (kty === 2 && alg === -7 && m.get(-1) === 1) { const x = m.get(-2), y = m.get(-3); if (!(x instanceof Uint8Array) || !(y instanceof Uint8Array) || x.length !== 32 || y.length !== 32) return null;
+    return { alg: -7, jwk: { kty: "EC", crv: "P-256", x: b64u(x), y: b64u(y) } }; }
+  if (kty === 3 && alg === -257) { const n = m.get(-1), e = m.get(-2); if (!(n instanceof Uint8Array) || !(e instanceof Uint8Array) || n.length < 256 || n.length > 1024 || e.length > 8) return null;
+    return { alg: -257, jwk: { kty: "RSA", n: b64u(n), e: b64u(e) } }; }
+  return null;
+}
+const pkChiave = jwk => jwk.kty === "EC" ? crypto.subtle.importKey("jwk", { kty: "EC", crv: "P-256", x: jwk.x, y: jwk.y }, { name: "ECDSA", namedCurve: "P-256" }, false, ["verify"])
+  : crypto.subtle.importKey("jwk", { kty: "RSA", n: jwk.n, e: jwk.e, alg: "RS256" }, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"]);
+// firma ECDSA in DER (SEQUENCE di due INTEGER) → r||s di 32 + 32 byte, come vuole crypto.subtle
+function pkDerRaw(s) {
+  try { if (s[0] !== 0x30) return null; let i = 2; if (s[1] & 0x80) { if ((s[1] & 0x7f) !== 1) return null; i = 3; }
+    const intero = () => { if (s[i] !== 0x02) throw 0; const n = s[i + 1]; if (i + 2 + n > s.length) throw 0; let v = s.slice(i + 2, i + 2 + n); i += 2 + n;
+      while (v.length > 32 && v[0] === 0) v = v.slice(1); if (v.length > 32) throw 0; const o = new Uint8Array(32); o.set(v, 32 - v.length); return o; };
+    const r = intero(), t = intero(); if (i !== s.length) return null; const out = new Uint8Array(64); out.set(r); out.set(t, 32); return out; } catch (e) { return null; } }
+async function pkFirma(jwk, ad, cd, sig) {
+  try { const hc = new Uint8Array(await crypto.subtle.digest("SHA-256", cd)), dati = new Uint8Array(ad.length + 32); dati.set(ad); dati.set(hc, ad.length);
+    const k = await pkChiave(jwk);
+    if (jwk.kty === "EC") { const raw = pkDerRaw(sig); return !!raw && await crypto.subtle.verify({ name: "ECDSA", hash: "SHA-256" }, k, raw, dati); }
+    return await crypto.subtle.verify("RSASSA-PKCS1-v1_5", k, sig, dati);
+  } catch (e) { return false; } }
+// l'origine della pagina (dal clientDataJSON): solo quelle di Quota 120 (e localhost nelle prove in locale) → l'rpId atteso
+const pkOrigine = (o, loc) => { o = String(o || ""); if (PK_ORIGINI.includes(o)) return new URL(o).hostname; if (loc && /^http:\/\/localhost(:\d{1,5})?$/.test(o)) return "localhost"; return ""; };
+const pkUguali = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
+// clientDataJSON + authenticatorData: tipo, sfida, origine, rpIdHash, utente presente (UP) e verificato (UV), contatore
+async function pkLeggi(cd, ad, tipo, sfida, loc) {
+  let C; try { C = JSON.parse(new TextDecoder().decode(cd)); } catch (e) { return { no: "dati" }; }
+  if (!C || C.type !== tipo) return { no: "tipo" };
+  if (sfida != null && C.challenge !== sfida) return { no: "sfida" };
+  if (C.crossOrigin === true) return { no: "origine" };
+  const rp = pkOrigine(C.origin, loc); if (!rp) return { no: "origine" };
+  if (!(ad instanceof Uint8Array) || ad.length < 37) return { no: "dati" };
+  if (!pkUguali(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(rp))), ad.slice(0, 32))) return { no: "rp" };
+  const fl = ad[32]; if (!(fl & 1)) return { no: "up" }; if (!(fl & 4)) return { no: "uv" };
+  return { ok: true, rp, fl, cnt: ((ad[33] << 24) >>> 0) + (ad[34] << 16) + (ad[35] << 8) + ad[36], C };
+}
+
 /* ---------- ZIP (senza compressione: i documenti sono già PDF e foto compressi), anche a pezzi per i file grandi ---------- */
 const CRC_T = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
 const crcAgg = (c, u8) => { for (let i = 0; i < u8.length; i++) c = CRC_T[(c ^ u8[i]) & 255] ^ (c >>> 8); return c >>> 0; };
@@ -882,9 +949,12 @@ Dentro ci sono dati personali di piloti e clienti: tieni questo file in un posto
 export class Stato extends DurableObject {
   // ogni errore imprevisto torna come JSON (mai la pagina d'errore di Cloudflare)
   async fetch(request) {
-    if (await this.euGate()) return J({ errore: "Stiamo aggiornando questo spazio: riprova tra un minuto." }, 503);
-    try { return await this.gestisci(request); }
+    // anteprima 143: il corpo non letto (risposte date prima di leggerlo, es. 401) si chiude qui; se no il contenitore va in errore e la richiesta dopo riceve 503
+    const chiudi = async () => { try { if (request.body && !request.bodyUsed) { if (+(request.headers.get("content-length") || 0) <= 1048576) await request.arrayBuffer(); else await request.body.cancel(); } } catch (e) {} };
+    if (await this.euGate()) { await chiudi(); return J({ errore: "Stiamo aggiornando questo spazio: riprova tra un minuto." }, 503); }
+    try { const r = await this.gestisci(request); await chiudi(); return r; }
     catch (e) {
+      await chiudi();
       if (e && e.pieno) return J({ errore: "Spazio pieno: i dati di questo spazio hanno raggiunto il limite. Elimina voli o documenti vecchi, oppure scrivi all'assistenza." }, 413);
       console.error("Stato:", e && e.stack || e); return J({ errore: "Errore interno" }, 500);
     }
@@ -994,11 +1064,25 @@ export class Stato extends DurableObject {
       await st.put(k, c + n); return J({ ok: true });
     }
     if (p === "/interno/log") return J([...(await st.list({ prefix: "log:", reverse: true, limit: 300 })).values()]);
+    // anteprima 143: indice delle passkey (ID della credenziale → spazio), tenuto allineato dallo spazio quando ne aggiunge o ne toglie una
+    if (p === "/interno/pk-indice" && request.method === "POST") {
+      const b = await request.json().catch(() => ({})), cid = String(b.id || ""); if (!PK_ID.test(cid) || !SLUG_OK(b.op)) return J({ ok: false }, 400);
+      const k = "pkc:" + cid, X = await st.get(k);
+      if (b.on) { if (X && X.op !== b.op) return J({ ok: false, altro: true }); await st.put(k, { op: b.op, at: Date.now() }); return J({ ok: true }); }
+      if (X && X.op === b.op) await st.delete(k); return J({ ok: true });
+    }
+    if (p === "/interno/pk-invecchia" && LOCALE(this.env, request) && request.method === "POST") {   // solo per le prove in locale: una sfida scade
+      const b = await request.json().catch(() => ({})), S = await st.get("pks:" + b.ch); if (S) { S.at -= PK_SFIDA + 1000; await st.put("pks:" + b.ch, S); } return J({ ok: !!S }); }
+    if (p === "/interno/pk-indice-op" && request.method === "GET") {   // per le prove e il Pannello: le passkey indicizzate di uno spazio
+      const op = url.searchParams.get("op") || "", out = []; for (const [k, v] of await st.list({ prefix: "pkc:" })) if (v && v.op === op) out.push(k.slice(4)); return J(out); }
     if (p === "/interno/log/risolto" && request.method === "POST") { const b = await request.json().catch(() => ({})); const e = b.id && String(b.id).startsWith("log:") && await st.get(b.id); if (e) { e.risolto = !!b.on; await st.put(b.id, e); } return J({ ok: !!e }); }
     if (p === "/interno/log/pulizia") { const ora = Date.now(), via = [];
       for (const [k, v] of await st.list({ prefix: "log:", limit: 1000 })) { if (ora - (v.ult || v.at) > 30 * 864e5) via.push(k); }
       for (const pre of ["logn:", "logr:"]) for (const [k] of await st.list({ prefix: pre, limit: 1000 })) { if (+k.split(":").pop() < Math.floor(ora / 36e5) - 2) via.push(k); }
       for (const [k, v] of await st.list({ prefix: "logfp:", limit: 1000 })) { if (ora - (v.at || 0) > 2 * 864e5) via.push(k); }
+      // anteprima 143: sfide delle passkey scadute e contatori vecchi
+      for (const [k, v] of await st.list({ prefix: "pks:", limit: 1000 })) { if (ora - ((v && v.at) || 0) > PK_SFIDA) via.push(k); }
+      for (const pre of ["lim:pks:", "lim:pke:"]) for (const [k, v] of await st.list({ prefix: pre, limit: 1000 })) { if (ora - ((v && v.t) || 0) > 864e5) via.push(k); }
       const ieri = new Date(ora - 864e5).toISOString().slice(0, 10);
       for (const pre of ["logg:", "loga:", "logd:", "logmail:", "claude:tutti:", "claude:prova:", "lim:ave:", "lim:pn:", "lim:pnt:", "tetto:"]) for (const [k] of await st.list({ prefix: pre, limit: 1000 })) { if (k.split(":").pop() < ieri) via.push(k); }
       // chiavi dell'Admin del sito (90 giorni) e del corso (365 giorni) scadute, e contatori vecchi
@@ -1166,8 +1250,8 @@ export class Stato extends DurableObject {
     const sicMail = async (oggetto, corpo) => { if (PROVA) return false; const a = await sicEmailAdm(); if (!a || !(await this.puoMandare())) return false;
       try { await mandaMail(this.env, a, oggetto, mailBox(corpo)); return true; } catch (e) { console.error("sicurezza, email:", e && e.message || e); return false; } };
     const sicApri = async () => (await st.get("origine")) || BASEURL;
-    const avvisoIngresso = async x => sicMail("Nuovo accesso a Quota 120 da " + SENZA_LINK(x.dev || "un dispositivo nuovo", 60),
-      `<p><b>Nuovo accesso come Admin</b> da ${esc(SENZA_LINK(x.dev || "un dispositivo nuovo", 60))}, il ${oraRoma(now)}.</p><p>Se sei stato tu, non devi fare niente.</p><p>Se <b>non</b> sei stato tu: apri Quota 120 e vai in <b>Azienda › Sicurezza e dati › Telefoni e computer dell’Admin › Esci da tutti gli altri</b>, poi cambia la password della tua email e attiva la doppia verifica.</p>${mailTasto(await sicApri(), "Apri Quota 120")}`);
+    const avvisoIngresso = async (x, pkN) => sicMail("Nuovo accesso a Quota 120 da " + SENZA_LINK(x.dev || "un dispositivo nuovo", 60),
+      `<p><b>Nuovo accesso come Admin</b> da ${esc(SENZA_LINK(x.dev || "un dispositivo nuovo", 60))}, il ${oraRoma(now)}${pkN ? ", con impronta o viso (passkey «" + esc(SENZA_LINK(pkN, 60)) + "»)" : ""}.</p><p>Se sei stato tu, non devi fare niente.</p><p>Se <b>non</b> sei stato tu: apri Quota 120 e vai in <b>Azienda › Sicurezza e dati › Telefoni e computer dell’Admin › Esci da tutti gli altri</b>, poi cambia la password della tua email e attiva la doppia verifica.</p>${mailTasto(await sicApri(), "Apri Quota 120")}`);
     // controllo del codice (6 cifre dell'app, oppure un codice di riserva): { ok } oppure { no: risposta }. Senza doppia verifica attiva: { ok, spenta }
     const sicVerifica = async (v, chiave) => {
       chiave = chiave || "sic:tfa"; const T = await st.get(chiave); if (!T) return chiave === "sic:tfa" ? { ok: true, spenta: true } : { no: J({ errore: "Ricomincia dal passo 1." }, 410) };
@@ -1200,6 +1284,7 @@ export class Stato extends DurableObject {
         acc: A ? { ver: A.ver, nome: A.nome, ruolo: A.ruolo, at: A.at } : null, accVer: ACC_VER, dopo: +(await st.get("sic:dopo")) || 0,
         scar: LISTA(await st.get("sic:scar")).slice(0, 30), copia: C ? { at: C.at, n: C.n, dal: C.dal } : null, copieGiorni: COPIE_GIORNI,
         rip: R && R.stato === "attesa" ? { at: R.at, sblocco: R.sblocco, cod: R.cod } : null, prova: PROVA, chiaveCifrata: !!this.env.SICUREZZA_CHIAVE,
+        pk: pkPub(await pkLista()), pkMax: PK_MAX,
         docN: conDoc ? (await st.list({ prefix: "docinfo:" })).size : undefined, docByte: conDoc ? await usoFile() : undefined }; };
     // «Ho perso telefono e codici»: richiesta che resta ferma 3 giorni; all'email dell'Admin un avviso con il tasto per bloccarla
     const sicPerso = async x => {
@@ -1216,6 +1301,38 @@ export class Stato extends DurableObject {
         <p>La richiesta n. <b>${cod}</b> resta ferma almeno 3 giorni, fino al <b>${giornoRoma(R.sblocco)}</b>. L’assistenza la chiude solo dopo aver controllato la visura camerale dell’azienda e il documento del titolare o del legale rappresentante.</p>
         <p><b>Se non sei stato tu</b>, bloccala subito:</p>${mailTasto(link, "Non sono stato io: blocca la richiesta")}`);
       return J({ ok: true, cod, sblocco: R.sblocco });
+    };
+    // ---- anteprima 143: passkey dell'Admin («pk:list»; l'indice ID → spazio sta nel registro, «pkc:<id>») ----
+    const pkLista = async () => LISTA(await st.get("pk:list"));
+    const pkPub = L => L.map(x => ({ id: x.id, n: x.n, at: x.at, uso: x.uso || 0, da: x.da || "", ud: x.ud || "", dev: x.dev || "" }));
+    // l'indice nel registro (solo per gli spazi veri: nella prova si entra dal proprio contenitore)
+    const pkIndice = async (cid, on) => { if (!OPN) return { ok: true };
+      return sto(this.env, "registro").fetch(new Request("https://quota120.interno/interno/pk-indice", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ op: OPN, id: cid, on: !!on }) }))
+        .then(r => r.json()).catch(e => { console.error("passkey, indice:", e && e.message || e); return { ok: false }; }); };
+    const pkTogliTutte = async () => { const L = await pkLista(); for (const x of L) await pkIndice(x.id, false); await st.delete("pk:list"); await st.delete("pk:nuova"); return L.length; };
+    // ingresso con la passkey (la sfida l'ha già controllata e consumata chi chiama): firma, origine, rpId, UP, UV, contatore → telefono dell'Admin come dopo email + doppia verifica
+    const pkEntra = async (b, loc, ua) => {
+      const kT = "pk:errT", eT0 = await st.get(kT), eT = eT0 && now - eT0.t <= SIC_PAUSA ? eT0 : { n: 0, t: now };
+      if (eT.n >= SIC_TENT * 6) return J({ errore: "Troppi tentativi sbagliati: riprova tra 15 minuti, oppure entra con il codice via email." }, 429);
+      const male = async (m, s) => { eT.n++; await st.put(kT, eT); return J({ errore: m || "Impronta o viso non riconosciuti: entra con il codice via email." }, s || 403); };
+      const L = await pkLista(), P = L.find(x => x && x.id === String(b.id || ""));
+      if (!P) return J({ errore: "Questa passkey non vale più per Quota 120 (forse è stata tolta): entra con il codice via email.", manca: true }, 404);
+      let cd, ad, sig; try { cd = ub64u(b.cd); ad = ub64u(b.ad); sig = ub64u(b.sig); } catch (e) { return male(); }
+      if (cd.length > 4000 || ad.length > 4000 || sig.length > 1100) return male();
+      const R = await pkLeggi(cd, ad, "webauthn.get", String(b.ch || ""), loc);
+      if (R.no) return male(R.no === "origine" || R.no === "rp" ? "Questa passkey non è di questo indirizzo di Quota 120." : "");
+      if (R.rp !== P.rp) return male("Questa passkey non è di questo indirizzo di Quota 120.");
+      if (!(await pkFirma(P.jwk, ad, cd, sig))) return male();
+      // contatore: se il telefono lo tiene, deve sempre salire (se no la passkey potrebbe essere stata copiata)
+      if ((R.cnt || P.cnt) && R.cnt <= (+P.cnt || 0)) return male("Questa passkey sembra copiata da un altro dispositivo: per sicurezza entra con il codice via email e toglila da Sicurezza e dati.");
+      if (!PROVA && Object.keys(disp).length >= LIM.dispSpazio) pulisciDisp();
+      const id2 = rnd(8), k2 = rnd(18);
+      disp[id2] = Object.assign({ k: k2, ruolo: "adm", n: "Admin", pid: null, nuovo: false, codice: cod4(), stato: "ok", at: now, visto: now, app: true, dev: nomeDisp(ua), pk: P.id },
+        OPN ? { via: "email", email: await sicEmailAdm() } : {});
+      await st.put("disp", disp);
+      P.cnt = R.cnt; P.uso = now; P.ud = id2; await st.put("pk:list", L); await st.delete(kT);
+      if (OPN) await avvisoIngresso(disp[id2], P.n);
+      return J({ id: id2, k: k2, n: "Admin", stato: "ok", codice: disp[id2].codice, asp: aspetti.Admin || ASP_BASE });
     };
     const mbDi = n => n >= 1048576 ? Math.max(1, Math.round(n / 1048576)) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB";
     const togliExp = async (tok, X) => { for (const f of LISTA(X && X.files)) for (let j = 0; j < (+f.pezzi || 0); j++) await st.delete("sic:expf:" + tok + ":" + f.i + ":" + j); await st.delete("sic:exp:" + tok); };
@@ -1320,7 +1437,7 @@ export class Stato extends DurableObject {
       const prima = await this.copiaFai(OPN, giornoUTC() + "-prima-del-ripristino-" + String(now).slice(-6));
       const V = []; let dopo = null;
       for (let giro = 0; giro < 200; giro++) { const r = await B.copiaLeggi(et, dopo); if (!r || !r.voci.length) break; V.push(...r.voci); dopo = r.ult; if (r.fine) break; }
-      const tieni = k => ["disp", "creato", "pin", "origine", "blocchi"].includes(k) || k.startsWith("sic:") || k.startsWith("copia:") || k.startsWith("docinfo:");
+      const tieni = k => ["disp", "creato", "pin", "origine", "blocchi"].includes(k) || k.startsWith("sic:") || k.startsWith("pk:") || k.startsWith("copia:") || k.startsWith("docinfo:");
       const via = [...(await st.list({ end: "doc:" })).keys(), ...(await st.list({ start: "doc;" })).keys()].filter(k => !tieni(k));
       for (let i = 0; i < via.length; i += 128) await st.delete(via.slice(i, i + 128));
       for (const [k, v] of V) if (!tieni(k)) await st.put(k, v);
@@ -1334,7 +1451,20 @@ export class Stato extends DurableObject {
     if (p === "/interno/sic-pannello") {
       const R = await st.get("sic:rip"), B = OPN ? sto(this.env, ("copie:" + OPN)) : null;
       return J({ tfa: !!(await st.get("sic:tfa")), rip: R ? { stato: R.stato, at: R.at, sblocco: R.sblocco, cod: R.cod, dev: R.dev, fatta: R.fatta || 0, annullata: R.annullata || 0 } : null,
-        copie: B ? await B.copiaElenco() : [], ultima: (await st.get("copia:ultima")) || null, ripristino: (await st.get("copia:ripristino")) || null, email: await sicEmailAdm() });
+        copie: B ? await B.copiaElenco() : [], ultima: (await st.get("copia:ultima")) || null, ripristino: (await st.get("copia:ripristino")) || null, email: await sicEmailAdm(),
+        pk: (await pkLista()).map(x => ({ n: x.n, at: x.at, uso: x.uso || 0 })) });
+    }
+    // anteprima 143: il titolare toglie tutte le passkey dell'Admin (recupero dell'accesso); all'Admin arriva un'email
+    if (p === "/interno/pk-togli-tutte" && request.method === "POST") {
+      await request.text().catch(() => ""); const n = await pkTogliTutte();
+      if (n) await sicMail("Passkey tolte dall’assistenza", `<p>Il ${oraRoma(now)} l’assistenza di Quota 120 ha tolto ${n === 1 ? "la passkey" : "le " + n + " passkey"} (impronta o viso) dell’Admin, come richiesto per recuperare l’accesso.</p><p>Da adesso si entra con il codice via email${(await st.get("sic:tfa")) ? " e la doppia verifica" : ""}. Le passkey si possono aggiungere di nuovo da Azienda › Sicurezza e dati › Impronta o viso.</p><p>Se non l’hai chiesto tu, scrivi subito a assistenza@quota120.com.</p>${mailTasto(await sicApri(), "Apri Quota 120")}`);
+      return J({ ok: true, n });
+    }
+    // anteprima 143: ingresso con la passkey; la chiama solo il registro, dopo aver controllato e consumato la sfida
+    if (p === "/interno/pk-entra" && request.method === "POST") {
+      if (await st.get("sospeso")) return J({ errore: "Questo spazio è sospeso: scrivi all'assistenza di Quota 120." }, 423);
+      const b = await request.json().catch(() => ({}));
+      return pkEntra(b, !!b.loc, b.ua);
     }
     if (p === "/interno/sic-approva" && request.method === "POST") {
       await request.text().catch(() => ""); const R = await st.get("sic:rip");
@@ -1342,7 +1472,8 @@ export class Stato extends DurableObject {
       if (now < R.sblocco) return J({ errore: "Si può togliere la doppia verifica solo dal " + oraRoma(R.sblocco) + " (3 giorni dalla richiesta)." }, 409);
       await st.delete("sic:tfa"); await st.delete("sic:tfaNuova"); R.stato = "fatta"; R.fatta = now; await st.put("sic:rip", R);
       for (const x of Object.values(disp)) if (x.ruolo === "adm" && x.stato === "2fa") x.stato = "tolto"; await st.put("disp", disp);
-      await sicMail("Doppia verifica tolta dall’assistenza", `<p>Come chiesto (richiesta n. ${esc(R.cod)}), l’assistenza ha controllato i documenti e ha tolto la doppia verifica: adesso entri con il solo codice via email.</p><p>Appena dentro, riattivala con il telefono nuovo: Azienda › Sicurezza e dati › Doppia verifica.</p>${mailTasto(await sicApri(), "Apri Quota 120")}`);
+      const nPk = await pkTogliTutte();   // anteprima 143: con il recupero si tolgono anche le passkey
+      await sicMail("Doppia verifica tolta dall’assistenza", `<p>Come chiesto (richiesta n. ${esc(R.cod)}), l’assistenza ha controllato i documenti e ha tolto la doppia verifica${nPk ? " e le passkey (impronta o viso)" : ""}: adesso entri con il solo codice via email.</p><p>Appena dentro, riattivala con il telefono nuovo: Azienda › Sicurezza e dati › Doppia verifica.</p>${mailTasto(await sicApri(), "Apri Quota 120")}`);
       return J({ ok: true });
     }
     // solo per le prove in locale: invecchiare la richiesta, cambiare la versione dell'accordo accettato, vedere le copie
@@ -1352,6 +1483,7 @@ export class Stato extends DurableObject {
       if (b.op === "ripVecchia") { const R = await st.get("sic:rip"); if (R) { R.at -= RIP_ATTESA + 60000; R.sblocco -= RIP_ATTESA + 60000; await st.put("sic:rip", R); } return J({ ok: !!R }); }
       if (b.op === "copie") return J(OPN ? await sto(this.env, ("copie:" + OPN)).copiaElenco() : []);
       if (b.op === "chiavi") return J([...(await st.list({ prefix: b.pre || "sic:" })).keys()]);
+      if (b.op === "pk") return J(await pkLista());   // anteprima 143: le passkey salvate (per le prove)
       return J({ errore: "op?" }, 400);
     }
     if (p === "/interno/posta" && LOCALE(this.env, request)) return J(globalThis.__POSTA || []);
@@ -1563,6 +1695,21 @@ export class Stato extends DurableObject {
       return new Response(request.method === "HEAD" ? null : zipFlusso(voci, X.at), { headers: { "content-type": "application/zip", "content-disposition": `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(X.nome)}`, "cache-control": "private, no-store", "x-robots-tag": "noindex" } });
     }
 
+    // ---- anteprima 143: nella versione di prova la passkey entra nel contenitore di quella prova (negli spazi veri passa dal registro) ----
+    if (PROVA && (p === "/api/pk/sfida" || p === "/api/pk/entra") && request.method === "POST") {
+      const b = await request.json().catch(() => ({})), kE = "pkerr:" + (IPR || "x"), e0 = await st.get(kE), e = e0 && now - e0.t <= SIC_PAUSA ? e0 : { n: 0, t: now };
+      if (e.n >= SIC_TENT) return J({ errore: "Troppi tentativi sbagliati: riprova tra 15 minuti." }, 429);
+      if (p === "/api/pk/sfida") { for (const [kk, x] of await st.list({ prefix: "pk:s:" })) if (!x || now - x.at > PK_SFIDA) await st.delete(kk);
+        if ((await st.list({ prefix: "pk:s:" })).size >= 30) return J({ errore: "Troppe richieste: riprova tra qualche minuto." }, 429);
+        const ch = b64u(crypto.getRandomValues(new Uint8Array(32))); await st.put("pk:s:" + ch, { at: now }); return J({ ch, ms: PK_SFIDA }); }
+      let C = null; try { C = JSON.parse(new TextDecoder().decode(ub64u(b.cd))); } catch (er) {}
+      const ch = C && typeof C.challenge === "string" && /^[A-Za-z0-9_-]{43}$/.test(C.challenge) ? C.challenge : "", S = ch ? await st.get("pk:s:" + ch) : null;
+      if (S) await st.delete("pk:s:" + ch);
+      if (!S || now - S.at > PK_SFIDA) { e.n++; await st.put(kE, e); return J({ errore: "La richiesta è scaduta o è già stata usata: tocca di nuovo «Entra con impronta o viso»." }, 410); }
+      const r = await pkEntra(Object.assign({}, b, { ch }), LOCALE(this.env, request), request.headers.get("user-agent"));
+      if (r.status !== 200) { e.n++; await st.put(kE, e); } else await st.delete(kE);
+      return r;
+    }
     // ---- da qui serve un dispositivo riconosciuto ----
     // la chiave del telefono arriva solo nell'intestazione X-Disp (mai nell'indirizzo, che finisce nella cronologia e nei registri)
     let id = "", k = "";
@@ -1705,6 +1852,57 @@ export class Stato extends DurableObject {
         const link = url.origin + "/api/sic/scarico/file?" + (OPN ? "op=" + encodeURIComponent(OPN) + "&" : "") + "t=" + tok;
         await sicMail("I dati di " + SENZA_LINK(az0, 60) + " sono pronti da scaricare", `<p>Lo zip con tutti i dati è pronto: ${esc(X.nome)} (${mbDi(byte)}).</p><p>Il link vale 24 ore. Dentro ci sono dati personali di piloti e clienti: tienilo in un posto sicuro.</p>${mailTasto(link, "Scarica lo zip")}`);
         return J({ ok: true, url: link, nome: X.nome, byte, scad: X.scad, docs: DOC.length, ris: !!r.ris, rimasti: r.rimasti });
+      }
+      // ---- anteprima 143: impronta o viso (passkey) ----
+      // 1) la sfida per crearne una (dopo la doppia verifica, se è attiva); vale 5 minuti, per questo telefono
+      if (az === "pk/nuova" && POST) {
+        const r = await sicVerifica(b.v); if (r.no) return r.no;
+        const L = await pkLista(); if (L.length >= PK_MAX) return J({ errore: "Hai già " + PK_MAX + " passkey: togline una per aggiungerne un’altra." }, 409);
+        let uid = await st.get("pk:uid"); if (!uid) { uid = b64u(crypto.getRandomValues(new Uint8Array(16))); await st.put("pk:uid", uid); }
+        const ch = b64u(crypto.getRandomValues(new Uint8Array(32))), m = await leggiMain(), az0 = sicNomeAz(m && m.d), em = PROVA ? "" : await sicEmailAdm();
+        await st.put("pk:nuova", { ch, at: now, da: id });
+        return J({ ch, uid, nome: em || "Admin · " + az0, vis: "Admin · " + az0, excl: L.map(x => ({ id: x.id, tr: LISTA(x.tr) })), ris: !!r.ris, rimasti: r.rimasti });
+      }
+      // 2) la passkey nuova: controlli sul server (sfida, origine, rpIdHash, UP, UV, chiave COSE), poi l'indice nel registro e l'email di avviso
+      if (az === "pk/salva" && POST) {
+        const N = await st.get("pk:nuova"); if (N) await st.delete("pk:nuova");
+        if (!N || N.da !== id || now - N.at > PK_SFIDA) return J({ errore: "Sono passati più di 5 minuti: tocca di nuovo «Aggiungi»." }, 410);
+        const no = m => J({ errore: m || "Il telefono ha risposto in un modo che non riconosco: riprova." }, 400);
+        let cd, ao; try { cd = ub64u(b.cd); ao = ub64u(b.ao); } catch (e) { return no(); }
+        if (cd.length > 4000 || ao.length > 20000 || !PK_ID.test(String(b.id || ""))) return no();
+        let A; try { [A] = cbor(ao); } catch (e) { return no(); }
+        const ad = A instanceof Map ? A.get("authData") : null; if (!(ad instanceof Uint8Array)) return no();
+        const R = await pkLeggi(cd, ad, "webauthn.create", N.ch, LOCALE(this.env, request));
+        if (R.no) return no(R.no === "uv" ? "Serve il dito o il viso (o il codice di sblocco del telefono): riprova." : R.no === "origine" || R.no === "rp" ? "Questo indirizzo non è quello di Quota 120." : "");
+        if (!(R.fl & 0x40) || ad.length < 55) return no();
+        const cl = (ad[53] << 8) | ad[54], cid = ad.slice(55, 55 + cl); if (!cl || cl > 1023 || 55 + cl > ad.length) return no();
+        if (b64u(cid) !== String(b.id)) return no();
+        let K = null; try { K = pkJwk(cbor(ad, 55 + cl)[0]); } catch (e) {}
+        if (!K) return no("Questo telefono usa un tipo di chiave che Quota 120 non conosce.");
+        try { await pkChiave(K.jwk); } catch (e) { return no(); }
+        const L = await pkLista(), cidS = b64u(cid);
+        if (L.some(x => x.id === cidS)) return J({ errore: "Questa passkey c’è già nell’elenco." }, 409);
+        if (L.length >= PK_MAX) return J({ errore: "Hai già " + PK_MAX + " passkey: togline una per aggiungerne un’altra." }, 409);
+        const ix = await pkIndice(cidS, true); if (!ix.ok) return J({ errore: ix.altro ? "Questa passkey è già usata da un altro spazio." : "Non riesco a salvarla adesso: riprova tra poco." }, ix.altro ? 409 : 503);
+        const dev = nomeDisp(request.headers.get("user-agent")), P = { id: cidS, n: dev || "Telefono o computer", jwk: K.jwk, alg: K.alg, cnt: R.cnt, at: now, uso: 0, da: id, ud: "", dev, rp: R.rp,
+          tr: LISTA(b.tr).filter(x => ["internal", "hybrid", "usb", "nfc", "ble", "smart-card"].includes(x)).slice(0, 6), bk: !!(R.fl & 0x10) };
+        L.push(P); await st.put("pk:list", L);
+        const m = await leggiMain(), az0 = sicNomeAz(m && m.d);
+        const mail = await sicMail("Nuovo modo di entrare in Quota 120", `<p>Ciao, nello spazio <b>${esc(SENZA_LINK(az0, 60))}</b> è stata aggiunta una passkey (impronta o viso): <b>${esc(SENZA_LINK(P.n, 60))}</b>, il ${oraRoma(now)}, da ${esc(SENZA_LINK(dev || "un dispositivo", 60))}.</p>
+          <p>Se sei stato tu, non devi fare niente.</p><p>Se <b>non</b> sei stato tu: entra con il codice via email, vai in <b>Azienda › Sicurezza e dati › Impronta o viso</b> e tocca «Togli». Poi scrivi ad assistenza@quota120.com.</p>${mailTasto(await sicApri(), "Apri Quota 120")}`);
+        return J({ ok: true, pk: pkPub([P])[0], mail, sic: await sicRiass() });
+      }
+      if (az === "pk/nome" && POST) {
+        const L = await pkLista(), P = L.find(x => x.id === String(b.id || "")); if (!P) return J({ errore: "Questa passkey non c’è più." }, 404);
+        const n = SENZA_LINK(TX(String(b.n || "").replace(/\s+/g, " ").trim(), 60), 60); if (n.length < 2) return J({ errore: "Scrivi un nome, per esempio «iPhone di Carla»." }, 400);
+        P.n = n; await st.put("pk:list", L); return J({ ok: true, sic: await sicRiass() });
+      }
+      // togliere una passkey: con la doppia verifica, se è attiva; l'indice nel registro si toglie insieme
+      if (az === "pk/togli" && POST) {
+        const L = await pkLista(), P = L.find(x => x.id === String(b.id || "")); if (!P) return J({ errore: "Questa passkey non c’è più.", sic: await sicRiass() }, 404);
+        const r = await sicVerifica(b.v); if (r.no) return r.no;
+        await st.put("pk:list", L.filter(x => x !== P)); await pkIndice(P.id, false);
+        return J({ ok: true, ris: !!r.ris, rimasti: r.rimasti, sic: await sicRiass() });
       }
       return J({ errore: "Non trovato" }, 404);
     }
@@ -2588,6 +2786,35 @@ Stato.prototype.registro = async function (request, url, p) {
     return J({ ok: true });
   };
 
+  // ---- anteprima 143: ingresso dell'Admin con impronta o viso (passkey, senza scrivere l'email: «discoverable credential») ----
+  // la sfida: casuale, salvata qui, vale 5 minuti e si usa una volta sola
+  if (p === "/api/registro/pk-sfida" && POST) {
+    await request.text().catch(() => "");   // il corpo si legge sempre (anche se vuoto)
+    if (await troppi("lim:pks:" + ip, 60, 3600000)) return J({ errore: "Troppe richieste: riprova tra un'ora, oppure entra con il codice via email." }, 429);
+    const ch = b64u(crypto.getRandomValues(new Uint8Array(32))); await st.put("pks:" + ch, { at: now });
+    return J({ ch, ms: PK_SFIDA });
+  }
+  // la risposta del telefono: sfida consumata, dall'ID della credenziale si trova lo spazio (indice «pkc:»), lo spazio controlla firma e il resto
+  if (p === "/api/registro/pk-entra" && POST) {
+    const b = await corpo(), kE = "lim:pke:" + ip, e0 = await st.get(kE), e = e0 && now - e0.t < SIC_PAUSA ? e0 : { n: 0, t: now };
+    if (e.n >= SIC_TENT) return J({ errore: "Troppi tentativi sbagliati: riprova tra 15 minuti, oppure entra con il codice via email." }, 429);
+    const male = async (m, s) => { e.n++; await st.put(kE, e); return J({ errore: m || "Impronta o viso non riconosciuti: entra con il codice via email." }, s || 403); };
+    let C = null; try { C = JSON.parse(new TextDecoder().decode(ub64u(b.cd))); } catch (er) {}
+    if (!C || C.type !== "webauthn.get" || typeof C.challenge !== "string" || !/^[A-Za-z0-9_-]{43}$/.test(C.challenge)) return male("", 400);
+    const S = await st.get("pks:" + C.challenge); if (S) await st.delete("pks:" + C.challenge);
+    if (!S || now - S.at > PK_SFIDA) return male("La richiesta è scaduta o è già stata usata: tocca di nuovo «Entra con impronta o viso».", 410);
+    const cid = String(b.id || ""); if (!PK_ID.test(cid)) return male("", 400);
+    const X = await st.get("pkc:" + cid);
+    if (!X || !SLUG_OK(X.op)) return male("Questa passkey non vale più per Quota 120 (forse è stata tolta): entra con il codice via email.", 404);
+    const r = await spazio(X.op).fetch("https://q/interno/pk-entra", { method: "POST", headers: { "x-q120-op": X.op, "content-type": "application/json" },
+      body: JSON.stringify({ id: cid, cd: String(b.cd || ""), ad: String(b.ad || ""), sig: String(b.sig || ""), ch: C.challenge, loc: LOCALE(env, request), ua: String(request.headers.get("user-agent") || "").slice(0, 300) }) });
+    const j = await r.json().catch(() => ({}));
+    if (j.manca) await st.delete("pkc:" + cid);   // l'indice era rimasto indietro: si sistema qui
+    if (r.status === 423 || r.status === 429) return J(j, r.status);
+    if (!r.ok || !j.id) return male(j.errore, r.status >= 400 && r.status < 500 ? r.status : 403);
+    await st.delete(kE);
+    return J(Object.assign({ op: X.op }, j));
+  }
   // il nome dell'operatore, per la pagina di entrata del pilota
   if (p === "/api/registro/info") {
     const op = String(url.searchParams.get("op") || "").toLowerCase(), x = SLUG_OK(op) ? await st.get("op:" + op) : null;
@@ -2827,7 +3054,10 @@ export default {
         return sto(env, ("op:" + op)).fetch(new Request(N + "/interno/sic-pannello", { headers: { "x-q120-op": op } })); }
       if ((az === "sic-approva" || az === "ripristina") && request.method === "POST") { const b = await request.json().catch(() => ({})); if (!SLUG_OK(b.op)) return J({ errore: "operatore" }, 400);
         return sto(env, ("op:" + b.op)).fetch(new Request(N + (az === "ripristina" ? "/interno/copia-ripristina" : "/interno/sic-approva"), { method: "POST", headers: { "x-q120-op": b.op, "content-type": "application/json" }, body: JSON.stringify({ et: String(b.et || "") }) })); }
-      if (az === "log" && request.method === "GET") return reg().fetch(new Request(N + "/interno/log"));
+      // anteprima 143: togliere tutte le passkey dell'Admin di uno spazio (recupero dell'accesso)
+      if (az === "pk-togli" && request.method === "POST") { const b = await request.json().catch(() => ({})); if (!SLUG_OK(b.op)) return J({ errore: "operatore" }, 400);
+        return sto(env, ("op:" + b.op)).fetch(new Request(N + "/interno/pk-togli-tutte", { method: "POST", headers: { "x-q120-op": b.op } })); }
+      if (az === "log" && request.method === "GET") return reg().fetch(new Request(N + "/interno/log")); 
       if (az === "log-risolto" && request.method === "POST") return reg().fetch(new Request(N + "/interno/log/risolto", { method: "POST", headers: { "content-type": "application/json" }, body: await request.text() }));
       if (az === "sospendi" && request.method === "POST") { const b = await request.json().catch(() => ({})); if (!SLUG_OK(b.op)) return J({ errore: "operatore" }, 400);
         return sto(env, ("op:" + b.op)).fetch(new Request(N + "/interno/sospendi", { method: "POST", headers: { "x-q120-op": b.op }, body: JSON.stringify({ on: !!b.on }) })); }
@@ -2923,7 +3153,8 @@ export default {
     // registro: da fuori solo quello che chiamano le pagine dell'app (iscrizione e entrata dell'Admin dello spazio);
     // codici del corso e dell'Admin del sito passano solo da /api/corso/* e /api/admin/* (con il controllo anti-robot)
     if (p.startsWith("/api/registro/")) {
-      if (!["/api/registro/info", "/api/registro/iscrivi", "/api/registro/rimanda", "/api/registro/codice", "/api/registro/verifica"].includes(p)) return J({ errore: "Non trovato" }, 404);
+      if (!["/api/registro/info", "/api/registro/iscrivi", "/api/registro/rimanda", "/api/registro/codice", "/api/registro/verifica", "/api/registro/pk-sfida", "/api/registro/pk-entra"].includes(p)) return J({ errore: "Non trovato" }, 404);
+      if (p === "/api/registro/pk-entra" && +(request.headers.get("content-length") || 0) > 20000) return J({ errore: "Dati non validi" }, 400);
       // iscrizione: anche qui il controllo anti-robot, come sul sito (se Turnstile è configurato)
       if (p === "/api/registro/iscrivi" && request.method === "POST") {
         const corpo = await request.text(); if (corpo.length > 4000) return J({ errore: "Dati non validi" }, 400);
