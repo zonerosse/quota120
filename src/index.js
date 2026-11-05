@@ -722,6 +722,133 @@ function nomeSpazio(nome) {
   return s.length >= 3 ? s : "operatore-" + rnd(2);
 }
 
+/* ---------- anteprima 141: Sicurezza e dati (doppia verifica, scarico di tutti i dati, accordo art. 28, copie di sicurezza) ---------- */
+// versione dell'accordo sul trattamento dei dati: se cambia il testo (nella pagina), si alza qui e l'Admin lo riaccetta
+const ACC_VER = 1;
+const ACC_RUOLI = ["Legale rappresentante", "Titolare", "Amministratore delegato", "Persona con delega"];
+const COPIE_GIORNI = 30;                       // copie giornaliere tenute (poi si cancellano da sole)
+const RIP_ATTESA = 3 * 864e5;                  // «Ho perso telefono e codici»: la doppia verifica si toglie non prima di 3 giorni
+const EXP_ORE = 24;                            // il link dello scarico vale 24 ore
+const SIC_TENT = 5, SIC_PAUSA = 15 * 60000;    // 5 codici sbagliati = 15 minuti di attesa
+const B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+const b32enc = u8 => { let bits = 0, v = 0, out = ""; for (const b of u8) { v = (v << 8) | b; bits += 8; while (bits >= 5) { out += B32[(v >>> (bits - 5)) & 31]; bits -= 5; } } if (bits > 0) out += B32[(v << (5 - bits)) & 31]; return out; };
+const b32dec = s => { s = String(s || "").toUpperCase().replace(/[^A-Z2-7]/g, ""); const out = []; let bits = 0, v = 0; for (const ch of s) { v = (v << 5) | B32.indexOf(ch); bits += 5; if (bits >= 8) { out.push((v >>> (bits - 8)) & 255); bits -= 8; } } return new Uint8Array(out); };
+// TOTP (RFC 6238): HMAC-SHA1, 6 cifre, passi da 30 secondi
+async function totp(seg, passo) {
+  const k = await crypto.subtle.importKey("raw", b32dec(seg), { name: "HMAC", hash: "SHA-1" }, false, ["sign"]);
+  const c = new Uint8Array(8); let x = passo; for (let i = 7; i >= 0; i--) { c[i] = x & 255; x = Math.floor(x / 256); }
+  const h = new Uint8Array(await crypto.subtle.sign("HMAC", k, c)), o = h[19] & 15;
+  const n = ((h[o] & 127) << 24) | (h[o + 1] << 16) | (h[o + 2] << 8) | h[o + 3];
+  return String(n % 1000000).padStart(6, "0");
+}
+// codici di riserva: 8 caratteri senza quelli che si confondono (0/O, 1/I), scritti XXXX-XXXX
+const RIS_ALF = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+const risNuovo = () => { const r = crypto.getRandomValues(new Uint8Array(8)); let s = ""; for (const b of r) s += RIS_ALF[b % 32]; return s.slice(0, 4) + "-" + s.slice(4); };
+const risNorm = s => String(s || "").toUpperCase().replace(/[^A-Z0-9]/g, "").replace(/O/g, "0").replace(/I/g, "1").slice(0, 8);
+// il segreto della doppia verifica: cifrato con SICUREZZA_CHIAVE (segreto di Cloudflare) se c'è; in ogni caso mai mandato al browser dopo l'attivazione
+async function chiaveSic(env) { const s = env.SICUREZZA_CHIAVE && String(env.SICUREZZA_CHIAVE); if (!s) return null;
+  return crypto.subtle.importKey("raw", await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)), { name: "AES-GCM" }, false, ["encrypt", "decrypt"]); }
+async function segChiudi(env, seg) { const k = await chiaveSic(env); if (!k) return { s: seg };
+  const iv = crypto.getRandomValues(new Uint8Array(12)), ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, k, new TextEncoder().encode(seg)));
+  const u = new Uint8Array(12 + ct.length); u.set(iv); u.set(ct, 12); return { e: b64(u.buffer) }; }
+async function segApri(env, x) { if (!x) return null; if (x.s) return x.s; const k = await chiaveSic(env); if (!k || !x.e) return null;
+  try { const u = Uint8Array.from(atob(x.e), c => c.charCodeAt(0)); return new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: u.slice(0, 12) }, k, u.slice(12))); } catch (e) { return null; } }
+// data e ora di Roma, per le email
+const oraRoma = t => new Intl.DateTimeFormat("it-IT", { timeZone: "Europe/Rome", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(t)).replace(",", " alle");
+const giornoRoma = t => new Intl.DateTimeFormat("it-IT", { timeZone: "Europe/Rome", day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(t));
+const mailBox = (corpo, piede) => `<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;color:#0F1C26;font-size:15px;line-height:1.5"><div style="border-bottom:2px solid #132A3A;padding-bottom:10px;margin-bottom:14px;font-size:20px;font-weight:bold;color:#132A3A">Quota 120</div>${corpo}<p style="font-size:12.5px;color:#5E6D77;margin-top:18px;border-top:1px solid #E3E8EB;padding-top:10px">${piede || "Ricevi questa email perché sei l'Admin di questo spazio su Quota 120."}</p></div>`;
+const mailTasto = (href, t) => `<a href="${esc(href, 600)}" style="display:inline-block;background:#1D5C7C;color:#fff;border-radius:8px;padding:12px 18px;font-weight:bold;text-decoration:none">${t}</a>`;
+
+/* ---------- ZIP (senza compressione: i documenti sono già PDF e foto compressi), anche a pezzi per i file grandi ---------- */
+const CRC_T = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+const crcAgg = (c, u8) => { for (let i = 0; i < u8.length; i++) c = CRC_T[(c ^ u8[i]) & 255] ^ (c >>> 8); return c >>> 0; };
+const U8 = x => x instanceof Uint8Array ? x : x instanceof ArrayBuffer ? new Uint8Array(x) : new TextEncoder().encode(String(x));
+function dosOra(t) { const d = new Date(t); return { tm: (d.getUTCHours() << 11) | (d.getUTCMinutes() << 5) | (d.getUTCSeconds() >> 1), dt: ((d.getUTCFullYear() - 1980) << 9) | ((d.getUTCMonth() + 1) << 5) | d.getUTCDate() }; }
+// voci: [{ nome, dati (Uint8Array) } oppure { nome, pezzi: async function* () }]: restituisce i pezzi dello zip, uno alla volta
+async function* zipParti(voci, t) {
+  const { tm, dt } = dosOra(t || Date.now()), cd = []; let off = 0;
+  const h = n => { const b = new ArrayBuffer(n); return [new DataView(b), new Uint8Array(b)]; };
+  for (const v of voci) {
+    const nome = new TextEncoder().encode(v.nome);
+    const [L, Lu] = h(30); L.setUint32(0, 0x04034b50, true); L.setUint16(4, 20, true); L.setUint16(6, 0x0808, true); L.setUint16(8, 0, true);
+    L.setUint16(10, tm, true); L.setUint16(12, dt, true); L.setUint16(26, nome.length, true);
+    yield Lu; yield nome; const inizio = off; off += 30 + nome.length;
+    let crc = 0xFFFFFFFF, n = 0;
+    if (v.dati) { const d = U8(v.dati); crc = crcAgg(crc, d); n = d.length; yield d; }
+    else for await (const p of v.pezzi()) { const d = U8(p); crc = crcAgg(crc, d); n += d.length; yield d; }
+    crc = (crc ^ 0xFFFFFFFF) >>> 0; off += n;
+    const [D, Du] = h(16); D.setUint32(0, 0x08074b50, true); D.setUint32(4, crc, true); D.setUint32(8, n, true); D.setUint32(12, n, true); yield Du; off += 16;
+    cd.push({ nome, crc, n, inizio });
+  }
+  const cdIn = off; let cdLen = 0;
+  for (const c of cd) { const [C, Cu] = h(46); C.setUint32(0, 0x02014b50, true); C.setUint16(4, 20, true); C.setUint16(6, 20, true); C.setUint16(8, 0x0808, true);
+    C.setUint16(12, tm, true); C.setUint16(14, dt, true); C.setUint32(16, c.crc, true); C.setUint32(20, c.n, true); C.setUint32(24, c.n, true); C.setUint16(28, c.nome.length, true); C.setUint32(42, c.inizio, true);
+    yield Cu; yield c.nome; cdLen += 46 + c.nome.length; }
+  const [E, Eu] = h(22); E.setUint32(0, 0x06054b50, true); E.setUint16(8, cd.length, true); E.setUint16(10, cd.length, true); E.setUint32(12, cdLen, true); E.setUint32(16, cdIn, true); yield Eu;
+}
+async function zipMem(voci) { const P = []; let n = 0; for await (const p of zipParti(voci)) { P.push(p); n += p.length; } const u = new Uint8Array(n); let o = 0; for (const p of P) { u.set(p, o); o += p.length; } return u; }
+const zipFlusso = (voci, t) => { const it = zipParti(voci, t); return new ReadableStream({ async pull(c) { const { value, done } = await it.next(); if (done) c.close(); else c.enqueue(value); } }, { highWaterMark: 4 }); };
+
+/* ---------- le tabelle dei dati: un CSV per elenco (si apre con Excel), lo stesso in un file Excel con un foglio per elenco ---------- */
+const TAB_NOMI = [["OP", "azienda", "Azienda"], ["DRONI", "droni", "Droni"], ["SCHEDE", "schede-droni", "Schede droni"], ["MATR", "matricole-droni", "Matricole droni"], ["BATT", "batterie", "Batterie"],
+  ["PILOTI", "piloti", "Piloti"], ["SCHEDEP", "schede-piloti", "Schede piloti"], ["PERM", "permessi-piloti", "Permessi piloti"], ["PATENTINO", "patentini", "Patentini"],
+  ["ASSIC", "assicurazione", "Assicurazione"], ["AUT_ENAC", "autorizzazioni-enac", "Autorizzazioni ENAC"], ["DOMANDA", "domanda-enac", "Domanda ENAC"],
+  ["CLIENTI", "clienti", "Clienti"], ["CLIDATI", "dati-clienti", "Dati clienti"], ["LAVORI", "lavori", "Lavori"], ["PREV", "preventivi", "Preventivi"],
+  ["VOLI", "voli", "Voli"], ["INV", "inventario", "Inventario"], ["CAMPI", "campi", "Campi"], ["TRATT", "trattamenti", "Trattamenti"],
+  ["RISCHI", "valutazioni-rischio", "Valutazioni rischio"], ["RICH", "richieste-permesso", "Richieste permesso"], ["ZONE", "verifiche-zone", "Verifiche zone"],
+  ["SEGN", "segnalazioni", "Segnalazioni"], ["CHECK", "checklist", "Checklist"], ["DOCS", "documenti", "Documenti"], ["AVVISI", "avvisi", "Avvisi"],
+  ["MANUALE", "manuale-operazioni", "Manuale operazioni"], ["IMPORTI", "importazioni", "Importazioni"]];
+const TAB_UNA = new Set(["OP", "ASSIC", "AUT_ENAC", "DOMANDA", "AVVISI", "MANUALE"]);   // un solo record: una riga
+const cella = v => { if (v == null) return ""; if (typeof v === "string") return /^data:[a-z]+\/[a-z0-9.+-]+;base64,/i.test(v) ? "(immagine)" : v.slice(0, 32000);
+  if (typeof v === "number" || typeof v === "boolean") return v; const s = JSON.stringify(v).replace(/"data:[a-z]+\/[a-z0-9.+-]+;base64,[^"]*"/gi, '"(immagine)"'); return s.slice(0, 32000); };
+function righeDi(v, una) {
+  const obj = x => x && typeof x === "object" && !Array.isArray(x);
+  const daOggetti = (L, pre) => { const col = []; for (const [, o] of L) for (const k of Object.keys(o)) if (!col.includes(k)) col.push(k);
+    return [(pre ? [pre] : []).concat(col)].concat(L.map(([ch, o]) => (pre ? [ch] : []).concat(col.map(k => cella(o[k]))))); };
+  if (Array.isArray(v)) { if (!v.length) return [["(vuoto)"]]; if (v.every(obj)) return daOggetti(v.map(o => [null, o]), ""); return [["valore"]].concat(v.map(x => [cella(x)])); }
+  if (obj(v)) { const E = Object.entries(v); if (una) return daOggetti([[null, v]], "");
+    if (!E.length) return [["(vuoto)"]]; if (E.every(([, x]) => obj(x))) return daOggetti(E, "chiave"); return [["chiave", "valore"]].concat(E.map(([k, x]) => [k, cella(x)])); }
+  return [["valore"], [cella(v)]];
+}
+function tabelleDi(d, extra) {
+  const T = []; for (const [k, file, foglio] of TAB_NOMI) if (d[k] != null) T.push({ file, foglio, righe: righeDi(d[k], TAB_UNA.has(k)) });
+  for (const [file, foglio, v] of extra) if (v != null && (!Array.isArray(v) || v.length)) T.push({ file, foglio, righe: righeDi(v, false) });
+  return T;
+}
+const csvDi = R => "﻿" + R.map(r => r.map(x => { const s = String(x == null ? "" : x); return /[";\n\r]/.test(s) || /^[=+\-@]/.test(s) ? '"' + (/^[=+\-@]/.test(s) ? "'" : "") + s.replace(/"/g, '""') + '"' : s; }).join(";")).join("\r\n") + "\r\n";
+const xmlE = s => String(s).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f￾￿]/g, "").replace(/[<>&"]/g, c => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
+const colL = i => { let s = ""; i++; while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
+async function xlsxDi(T) {
+  const nomi = new Set(), fogli = T.map(t => { let n = t.foglio.replace(/[\\/?*\[\]:]/g, " ").slice(0, 31), i = 2; while (nomi.has(n.toLowerCase())) n = t.foglio.slice(0, 28) + " " + i++; nomi.add(n.toLowerCase()); return n; });
+  const V = [{ nome: "[Content_Types].xml", dati: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${T.map((t, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join("")}</Types>` },
+    { nome: "_rels/.rels", dati: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>` },
+    { nome: "xl/workbook.xml", dati: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${fogli.map((n, i) => `<sheet name="${xmlE(n)}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join("")}</sheets></workbook>` },
+    { nome: "xl/_rels/workbook.xml.rels", dati: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${T.map((t, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join("")}<Relationship Id="rId${T.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>` },
+    { nome: "xl/styles.xml", dati: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>` }];
+  T.forEach((t, i) => V.push({ nome: "xl/worksheets/sheet" + (i + 1) + ".xml", dati: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${t.righe.map((r, j) => `<row r="${j + 1}">${r.map((x, c) => {
+      const ref = colL(c) + (j + 1), st = j ? "" : ' s="1"';
+      return typeof x === "number" && Number.isFinite(x) ? `<c r="${ref}"${st}><v>${x}</v></c>` : x === "" || x == null ? "" : `<c r="${ref}"${st} t="inlineStr"><is><t xml:space="preserve">${xmlE(x)}</t></is></c>`; }).join("")}</row>`).join("")}</sheetData></worksheet>` }));
+  return zipMem(V);
+}
+const nomeFile = (s, max = 80) => String(s || "").normalize("NFC").replace(/[\\/:*?"<>|\u0000-\u001f]+/g, " ").replace(/\s+/g, " ").trim().slice(0, max) || "documento";
+const LEGGIMI = (az, quando, conDoc) => `Quota 120 - tutti i dati di ${az}
+Preparato il ${quando}.
+
+COSA C'E' DENTRO
+- ${"Quota120-" + nomeFile(az, 40).replace(/\s+/g, "-")}.xlsx : gli stessi elenchi in un unico file Excel, un foglio per elenco.
+- tabelle/ : un file CSV per ogni elenco (droni, piloti, voli, clienti, lavori, preventivi, ...).
+  Si aprono con Excel, LibreOffice o Google Fogli (separatore: punto e virgola, caratteri UTF-8).
+- tutto.json : tutti i dati in un unico file, per passarli a un altro programma.
+${conDoc ? "- documenti/ : i documenti e i PDF caricati, divisi in cartelle (azienda, piloti, droni, voli, ...).\n" : "- (i documenti caricati non ci sono: hai scelto solo le tabelle)\n"}
+COME SI LEGGE
+- Una riga per ogni cosa (un drone, un pilota, un volo...). Le colonne hanno i nomi usati dentro Quota 120.
+- Dove una cella contiene {...} o [...], sono dati con piu' parti (per esempio gli attestati di un pilota).
+- Le firme e le immagini nelle tabelle sono scritte come "(immagine)": l'originale e' in tutto.json.
+
+ATTENZIONE
+Dentro ci sono dati personali di piloti e clienti: tieni questo file in un posto sicuro e cancellalo quando non serve piu'.
+`;
+
 export class Stato extends DurableObject {
   // ogni errore imprevisto torna come JSON (mai la pagina d'errore di Cloudflare)
   async fetch(request) {
@@ -738,6 +865,31 @@ export class Stato extends DurableObject {
     if (Date.now() >= scad - 1000) await this.provaCancella(); else await st.setAlarm(scad);
   }
   async provaCancella() { const st = this.ctx.storage; await st.deleteAlarm(); await st.deleteAll(); this.PIL = null; }
+  /* ---------- anteprima 141: contenitore delle copie di sicurezza di uno spazio («copie:<spazio>»). Lo chiama solo lo spazio, mai dall'esterno.
+     cg:<etichetta> → informazioni della copia · cv:<etichetta>:<chiave> → i dati di quel giorno · cd:<doc> e cdp:<doc>:<n> → i documenti, salvati una volta sola ---------- */
+  async copiaInizia(et) { const st = this.ctx.storage, K = [...(await st.list({ prefix: "cv:" + et + ":" })).keys()];
+    for (let i = 0; i < K.length; i += 128) await st.delete(K.slice(i, i + 128)); await st.delete("cg:" + et); return true; }
+  async copiaVoci(et, L) { const st = this.ctx.storage; for (const [k, v] of L) await st.put("cv:" + et + ":" + k, v); return L.length; }
+  async copiaHa(dids) { const st = this.ctx.storage, out = []; for (const d of dids) if (!(await st.get("cd:" + d))) out.push(d); return out; }
+  async copiaDoc(did, info, P) { const st = this.ctx.storage; for (let i = 0; i < P.length; i++) await st.put("cdp:" + did + ":" + i, P[i]); await st.put("cd:" + did, Object.assign({}, info, { pezzi: P.length })); return true; }
+  async copiaChiudi(et, meta, giorni) {
+    const st = this.ctx.storage; await st.put("cg:" + et, meta);
+    const lim = new Date(Date.now() - giorni * 864e5).toISOString().slice(0, 10);
+    for (const k of [...(await st.list({ prefix: "cg:" })).keys()]) if (k.slice(3, 13) < lim) await this.copiaInizia(k.slice(3));
+    // i documenti che nessuna copia rimasta usa più
+    const vive = [...(await st.list({ prefix: "cg:" }))], usati = new Set(); for (const [, m] of vive) for (const d of (m && m.docs) || []) usati.add(d);
+    for (const [k, info] of await st.list({ prefix: "cd:" })) { const d = k.slice(3); if (usati.has(d)) continue; for (let i = 0; i < (+(info && info.pezzi) || 0); i++) await st.delete("cdp:" + d + ":" + i); await st.delete(k); }
+    const et2 = vive.map(([k]) => k.slice(3)).sort(); return { n: vive.length, dal: et2[0] || et };
+  }
+  async copiaElenco() { const out = []; for (const [k, m] of await this.ctx.storage.list({ prefix: "cg:" })) out.push({ et: k.slice(3), at: m.at, chiavi: m.chiavi, byte: m.byte, docs: ((m && m.docs) || []).length });
+    return out.sort((a, b) => b.et.localeCompare(a.et)); }
+  async copiaLeggi(et, dopo) { const st = this.ctx.storage; if (!(await st.get("cg:" + et))) return null; const pre = "cv:" + et + ":";
+    const L = await st.list(Object.assign({ prefix: pre, limit: 60 }, dopo ? { startAfter: pre + dopo } : {})); const voci = []; let peso = 0, ult = dopo;
+    for (const [k, v] of L) { const n = v instanceof ArrayBuffer ? v.byteLength : JSON.stringify(v === undefined ? null : v).length; if (voci.length && peso + n > 8e6) return { voci, ult, fine: false }; voci.push([k.slice(pre.length), v]); peso += n; ult = k.slice(pre.length); }
+    return { voci, ult, fine: L.size < 60 }; }
+  async copiaDocLeggi(did) { const st = this.ctx.storage, info = await st.get("cd:" + did); if (!info) return null; const pezzi = [];
+    for (let i = 0; i < (+info.pezzi || 0); i++) { const x = await st.get("cdp:" + did + ":" + i); if (!x) return null; pezzi.push(x); } return { info, pezzi }; }
+
   async gestisci(request) {
     const url = new URL(request.url), st = this.ctx.storage, p = url.pathname;
     // l'intestazione x-q120-prova la mette solo lo smistatore, e solo per i contenitori delle prove personali
@@ -849,7 +1001,8 @@ export class Stato extends DurableObject {
     if (p === "/interno/riepilogo") {
       const m = await st.get("main"); let dd = {}; try { dd = m ? JSON.parse(m.json) : {}; } catch (e) {}
       const dsp = (await st.get("disp")) || {}, vis = Object.values(dsp).map(x => x.visto || x.at || 0);
-      return J({ piloti: (dd.PILOTI || []).length, droni: (dd.DRONI || []).length, voli: (dd.VOLI || []).length, telefoni: Object.keys(dsp).length, ultimo: vis.length ? Math.max(...vis) : 0, sospeso: !!(await st.get("sospeso")) });
+      return J({ piloti: (dd.PILOTI || []).length, droni: (dd.DRONI || []).length, voli: (dd.VOLI || []).length, telefoni: Object.keys(dsp).length, ultimo: vis.length ? Math.max(...vis) : 0, sospeso: !!(await st.get("sospeso")),
+        tfa: !!(await st.get("sic:tfa")), rip: await st.get("sic:rip").then(R => R && R.stato === "attesa" ? { at: R.at, sblocco: R.sblocco, cod: R.cod } : null), copia: ((await st.get("copia:ultima")) || {}).at || 0 });
     }
     if (p === "/interno/corsi-az") return J((await st.get("corsi-az")) || []);
     if (p === "/interno/sospendi") { const b = await request.json().catch(() => ({})); if (b.on) await st.put("sospeso", true); else await st.delete("sospeso"); return J({ ok: true }); }
@@ -866,7 +1019,7 @@ export class Stato extends DurableObject {
     // telefoni da dimenticare: usciti, rifiutati o tolti da più di 7 giorni; nella prova anche quelli non usati da 2 giorni
     const pulisciDisp = () => { let n = 0; for (const [i, x] of Object.entries(disp)) {
       if ((["uscito", "rifiutato", "tolto"].includes(x.stato) && now - (x.visto || 0) > 7 * 864e5) || (PROVA && now - (x.visto || x.at || 0) > 2 * 864e5)
-        || (x.stato === "invito" && now - (x.at || 0) > 14 * 864e5)) { delete disp[i]; n++; } } return n; };
+        || (x.stato === "invito" && now - (x.at || 0) > 14 * 864e5) || (x.stato === "2fa" && now - (x.at || 0) > 864e5)) { delete disp[i]; n++; } } return n; };
     // inv: il profilo mandato dal link di invito (solo finché aspetta l'approvazione)
     const pub = () => Object.keys(disp).map(id => { const x = disp[id]; return Object.assign({ id, ruolo: x.ruolo, n: x.n, codice: x.codice, stato: x.stato, at: x.at, visto: x.visto, nuovo: !!x.nuovo, pid: x.pid, dev: x.dev || "" },
       x.stato === "invito" && x.inv ? { inv: { n: x.inv.n, tel: x.inv.tel, email: x.inv.email, at: x.inv.at } } : {}); });
@@ -938,12 +1091,77 @@ export class Stato extends DurableObject {
       return (!!chi.adm || chi.n === "Admin") && Object.values(disp).some(x => x.ruolo === "adm" && x.stato === "ok" && x.n === chi.n);
     };
     const togliCodici = async n => { for (const t of ["cal", "invio"]) { const tk = await st.get(t + ":di:" + n); if (tk) await st.delete(t + ":" + tk); await st.delete(t + ":di:" + n); } };
-    const nuovoAdmin = async email => {
-      const id = rnd(8), k = rnd(18);
-      disp[id] = { k, ruolo: "adm", n: "Admin", pid: null, nuovo: false, codice: cod4(), stato: "ok", at: now, visto: now, app: true, via: "email", email, dev: nomeDisp(request.headers.get("user-agent")) };
+    // avvisa: entrata con il codice via email (non l'iscrizione): con la doppia verifica attiva il telefono resta «2fa» finché non scrive il codice dell'app;
+    // senza, entra subito e all'Admin arriva l'email di avviso
+    const nuovoAdmin = async (email, ua, avvisa) => {
+      const id = rnd(8), k = rnd(18), tfa = !!avvisa && !!(await st.get("sic:tfa"));
+      disp[id] = { k, ruolo: "adm", n: "Admin", pid: null, nuovo: false, codice: cod4(), stato: tfa ? "2fa" : "ok", at: now, visto: now, app: true, via: "email", email, dev: nomeDisp(ua || request.headers.get("user-agent")) };
       await st.put("disp", disp);
-      return { id, k, n: "Admin", stato: "ok", codice: disp[id].codice, asp: aspetti.Admin || ASP_BASE };
+      if (avvisa && !tfa) await avvisoIngresso(disp[id]);
+      return { id, k, n: "Admin", stato: disp[id].stato, codice: disp[id].codice, asp: aspetti.Admin || ASP_BASE };
     };
+    // ---- anteprima 141: Sicurezza e dati ----
+    const sicNomeAz = d => String(((d || {}).OP || {}).nome || "").replace(/\s*\(dati di esempio\)\s*$/i, "").trim() || "la tua azienda";
+    // l'email dell'Admin dello spazio (una sola per spazio: quella dell'iscrizione)
+    const sicEmailAdm = async () => { const cr = (await st.get("creato")) || {}; if (EMAIL(cr.email)) return String(cr.email).trim();
+      const x = Object.values(disp).find(y => y && y.ruolo === "adm" && y.via === "email" && EMAIL(y.email)); return x ? String(x.email).trim() : ""; };
+    // email all'Admin (mai nella prova): dentro il tetto delle email automatiche
+    const sicMail = async (oggetto, corpo) => { if (PROVA) return false; const a = await sicEmailAdm(); if (!a || !(await this.puoMandare())) return false;
+      try { await mandaMail(this.env, a, oggetto, mailBox(corpo)); return true; } catch (e) { console.error("sicurezza, email:", e && e.message || e); return false; } };
+    const sicApri = async () => (await st.get("origine")) || BASEURL;
+    const avvisoIngresso = async x => sicMail("Nuovo accesso a Quota 120 da " + SENZA_LINK(x.dev || "un dispositivo nuovo", 60),
+      `<p><b>Nuovo accesso come Admin</b> da ${esc(SENZA_LINK(x.dev || "un dispositivo nuovo", 60))}, il ${oraRoma(now)}.</p><p>Se sei stato tu, non devi fare niente.</p><p>Se <b>non</b> sei stato tu: apri Quota 120 e vai in <b>Azienda › Sicurezza e dati › Telefoni e computer dell’Admin › Esci da tutti gli altri</b>, poi cambia la password della tua email e attiva la doppia verifica.</p>${mailTasto(await sicApri(), "Apri Quota 120")}`);
+    // controllo del codice (6 cifre dell'app, oppure un codice di riserva): { ok } oppure { no: risposta }. Senza doppia verifica attiva: { ok, spenta }
+    const sicVerifica = async (v, chiave) => {
+      chiave = chiave || "sic:tfa"; const T = await st.get(chiave); if (!T) return chiave === "sic:tfa" ? { ok: true, spenta: true } : { no: J({ errore: "Ricomincia dal passo 1." }, 410) };
+      v = v && typeof v === "object" ? v : {};
+      // tentativi sbagliati: 5 per telefono ogni 15 minuti, e al massimo 30 per tutto lo spazio (nessuno prova all'infinito da tanti telefoni)
+      const kE = "sic:err:" + (id || "x"), fin = x => x && now - x.t <= SIC_PAUSA ? x : { n: 0, t: now };
+      const e = fin(await st.get(kE)), eT = fin(await st.get("sic:errT"));
+      if (e.n >= SIC_TENT || eT.n >= SIC_TENT * 6) return { no: J({ errore: "Troppi codici sbagliati: riprova tra 15 minuti.", tfa: true }, 429) };
+      const male = async m => { e.n++; eT.n++; await st.put(kE, e); await st.put("sic:errT", eT); const basta = e.n >= SIC_TENT; return { no: J({ errore: basta ? "Troppi codici sbagliati: riprova tra 15 minuti." : m, tfa: true }, basta ? 429 : 403) }; };
+      if (v.riserva != null && String(v.riserva).trim() !== "") {
+        const c = risNorm(v.riserva); if (c.length !== 8) return male("Il codice di riserva ha 8 caratteri, come 4F7K-9Q2M.");
+        const h = await sha256h(T.sale + c), r = LISTA(T.ris).find(x => x.h === h);
+        if (!r) return male("Questo codice di riserva non è giusto.");
+        if (r.u) return male("Questo codice di riserva è già stato usato: ognuno vale una volta sola.");
+        r.u = now; await st.put(chiave, T); await st.delete(kE); return { ok: true, ris: true, rimasti: LISTA(T.ris).filter(x => !x.u).length, T };
+      }
+      const c = String(v.codice || "").replace(/\D/g, ""); if (c.length !== 6) return male("Servono le 6 cifre dell’app di autenticazione.");
+      const seg = await segApri(this.env, T.seg);
+      if (!seg) return { no: J({ errore: "La doppia verifica non si riesce a leggere: usa un codice di riserva, oppure scrivi all’assistenza.", tfa: true }, 500) };
+      const p0 = Math.floor(now / 30000);
+      for (const dp of [0, -1, 1]) if (await totp(seg, p0 + dp) === c) {
+        if (p0 + dp <= (+T.last || 0)) return male("Questo codice è già stato usato: aspetta quello nuovo (cambia ogni 30 secondi).");
+        T.last = p0 + dp; await st.put(chiave, T); await st.delete(kE); return { ok: true, T };
+      }
+      const m0 = await leggiMain();
+      return male("Il codice non è giusto: controlla che sia quello di «Quota 120» (" + sicNomeAz(m0 && m0.d) + ") e scrivilo prima che cambi.");
+    };
+    const sicRiass = async conDoc => { const T = await st.get("sic:tfa"), A = await st.get("sic:acc"), R = await st.get("sic:rip"), C = await st.get("copia:ultima");
+      return { tfa: T ? { on: true, dal: T.dal, rimasti: LISTA(T.ris).filter(x => !x.u).length } : { on: false },
+        acc: A ? { ver: A.ver, nome: A.nome, ruolo: A.ruolo, at: A.at } : null, accVer: ACC_VER, dopo: +(await st.get("sic:dopo")) || 0,
+        scar: LISTA(await st.get("sic:scar")).slice(0, 30), copia: C ? { at: C.at, n: C.n, dal: C.dal } : null, copieGiorni: COPIE_GIORNI,
+        rip: R && R.stato === "attesa" ? { at: R.at, sblocco: R.sblocco, cod: R.cod } : null, prova: PROVA, chiaveCifrata: !!this.env.SICUREZZA_CHIAVE,
+        docN: conDoc ? (await st.list({ prefix: "docinfo:" })).size : undefined, docByte: conDoc ? await usoFile() : undefined }; };
+    // «Ho perso telefono e codici»: richiesta che resta ferma 3 giorni; all'email dell'Admin un avviso con il tasto per bloccarla
+    const sicPerso = async x => {
+      if (!(await st.get("sic:tfa"))) return J({ errore: "La doppia verifica non è attiva: entra con il codice via email." }, 400);
+      let R = await st.get("sic:rip");
+      if (R && R.stato === "attesa") return J({ ok: true, cod: R.cod, sblocco: R.sblocco, gia: true });
+      const kk = "sic:ripn:" + giornoUTC(), n = (await st.get(kk)) || 0;
+      if (n >= 3) return J({ errore: "Oggi sono già state fatte 3 richieste: scrivi direttamente a assistenza@quota120.com." }, 429);
+      await st.put(kk, n + 1);
+      const tok = rnd(24), cod = risNuovo().replace("-", "").slice(0, 6);
+      R = { stato: "attesa", at: now, sblocco: now + RIP_ATTESA, cod, tokH: await sha256h(tok), dev: x.dev || "" }; await st.put("sic:rip", R);
+      const link = url.origin + "/api/sic/annulla?" + (OPN ? "op=" + encodeURIComponent(OPN) + "&" : "") + "t=" + tok;
+      await sicMail("Richiesta di togliere la doppia verifica (n. " + cod + ")", `<p>Il ${oraRoma(now)}, da ${esc(SENZA_LINK(x.dev || "un dispositivo", 60))}, chi è entrato con la tua email ha detto di aver perso il telefono e i codici di riserva e ha chiesto di togliere la doppia verifica di Quota 120.</p>
+        <p>La richiesta n. <b>${cod}</b> resta ferma almeno 3 giorni, fino al <b>${giornoRoma(R.sblocco)}</b>. L’assistenza la chiude solo dopo aver controllato la visura camerale dell’azienda e il documento del titolare o del legale rappresentante.</p>
+        <p><b>Se non sei stato tu</b>, bloccala subito:</p>${mailTasto(link, "Non sono stato io: blocca la richiesta")}`);
+      return J({ ok: true, cod, sblocco: R.sblocco });
+    };
+    const mbDi = n => n >= 1048576 ? Math.max(1, Math.round(n / 1048576)) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB";
+    const togliExp = async (tok, X) => { for (const f of LISTA(X && X.files)) for (let j = 0; j < (+f.pezzi || 0); j++) await st.delete("sic:expf:" + tok + ":" + f.i + ":" + j); await st.delete("sic:exp:" + tok); };
     // ---- porte interne: le usa solo il registro (dal mondo esterno /interno/ non arriva) ----
     if (p === "/interno/crea" && request.method === "POST") {
       if (!OPN) return J({ errore: "solo per gli spazi" }, 400);
@@ -957,7 +1175,7 @@ export class Stato extends DurableObject {
     if (p === "/interno/nuovoadmin" && request.method === "POST") {
       if (!creato) return J({ errore: "operatore" }, 404);
       const b = await request.json();
-      return J(await nuovoAdmin(b.email));
+      return J(await nuovoAdmin(b.email, b.ua, true));
     }
 
     // ---- entrata: Admin con codice, Pilota con nome e cognome + matricola ----
@@ -1020,9 +1238,64 @@ export class Stato extends DurableObject {
       for (const pre of ["car:", "nuovidisp:", "lavlim:", "invlim:", "clilim:"]) for (const [kk] of await st.list({ prefix: pre })) { if (+kk.split(":").pop() < oraH - 1) via.push(kk); }
       for (const pre of ["dji:", "invia:dest:", "segnmail:", "prova-avvisi:", "bud:", "invgio:", "clirq:", "clicod:"]) for (const [kk] of await st.list({ prefix: pre })) { const g2 = kk.split(":").pop(); if (g2 < giornoUTC() && g2.length === 10) via.push(kk); }
       for (let i = 0; i < via.length; i += 128) await st.delete(via.slice(i, i + 128));
+      // anteprima 141: scarichi di tutti i dati scaduti (il link vale 24 ore) e contatori vecchi
+      for (const [kk, X] of await st.list({ prefix: "sic:exp:" })) if (!X || now > X.scad) await togliExp(kk.slice(8), X);
+      for (const pre of ["sic:expn:", "sic:ripn:"]) for (const [kk] of await st.list({ prefix: pre })) if (kk.split(":").pop() < giornoUTC()) await st.delete(kk);
+      for (const [kk, x] of await st.list({ prefix: "sic:err" })) if (!x || now - (+x.t || 0) > SIC_PAUSA) await st.delete(kk);
       // telefoni: via quelli usciti da 7 giorni (nella prova quelli non usati da 2 giorni)
       if (pulisciDisp()) await st.put("disp", disp);
       return J({ ok: true, guardati: vecchi.length, arrivi: viaA.length });
+    }
+    // ---- anteprima 141: copia di sicurezza di ogni giorno (dal cron), nel contenitore «copie:<spazio>»; si tengono 30 giorni ----
+    if (p === "/interno/copia") {
+      if (PROVA) return J({ ok: true, saltato: "versione di prova" });
+      const forza = LOCALE(this.env, request) && url.searchParams.get("forza") === "1", g = giornoUTC();
+      if (!forza && (await st.get("copia:giorno")) === g) return J({ ok: true, saltato: "già fatta oggi" });
+      const gg = url.searchParams.get("giorno") || "", et = forza && /^\d{4}-\d{2}-\d{2}$/.test(gg) ? gg : g;
+      if (!forza) await st.put("copia:giorno", g);
+      return J(await this.copiaFai(OPN, et));
+    }
+    // ripristino di una copia (lo chiede il titolare dal Pannello): prima si fa una copia di adesso; accessi, telefoni e sicurezza restano quelli di adesso
+    if (p === "/interno/copia-ripristina" && request.method === "POST") {
+      if (PROVA) return J({ errore: "solo per gli spazi" }, 400);
+      const b = await request.json().catch(() => ({})), et = String(b.et || ""), B = this.env.STATO.get(this.env.STATO.idFromName("copie:" + OPN));
+      if (!(await B.copiaElenco()).some(x => x.et === et)) return J({ errore: "Copia non trovata" }, 404);
+      const prima = await this.copiaFai(OPN, giornoUTC() + "-prima-del-ripristino-" + String(now).slice(-6));
+      const V = []; let dopo = null;
+      for (let giro = 0; giro < 200; giro++) { const r = await B.copiaLeggi(et, dopo); if (!r || !r.voci.length) break; V.push(...r.voci); dopo = r.ult; if (r.fine) break; }
+      const tieni = k => ["disp", "creato", "pin", "origine", "blocchi"].includes(k) || k.startsWith("sic:") || k.startsWith("copia:") || k.startsWith("docinfo:");
+      const via = [...(await st.list({ end: "doc:" })).keys(), ...(await st.list({ start: "doc;" })).keys()].filter(k => !tieni(k));
+      for (let i = 0; i < via.length; i += 128) await st.delete(via.slice(i, i + 128));
+      for (const [k, v] of V) if (!tieni(k)) await st.put(k, v);
+      let rimessi = 0;
+      for (const [k, info] of V) { if (!k.startsWith("docinfo:") || await st.get(k)) continue; const did = k.slice(8), D = await B.copiaDocLeggi(did); if (!D) continue;
+        for (let i = 0; i < D.pezzi.length; i++) await st.put("doc:" + did + ":" + i, D.pezzi[i]); await st.put(k, info); rimessi++; }
+      await st.delete("uso:byte"); this.PIL = null; await st.put("copia:ripristino", { at: now, et, prima: prima.et });
+      return J({ ok: true, voci: V.length, docRimessi: rimessi, prima: prima.et });
+    }
+    // Pannello del titolare: copie e richiesta «ho perso telefono e codici» (mai i dati dello spazio)
+    if (p === "/interno/sic-pannello") {
+      const R = await st.get("sic:rip"), B = OPN ? this.env.STATO.get(this.env.STATO.idFromName("copie:" + OPN)) : null;
+      return J({ tfa: !!(await st.get("sic:tfa")), rip: R ? { stato: R.stato, at: R.at, sblocco: R.sblocco, cod: R.cod, dev: R.dev, fatta: R.fatta || 0, annullata: R.annullata || 0 } : null,
+        copie: B ? await B.copiaElenco() : [], ultima: (await st.get("copia:ultima")) || null, ripristino: (await st.get("copia:ripristino")) || null, email: await sicEmailAdm() });
+    }
+    if (p === "/interno/sic-approva" && request.method === "POST") {
+      await request.text().catch(() => ""); const R = await st.get("sic:rip");
+      if (!R || R.stato !== "attesa") return J({ errore: "Non c’è una richiesta in attesa (forse l’Admin l’ha bloccata)." }, 409);
+      if (now < R.sblocco) return J({ errore: "Si può togliere la doppia verifica solo dal " + oraRoma(R.sblocco) + " (3 giorni dalla richiesta)." }, 409);
+      await st.delete("sic:tfa"); await st.delete("sic:tfaNuova"); R.stato = "fatta"; R.fatta = now; await st.put("sic:rip", R);
+      for (const x of Object.values(disp)) if (x.ruolo === "adm" && x.stato === "2fa") x.stato = "tolto"; await st.put("disp", disp);
+      await sicMail("Doppia verifica tolta dall’assistenza", `<p>Come chiesto (richiesta n. ${esc(R.cod)}), l’assistenza ha controllato i documenti e ha tolto la doppia verifica: adesso entri con il solo codice via email.</p><p>Appena dentro, riattivala con il telefono nuovo: Azienda › Sicurezza e dati › Doppia verifica.</p>${mailTasto(await sicApri(), "Apri Quota 120")}`);
+      return J({ ok: true });
+    }
+    // solo per le prove in locale: invecchiare la richiesta, cambiare la versione dell'accordo accettato, vedere le copie
+    if (p === "/interno/sic-prova" && LOCALE(this.env, request) && request.method === "POST") {
+      const b = await request.json().catch(() => ({}));
+      if (b.op === "accVer") { const A = await st.get("sic:acc"); if (A) { A.ver = +b.ver; await st.put("sic:acc", A); } return J({ ok: !!A }); }
+      if (b.op === "ripVecchia") { const R = await st.get("sic:rip"); if (R) { R.at -= RIP_ATTESA + 60000; R.sblocco -= RIP_ATTESA + 60000; await st.put("sic:rip", R); } return J({ ok: !!R }); }
+      if (b.op === "copie") return J(OPN ? await this.env.STATO.get(this.env.STATO.idFromName("copie:" + OPN)).copiaElenco() : []);
+      if (b.op === "chiavi") return J([...(await st.list({ prefix: b.pre || "sic:" })).keys()]);
+      return J({ errore: "op?" }, 400);
     }
     if (p === "/interno/posta" && LOCALE(this.env, request)) return J(globalThis.__POSTA || []);
 
@@ -1209,6 +1482,30 @@ export class Stato extends DurableObject {
       return J({ errore: "Richiesta sconosciuta" }, 404);
     }
 
+    // ---- anteprima 141: link dalle email (senza telefono) ----
+    // blocca la richiesta «ho perso telefono e codici»: la pagina chiede il tocco (i programmi che controllano i link nelle email non la bloccano da soli)
+    if (p === "/api/sic/annulla") {
+      const t = String(url.searchParams.get("t") || ""), R = await st.get("sic:rip");
+      if (!/^[a-f0-9]{48}$/.test(t) || !R || R.tokH !== await sha256h(t)) return paginaSemplice("Link non valido", "Il link non è valido o la richiesta non c’è più.");
+      if (R.stato !== "attesa") return paginaSemplice(R.stato === "annullata" ? "Richiesta già bloccata" : "Richiesta già chiusa", R.stato === "annullata" ? "Questa richiesta era già stata bloccata: la doppia verifica resta attiva." : "Questa richiesta è già stata chiusa dall’assistenza. Se non l’hai fatta tu, scrivi subito a assistenza@quota120.com.");
+      if (request.method === "POST") { R.stato = "annullata"; R.annullata = now; R.da = "email"; await st.put("sic:rip", R);
+        return paginaSemplice("Richiesta bloccata", "La richiesta n. " + esc(R.cod) + " è bloccata: la doppia verifica resta attiva com’è.<br><br>Se non l’hai fatta tu, qualcuno conosce la tua email: cambia la password dell’email e controlla in Quota 120 › Azienda › Sicurezza e dati i telefoni e i computer collegati."); }
+      return paginaSemplice("Blocca la richiesta n. " + esc(R.cod), "Il " + oraRoma(R.at) + " è stato chiesto di togliere la doppia verifica di Quota 120. Se non l’hai chiesto tu, bloccala: la doppia verifica resta attiva.",
+        `<form method="post" action="${esc(url.pathname + url.search, 600)}"><button type="submit" style="font:inherit;font-weight:bold;font-size:16px;background:#AE2F28;color:#fff;border:0;border-radius:8px;padding:12px 18px;cursor:pointer">Non sono stato io: blocca la richiesta</button></form>`);
+    }
+    // lo zip con tutti i dati: link valido 24 ore; ogni scarico va nel registro
+    if (p === "/api/sic/scarico/file" && (request.method === "GET" || request.method === "HEAD")) {
+      const t = String(url.searchParams.get("t") || ""), X = /^[a-f0-9]{48}$/.test(t) ? await st.get("sic:exp:" + t) : null;
+      if (!X || now > X.scad) return paginaSemplice("Link scaduto", "Il link per scaricare i dati vale 24 ore ed è scaduto, oppure non è giusto. Preparane uno nuovo: Azienda › Sicurezza e dati › Scarica tutti i dati.");
+      if (request.method === "GET") { const R = LISTA(await st.get("sic:scar"));
+        R.unshift({ at: now, chi: "Admin", dev: nomeDisp(request.headers.get("user-agent")) || "dispositivo sconosciuto", cosa: (X.doc ? "tabelle e documenti" : "solo tabelle") + " · " + mbDi(X.byte) });
+        await st.put("sic:scar", R.slice(0, 300)); }
+      const voci = LISTA(X.files).map(f => ({ nome: f.nome, pezzi: async function* () { for (let j = 0; j < f.pezzi; j++) { const v = await st.get("sic:expf:" + t + ":" + f.i + ":" + j); if (v) yield v; } } }))
+        .concat(LISTA(X.docs).map(f => ({ nome: f.nome, pezzi: async function* () { const info = await st.get("docinfo:" + f.did); for (let j = 0; j < (info ? +info.pezzi || 0 : 0); j++) { const v = await st.get("doc:" + f.did + ":" + j); if (v) yield v; } } })));
+      const ascii = X.nome.normalize("NFD").replace(/[^\x20-\x7e]/g, "").replace(/["\\]/g, "") || "Quota120.zip";
+      return new Response(request.method === "HEAD" ? null : zipFlusso(voci, X.at), { headers: { "content-type": "application/zip", "content-disposition": `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(X.nome)}`, "cache-control": "private, no-store", "x-robots-tag": "noindex" } });
+    }
+
     // ---- da qui serve un dispositivo riconosciuto ----
     // la chiave del telefono arriva solo nell'intestazione X-Disp (mai nell'indirizzo, che finisce nella cronologia e nei registri)
     let id = "", k = "";
@@ -1228,6 +1525,14 @@ export class Stato extends DurableObject {
     if (p === "/api/disp/stato") return J({ stato: me.stato, codice: me.codice, ruolo: me.ruolo, n: me.n, asp: aspetti[me.n] || ASP_BASE });
     // chi esce toglie il suo telefono dall'elenco (anche se era ancora in attesa)
     if (p === "/api/disp/esci" && request.method === "POST") { me.stato = "uscito"; await st.put("disp", disp); return J({ ok: true }); }
+    // ---- anteprima 141: telefono nuovo dell'Admin con la doppia verifica attiva: entra solo con il codice dell'app (o un codice di riserva) ----
+    if (me.stato === "2fa" && p === "/api/sic/entra" && request.method === "POST") {
+      const b = await request.json().catch(() => ({})), r = await sicVerifica(b);
+      if (r.no) return r.no;
+      me.stato = "ok"; me.tfaAt = now; await st.put("disp", disp); await avvisoIngresso(me);
+      return J({ ok: true, stato: "ok", ris: !!r.ris, rimasti: r.rimasti });
+    }
+    if (me.stato === "2fa" && p === "/api/sic/perso" && request.method === "POST") { await request.text().catch(() => ""); return sicPerso(me); }
     if (me.stato !== "ok") return J({ errore: "non approvato", stato: me.stato }, 403);
     const adm = me.ruolo === "adm";
     // di chi è un file o un volo arrivato: se c'è l'id del pilota vale quello; il nome da solo solo per i file vecchi (senza id)
@@ -1243,6 +1548,109 @@ export class Stato extends DurableObject {
       if (LISTA(d.SEGN).length > LIM.segnMax) { const chiuse = d.SEGN.filter(x => x && x.stato === "chiusa" && !x.fermo).slice(-(d.SEGN.length - LIM.segnMax + 50));
         if (chiuse.length) { const S = new Set(chiuse); d.SEGN = d.SEGN.filter(x => !S.has(x)); await st.put("archivio:SEGN:" + now + ":" + rnd(2), chiuse); fatto = true; } }
       return fatto; };
+
+    // ---- anteprima 141: Sicurezza e dati (solo Admin) ----
+    if (p.startsWith("/api/sic/")) {
+      if (!adm) return J({ errore: "Solo l'Admin" }, 403);
+      const az = p.slice(9), POST = request.method === "POST", b = POST ? await request.json().catch(() => ({})) : {};
+      if (az === "stato") return J(await sicRiass(true));
+      // doppia verifica, passo 2: la chiave nuova (QR e chiave da scrivere a mano); vale 30 minuti, finché non è confermata con un codice
+      if (az === "tfa/nuova" && POST) {
+        if (await st.get("sic:tfa")) return J({ errore: "La doppia verifica è già attiva." }, 409);
+        const seg = b32enc(crypto.getRandomValues(new Uint8Array(20))), m = await leggiMain(), nome = sicNomeAz(m && m.d);
+        await st.put("sic:tfaNuova", { seg: await segChiudi(this.env, seg), at: now, da: id });
+        return J({ chiave: seg.match(/.{1,4}/g).join(" "), nome, uri: "otpauth://totp/" + encodeURIComponent("Quota 120:" + nome) + "?secret=" + seg + "&issuer=" + encodeURIComponent("Quota 120") + "&algorithm=SHA1&digits=6&period=30" });
+      }
+      // passo 3: il primo codice dell'app; se è giusto, i 10 codici di riserva (si vedono solo adesso: sul server resta l'impronta)
+      if (az === "tfa/prova" && POST) {
+        const N0 = await st.get("sic:tfaNuova"); if (!N0 || now - N0.at > 30 * 60000) return J({ errore: "Sono passati più di 30 minuti: ricomincia dal passo 1." }, 410);
+        const r = await sicVerifica({ codice: b.codice }, "sic:tfaNuova"); if (r.no) return r.no;
+        const N = r.T, sale = rnd(8), C = Array.from({ length: 10 }, risNuovo);
+        N.ok = true; N.sale = sale; N.ris = await Promise.all(C.map(async c => ({ h: await sha256h(sale + risNorm(c)), u: 0 }))); await st.put("sic:tfaNuova", N);
+        return J({ ok: true, codici: C });
+      }
+      if (az === "tfa/attiva" && POST) {
+        const N = await st.get("sic:tfaNuova"); if (!N || !N.ok || now - N.at > 30 * 60000) return J({ errore: "Sono passati più di 30 minuti: ricomincia dal passo 1." }, 410);
+        await st.put("sic:tfa", { seg: N.seg, dal: now, last: +N.last || 0, sale: N.sale, ris: N.ris, risAt: now, da: id }); await st.delete("sic:tfaNuova");
+        await sicMail("Doppia verifica attiva", "<p>Da adesso per entrare come Admin da un telefono o da un computer nuovo serve anche il codice dell’app di autenticazione.</p><p>Tieni al sicuro i 10 codici di riserva, fuori dal telefono: servono se lo perdi.</p>");
+        return J({ ok: true, sic: await sicRiass() });
+      }
+      if (az === "tfa/spegni" && POST) {
+        const r = await sicVerifica(b.v); if (r.no) return r.no;
+        await st.delete("sic:tfa"); await st.delete("sic:tfaNuova");
+        await sicMail("Doppia verifica spenta", `<p>Il ${oraRoma(now)} la doppia verifica di Quota 120 è stata spenta: per entrare come Admin torna a bastare il codice via email.</p><p>Se non sei stato tu, apri Quota 120 e riattivala subito (Azienda › Sicurezza e dati).</p>${mailTasto(await sicApri(), "Apri Quota 120")}`);
+        return J({ ok: true, ris: !!r.ris, rimasti: r.rimasti, sic: await sicRiass() });
+      }
+      if (az === "tfa/codici" && POST) {
+        const r = await sicVerifica(b.v); if (r.no) return r.no;
+        const T = await st.get("sic:tfa"); if (!T) return J({ errore: "La doppia verifica non è attiva." }, 400);
+        const sale = rnd(8), C = Array.from({ length: 10 }, risNuovo);
+        T.sale = sale; T.ris = await Promise.all(C.map(async c => ({ h: await sha256h(sale + risNorm(c)), u: 0 }))); T.risAt = now; await st.put("sic:tfa", T);
+        return J({ ok: true, codici: C, sic: await sicRiass() });
+      }
+      // telefoni e computer dell'Admin: esci da tutti gli altri (questo resta)
+      if (az === "esci-tutti" && POST) {
+        let n = 0; for (const [i, x] of Object.entries(disp)) if (i !== id && x.ruolo === "adm" && ["ok", "2fa", "attesa"].includes(x.stato)) { x.stato = "tolto"; x.visto = now; n++; }
+        await st.put("disp", disp); return J({ ok: true, n, disp: pub() });
+      }
+      // accordo sul trattamento dei dati (art. 28): nome, ruolo, spunta e versione
+      if (az === "accordo" && POST) {
+        const nome = TX(String(b.nome || "").replace(/\s+/g, " ").trim(), 80), ruolo = ACC_RUOLI.includes(b.ruolo) ? b.ruolo : "";
+        if (nome.length < 4 || !/\s/.test(nome)) return J({ errore: "Scrivi nome e cognome di chi accetta." }, 400);
+        if (!ruolo) return J({ errore: "Scegli il ruolo nell’azienda." }, 400);
+        if (b.ok !== true) return J({ errore: "Spunta che hai letto l’accordo e puoi accettarlo per l’azienda." }, 400);
+        if (+b.ver !== ACC_VER) return J({ errore: "L’accordo è cambiato mentre lo leggevi: ricarica la pagina e rileggilo.", cambiato: true }, 409);
+        const prima = await st.get("sic:acc"); if (prima) { const S = LISTA(await st.get("sic:accStoria")); S.unshift(prima); await st.put("sic:accStoria", S.slice(0, 50)); }
+        await st.put("sic:acc", { ver: ACC_VER, nome, ruolo, at: now, dev: me.dev || "" }); await st.delete("sic:dopo");
+        return J({ ok: true, sic: await sicRiass() });
+      }
+      if (az === "dopo" && POST) { await st.put("sic:dopo", now); return J({ ok: true }); }
+      // la richiesta «ho perso telefono e codici» vista dall'Admin ancora dentro: la blocca da qui
+      if (az === "perso-blocca" && POST) { const R = await st.get("sic:rip"); if (R && R.stato === "attesa") { R.stato = "annullata"; R.annullata = now; R.da = "Admin"; await st.put("sic:rip", R); } return J({ ok: true, sic: await sicRiass() }); }
+      // scarica tutti i dati: lo zip si prepara qui (tabelle, Excel, JSON) e i documenti si aggiungono mentre si scarica; il link vale 24 ore
+      if (az === "scarico" && POST) {
+        const r = await sicVerifica(b.v); if (r.no) return r.no;
+        const kn = "sic:expn:" + giornoUTC(), nn = (await st.get(kn)) || 0;
+        if (nn >= 10) return J({ errore: "Oggi hai già preparato 10 scarichi: riprova domani." }, 429);
+        await st.put(kn, nn + 1);
+        for (const [k2, x] of await st.list({ prefix: "sic:exp:" })) await togliExp(k2.slice(8), x);   // un solo scarico pronto alla volta
+        const m = await leggiMain(), d = m ? m.d : {}, az0 = sicNomeAz(d), doc = b.doc !== false;
+        const arch = { ZONE: [], SEGN: [] }; for (const [k2, v] of await st.list({ prefix: "archivio:" })) { const t2 = k2.split(":")[1]; if (arch[t2] && Array.isArray(v)) arch[t2].push(...v); }
+        const A = await st.get("sic:acc"), AS = LISTA(await st.get("sic:accStoria")), cliR = LISTA(await st.get("cli:rich")), cliRap = (await st.get("cli:rap")) || {};
+        const T = tabelleDi(d, [["richieste-clienti", "Richieste clienti", cliR], ["archivio-verifiche-zone", "Archivio zone", arch.ZONE], ["archivio-segnalazioni", "Archivio segnalazioni", arch.SEGN],
+          ["accordo-trattamento-dati", "Accordo dati", A ? [A].concat(AS) : []], ["registro-scarichi", "Registro scarichi", LISTA(await st.get("sic:scar"))]]);
+        // i documenti caricati, in cartelle (azienda, piloti, droni, voli, rapporti, manuale)
+        const DOC = []; let byteDoc = 0;
+        if (doc) { const usati = new Set(), cart = did => { const x = LISTA(d.DOCS).find(y => y && y.id === did), s = (x && x.dest) || {};
+            if (manualeDocs(d).includes(did) || (s.k === "operatore" && s.voce === "manuale") || LISTA((d.MANUALE || {}).rev).some(y => y && y.doc === did)) return "manuale";
+            if (s.k === "pilota") { const q = LISTA(d.PILOTI).find(y => y && y.id === s.id); return "piloti/" + nomeFile(q ? q.nome : "pilota " + s.id, 60); }
+            if (s.k === "drone") { const q = LISTA(d.DRONI).find(y => y && y.id === s.id); return "droni/" + nomeFile(q ? q.nome : "drone " + s.id, 60); }
+            for (const [k3, sc] of Object.entries(d.SCHEDE || {})) if (sc && sc.docIds && Object.values(sc.docIds).includes(did)) { const q = LISTA(d.DRONI).find(y => y && String(y.id) === k3); return "droni/" + nomeFile(q ? q.nome : "drone " + k3, 60); }
+            if (s.k === "operatore" || [(d.ASSIC || {}).doc, (d.OP || {}).dfDoc, (d.AUT_ENAC || {}).doc].includes(did)) return "azienda";
+            if (LISTA(d.VOLI).some(v => v && v.docLog === did)) return "voli/registri DJI";
+            if (Object.values(cliRap).some(v => v && v.did === did)) return "rapporti";
+            if (LISTA(d.RISCHI).some(v => v && v.pdf === did)) return "valutazioni del rischio";
+            return x ? "altri" : "caricati e non ancora sistemati"; };
+          for (const [k2, info] of await st.list({ prefix: "docinfo:" })) { if (!info) continue; const did = k2.slice(8), est = TIPI_FILE[info.mime] || "bin";
+            let nb = nomeFile(String(info.nome || "documento").replace(/\.[a-z0-9]{1,5}$/i, ""), 80), n = "documenti/" + cart(did) + "/" + nb + "." + est, i = 2;
+            while (usati.has(n.toLowerCase())) n = "documenti/" + cart(did) + "/" + nb + " (" + i++ + ")." + est;
+            usati.add(n.toLowerCase()); DOC.push({ did, nome: n, size: +info.size || 0, mime: info.mime }); byteDoc += +info.size || 0; } }
+        const ymd = new Date(now).toISOString().slice(0, 10), base = "Quota120-" + nomeFile(az0, 40).replace(/\s+/g, "-") + "-" + ymd;
+        const F = [{ nome: "LEGGIMI.txt", dati: U8(LEGGIMI(az0, oraRoma(now), doc).replace(/\n/g, "\r\n")) }, { nome: base.replace("-" + ymd, "") + ".xlsx", dati: await xlsxDi(T) }]
+          .concat(T.map(t => ({ nome: "tabelle/" + t.file + ".csv", dati: U8(csvDi(t.righe)) })))
+          .concat([{ nome: "tutto.json", dati: U8(JSON.stringify({ programma: "Quota 120", esportato: new Date(now).toISOString(), azienda: az0, dati: d, richiesteClienti: cliR, archivio: arch,
+            accordo: A ? [A].concat(AS) : [], registroScarichi: LISTA(await st.get("sic:scar")), documenti: DOC.map(x => ({ id: x.did, file: x.nome, tipo: x.mime, byte: x.size })) }, null, 1)) }]);
+        const tok = rnd(24); let byte = byteDoc;
+        for (let i = 0; i < F.length; i++) { const u = F[i].dati, np = Math.max(1, Math.ceil(u.length / PEZZO)); F[i] = { nome: F[i].nome, i, pezzi: np, size: u.length }; byte += u.length;
+          for (let j = 0; j < np; j++) await st.put("sic:expf:" + tok + ":" + i + ":" + j, u.slice(j * PEZZO, (j + 1) * PEZZO)); }
+        const X = { at: now, scad: now + EXP_ORE * 36e5, doc, nome: base + ".zip", files: F, docs: DOC, byte, da: id };
+        await st.put("sic:exp:" + tok, X);
+        const link = url.origin + "/api/sic/scarico/file?" + (OPN ? "op=" + encodeURIComponent(OPN) + "&" : "") + "t=" + tok;
+        await sicMail("I dati di " + SENZA_LINK(az0, 60) + " sono pronti da scaricare", `<p>Lo zip con tutti i dati è pronto: ${esc(X.nome)} (${mbDi(byte)}).</p><p>Il link vale 24 ore. Dentro ci sono dati personali di piloti e clienti: tienilo in un posto sicuro.</p>${mailTasto(link, "Scarica lo zip")}`);
+        return J({ ok: true, url: link, nome: X.nome, byte, scad: X.scad, docs: DOC.length, ris: !!r.ris, rimasti: r.rimasti });
+      }
+      return J({ errore: "Non trovato" }, 404);
+    }
 
     // ---- corsi dell'azienda: li prepara l'Admin, li vedono i suoi piloti ----
     if (p === "/api/corsi" && request.method === "GET") {
@@ -1704,7 +2112,7 @@ export class Stato extends DurableObject {
       if (!m) return J({ vuoto: true });
       // emailOk (solo Admin): per ogni indirizzo degli avvisi, true = confermato, "inviata" = gli abbiamo mandato l'email di conferma, false = non ancora
       const statoEmail = async d => { if (!OPN) return {}; const { ok, C } = await this.confermate(), out = {}; for (const a of destAvvisi(d, true)) out[a] = ok.has(a) ? true : C[a] && C[a].inviato ? "inviata" : false; return out; };
-      const { row } = m, io = { r: me.ruolo, n: me.n, id, asp: aspetti[me.n] || ASP_BASE, email: me.via === "email" ? me.email : "" }, extra = adm ? { disp: pub(), blocchi, pinIniziale: !!OPN && !(await st.get("pin")), emailOk: await statoEmail(m.d), cli: await this.cliAdmin(PROVA) } : {};
+      const { row } = m, io = { r: me.ruolo, n: me.n, id, asp: aspetti[me.n] || ASP_BASE, email: me.via === "email" ? me.email : "" }, extra = adm ? { disp: pub(), blocchi, pinIniziale: !!OPN && !(await st.get("pin")), emailOk: await statoEmail(m.d), cli: await this.cliAdmin(PROVA), sic: await sicRiass() } : {};
       if (request.method === "GET") {
         if (adm && !/localhost|127\.0\.0\.1/.test(url.origin) && (await st.get("origine")) !== BASEURL) await st.put("origine", BASEURL);
         // l'Admin guarda il programma come lo vede un pilota (solo lettura)
@@ -1890,6 +2298,26 @@ export class Stato extends DurableObject {
   }
 }
 
+// anteprima 141: la copia di sicurezza di uno spazio (tutti i dati e i documenti), nel suo contenitore «copie:<spazio>»
+Stato.prototype.copiaFai = async function (op, et) {
+  const st = this.ctx.storage, B = this.env.STATO.get(this.env.STATO.idFromName("copie:" + op)), now = Date.now();
+  await B.copiaInizia(et);
+  // tutto tranne i pezzi dei documenti (vanno a parte, una volta sola), gli scarichi da 24 ore e le informazioni sulle copie
+  const L = [...(await st.list({ end: "doc:" })), ...(await st.list({ start: "doc;" }))].filter(([k]) => !k.startsWith("sic:exp") && !k.startsWith("copia:"));
+  let lotto = [], peso = 0, byte = 0;
+  const manda = async () => { if (lotto.length) await B.copiaVoci(et, lotto); lotto = []; peso = 0; };
+  for (const [k, v] of L) { const n = v instanceof ArrayBuffer ? v.byteLength : ArrayBuffer.isView(v) ? v.byteLength : JSON.stringify(v === undefined ? null : v).length; byte += n;
+    if (lotto.length && peso + n > 8e6) await manda(); lotto.push([k, v]); peso += n; }
+  await manda();
+  const D = L.filter(([k]) => k.startsWith("docinfo:")).map(([k, v]) => [k.slice(8), v]), manca = new Set(await B.copiaHa(D.map(x => x[0])));
+  let nuovi = 0;
+  for (const [did, info] of D) { byte += +(info && info.size) || 0; if (!manca.has(did)) continue;
+    const P = []; for (let i = 0; i < (+(info && info.pezzi) || 0); i++) P.push(await st.get("doc:" + did + ":" + i)); if (P.some(x => !x)) continue;
+    await B.copiaDoc(did, info, P); nuovi++; }
+  const r = await B.copiaChiudi(et, { at: now, chiavi: L.length, docs: D.map(x => x[0]), byte }, COPIE_GIORNI);
+  const U = { at: now, et, n: r.n, dal: r.dal, byte, docNuovi: nuovi }; await st.put("copia:ultima", U);
+  return Object.assign({ ok: true }, U);
+};
 Stato.prototype.avvisi = async function (prova, origine) {
   const st = this.ctx.storage, row = await st.get("main"); if (!row) return { ok: false, motivo: "nessun dato" };
   const d = JSON.parse(row.json), A = d.AVVISI || {}, oggi = oggiRoma();
@@ -2180,7 +2608,7 @@ Stato.prototype.registro = async function (request, url, p) {
       }
       return J(Object.assign({ op, nuovo: true }, dev));
     }
-    const r = await spazio(a.op).fetch("https://q/interno/nuovoadmin", { method: "POST", headers: { "x-q120-op": a.op, "content-type": "application/json" }, body: JSON.stringify({ email }) });
+    const r = await spazio(a.op).fetch("https://q/interno/nuovoadmin", { method: "POST", headers: { "x-q120-op": a.op, "content-type": "application/json" }, body: JSON.stringify({ email, ua: String(request.headers.get("user-agent") || "").slice(0, 300) }) });
     if (!r.ok) return J({ errore: "Lo spazio non risponde: riprova." }, 500);
     return J(Object.assign({ op: a.op }, await r.json()));
   }
@@ -2229,7 +2657,9 @@ export default {
       const L = await env.STATO.get(env.STATO.idFromName("registro")).fetch("https://quota120.interno/interno/elenco").then(r => r.json()).catch(() => []);
       for (const op of L) { const s = env.STATO.get(env.STATO.idFromName("op:" + op));
         await s.fetch("https://quota120.interno/interno/avvisi", { headers: { "x-q120-op": op } }).catch(() => {});
-        await s.fetch("https://quota120.interno/interno/pulizia", { headers: { "x-q120-op": op } }).catch(() => {}); }
+        await s.fetch("https://quota120.interno/interno/pulizia", { headers: { "x-q120-op": op } }).catch(() => {});
+        // anteprima 141: la copia di sicurezza di ogni giorno (una volta al giorno: le altre ore si salta)
+        await s.fetch("https://quota120.interno/interno/copia", { headers: { "x-q120-op": op } }).catch(e => console.error("copia " + op + ":", e && e.message || e)); }
     })());
   },
   async fetch(request, env) {
@@ -2244,6 +2674,7 @@ export default {
       // (la pagina dell'area del cliente si può mostrare solo dentro il programma stesso: l'anteprima dell'Admin)
       const x = new Response(r.body, r), cornice = x.headers.get("x-q120-cornice") === "1"; x.headers.delete("x-q120-cornice");
       x.headers.set("X-Content-Type-Options", "nosniff");
+      x.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");   // anteprima 141: HTTPS obbligatorio anche per il programma
       x.headers.set("X-Frame-Options", cornice ? "SAMEORIGIN" : "DENY");
       x.headers.set("Referrer-Policy", cornice ? "no-referrer" : "strict-origin-when-cross-origin");
       if (/^text\/html/i.test(x.headers.get("content-type") || "")) x.headers.set("Content-Security-Policy", cornice ? CSP_APP.replace("frame-ancestors 'none'", "frame-ancestors 'self'") : CSP_APP);
@@ -2327,9 +2758,14 @@ export default {
         const corsi = await corsiConVideo(env, url, await reg().fetch(new Request(N + "/interno/corsi")).then(r => r.json()), true);
         const lez = corsi.flatMap(c => c.lezioni || []), c = n => !!(env[n] && String(env[n]).trim());
         const prob = await reg().fetch(new Request(N + "/interno/log")).then(r => r.json()).catch(() => []);
-        return J({ operatori: ops.map(o => ({ op: o.op, nome: o.nome, email: o.email, adm: o.adm, at: o.at, piloti: o.piloti || 0, droni: o.droni || 0, voli: o.voli || 0, telefoni: o.telefoni || 0, ultimo: o.ultimo || 0, sospeso: !!o.sospeso, video: !!o.video })),
+        return J({ operatori: ops.map(o => ({ op: o.op, nome: o.nome, email: o.email, adm: o.adm, at: o.at, piloti: o.piloti || 0, droni: o.droni || 0, voli: o.voli || 0, telefoni: o.telefoni || 0, ultimo: o.ultimo || 0, sospeso: !!o.sospeso, video: !!o.video, tfa: !!o.tfa, rip: o.rip || null, copia: o.copia || 0 })),
           problemi: prob.filter(x => !x.risolto).length, iscritti: isc, stato: { posta: c("RESEND_API_KEY") || c("BREVO_API_KEY"), mittente: env.MITTENTE || "", dji: c("DJI_API_KEY"), claude: c("ANTHROPIC_API_KEY"), robot: c("TURNSTILE_SECRET"), video: lez.filter(l => l.pronto).length, lezioni: lez.length }, corsi: corsi.map(x => ({ id: x.id, t: x.t, n: (x.lezioni || []).length })) });
       }
+      // anteprima 141: copie di sicurezza e richieste «ho perso telefono e codici» di uno spazio (mai i suoi dati)
+      if (az === "sic" && request.method === "GET") { const op = String(url.searchParams.get("op") || ""); if (!SLUG_OK(op)) return J({ errore: "operatore" }, 400);
+        return env.STATO.get(env.STATO.idFromName("op:" + op)).fetch(new Request(N + "/interno/sic-pannello", { headers: { "x-q120-op": op } })); }
+      if ((az === "sic-approva" || az === "ripristina") && request.method === "POST") { const b = await request.json().catch(() => ({})); if (!SLUG_OK(b.op)) return J({ errore: "operatore" }, 400);
+        return env.STATO.get(env.STATO.idFromName("op:" + b.op)).fetch(new Request(N + (az === "ripristina" ? "/interno/copia-ripristina" : "/interno/sic-approva"), { method: "POST", headers: { "x-q120-op": b.op, "content-type": "application/json" }, body: JSON.stringify({ et: String(b.et || "") }) })); }
       if (az === "log" && request.method === "GET") return reg().fetch(new Request(N + "/interno/log"));
       if (az === "log-risolto" && request.method === "POST") return reg().fetch(new Request(N + "/interno/log/risolto", { method: "POST", headers: { "content-type": "application/json" }, body: await request.text() }));
       if (az === "sospendi" && request.method === "POST") { const b = await request.json().catch(() => ({})); if (!SLUG_OK(b.op)) return J({ errore: "operatore" }, 400);
@@ -2401,7 +2837,7 @@ export default {
         const des = priv ? "Quali dati raccolgono Quota 120 e il sito quota120.com, perché, dove finiscono, quali cookie tecnici usano e quali diritti hai secondo il GDPR."
           : "Le condizioni d'uso di Quota 120, il gestionale per operatori di droni: cosa offre la prova gratuita, responsabilità e regole del servizio.";
         const ld = { "@context": "https://schema.org", "@graph": [
-          { "@type": "WebPage", "@id": u + "#page", url: u, name: tit, description: des, inLanguage: "it-IT", isPartOf: { "@id": "https://quota120.com/#web" }, publisher: { "@id": "https://quota120.com/#org" }, dateModified: "2026-11-01" },
+          { "@type": "WebPage", "@id": u + "#page", url: u, name: tit, description: des, inLanguage: "it-IT", isPartOf: { "@id": "https://quota120.com/#web" }, publisher: { "@id": "https://quota120.com/#org" }, dateModified: "2026-11-05" },
           { "@type": "Organization", "@id": "https://quota120.com/#org", name: "Quota 120", url: "https://quota120.com/", logo: "https://quota120.com/img/logo-512.png", email: "assistenza@quota120.com", areaServed: "IT",
             address: { "@type": "PostalAddress", addressLocality: "Ostellato", addressRegion: "FE", postalCode: "44020", addressCountry: "IT" }, sameAs: ["https://puntowebferrara.com/", "https://app.quota120.com/"],
             contactPoint: { "@type": "ContactPoint", contactType: "customer support", email: "assistenza@quota120.com", availableLanguage: "it" } },

@@ -54,3 +54,36 @@ a Claude (Sonnet) e propone tipo, dati e scheda di destinazione; senza la chiave
   di Paolo), DataForSEO SERP live fino alla 100ª posizione (tetto `POS_CAP` controlli al mese, predefinito 200), volumi delle parole nuove.
 - Pannelli: `_pos-comune.js` / `pos-comune.js` = copia della parte «leggi/parola» di `_pos.js`; `pos-ui.js` = la scheda, uguale in tutti
   i repository: se cambia, copiarla in tutti. Senza POS il pannello dice «non ancora collegato».
+
+## Sicurezza e dati (05/11/2026, anteprima 141 approvata)
+Azienda › «Sicurezza e dati» (solo Admin), con cinque righe; in Home › «Da sistemare» una riga finché l'accordo non è accettato e una finché
+la doppia verifica è spenta (non nella prova). Ogni parte ha la sua guida (parte solo se la avvii, o toccando la riga) e una lezione nello Studio.
+- **Doppia verifica** (TOTP, RFC 6238: HMAC-SHA1, 6 cifre, 30 s, si accetta ±1 passo): QR `otpauth://` e chiave da scrivere a mano; un codice
+  già usato non vale di nuovo (si tiene l'ultimo passo usato). 10 codici di riserva `XXXX-XXXX`, una volta sola, salvati come impronta SHA-256 con sale.
+  Il segreto non torna mai al browser dopo l'attivazione; se c'è il segreto di Cloudflare **`SICUREZZA_CHIAVE`** (facoltativo) è salvato cifrato
+  (AES-GCM). Attenzione: se poi si cambia o si toglie quella chiave, le doppie verifiche già attive non si leggono più (restano i codici di riserva).
+  5 codici sbagliati per telefono = 15 minuti di attesa (al massimo 30 per spazio ogni 15 minuti).
+  La chiede: all'ingresso da un telefono nuovo (il codice via email crea il telefono nello stato `2fa`, che entra solo con `/api/sic/entra`),
+  prima di spegnerla, di rifare i codici di riserva e di scaricare tutti i dati. A ogni ingresso nuovo dell'Admin parte un'email di avviso.
+- **«Ho perso telefono e codici»**: dalla pagina della doppia verifica, `/api/sic/perso` crea la richiesta (`sic:rip`): resta ferma 3 giorni,
+  all'email dell'Admin arriva l'avviso con il tasto per bloccarla (`/api/sic/annulla`, pagina con un tasto: i controlli automatici delle email
+  non la bloccano da soli). L'assistenza controlla visura camerale e documento (arrivano per email ad assistenza@quota120.com) e la chiude dal
+  Pannello del titolare (quota120.com/admin › Operatori › scheda › Sicurezza), non prima dei 3 giorni.
+- **Telefoni e computer dell'Admin**: esci da uno, da tutti gli altri (`/api/sic/esci-tutti`) o da questo.
+- **Scarica tutti i dati** (`/api/sic/scarico`, solo Admin, con la doppia verifica se è attiva): zip con LEGGIMI.txt, un .xlsx (un foglio per
+  elenco), `tabelle/*.csv` (UTF-8, punto e virgola), `tutto.json` e `documenti/<cartella>/`. Le tabelle si preparano subito, i documenti si
+  aggiungono mentre si scarica (zip senza compressione, a pezzi). Link valido 24 ore (`/api/sic/scarico/file?op=…&t=…`), email con il link,
+  ogni scarico nel registro (`sic:scar`).
+- **Accordo sul trattamento dei dati (art. 28)**: versione nel codice (`ACC_VER` in src/index.js; il testo è in public/index.html, `SIC_ART`):
+  se cambia il testo, alzare `ACC_VER` (e `SIC_ACC_DATA`/`SIC_ACC_CAMBI`) e l'Admin lo riaccetta. «Più tardi» = riquadro giallo.
+- **Sicurezza in breve**: PDF di una pagina con lo stato vero; «Manda per email» passa da `/api/doc/invia` (stessi limiti).
+
+### Copie di sicurezza
+- Lo spazio è un Durable Object con archivio **SQLite** (`new_sqlite_classes` in wrangler.jsonc): la piattaforma permette il ripristino a un
+  momento qualsiasi degli ultimi 30 giorni (Point-in-time recovery dei Durable Objects SQLite). In Quota 120 non c'è ancora un comando che lo usa.
+- In più, **ogni giorno** (dal cron, una volta al giorno) ogni spazio fa una copia di tutti i suoi dati in un altro Durable Object, `copie:<spazio>`
+  (stessa classe, nessuna configurazione da aggiungere): `cg:<giorno>` informazioni, `cv:<giorno>:<chiave>` i dati, `cd:`/`cdp:` i documenti
+  salvati una volta sola. Si tengono 30 giorni: le copie più vecchie e i documenti che nessuna copia usa più si cancellano da soli.
+  R2 non si usa: avrebbe chiesto di creare un bucket a mano in Cloudflare.
+- Ripristino: Pannello del titolare › scheda dello spazio › «Ripristina questa copia». Prima si fa una copia di adesso
+  («…-prima-del-ripristino-…»); telefoni, doppia verifica, accordo e registro degli scarichi restano quelli di adesso.
