@@ -20,7 +20,7 @@ lezioni cambiate li rifà GitHub la notte (o subito, facendo partire a mano «Vi
 | F6 | ENAC, LG 2023/005-UAS (esami ed Entità Riconosciute) | https://www.enac.gov.it/sites/default/files/allegati/2023-Nov/LG%202023_005_uas_eD1_231103.pdf |
 | F7 | D-Flight, novità e dichiarazioni | https://www.d-flight.it/ |
 
-## Dati usati nei corsi (verificati il 02/11/2026)
+## Dati usati nei corsi (verificati il 09/11/2026)
 
 | Corso | Dato | Valore nei corsi | Fonte |
 |---|---|---|---|
