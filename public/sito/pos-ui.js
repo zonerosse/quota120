@@ -27,9 +27,12 @@
 .pz-x{border:0;background:none;color:#94a3b8;font-size:18px;cursor:pointer;padding:0 4px}.pz-x:hover{color:var(--pzGiu)}
 .pz-leg{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--pzM);margin-top:8px}
 .pz-rot{display:inline-block;width:14px;height:14px;border:2px solid #cbd5e1;border-top-color:var(--pzA);border-radius:50%;animation:pzr .8s linear infinite;vertical-align:-2px;margin-right:6px}@keyframes pzr{to{transform:rotate(360deg)}}
+.pz-bar{height:10px;border-radius:99px;background:#e2e8f0;overflow:hidden;margin:10px 0 4px}.pz-bar i{display:block;height:100%;background:#15803d}
+.pz-ind details{border-top:1px solid var(--pzL);padding:8px 0}.pz-ind summary{cursor:pointer;font-weight:600;color:var(--pzD);display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}.pz-ind summary small{color:var(--pzM);font-weight:400}
+.pz-ind ul{margin:6px 0 2px;padding-left:18px}.pz-ind li{margin:3px 0}.pz-ind .pz-cosa{color:var(--pzM);font-size:13px;margin:4px 0 0}
 @media(max-width:820px){.pz-n4{grid-template-columns:1fr 1fr}}@media(max-width:560px){.pz .hm{display:none}}`;
   const SV = { pos: '<path d="M4 19h16"/><path d="M7 15v-4"/><path d="M12 15V7"/><path d="M17 15v-6"/>', cerca: '<circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/>',
-    ch: '<path d="M4 7h16M4 12h10M4 17h7"/>', pag: '<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/>' };
+    ch: '<path d="M4 7h16M4 12h10M4 17h7"/>', pag: '<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/>', ind: '<path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h5"/><path d="M15 15l2 2 3-4"/>' };
   const ic = (k, c) => `<span class="pz-ic ${c || ''}"><svg viewBox="0 0 24 24">${SV[k]}</svg></span>`;
   const e = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const nf = (n, d) => n == null ? '–' : Number(n).toLocaleString('it-IT', { maximumFractionDigits: d == null ? 1 : d });
@@ -46,6 +49,14 @@
   async function post(url, b) { const r = await fetch(url, { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) }); const j = await r.json().catch(() => ({})); if (!r.ok || j.ok === false) throw new Error(j.error || j.errore || ('errore ' + r.status)); return j; }
   const MANCA = '<div class="pz-avv"><b>Il Posizionamento non è ancora collegato.</b> Manca l\'archivio «posizionamento» in Cloudflare, collegato a questo sito con il nome POS.</div>';
   const pd = s => s ? s.slice(8, 10) + '/' + s.slice(5, 7) : '';
+  // i gruppi del controllo dell'indice (le parole di Google, in italiano): chiave, nome, cosa vuol dire
+  const INDG = [['ok', "Nell'indice di Google", ''],
+    ['scoperta', 'Trovate ma non ancora lette', "Google sa che esistono ma non è ancora passato a leggerle: di solito succede da solo nelle settimane dopo."],
+    ['letta', 'Lette ma non messe', "Google le ha lette e per ora ha deciso di non mostrarle: di solito pagine nuove o che somigliano ad altre. Si migliorano con testi più utili e più collegamenti dalle altre pagine."],
+    ['sconosciuta', 'Non le conosce ancora', "Google non le ha mai viste: la mappa del sito gliele indica, arriverà."]];
+  const INDA = [['doppione', 'Doppioni di un\'altra pagina', "Google le considera uguali a un'altra pagina e mostra quella."],
+    ['bloccata', 'Bloccate', "La pagina chiede di non essere mostrata (noindex), è bloccata da robots.txt, oppure non esiste più."],
+    ['altro', 'Altro', "Un altro motivo di Google: da guardare in Search Console."]];
   function corpo(D, ag) {
     const S = D.storia; let h = `<h1>${e(D.nome)}</h1><p class="pz-s">${e(D.dom)} · ${D.ultimo ? 'ultimo aggiornamento ' + dt(D.ultimo.at) : 'ancora nessun aggiornamento: il primo arriva lunedì'} · si aggiorna da solo ogni lunedì${D.costoMese ? ' · spesa del mese ' + nf(D.costoMese, 2) + ' €' : ''}</p>`;
     if (D.chiuso) h += `<div class="pz-avv"><b>Il sito è chiuso a Google</b> (scelta tua finché la vendita non è pronta). Google non lo mostra nelle ricerche: le posizioni si controllano quando lo apri.</div>`;
@@ -54,6 +65,14 @@
     if (!D.chiuso && g) h += `<div class="pz-b"><h2>${ic('cerca', 'v')}Da Google, ultime 4 settimane</h2><p class="pz-da">Search Console · dal ${pd(g.dal)} al ${pd(g.al)} · confronto con le 4 settimane prima</p><div class="pz-n4">
       <div class="pz-n"><small>Clic</small><b>${nf(g.tot.c, 0)}</b>${fr(g.tot.c, g.prev.c)}</div><div class="pz-n"><small>Volte che sei comparso</small><b>${nf(g.tot.i, 0)}</b>${fr(g.tot.i, g.prev.i)}</div>
       <div class="pz-n"><small>Chi ti vede e clicca</small><b>${nf(g.tot.ctr)}%</b>${fr(g.tot.ctr, g.prev.ctr)}</div><div class="pz-n"><small>Posizione media</small><b>${g.tot.pos ? nf(g.tot.pos) : '–'}</b>${g.tot.pos ? fr(g.tot.pos, g.prev.pos, 1) : ''}</div></div></div>`;
+    // 10/11/2026 (Paolo: «A»): quali pagine del sito Google ha nel suo indice, dal controllo URL di Search Console, ogni lunedì
+    const I = g && g.indice;
+    if (!D.chiuso && I && I.err && !I.fatte) h += `<div class="pz-avv">Pagine che Google conosce: non sono riuscito a controllarle (${e(I.err)}). Si riprova lunedì.</div>`;
+    if (!D.chiuso && I && I.tot) { const ok = I.dentro || 0, pc = Math.round(ok / I.tot * 100);
+      h += `<div class="pz-b pz-ind"><h2>${ic('ind', 'v')}Pagine che Google conosce</h2><p class="pz-da">Search Console, controllo di ogni pagina della mappa del sito · ${I.fatte < I.tot ? `controllo in corso: ${nf(I.fatte, 0)} pagine su ${nf(I.tot, 0)}` : 'aggiornato ' + dt(I.at)}</p>
+      <div class="pz-n4"><div class="pz-n"><small>Nell'indice di Google</small><b>${nf(ok, 0)}</b> <span class="pz-ug">su ${nf(I.tot, 0)}</span></div>${INDG.slice(1).map(([k, t]) => `<div class="pz-n"><small>${t}</small><b>${nf((I.g[k] || []).length, 0)}</b></div>`).join('')}</div>
+      <div class="pz-bar" aria-hidden="true"><i style="width:${pc}%"></i></div><p class="pz-da" style="margin:0 0 6px">${pc}% delle pagine è già nelle ricerche di Google</p>
+      ${INDG.slice(1).concat(INDA).filter(([k]) => (I.g[k] || []).length).map(([k, t, c]) => `<details><summary>${t} <small>${nf(I.g[k].length, 0)} ${I.g[k].length === 1 ? 'pagina' : 'pagine'}</small></summary><p class="pz-cosa">${c}</p><ul>${I.g[k].map(([u, v]) => `<li><span class="pz-pg">${e(u)}</span>${v ? ` <small class="pz-ug">· Google l'ha letta ${pd(v)}</small>` : ''}</li>`).join('')}</ul></details>`).join('')}</div>`; }
     h += `<div class="pz-b"><h2>${ic('ch')}Le tue parole chiave</h2><p class="pz-da">Le parole chiave delle pagine del sito (quelle di titoli e H1) · posizione media su Google nelle ultime 4 settimane, dai dati di Google (Search Console), aggiornata ogni lunedì</p><div class="pz-tw"><table>
       <tr><th>Parola</th><th class="r hm">Ricerche al mese</th><th class="r">Oggi</th><th class="r hm">Lun. prima</th><th class="hm">Ultime 8 settimane</th><th class="r hm">Comparso</th><th>Dove sei</th><th></th></tr>
       ${D.parole.map(p => { const st = p.storia || [], o = st.length ? st[st.length - 1] : null, pr = st.length > 1 ? st[st.length - 2] : null, d = o && pr ? pr - o : 0;
