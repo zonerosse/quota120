@@ -2950,6 +2950,12 @@ export default {
     })());
   },
   async fetch(request, env) {
+    // chi arriva con http:// passa subito alla stessa pagina con https:// (collegamento sicuro), tranne le prove in locale
+    const u0 = new URL(request.url);
+    if (u0.protocol === "http:" && !/^(localhost|127\.0\.0\.1)$/.test(u0.hostname)) {
+      u0.protocol = "https:";
+      return new Response(null, { status: 301, headers: { location: u0.toString(), "Strict-Transport-Security": "max-age=31536000; includeSubDomains", "cache-control": "max-age=3600" } });
+    }
     let r;
     await euInit(env);
     try { r = await this.smista(request, env); }
