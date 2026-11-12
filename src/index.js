@@ -2990,6 +2990,10 @@ export default {
     const host = (LOCALE(env, request) && request.headers.get("x-prova-host")) || url.hostname;   // l'intestazione vale solo nelle prove in locale (localhost)
     const IPC = ipCliente(request, env);   // la rete del visitatore: va ai contenitori nell'intestazione interna x-q120-ip
     if (host === "www.quota120.com") return Response.redirect("https://quota120.com" + p + url.search, 301);
+    // security.txt: a chi scrivere se trova un problema di sicurezza (RFC 9116)
+    if (p === "/.well-known/security.txt") return new Response(
+      "Contact: mailto:assistenza@quota120.com\nExpires: 2027-05-12T00:00:00Z\nPreferred-Languages: it\nCanonical: https://quota120.com/.well-known/security.txt\n",
+      { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "max-age=86400" } });
     const reg = () => sto(env, ("registro"));
     // video dei corsi: niente percorsi codificati (%) o con barre doppie, che potrebbero aggirare il controllo della firma qui sotto
     if (/^\/corso\/+video\//i.test(p) && (p.includes("%") || !p.startsWith("/corso/video/"))) return new Response("Indirizzo non valido", { status: 400, headers: { "content-type": "text/plain; charset=utf-8" } });
