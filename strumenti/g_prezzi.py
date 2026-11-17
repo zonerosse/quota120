@@ -57,12 +57,12 @@ css = '''.pz-l{list-style:none;padding:0;margin:0 0 24px;display:grid;gap:10px}
 @media(max-width:860px){.cz .w{grid-template-columns:1fr!important}.cz .w>div:last-child{order:-1}.reg{position:static!important}}
 '''
 ld = {"@context": "https://schema.org", "@graph": [
- {"@type": "WebPage", "@id": U + "#page", "url": U, "name": TIT, "description": DES, "inLanguage": "it-IT", "isPartOf": {"@id": "https://quota120.com/#web"}, "about": {"@id": "https://quota120.com/#app"}, "datePublished": "2026-11-01", "dateModified": "2026-11-01", "author": {"@id": "https://quota120.com/#sara"}},
+ {"@type": "WebPage", "@id": U + "#page", "url": U, "name": TIT, "description": DES, "inLanguage": "it-IT", "isPartOf": {"@id": "https://quota120.com/#web"}, "about": {"@id": "https://quota120.com/#app"}, "datePublished": "2026-11-01", "dateModified": "2026-11-01", "author": {"@id": "https://quota120.com/#paolo"}},
  {"@type": "SoftwareApplication", "@id": "https://quota120.com/#app", "name": "Quota 120", "applicationCategory": "BusinessApplication", "operatingSystem": "Web, iPhone, Android", "url": "https://app.quota120.com/",
   "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR", "description": "Gratis nel periodo di lancio, con tutte le funzioni", "url": U}},
  {"@type": "FAQPage", "@id": U + "#faq", "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in FAQ]},
  {"@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Quota 120", "item": "https://quota120.com/"}, {"@type": "ListItem", "position": 2, "name": "Prezzi", "item": U}]},
- {"@type": "Person", "@id": "https://quota120.com/#sara", "name": "Sara Boldrini", "url": "https://puntowebferrara.com/"}]}
+ {"@type": "Person", "@id": "https://quota120.com/#paolo", "name": "Paolo Boldrini", "url": "https://puntowebferrara.com/"}]}
 t = s
 t = re.sub(r'<meta name="description" content="[^"]*">', '<meta name="description" content="%s">' % DES, t, count=1)
 t = re.sub(r'<title>[^<]*</title>', '<title>Prezzi · Quota 120</title>', t, count=1)

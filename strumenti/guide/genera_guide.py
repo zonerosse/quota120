@@ -39,7 +39,7 @@ def pagina(g):
     org = next(n for n in d['@graph'] if n['@type'] == 'Organization'); per = next(n for n in d['@graph'] if n['@type'] == 'Person')
     d['@graph'] = [org, per,
       {"@type": "Article", "@id": u + "#articolo", "headline": g['h1'], "description": g['desc'], "url": u, "inLanguage": "it-IT", "datePublished": g['data'], "dateModified": g['data'],
-       "author": {"@id": B + "/#sara"}, "publisher": {"@id": B + "/#org"}, "isPartOf": {"@id": B + "/#web"}, "image": f'{B}/img/{g.get("og","og-home.jpg")}', "citation": [f[1] for f in g['fonti']], "about": g.get('about', [])},
+       "author": {"@id": B + "/#paolo"}, "publisher": {"@id": B + "/#org"}, "isPartOf": {"@id": B + "/#web"}, "image": f'{B}/img/{g.get("og","og-home.jpg")}', "citation": [f[1] for f in g['fonti']], "about": g.get('about', [])},
       {"@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Quota 120", "item": B + "/"}, {"@type": "ListItem", "position": 2, "name": "Guide", "item": B + "/guide/"}, {"@type": "ListItem", "position": 3, "name": g['breve_nome'], "item": u}]},
       {"@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": re.sub('<[^>]+>', '', a)}} for q, a in g['faq']]}]
     h = h[:m.start(2)] + json.dumps(d, ensure_ascii=False) + h[m.end(2):]
@@ -49,7 +49,7 @@ def pagina(g):
       '<section class="gd"><div class="w">' + ''.join(blocco(b) for b in g['corpo'])
       + '<div class="cta">' + ''.join(f'<div><b>{t}</b><p>{p}</p><a class="kbtn kbp" href="{l}">{a}</a></div>' for t, p, a, l in g['cta']) + '</div>'
       + '<h2 id="domande">Domande frequenti</h2>' + ''.join(f'<details><summary>{q}</summary><p>{a}</p></details>' for q, a in g['faq'])
-      + '<div class="fonti"><b>Fonti ufficiali</b><ul>' + ''.join(f'<li><a href="{l}" rel="noopener" target="_blank">{t}</a></li>' for t, l in g['fonti']) + f'</ul><p style="margin:8px 0 0">Scritta da Sara Boldrini, Quota 120. Le regole cambiano: prima di volare controlla sempre le fonti ufficiali. Quota 120 non è collegato a ENAC, D-Flight o EASA.</p></div>'
+      + '<div class="fonti"><b>Fonti ufficiali</b><ul>' + ''.join(f'<li><a href="{l}" rel="noopener" target="_blank">{t}</a></li>' for t, l in g['fonti']) + f'</ul><p style="margin:8px 0 0">Scritta da Paolo Boldrini, Quota 120. Le regole cambiano: prima di volare controlla sempre le fonti ufficiali. Quota 120 non è collegato a ENAC, D-Flight o EASA.</p></div>'
       + '</div></section></div></main>')
     i = h.index('<main>'); j = h.index('</main>') + 7
     return h[:i] + main + h[j:]
@@ -66,7 +66,7 @@ def indice(guide):
     h = re.sub(r'<meta property="og:url" content="[^"]*">', f'<meta property="og:url" content="{u}">', h)
     m = re.search(r'(<script type="application/ld\+json">)(.*?)(</script>)', h, re.S); d = json.loads(m.group(2))
     org = next(n for n in d['@graph'] if n['@type'] == 'Organization'); per = next(n for n in d['@graph'] if n['@type'] == 'Person')
-    d['@graph'] = [org, per, {"@type": "CollectionPage", "@id": u + "#page", "url": u, "name": tit, "description": des, "inLanguage": "it-IT", "isPartOf": {"@id": B + "/#web"}, "author": {"@id": B + "/#sara"},
+    d['@graph'] = [org, per, {"@type": "CollectionPage", "@id": u + "#page", "url": u, "name": tit, "description": des, "inLanguage": "it-IT", "isPartOf": {"@id": B + "/#web"}, "author": {"@id": B + "/#paolo"},
        "hasPart": [{"@type": "Article", "headline": g['h1'], "url": f'{B}/guide/{g["slug"]}/'} for g in guide]},
       {"@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Quota 120", "item": B + "/"}, {"@type": "ListItem", "position": 2, "name": "Guide", "item": u}]}]
     h = h[:m.start(2)] + json.dumps(d, ensure_ascii=False) + h[m.end(2):]
