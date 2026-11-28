@@ -53,6 +53,21 @@ def pagina(g):
       + '</div></section></div></main>')
     i = h.index('<main>'); j = h.index('</main>') + 7
     return h[:i] + main + h[j:]
+GRUPPI = [
+  ('in-regola', 'Mettersi in regola', 'Cosa serve prima ancora di decollare: la registrazione come operatore, il codice da attaccare sul drone, l’attestato giusto per il tipo di volo e l’assicurazione.', ['d-flight', 'codice-operatore-uas', 'patentino-drone', 'assicurazione-drone']),
+  ('dove-volare', 'Dove e quando si può volare', 'Come si leggono le zone sulla mappa D-Flight, dove si controllano i NOTAM e quando serve chiedere una riserva di spazio aereo con il modulo ATM-09.', ['mappa-d-flight', 'notam-droni', 'atm-09']),
+  ('agricoltura', 'Droni in agricoltura', 'Cosa si può fare oggi con un drone nei campi e come si tiene il quaderno di campagna, che diventa digitale.', ['drone-agricolo', 'quaderno-di-campagna-digitale']),
+  ('imprevisti', 'Se qualcosa va storto', 'Cosa va segnalato dopo un incidente o un inconveniente con il drone, a chi e in quanto tempo.', ['segnalazione-incidenti-drone']),
+]
+def gruppi(guide):
+    """Le guide dell'indice divise per argomento; quelle non elencate in GRUPPI finiscono in «Altre guide»."""
+    per = {g['slug']: g for g in guide}; usate = set(); out = []
+    for gid, tit, intro, slugs in GRUPPI:
+        gg = [per[x] for x in slugs if x in per]; usate.update(x['slug'] for x in gg)
+        if gg: out.append((gid, tit, intro, gg))
+    resto = [g for g in guide if g['slug'] not in usate]
+    if resto: out.append(('altre', 'Altre guide', 'Le altre guide per chi vola con i droni.', resto))
+    return out
 def indice(guide):
     """Pagina /guide/: un riquadro con bottone per ogni guida."""
     u = f'{B}/guide/'
@@ -74,9 +89,11 @@ def indice(guide):
     if '.gd{' not in h: h = h.replace('</style>', CSS + '</style>', 1)
     main = ('<main><div class="kh"><section class="khero" style="padding:72px 0 56px"><div class="blob b1"></div><div class="blob b2"></div><div class="grid-bg"></div>'
       '<div class="w"><div class="kpill"><b></b>Guide · con le fonti ufficiali</div><h1>Guide per chi vola con i droni</h1><p class="lead">Le cose da sapere prima di volare e per lavorare in regola, spiegate in breve. Ogni guida ha la risposta in cima e i link alle fonti ufficiali.</p></div></section>'
-      '<section class="gd"><div class="w" style="max-width:1080px"><div class="cta" style="margin-top:0">'
-      + ''.join(f'<div><b>{g["breve_nome"]}</b><p>{g["lead"]}</p><a class="kbtn kbp" href="/guide/{g["slug"]}/">{g.get("anchor", g["breve_nome"])}</a></div>' for g in guide)
-      + '</div></div></section></div></main>')
+      '<section class="gd"><div class="w" style="max-width:1080px">' + ''.join(
+        f'<h2 id="{gid}">{tit_g}</h2><p>{intro}</p><div class="cta" style="margin-top:14px">'
+        + ''.join(f'<div><b>{g["breve_nome"]}</b><p>{g["lead"]}</p><a class="kbtn kbp" href="/guide/{g["slug"]}/">{g.get("anchor", g["breve_nome"])}</a></div>' for g in gg) + '</div>'
+        for gid, tit_g, intro, gg in gruppi(guide))
+      + '</div></section></div></main>')
     i = h.index('<main>'); j = h.index('</main>') + 7
     return h[:i] + main + h[j:]
 
