@@ -62,7 +62,8 @@ ld = {"@context": "https://schema.org", "@graph": [
   "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR", "description": "Gratis nel periodo di lancio, con tutte le funzioni", "url": U}},
  {"@type": "FAQPage", "@id": U + "#faq", "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in FAQ]},
  {"@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Quota 120", "item": "https://quota120.com/"}, {"@type": "ListItem", "position": 2, "name": "Prezzi", "item": U}]},
- {"@type": "Person", "@id": "https://quota120.com/#paolo", "name": "Paolo Boldrini", "url": "https://puntowebferrara.com/"}]}
+ {"@type": "Person", "@id": "https://quota120.com/#paolo", "name": "Paolo Boldrini", "url": "https://puntowebferrara.com/"},
+ *[n for n in json.loads(re.search(r'<script type="application/ld\+json">(.*?)</script>', s, re.S).group(1))["@graph"] if n["@type"] in ("Organization", "WebSite")]]}
 t = s
 t = re.sub(r'<meta name="description" content="[^"]*">', '<meta name="description" content="%s">' % DES, t, count=1)
 t = re.sub(r'<title>[^<]*</title>', '<title>Prezzi · Quota 120</title>', t, count=1)

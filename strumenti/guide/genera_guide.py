@@ -36,8 +36,8 @@ def pagina(g):
     h = re.sub(r'<meta property="og:type" content="[^"]*">', '<meta property="og:type" content="article">', h)
     h = h.replace('og-home.jpg', g.get('og', 'og-home.jpg'))
     m = re.search(r'(<script type="application/ld\+json">)(.*?)(</script>)', h, re.S); d = json.loads(m.group(2))
-    org = next(n for n in d['@graph'] if n['@type'] == 'Organization'); per = next(n for n in d['@graph'] if n['@type'] == 'Person')
-    d['@graph'] = [org, per,
+    org = next(n for n in d['@graph'] if n['@type'] == 'Organization'); per = next(n for n in d['@graph'] if n['@type'] == 'Person'); web = next(n for n in d['@graph'] if n['@type'] == 'WebSite')
+    d['@graph'] = [org, web, per,
       {"@type": "Article", "@id": u + "#articolo", "headline": g['h1'], "description": g['desc'], "url": u, "inLanguage": "it-IT", "datePublished": g['data'], "dateModified": g['data'],
        "author": {"@id": B + "/#paolo"}, "publisher": {"@id": B + "/#org"}, "isPartOf": {"@id": B + "/#web"}, "image": f'{B}/img/{g.get("og","og-home.jpg")}', "citation": [f[1] for f in g['fonti']], "about": g.get('about', [])},
       {"@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Quota 120", "item": B + "/"}, {"@type": "ListItem", "position": 2, "name": "Guide", "item": B + "/guide/"}, {"@type": "ListItem", "position": 3, "name": g['breve_nome'], "item": u}]},
@@ -65,8 +65,9 @@ def indice(guide):
     h = re.sub(r'<link rel="canonical" href="[^"]*">', f'<link rel="canonical" href="{u}">', h)
     h = re.sub(r'<meta property="og:url" content="[^"]*">', f'<meta property="og:url" content="{u}">', h)
     m = re.search(r'(<script type="application/ld\+json">)(.*?)(</script>)', h, re.S); d = json.loads(m.group(2))
-    org = next(n for n in d['@graph'] if n['@type'] == 'Organization'); per = next(n for n in d['@graph'] if n['@type'] == 'Person')
-    d['@graph'] = [org, per, {"@type": "CollectionPage", "@id": u + "#page", "url": u, "name": tit, "description": des, "inLanguage": "it-IT", "isPartOf": {"@id": B + "/#web"}, "author": {"@id": B + "/#paolo"},
+    org = next(n for n in d['@graph'] if n['@type'] == 'Organization'); per = next(n for n in d['@graph'] if n['@type'] == 'Person'); web = next(n for n in d['@graph'] if n['@type'] == 'WebSite')
+    d['@graph'] = [org, web, per, {"@type": "CollectionPage", "@id": u + "#page", "url": u, "name": tit, "description": des, "inLanguage": "it-IT", "isPartOf": {"@id": B + "/#web"}, "author": {"@id": B + "/#paolo"}, "publisher": {"@id": B + "/#org"},
+       "datePublished": min(g['data'] for g in guide), "dateModified": max(g['data'] for g in guide),
        "hasPart": [{"@type": "Article", "headline": g['h1'], "url": f'{B}/guide/{g["slug"]}/'} for g in guide]},
       {"@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Quota 120", "item": B + "/"}, {"@type": "ListItem", "position": 2, "name": "Guide", "item": u}]}]
     h = h[:m.start(2)] + json.dumps(d, ensure_ascii=False) + h[m.end(2):]
